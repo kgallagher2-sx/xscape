@@ -530,7 +530,7 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">Earn GP from Jad and Gloamhold, then buy Black d'hide in the Shop. Equip it from your bank.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Spend it in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
@@ -595,7 +595,7 @@
         <div id="shop-gp" class="gp-line">GP: <span id="shop-gp-amt" class="gp-amt gp-yellow">0</span></div>
         <div class="sheet-scroll" id="shop-scroll">
           <div id="shop-list"></div>
-          <div class="shop-foot">Pretend GP from Jad and Gloamhold only — nothing real is ever charged. New kit goes to your bank.</div>
+          <div class="shop-foot">First Jad kill grants a Fire cape and no GP. Later Jad kills pay 2–3M pretend GP. Gloamhold payouts are unchanged. Nothing real is ever charged.</div>
         </div>
         <div class="sheet-actions">
           <button class="btn" id="btn-shop-close" type="button">CLOSE</button>
@@ -636,7 +636,7 @@
     <div class="overlay hidden" id="overlay-win">
       <div class="share-card" id="share-card">
         <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
-        <div class="win-title">FIRE CAPE OBTAINED!</div>
+        <div class="win-title" id="win-title">FIRE CAPE OBTAINED!</div>
         <canvas id="cape-canvas" width="100" height="120"></canvas>
         <div class="result-grid" id="win-stats"></div>
         <div class="share-hint">Screenshot this card and share your run</div>
@@ -737,8 +737,8 @@ const MUSIC_BPM_URGENT = 108;     // slightly faster once healers spawn
 const MUSIC_GAIN = 0.17;          // music bus into master; stays under SFX
 const PRAYER_DRAIN_EVERY = 2;    // 1 point every N ticks
 const BOSS_ID = "tztok-jad";
-const JAD_KILL_GP_MIN = 5000000;  // random Jad kill reward (inclusive)
-const JAD_KILL_GP_MAX = 10000000;
+const JAD_KILL_GP_MIN = 2000000;  // GP for kills after the Fire cape is owned (inclusive)
+const JAD_KILL_GP_MAX = 3000000;
 const STORAGE = {
   name: "kellenscape-player-name",
   tutorial: "kellenscape-tutorial-seen",
@@ -2130,6 +2130,27 @@ function rollJadGp() {
   return rand(JAD_KILL_GP_MIN, JAD_KILL_GP_MAX);
 }
 
+/** First kill while the profile does not own a Fire cape: cape + 0 GP.
+    Every later kill (cape already owned): random 2M–3M GP. */
+function awardJadWinReward() {
+  const firstCape = (typeof ownsFireCape === "function") ? !ownsFireCape() : !((Profile && (Profile.hasFireCape || (Profile.equipment && Profile.equipment.cape === "fire_cape"))) || (typeof isOwned === "function" && isOwned("fire_cape")));
+  let gpAwarded = 0;
+  if (firstCape) {
+    if (typeof awardFireCape === "function") awardFireCape();
+  } else {
+    gpAwarded = rollJadGp();
+    awardGp(gpAwarded);
+  }
+  return { firstCape: !!firstCape, gpAwarded: gpAwarded };
+}
+
+function setWinTitle(firstCape, gpAwarded) {
+  const el = $("win-title");
+  if (!el) return;
+  if (firstCape) el.textContent = "FIRE CAPE OBTAINED!";
+  else el.textContent = "+" + gpStyle(gpAwarded).text + " GP";
+}
+
 const audio = {
   ctx: null,
   muted: false,
@@ -3261,7 +3282,13 @@ function fillResultGrid(el, result, score, survived) {
   if (survived) {
     rows.push(["Score", String(score), "gold"]);
     rows.push(["Best", best ? String(best.score) : String(score), "gold"]);
-    if (result.gpAwarded) {
+    if (result.firstCape) {
+      rows.push(["Reward", "Fire cape", "gold"]);
+      if (result.gpTotal != null) {
+        const total = gpStyle(result.gpTotal);
+        rows.push(["GP total", total.text, total.class]);
+      }
+    } else if (result.gpAwarded) {
       const earned = gpStyle(result.gpAwarded);
       const total = gpStyle(result.gpTotal);
       rows.push(["GP earned", "+" + earned.text, earned.class]);
@@ -3278,14 +3305,13 @@ function endWin() {
   if (G.mode !== "playing") return;
   setPlayingChrome(false);
   G.jad.hp = 0;
-  const gpAwarded = rollJadGp();
-  awardGp(gpAwarded);
-  awardFireCape();
+  const reward = awardJadWinReward();
   const result = buildResult();
-  result.gpAwarded = gpAwarded;
+  result.gpAwarded = reward.gpAwarded;
+  result.firstCape = reward.firstCape;
   result.gpTotal = Profile.gp;
   const packed = submitScore(result);
-  G._pendingWin = { gpAwarded, result, packed };
+  G._pendingWin = { gpAwarded: reward.gpAwarded, firstCape: reward.firstCape, result, packed };
   audio.stopAmbient();
   if (!Profile.seenFirstKill) startFirstKill();
   else {
@@ -4670,12 +4696,13 @@ function showWinCard() {
     // Debug / URL jump: synthesize a modest result
     G.mode = "win";
     if (G.jad) G.jad.hp = 0;
-    const gpAwarded = rollJadGp();
-    awardGp(gpAwarded);
+    const reward = awardJadWinReward();
     const result = buildResult();
-    result.gpAwarded = gpAwarded;
+    result.gpAwarded = reward.gpAwarded;
+    result.firstCape = reward.firstCape;
     result.gpTotal = Profile.gp;
     const packed = submitScore(result);
+    setWinTitle(reward.firstCape, reward.gpAwarded);
     fillResultGrid($("win-stats"), result, packed.score, true);
     drawCape($("cape-canvas").getContext("2d"), $("cape-canvas").width, $("cape-canvas").height, true);
     $("overlay-win").classList.remove("hidden");
@@ -4684,13 +4711,17 @@ function showWinCard() {
     return;
   }
   G.mode = "win";
+  setWinTitle(pending.firstCape, pending.gpAwarded);
   fillResultGrid($("win-stats"), pending.result, pending.packed.score, true);
   drawCape($("cape-canvas").getContext("2d"), $("cape-canvas").width, $("cape-canvas").height, true);
   $("overlay-win").classList.remove("hidden");
   audio.stopAmbient();
   audio.win();
-  const gs = gpStyle(pending.gpAwarded);
-  flashMsg("+" + gs.text + " GP!", gs.color);
+  if (pending.firstCape) flashMsg("Fire cape obtained!", "#ffe44a");
+  else if (pending.gpAwarded) {
+    const gs = gpStyle(pending.gpAwarded);
+    flashMsg("+" + gs.text + " GP!", gs.color);
+  }
   G._pendingWin = null;
 }
 
