@@ -20,7 +20,7 @@
   const RANGING_POT_BOOST = 13;
   const RANGING_POT_TICKS = 83;
   const SHARK_DELAY = 3;
-  const POT_DELAY = 3;
+  const POT_DELAY = 0; // OSRS: potions/brews do not delay the attack timer
   const CONSUME_CD = 3;
   const PRAYER_DRAIN_EVERY = 2;
   const MORVANE_HP = 140;
@@ -658,7 +658,7 @@
     if (st.mode !== "playing") { restoreLocalFighter(st); return; }
     livingFighters(st).forEach(function (f) {
       withFighter(st, f, function (s) {
-        if (f.atkCd <= 0 && !f.stepping && canAttackHere(s)) playerAttack(s);
+        if (f.atkCd <= 0 && canAttackHere(s)) playerAttack(s);
       });
     });
     tickAdds(st);
@@ -1152,7 +1152,7 @@
     else if (room === "loot" || (room && room.indexOf("chest") === 0)) tickChest(st);
     if (st.mode !== "playing") return;
 
-    if (p.atkCd <= 0 && !p.stepping && canAttackHere(st)) playerAttack(st);
+    if (p.atkCd <= 0 && canAttackHere(st)) playerAttack(st);
     tickAdds(st);
     if (st.boss && st.boss.hurt > 0) st.boss.hurt = Math.max(0, st.boss.hurt - 1);
   }
@@ -1804,14 +1804,14 @@
     }
     if (fam === "prayer_potion") {
       p.prayerPts = clamp(p.prayerPts + POT_RESTORE, 0, PLAYER_MAX_PRAYER);
-      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      st.potCd = CONSUME_CD; sfx(st, "sip");
       return true;
     }
     if (fam === "super_restore") {
       const amt = (PS && PS.restoreAmount) ? PS.restoreAmount("prayer") : 32;
       p.prayerPts = clamp(p.prayerPts + amt, 0, PLAYER_MAX_PRAYER);
       if (local && PS && PS.applySuperRestore) PS.applySuperRestore();
-      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      st.potCd = CONSUME_CD; sfx(st, "sip");
       flash(st, "Super restore", "#d8a0ff");
       return true;
     }
@@ -1824,27 +1824,27 @@
         const r = PS.applyBrew();
         if (r && r.hp != null) p.hp = r.hp;
       }
-      p.atkCd += POT_DELAY; st.brewCd = CONSUME_CD; sfx(st, "sip");
+      st.brewCd = CONSUME_CD; sfx(st, "sip");
       flash(st, "Saradomin brew", "#e8e0b0");
       return true;
     }
     if (fam === "ranging_potion") {
       p.rangingLeft = RANGING_POT_TICKS;
       if (local && PS && PS.applyRangingPotion) PS.applyRangingPotion();
-      p.atkCd += POT_DELAY; st.rangeCd = CONSUME_CD; sfx(st, "sip");
+      st.rangeCd = CONSUME_CD; sfx(st, "sip");
       flash(st, "Ranging potion", "#7af07a");
       return true;
     }
     if (fam === "magic_potion") {
       if (local && PS && PS.applyMagicPotion) PS.applyMagicPotion();
-      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      st.potCd = CONSUME_CD; sfx(st, "sip");
       flash(st, "Magic potion", "#7ad8ff");
       return true;
     }
     if (fam === "super_attack" || fam === "super_strength" || fam === "super_defence") {
       const skill = fam === "super_attack" ? "attack" : fam === "super_strength" ? "strength" : "defence";
       if (local && PS && PS.applySuperPotion) PS.applySuperPotion(skill);
-      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      st.potCd = CONSUME_CD; sfx(st, "sip");
       flash(st, fam.replace("super_", "Super "), "#7af07a");
       return true;
     }
@@ -2680,10 +2680,8 @@
     if (score) score.textContent = ROOM_TITLE[st.room] || "";
     if (typeof global.updatePrayerButtons === "function") {
       try {
-        const saved = global.G && global.G.prayer;
         if (global.G) global.G.prayer = st.prayer;
         global.updatePrayerButtons();
-        if (global.G) global.G.prayer = saved;
       } catch (e) {}
     }
     ["btn-mage","btn-range","btn-melee"].forEach(function (id, i) {
@@ -2723,7 +2721,11 @@
     f.prevRow = packed.prevRow != null ? packed.prevRow : packed.row;
     f.col = packed.col; f.row = packed.row;
     f.stepping = !!packed.stepping;
-    f.prayer = packed.prayer || null;
+    var isLocal = !!(st.group && packed.id && String(packed.id) === String(st.group.localId));
+    // Followers can flick prayer between host state packets. Keep the local
+    // player's latest toggle; the host applies it on the tick that counts.
+    if (isLocal) f.prayer = st.prayer;
+    else f.prayer = packed.prayer || null;
     f.atkCd = packed.atkCd; f.rangingLeft = packed.rangingLeft;
     f.stillTicks = packed.stillTicks; f.dead = !!packed.dead;
     if (packed.damageDealt != null) f.damageDealt = packed.damageDealt;

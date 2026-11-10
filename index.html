@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110214353-7d61be9";</script>
+  <script>window.XSCAPE_BUILD = "20261110221404-82f80ca";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -111,9 +111,11 @@
       flex: 0 0 auto; display: flex; align-items: stretch; gap: 6px;
       padding: 4px var(--hud-right) var(--hud-bottom) var(--hud-left);
       background: #160e0a; border-top: 2px solid #3a2a18;
+      touch-action: manipulation; z-index: 5;
     }
-    #quick-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; min-width: 0; }
-    .quick-slot { position: relative; overflow: hidden; height: 56px; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 2px 2px 1px; background: linear-gradient(#3a2c1c, #22180e); border: 2px solid #5a4630; border-radius: 6px; color: #d8c8a0; cursor: pointer; font-family: inherit; }
+    #quick-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; min-width: 0; touch-action: manipulation; }
+    .quick-slot, #btn-quick-edit { touch-action: manipulation; }
+    .quick-slot { position: relative; overflow: hidden; height: 58px; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 2px 2px 1px; background: linear-gradient(#3a2c1c, #22180e); border: 2px solid #5a4630; border-radius: 6px; color: #d8c8a0; cursor: pointer; font-family: inherit; }
     .quick-slot canvas { width: 28px; height: 28px; display: block; }
     .quick-slot .q-lab { font-size: 8px; font-weight: 700; letter-spacing: 0.2px; line-height: 1.05; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .quick-slot .q-qty { position: absolute; right: 3px; top: 2px; z-index: 2; background: #1a1008; border: 1px solid #000; color: var(--gold); min-width: 12px; padding: 0 3px; font-size: 9px; font-weight: 700; border-radius: 2px; }
@@ -1400,7 +1402,7 @@ const POT_RESTORE = 31;
 const POT_COUNT = 2;
 const RANGE_POT_COUNT = 1;
 const SHARK_ATTACK_DELAY_TICKS = 3; // eating delays the next crossbow shot
-const POT_ATTACK_DELAY_TICKS = 3;   // Kellen's choice: sipping also delays the next shot
+const POT_ATTACK_DELAY_TICKS = 0;   // OSRS: potions and brews do not delay the attack timer
 const CONSUME_COOLDOWN_TICKS = 3;   // one eat / one sip per 3 ticks (separate timers)
 const JAD_ATTACK_SPEED_TICKS = 8;   // OSRS TzTok-Jad attack speed
 const HEALER_COUNT = 4;
@@ -4233,12 +4235,14 @@ function gameTick() {
     }
   }
 
-  const moved = processMovement();
+  processMovement();
   tickTileAttacks();
 
+  // OSRS: the attack timer keeps ticking while you walk and does not reset.
+  // If it is ready and you are in range, you attack on this tick even if you also stepped.
   G.player.atkCd--;
   if (G.player.atkCd < 0) G.player.atkCd = 0;
-  if (!moved && G.player.atkCd <= 0 && G.player.hp > 0 && j.hp > 0) {
+  if (G.player.atkCd <= 0 && G.player.hp > 0 && j.hp > 0) {
     playerAttack();
     G.player.atkCd = PLAYER_ATTACK_TICKS;
   }

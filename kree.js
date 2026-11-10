@@ -394,12 +394,13 @@
       }
     }
 
-    const moved = (typeof global.processMovement === "function") ? processMovement() : false;
+    if (typeof global.processMovement === "function") processMovement();
     if (typeof global.tickTileAttacks === "function") tickTileAttacks();
 
+    // OSRS: walking does not reset or pause the attack timer.
     G.player.atkCd--;
     if (G.player.atkCd < 0) G.player.atkCd = 0;
-    if (!moved && G.player.atkCd <= 0 && G.player.hp > 0 && k && k.hp > 0) {
+    if (G.player.atkCd <= 0 && G.player.hp > 0 && k && k.hp > 0) {
       fireBolt();
       G.player.atkCd = global.PLAYER_ATTACK_TICKS || 4;
     }

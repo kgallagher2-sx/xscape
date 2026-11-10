@@ -481,7 +481,6 @@
       const base = (PS && PS.baseLevel) ? PS.baseLevel("prayer") : 99;
       const amt = 7 + Math.floor(base * 0.25);
       p.prayerPts = Math.min(maxP, p.prayerPts + amt);
-      p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Prayer potion", "#9ad0ff");
@@ -495,7 +494,6 @@
       if (!needPray && !needStat) return false;
       if (needPray) p.prayerPts = Math.min(maxP, p.prayerPts + amt);
       if (PS && PS.applySuperRestore) PS.applySuperRestore();
-      p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Super restore", "#d8a0ff");
@@ -512,7 +510,6 @@
         p.hp = Math.min((global.PLAYER_MAX_HP || 99), p.hp + 16);
         if (typeof global.spawnSplat === "function") spawnSplat(p.x + 0.08, p.y - 0.14, p.hp - before, "green");
       }
-      p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Saradomin brew", "#e8e0b0");
@@ -520,7 +517,6 @@
     }
     if (fam === "ranging_potion") {
       if (PS && PS.applyRangingPotion) PS.applyRangingPotion();
-      p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.rangeCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Ranging potion", "#7af07a");
@@ -528,7 +524,6 @@
     }
     if (fam === "magic_potion") {
       if (PS && PS.applyMagicPotion) PS.applyMagicPotion();
-      p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Magic potion", "#7ad8ff");
@@ -537,7 +532,6 @@
     if (fam === "super_attack" || fam === "super_strength" || fam === "super_defence") {
       const skill = POTION_FAMILIES[fam].skill;
       if (PS && PS.applySuperPotion) PS.applySuperPotion(skill);
-      p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg(POTION_FAMILIES[fam].name, "#7af07a");
@@ -798,7 +792,23 @@
       btn.className = "quick-slot";
       btn.setAttribute("data-slot", String(i));
       btn.innerHTML = '<span class="cd-sweep"></span><canvas width="64" height="64"></canvas><span class="q-lab"></span><span class="q-qty"></span>';
-      btn.addEventListener("click", function (e) { e.preventDefault(); onSlot(i); });
+      // pointerdown so prayer flicks register immediately; ignore the ghost click.
+      let lastPtr = 0;
+      btn.addEventListener("pointerdown", function (e) {
+        if (e.button && e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        lastPtr = e.timeStamp || Date.now();
+        onSlot(i);
+      });
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const ts = e.timeStamp || Date.now();
+        if (lastPtr && ts - lastPtr < 700) return;
+        lastPtr = 0;
+        onSlot(i);
+      });
       grid.appendChild(btn);
     }
     const edit = $("btn-quick-edit");
