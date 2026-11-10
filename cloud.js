@@ -1076,8 +1076,11 @@
           ".</div><div class='acts'>" +
           '<button type="button" class="cloud-btn" id="cloud-accept">Accept</button>' +
           '<button type="button" class="cloud-btn guest" id="cloud-decline">Decline</button></div>' +
-          "<div class='cloud-or'>Full duel combat is coming next — this just holds the invite.</div>";
-        on($("cloud-accept"), "click", function () { respondChallenge(pendingIn.id, true); });
+          "<div class='cloud-or'>Set your stake, then accept twice to begin.</div>";
+        on($("cloud-accept"), "click", function () {
+          if (global.XscapeDuel && XscapeDuel.respondTo) XscapeDuel.respondTo(pendingIn);
+          else respondChallenge(pendingIn.id, true);
+        });
         on($("cloud-decline"), "click", function () { respondChallenge(pendingIn.id, false); });
       } else {
         invite.classList.remove("open");
@@ -1093,7 +1096,16 @@
   }
 
   async function challengeUser(userId) {
-    var res = await rpc("create_duel_challenge", { p_to: userId, p_stake: 0 });
+    if (global.XscapeDuel && typeof XscapeDuel.offerTo === "function") {
+      var name = null;
+      Object.keys(mergedPresenceMap()).forEach(function (id) {
+        var p = mergedPresenceMap()[id];
+        if (p && p.id === userId) name = p.username;
+      });
+      XscapeDuel.offerTo(userId, name);
+      return;
+    }
+    var res = await rpc("create_duel_challenge", { p_to: userId, p_stake: 0, p_items: [] });
     if (!res.ok) { alert(res.error || "Could not send the challenge"); return; }
     if (hubChannel) {
       hubChannel.send({
@@ -1106,11 +1118,12 @@
   }
 
   async function respondChallenge(id, accept) {
+    if (accept && global.XscapeDuel && typeof XscapeDuel.respondTo === "function") {
+      XscapeDuel.respondTo(id);
+      return;
+    }
     var res = await rpc("respond_duel_challenge", { p_id: id, p_accept: !!accept });
     if (!res.ok) { alert(res.error || "Could not update the challenge"); return; }
-    if (accept) {
-      alert("Challenge accepted. Full duel combat is the next step — this lobby just records the match for now.");
-    }
     if (hubChannel) {
       hubChannel.send({ type: "broadcast", event: "duel-update", payload: res.challenge || { id: id } });
     }
@@ -1121,6 +1134,9 @@
     var res = await rpc("my_duel_challenges", {});
     if (res.ok && Array.isArray(res.challenges)) challenges = res.challenges;
     renderChallenges();
+    if (global.XscapeDuel && typeof XscapeDuel.onChallenges === "function") {
+      try { XscapeDuel.onChallenges(challenges); } catch (e) {}
+    }
   }
 
   async function loadLeaderboard() {
@@ -1640,6 +1656,17 @@
       if (p.toId === uid) refreshChallenges();
     });
     hubChannel.on("broadcast", { event: "duel-update" }, function () { refreshChallenges(); });
+    hubChannel.on("broadcast", { event: "duel-confirm" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeDuel && XscapeDuel.onConfirmMsg) XscapeDuel.onConfirmMsg(payload);
+    });
+    hubChannel.on("broadcast", { event: "duel-settle" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeDuel && XscapeDuel.onOppInput) { /* settle via onChallenges too */ }
+      if (payload && payload.challenge && global.XscapeDuel && XscapeDuel.onChallenges) {
+        try { XscapeDuel.onChallenges([payload.challenge]); } catch (e) {}
+      }
+    });
     hubChannel.on("postgres_changes", { event: "*", schema: "public", table: "duel_challenges" }, function () {
       refreshChallenges();
     });
@@ -2076,7 +2103,9 @@
       return rpc("settle_duel", { p_id: id, p_winner: winner, p_ticks: ticks || null, p_forfeit: !!forfeit });
     },
     refundDuel: function (id) { return rpc("refund_duel", { p_id: id }); },
-    challengeUser: challengeUser
+    challengeUser: challengeUser,
+    getChallenges: function () { return challenges; },
+    applyProfile: applyCloudProfile
   };
   global.XscapeCloud = api;
 

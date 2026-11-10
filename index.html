@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110160504-b45c399";</script>
+  <script>window.XSCAPE_BUILD = "20261110161348-f729d10";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -284,7 +284,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -678,7 +678,7 @@
     }
     .osrs-slot.empty { opacity: 0.4; cursor: default; }
     .osrs-slot:active { filter: brightness(1.2); }
-    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv { overflow: hidden; }
+    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-hub.is-world #hub-dock { display: flex; }
     #overlay-hub.is-world #hub-gp-chip { display: block; }
     #hub-dock, #hub-gp-chip { display: none; }
@@ -710,6 +710,57 @@
     .bank-cols h3 { margin: 0 0 6px; font-size: 14px; color: #ffcf3a; }
 
     .boss-choice { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
+
+    /* Duel Arena */
+    #app.duel-world #overlay-hub,
+    #app.duel-world #mid,
+    #app.duel-world #consumables,
+    #app.duel-world #move-pad { display: none !important; }
+    #app.duel-world #top-hud { display: none; }
+    #app.duel-world #prayers { display: flex; }
+    #app.duel-world #btn-raid-help,
+    #app.duel-world #btn-kree-help { display: none; }
+    #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-stake .sheet-card,
+    #overlay-stake-confirm .sheet-card,
+    #overlay-duel-result .sheet-card {
+      width: 100%; max-width: 340px;
+      background: linear-gradient(#3a2c1c, #24180e);
+      border: 3px solid #c9a24a; box-shadow: 0 8px 24px #000, inset 0 0 0 1px #1a1008;
+      border-radius: 8px; padding: 14px 14px 12px; color: var(--beige);
+    }
+    .duel-note { margin: 0 0 10px; font-size: 13px; color: #efe0b0; line-height: 1.35; }
+    .duel-label { color: #ffcf3a; font-weight: 700; font-size: 13px; margin: 8px 0 4px; }
+    .duel-dim { color: #b8a070; font-size: 12px; }
+    .duel-gp, .duel-gp-now { color: #ffff00; font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+    .duel-gp-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .duel-gp-btns .btn { margin: 0; flex: 1 1 0; min-width: 52px; height: 36px; font-size: 12px; padding: 0 6px; }
+    .duel-gp-btns .btn.on { border-color: #ffcf3a; color: #ffe44a; background: #5a3a10; }
+    .duel-item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+    .duel-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      min-width: 0; margin: 0; padding: 4px 2px 4px; height: auto;
+      background: linear-gradient(#3a2a18, #22180e);
+      border: 2px solid #6a5428; border-radius: 4px; color: #efe0b0;
+      font-size: 9px; line-height: 1.15; text-align: center; cursor: pointer;
+      font-family: "Trebuchet MS", sans-serif;
+    }
+    .duel-item canvas { width: 44px; height: 44px; image-rendering: pixelated; }
+    .duel-item.on { border-color: #ffcf3a; box-shadow: 0 0 8px #a08020; }
+    .duel-item-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+    .duel-item-mini canvas { width: 40px; height: 40px; background: #1c0e08; border: 2px solid #6a5428; border-radius: 3px; image-rendering: pixelated; }
+    .duel-side { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #6a5430; }
+    #btn-duel-forfeit {
+      position: absolute; z-index: 40;
+      top: var(--hud-top); right: var(--hud-right);
+      min-height: 32px; padding: 6px 10px; margin: 0;
+      background: linear-gradient(#4a2414, #2c140c);
+      border: 2px solid #c9a24a; color: #ffe9a0;
+      font: 700 12px "Trebuchet MS", sans-serif; border-radius: 4px; cursor: pointer;
+    }
+    #btn-duel-forfeit.hidden { display: none; }
+    #stake-actions .btn, #confirm-actions .btn { margin: 0 4px 0 0; }
+
     #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help { display: none; }
 
     @media (max-height: 750px) {
@@ -4136,6 +4187,7 @@ function updateConsumeVisuals() {
 
 function setPrayer(kind) {
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.setPrayer(kind); return; }
+  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.setPrayer) { window.XscapeDuel.setPrayer(kind); return; }
   if (G.mode !== "playing") return;
   if (G.player.prayerPts <= 0) { flashMsg("No prayer!", "#ff8a70"); return; }
   if (G.prayer === kind) {
@@ -5406,7 +5458,7 @@ function refreshTitleBest() {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     if (id === "overlay-hub" && G && (G.scene === "hub" || G.mode === "hub")) return;
     const el = $(id);
     if (el) el.classList.add("hidden");
@@ -5469,9 +5521,20 @@ const Scenes = {
   },
   duel: {
     id: "duel",
-    locked: true,
     title: "Duel Arena",
-    enter() {}
+    enter() {
+      G.mode = "duel";
+      hideAllOverlays();
+      if ($("app")) {
+        $("app").classList.add("duel-world");
+        $("app").classList.remove("hub-world");
+      }
+      if (window.XscapeDuel && XscapeDuel.enter) XscapeDuel.enter();
+    },
+    exit() {
+      if (window.XscapeDuel && XscapeDuel.leave) XscapeDuel.leave();
+      if ($("app")) $("app").classList.remove("duel-world");
+    }
   }
 };
 

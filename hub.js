@@ -529,6 +529,12 @@
       setMovePath(bfs(state.col, state.row, npc.col, npc.row), npc.col, npc.row);
       return true;
     }
+    var other = playerAt(col, row);
+    if (other && !opts.walkOnly) {
+      markClick(opts.px, opts.py, "action");
+      showPlayerCtx(other, opts.px, opts.py);
+      return true;
+    }
     if (!walkable(col, row)) return false;
     state.pending = null;
     if (col === state.col && row === state.row) return false;
@@ -998,6 +1004,42 @@
   function hideCtx() {
     var el = $("hub-ctx");
     if (el) el.classList.add("hidden");
+  }
+
+  function playerAt(col, row) {
+    var others = othersInBank() || [];
+    for (var i = 0; i < others.length; i++) {
+      if (others[i] && others[i].col === col && others[i].row === row) return others[i];
+    }
+    return null;
+  }
+
+  function showPlayerCtx(p, px, py) {
+    var el = $("hub-ctx");
+    if (!el || !p) return;
+    el.innerHTML = '<div class="ctx-title">' + escapeHtml(p.username || "Adventurer") + "</div>" +
+      '<button type="button" data-act="challenge">Challenge to duel</button>' +
+      '<button type="button" data-act="examine">Examine</button>';
+    el.classList.remove("hidden");
+    var lay = state.layout || layout(cssWSafe(), cssHSafe());
+    var pos = tilePx(p.col, p.row, lay);
+    var x = Math.max(8, Math.min((lay.cssW || 390) - 180, (px != null ? px : pos.x) + 10));
+    var y = Math.max(8, Math.min((lay.cssH || 700) - 140, (py != null ? py : pos.y) - 20));
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    el.querySelectorAll("[data-act]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideCtx();
+        if (btn.getAttribute("data-act") === "challenge") {
+          if (global.XscapeDuel && XscapeDuel.offerTo) XscapeDuel.offerTo(p.id, p.username);
+          else if (global.XscapeCloud && XscapeCloud.challengeUser) XscapeCloud.challengeUser(p.id);
+        } else if (typeof flashMsg === "function") {
+          flashMsg("It's " + (p.username || "an adventurer") + ".", "#ffe9a0");
+        }
+      });
+    });
   }
 
   function showCtx(npc, px, py) {
