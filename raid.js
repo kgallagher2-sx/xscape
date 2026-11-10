@@ -26,6 +26,9 @@
   const MORVANE_HP = 140;
   const WARDEN_HP = 60;
   const SHADE_HP = 16;
+  // Per-player raid score maps linearly to 2–8M GP on the server.
+  // score = max(0, damageDealt + 25*perfectPrayers - 8*damageTaken); cap 1200 = 8M.
+  const RAID_SCORE_CAP = 1200;
   const RAID_ID = "gloamhold";
   const BOSS_ID = "morvane";
 
@@ -342,7 +345,8 @@
       hp: PLAYER_MAX_HP, prayerPts: PLAYER_MAX_PRAYER, atkCd: 1,
       col: 2, row: 0, prevCol: 2, prevRow: 0,
       stepping: false, path: [], prayer: null,
-      loadout: deep(loadout || STARTER_LOADOUT), rangingLeft: 0, stillTicks: 0
+      loadout: deep(loadout || STARTER_LOADOUT), rangingLeft: 0, stillTicks: 0,
+      damageDealt: 0, damageTaken: 0, perfectPrayers: 0, score: 0
     };
   }
   function defaultInv() { return { sharks: 10, pots: 6, brews: 0, ranging: 1 }; }
@@ -373,6 +377,34 @@
 
 
   function isGroup(st) { return !!(st && st.group); }
+  function partyScale(st) {
+    if (!st) return 1;
+    if (st.group && st.group.size) return Math.max(1, st.group.size | 0);
+    if (isGroup(st)) return Math.max(1, allFighters(st).length);
+    return 1;
+  }
+  function scaledHp(base, st) {
+    return Math.max(1, (base | 0) * partyScale(st));
+  }
+  function shadeCap(st) {
+    return Math.min(4, 1 + partyScale(st));
+  }
+  function computeRaidScore(f) {
+    if (!f) return 0;
+    var dmg = f.damageDealt || 0;
+    var taken = f.damageTaken || 0;
+    var flicks = f.perfectPrayers || 0;
+    return Math.max(0, dmg + flicks * 25 - taken * 8);
+  }
+  function scoresOf(st) {
+    var out = {};
+    allFighters(st).forEach(function (f) {
+      if (!f || !f.id) return;
+      f.score = computeRaidScore(f);
+      out[f.id] = f.score;
+    });
+    return out;
+  }
   function allFighters(st) {
     if (st && st.fighters && st.fighters.length) return st.fighters;
     return (st && st.player) ? [st.player] : [];
@@ -493,6 +525,7 @@
       leaderId: g.leaderId,
       localId: localId,
       isLeader: String(localId) === String(g.leaderId),
+      size: st.fighters.length,
       seed: opts.seed || g.seed,
       inputs: {},
       lastSent: null,
@@ -688,6 +721,7 @@
   function hurtPlayer(st, dmg, reason) {
     if (st.god || dmg <= 0 || st.mode !== "playing") return;
     st.player.hp = clamp(st.player.hp - dmg, 0, PLAYER_MAX_HP);
+    st.player.damageTaken = (st.player.damageTaken || 0) + dmg;
     st.damageTaken += dmg;
     st.dmgBy = st.dmgBy || {};
     const key = reason || "hit";
@@ -699,6 +733,7 @@
       st.player.dead = true;
       if (isGroup(st)) {
         flash(st, (st.player.username || "A teammate") + " fell.", "#ff8a70");
+        reportGroupDeaths(st);
         if (!livingFighters(st).length) die(st, reason || "The party was wiped.");
         return;
       }
@@ -743,6 +778,7 @@
       raidId: RAID_ID, bossId: BOSS_ID, survived: !!survived, room: st.room,
       ticks: st.ticks, seconds: Math.round(st.ticks * TICK_MS / 1000),
       damageTaken: st.damageTaken, dmgBy: st.dmgBy || {}, perfectPrayers: st.perfectPrayers,
+      score: (st.loot && st.loot.score != null) ? st.loot.score : computeRaidScore(st.player),
       loot: st.loot, hp: st.player.hp, prayer: st.player.prayerPts
     };
   }
@@ -1014,7 +1050,8 @@
     flash(st, "Round " + rs.round + " — watch the runes", "#c0a0ff");
   }
   function setupCourt(st) {
-    st.boss = { kind: "warden", id: "warden", hp: WARDEN_HP, hpMax: WARDEN_HP, col: 2, row: 0, style: null, phase: "idle", telLeft: 0, telLen: 2, recLeft: 2, hurt: 0, pose: 0 };
+    var wardHp = scaledHp(WARDEN_HP, st);
+    st.boss = { kind: "warden", id: "warden", hp: wardHp, hpMax: wardHp, col: 2, row: 0, style: null, phase: "idle", telLeft: 0, telLen: 2, recLeft: 2, hurt: 0, pose: 0 };
     st.target = { kind: "boss" };
     st.roomState.spawnIn = 8;
     st.roomState.cleared = false;
@@ -1023,7 +1060,8 @@
     st.roomState.wave = 0; st.roomState.waves = 8; st.roomState.stage = "rest"; st.roomState.timer = 2; st.roomState.cleared = false;
   }
   function setupThrone(st) {
-    st.boss = { kind: "morvane", id: "morvane", hp: MORVANE_HP, hpMax: MORVANE_HP, col: 2, row: 0, style: null, phase: "idle", phaseN: 1, telLeft: 0, telLen: 3, recLeft: 3, hurt: 0, pose: 0, lastStyle: "range", combo: null, comboI: 0 };
+    var morvHp = scaledHp(MORVANE_HP, st);
+    st.boss = { kind: "morvane", id: "morvane", hp: morvHp, hpMax: morvHp, col: 2, row: 0, style: null, phase: "idle", phaseN: 1, telLeft: 0, telLen: 3, recLeft: 3, hurt: 0, pose: 0, lastStyle: "range", combo: null, comboI: 0 };
     st.target = { kind: "boss" };
     st.roomState.shadeCd = 8; st.roomState.sigilCd = 12; st.roomState.pulseCd = 8; st.roomState.beamCd = 6; st.roomState.moon = { col: 0, row: 0 };
   }
@@ -1129,6 +1167,7 @@
   }
   function applyPlayerDamage(st, t, roll) {
     if (roll.dmg > 0) {
+      if (st.player) st.player.damageDealt = (st.player.damageDealt || 0) + roll.dmg;
       t.ref.hp = Math.max(0, t.ref.hp - roll.dmg);
       t.ref.hurt = 3;
       splat(st, t.ref.col != null ? t.ref.col : 2, t.ref.row != null ? t.ref.row : 0, roll.dmg, "#ffe44a");
@@ -1247,14 +1286,15 @@
     if (b && b.hp > 0) tickPrayerBoss(st, b, { styles: ["mage", "range"], speed: 5, tel: 2, maxHit: MONSTERS.warden.maxHit, accuracy: MONSTERS.warden.accuracy });
     rs.spawnIn--;
     const liveShades = st.adds.filter(function (a) { return a.hp > 0; }).length;
-    if (rs.spawnIn <= 0 && b && b.hp > 0 && liveShades < 2) {
+    if (rs.spawnIn <= 0 && b && b.hp > 0 && liveShades < shadeCap(st)) {
       spawnShade(st, st.rng() < 0.5 ? 0 : COLS - 1, 0);
       rs.spawnIn = 16;
     }
   }
   function spawnShade(st, col, row) {
     const id = "sh" + st.ticks + "-" + Math.floor(st.rng() * 99);
-    st.adds.push({ id: id, kind: "shade", hp: SHADE_HP, hpMax: SHADE_HP, col: col, row: row, atkCd: 3, life: 0, hurt: 0, seed: st.rng() * 10 });
+    var shHp = scaledHp(SHADE_HP, st);
+    st.adds.push({ id: id, kind: "shade", hp: shHp, hpMax: shHp, col: col, row: row, atkCd: 3, life: 0, hurt: 0, seed: st.rng() * 10 });
     flash(st, "A cinder shade rises", "#ff9a4a");
   }
   function tickAdds(st) {
@@ -1315,10 +1355,23 @@
     } else if (b.phase === "telegraph") {
       b.telLeft--;
       if (b.telLeft <= 0) {
-        const prot = st.prayer === b.style;
-        const dmg = rollBossHit(st.rng, cfg.maxHit, cfg.accuracy, prot, st.god);
-        if (prot) { st.perfectPrayers++; splat(st, st.player.col, st.player.row, 0, "#80c0ff"); sfx(st, "block"); }
-        else if (dmg > 0) hurtPlayer(st, dmg, (b.kind === "morvane" ? "Morvane" : "The Warden") + " strikes you.");
+        const hitOne = function () {
+          const prot = st.prayer === b.style;
+          const dmg = rollBossHit(st.rng, cfg.maxHit, cfg.accuracy, prot, st.god);
+          if (prot) {
+            st.perfectPrayers++;
+            if (st.player) st.player.perfectPrayers = (st.player.perfectPrayers || 0) + 1;
+            splat(st, st.player.col, st.player.row, 0, "#80c0ff");
+            sfx(st, "block");
+          } else if (dmg > 0) {
+            hurtPlayer(st, dmg, (b.kind === "morvane" ? "Morvane" : "The Warden") + " strikes you.");
+          }
+        };
+        if (isGroup(st)) {
+          livingFighters(st).forEach(function (f) { withFighter(st, f, hitOne); });
+        } else {
+          hitOne();
+        }
         sfx(st, "impact", b.style);
         if (cfg.afterHit) cfg.afterHit(st, b);
         b.phase = "recover";
@@ -1417,7 +1470,13 @@
     tickPrayerBoss(st, b, {
       styles: cfg.styles, speed: cfg.speed, tel: cfg.tel, maxHit: cfg.maxHit, accuracy: cfg.accuracy,
       afterHit: function (st2, b2) {
-        if (phaseOf(st2) >= 3) markDanger(st2, st2.player.col, st2.player.row, "burst", 2, 12);
+        if (phaseOf(st2) >= 3) {
+          if (isGroup(st2)) {
+            livingFighters(st2).forEach(function (f) { markDanger(st2, f.col, f.row, "burst", 2, 12); });
+          } else {
+            markDanger(st2, st2.player.col, st2.player.row, "burst", 2, 12);
+          }
+        }
         sfx(st2, "mark");
         if (b2 && b2.style === "mage") applyWitheringGaze(st2);
       }
@@ -1426,7 +1485,7 @@
     if (n >= 2) {
       rs.shadeCd--;
       const live = st.adds.filter(function (a) { return a.hp > 0; }).length;
-      const cap = 2;
+      const cap = shadeCap(st);
       const every = n >= 3 ? 14 : 16;
       if (rs.shadeCd <= 0 && live < cap) { spawnShade(st, st.rng() < 0.5 ? 0 : COLS - 1, 0); rs.shadeCd = every; }
     }
@@ -2153,10 +2212,16 @@
       loot: R.loot, god: R.god, loadout: deep(R.player.loadout),
       group: R.group ? {
         runId: R.group.runId, isLeader: R.group.isLeader, localId: R.group.localId,
-        leaderId: R.group.leaderId, completed: !!R.group.completed
+        leaderId: R.group.leaderId, completed: !!R.group.completed,
+        size: R.group.size || allFighters(R).length
       } : null,
       fighters: allFighters(R).map(function (f) {
-        return { id: f.id, username: f.username, col: f.col, row: f.row, hp: f.hp, prayer: f.prayer, dead: !!f.dead };
+        return {
+          id: f.id, username: f.username, col: f.col, row: f.row, hp: f.hp, prayer: f.prayer,
+          dead: !!f.dead, score: computeRaidScore(f),
+          damageDealt: f.damageDealt || 0, damageTaken: f.damageTaken || 0,
+          perfectPrayers: f.perfectPrayers || 0
+        };
       })
     };
   }
@@ -2211,7 +2276,8 @@
       if (!R || R.room !== "throne") start({ room: "throne", loadout: R ? R.player.loadout : BEST_LOADOUT });
       const b = R.boss;
       if (!b) return;
-      const hp = n >= 4 ? Math.floor(MORVANE_HP * 0.09) : n >= 3 ? Math.floor(MORVANE_HP * 0.27) : n >= 2 ? Math.floor(MORVANE_HP * 0.54) : MORVANE_HP;
+      const maxHp = b.hpMax || scaledHp(MORVANE_HP, R);
+      const hp = n >= 4 ? Math.floor(maxHp * 0.09) : n >= 3 ? Math.floor(maxHp * 0.27) : n >= 2 ? Math.floor(maxHp * 0.54) : maxHp;
       b.hp = hp;
       b.phaseN = phaseOf(R);
       flash(R, "Phase " + b.phaseN, "#c0a0ff");
@@ -2266,6 +2332,17 @@
         if (R.boss.kind === "morvane") advanceRoom(R);
         else { R.roomState.cleared = true; placeExit(R); }
       }
+    },
+    debugKill: function (nameOrId) {
+      if (!R || !isGroup(R)) return false;
+      var want = String(nameOrId || "");
+      var f = allFighters(R).find(function (x) {
+        return x && (String(x.id) === want || String(x.username || "") === want);
+      });
+      if (!f || f.dead) return !!f;
+      withFighter(R, f, function () { hurtPlayer(R, 999, "debug"); });
+      if (R.group && R.group.isLeader) broadcastRaidState(R);
+      return true;
     },
     win: function () {
       if (!R) start({ room: "loot" });
@@ -2491,6 +2568,8 @@
       col: f.col, row: f.row, prevCol: f.prevCol, prevRow: f.prevRow,
       stepping: !!f.stepping, prayer: f.prayer, atkCd: f.atkCd,
       rangingLeft: f.rangingLeft, stillTicks: f.stillTicks, dead: !!f.dead,
+      damageDealt: f.damageDealt || 0, damageTaken: f.damageTaken || 0,
+      perfectPrayers: f.perfectPrayers || 0, score: computeRaidScore(f),
       inv: f.inv ? { sharks: f.inv.sharks, pots: f.inv.pots, brews: f.inv.brews, ranging: f.inv.ranging } : null,
       loadout: f.loadout || null, equipment: f.equipment || null
     };
@@ -2513,9 +2592,25 @@
     f.prayer = packed.prayer || null;
     f.atkCd = packed.atkCd; f.rangingLeft = packed.rangingLeft;
     f.stillTicks = packed.stillTicks; f.dead = !!packed.dead;
+    if (packed.damageDealt != null) f.damageDealt = packed.damageDealt;
+    if (packed.damageTaken != null) f.damageTaken = packed.damageTaken;
+    if (packed.perfectPrayers != null) f.perfectPrayers = packed.perfectPrayers;
+    if (packed.score != null) f.score = packed.score;
     if (packed.inv) f.inv = packed.inv;
     if (packed.loadout) f.loadout = packed.loadout;
     if (packed.equipment) f.equipment = packed.equipment;
+  }
+
+  function deadIdsOf(st) {
+    return allFighters(st).filter(function (f) { return f && f.dead && f.id; }).map(function (f) { return f.id; });
+  }
+  function reportGroupDeaths(st) {
+    if (!st || !st.group || !st.group.isLeader || !st.group.runId) return;
+    var dead = deadIdsOf(st);
+    if (!dead.length) return;
+    var cloud = global.XscapeCloud;
+    if (!cloud || typeof cloud.reportRaidDeaths !== "function") return;
+    try { cloud.reportRaidDeaths(st.group.runId, dead); } catch (e) {}
   }
   function sendRaidInput(st, partial) {
     if (!st || !st.group) return;
@@ -2615,10 +2710,21 @@
   }
   function applyGroupReward(st, res) {
     if (!res || !res.ok) return;
-    var loot = { gp: res.gpAwarded || 0, items: res.items || [] };
-    if (typeof loot.items === "string") {
-      try { loot.items = JSON.parse(loot.items); } catch (e) { loot.items = []; }
+    var rawItems = res.items || [];
+    if (typeof rawItems === "string") {
+      try { rawItems = JSON.parse(rawItems); } catch (e) { rawItems = []; }
     }
+    if (!Array.isArray(rawItems)) rawItems = [];
+    var rares = rawItems.filter(function (id) { return id && id !== "hollow_bolts"; });
+    var loot = {
+      gp: res.gpAwarded || 0,
+      items: rawItems,
+      died: !!res.died,
+      halfGp: !!(res.halfGp || res.died),
+      uniqueHit: !!(res.uniqueHit || rares.length),
+      noRare: !rares.length && !res.died,
+      score: res.score != null ? res.score : computeRaidScore(st.player)
+    };
     st.loot = loot;
     if (loot.items && loot.items.length && typeof global.ownItem === "function") {
       for (var i = 0; i < loot.items.length; i++) {
@@ -2630,8 +2736,13 @@
       try { cloud.applyProfile(res.profile, { fromAward: true }); } catch (e) {}
     }
     var bits = [];
+    if (loot.score != null) bits.push("Score " + loot.score);
     if (loot.gp) bits.push((typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : loot.gp) + " GP");
-    (loot.items || []).forEach(function (id) { bits.push(itemLabel(id)); });
+    if (loot.died) bits.push("Died, half GP");
+    else if (!loot.uniqueHit) bits.push("No rare this time");
+    (loot.items || []).forEach(function (id) {
+      if (id && id !== "hollow_bolts") bits.push(itemLabel(id));
+    });
     if (bits.length) flash(st, bits.join(" · "), "#ffe44a");
   }
   function completeGroupRaid(st) {
@@ -2654,9 +2765,19 @@
       finish({ ok: false, error: "Could not reach the vault" });
       return;
     }
-    Promise.resolve(cloud.completeRaidRun(st.group.runId, st.ticks || 0)).then(finish).catch(function (err) {
-      finish({ ok: false, error: (err && err.message) || "Could not claim loot" });
-    });
+    var attempt = function (tries) {
+      Promise.resolve(cloud.completeRaidRun(st.group.runId, st.ticks || 0, deadIdsOf(st), scoresOf(st))).then(function (res) {
+        if (res && res.pending && tries > 0) {
+          setTimeout(function () { attempt(tries - 1); }, 400);
+          return;
+        }
+        finish(res);
+      }).catch(function (err) {
+        finish({ ok: false, error: (err && err.message) || "Could not claim loot" });
+      });
+    };
+    if (st.group.isLeader) reportGroupDeaths(st);
+    attempt(12);
   }
   function attachGroupClock(st) {
     if (!st || !st.group) return;
@@ -2751,10 +2872,26 @@
     const gridL = document.getElementById("lose-stats");
     function row(k, v) { return '<div class="k">' + k + '</div><div class="v">' + v + "</div>"; }
     const loot = result && result.loot;
-    const lootTxt = loot
-      ? ((loot.gp ? (typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : loot.gp) + " GP" : "") + (loot.items && loot.items.length ? " · " + loot.items.map(function (id) { const it = (global.ITEMS && global.ITEMS[id]) || getItem(id); return it ? it.name : id; }).join(", ") : ""))
+    function lootLabel(id) {
+      const it = (global.ITEMS && global.ITEMS[id]) || getItem(id);
+      return it ? it.name : id;
+    }
+    let lootTxt = "—";
+    const scoreVal = (loot && loot.score != null) ? loot.score : (result && result.score);
+    if (loot) {
+      const bits = [];
+      if (loot.died || loot.halfGp) bits.push("Died, half GP");
+      const rares = (loot.items || []).filter(function (id) { return id && id !== "hollow_bolts"; });
+      if (rares.length) rares.forEach(function (id) { bits.push(lootLabel(id)); });
+      else if (!(loot.died || loot.halfGp)) bits.push("No rare this time");
+      lootTxt = bits.join(" · ") || "—";
+    }
+    const gpTxt = loot && loot.gp
+      ? (typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : String(loot.gp)) + " GP"
       : "—";
     const html = row("Time", fmtTimeLocal(result && result.seconds)) +
+      row("Score", scoreVal != null ? String(scoreVal) : "—") +
+      (kind === "win" ? row("GP", gpTxt) : "") +
       row("Damage taken", String(result && result.damageTaken || 0)) +
       row("Perfect prayers", String(result && result.perfectPrayers || 0)) +
       (kind === "win" ? row("Loot", lootTxt || "—") : row("Fell in", ROOM_TITLE[(result && result.room)] || (result && result.room) || "—"));

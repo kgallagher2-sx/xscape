@@ -2277,8 +2277,19 @@
     startParty: function (id) { return rpc("start_party", { p_party: id }); },
     setPartyReady: function (id, ready) { return rpc("set_party_ready", { p_party: id, p_ready: !!ready }); },
     myParty: function () { return rpc("my_party", {}); },
-    completeRaidRun: function (runId, ticks) {
-      return rpc("complete_raid_run", { p_run: runId, p_ticks: ticks || 0 });
+    completeRaidRun: function (runId, ticks, deadIds, scores) {
+      return rpc("complete_raid_run", {
+        p_run: runId,
+        p_ticks: ticks || 0,
+        p_dead: Array.isArray(deadIds) ? deadIds : [],
+        p_scores: scores && typeof scores === "object" ? scores : {}
+      });
+    },
+    reportRaidDeaths: function (runId, deadIds) {
+      return rpc("report_raid_deaths", {
+        p_run: runId,
+        p_dead: Array.isArray(deadIds) ? deadIds : []
+      });
     },
     escrowDuel: function (id) { return rpc("escrow_duel", { p_id: id }); },
     settleDuel: function (id, winner, ticks, forfeit) {
