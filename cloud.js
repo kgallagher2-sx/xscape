@@ -1665,6 +1665,9 @@
     var testChat = isHubChatTest();
     if (!testChat && (!session || isRestrictedGuest() || isAnonymousUser(session.user))) {
       renderPresence();
+      if (global.XscapeTrade && typeof XscapeTrade.detach === "function") {
+        try { XscapeTrade.detach(); } catch (e) {}
+      }
       return;
     }
     hookLobbyVisibility();
@@ -1674,6 +1677,9 @@
     // Do not block presence/heartbeat on the duel-challenge fetch.
     if (!testChat) { try { refreshChallenges(); } catch (e) {} }
     var gen = ++lobbyGen;
+    if (global.XscapeTrade && typeof XscapeTrade.detach === "function") {
+      try { XscapeTrade.detach(); } catch (e) {}
+    }
     if (hubChannel) {
       try { await sb.removeChannel(hubChannel); } catch (e) {}
       if (gen !== lobbyGen) return;
@@ -1773,12 +1779,21 @@
       }
     });
     renderPresence();
+    if (global.XscapeTrade && typeof XscapeTrade.attach === "function" && session && session.user && !testChat) {
+      try { XscapeTrade.attach(sb, session.user.id); } catch (e) { console.warn("trade attach", e); }
+    }
   }
 
   async function signOut() {
     lobbyGen += 1;
     stopTickClock();
     stopHeartbeat();
+    if (global.XscapeTrade && typeof XscapeTrade.cancelOpen === "function") {
+      try { XscapeTrade.cancelOpen("left"); } catch (e) {}
+    }
+    if (global.XscapeTrade && typeof XscapeTrade.detach === "function") {
+      try { XscapeTrade.detach(); } catch (e) {}
+    }
     try { if (hubChannel && sb) await sb.removeChannel(hubChannel); } catch (e) {}
     hubChannel = null;
     presenceMap = {};

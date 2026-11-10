@@ -615,6 +615,9 @@
   function teleportTo(dest) {
     hideCtx();
     dest = dest === "arena" ? "arena" : "bank";
+    if (dest !== "bank" && global.XscapeTrade && typeof XscapeTrade.cancelOpen === "function") {
+      try { XscapeTrade.cancelOpen("left"); } catch (e) {}
+    }
     setArea(dest);
     applySpawn(pickSpawnTile());
     state.justSpawned = true;
@@ -673,6 +676,9 @@
     var other = playerAt(col, row);
     if (other && !opts.walkOnly) {
       markClick(opts.px, opts.py, "action");
+      if (opts.hold) {
+        state.hold = { kind: "player", player: other, px: opts.px, py: opts.py, t0: (typeof performance !== "undefined" ? performance.now() : Date.now()) };
+      }
       showPlayerCtx(other, opts.px, opts.py);
       return true;
     }
@@ -692,7 +698,7 @@
     state.hold = null;
     var t = tileAtPx(x, y, cssW, cssH);
     if (!t) return;
-    clickTile(t.col, t.row, { px: x, py: y, hold: !!(boothAt(t.col, t.row) || npcAt(t.col, t.row)) });
+    clickTile(t.col, t.row, { px: x, py: y, hold: !!(boothAt(t.col, t.row) || npcAt(t.col, t.row) || playerAt(t.col, t.row)) });
   }
 
   function onPointerUp() {
@@ -714,6 +720,9 @@
     } else if (hold.kind === "npc") {
       state.hold = null;
       examineNpc(hold.npc);
+    } else if (hold.kind === "player") {
+      state.hold = null;
+      showPlayerCtx(hold.player, hold.px, hold.py);
     }
   }
 
@@ -1283,10 +1292,15 @@
     if (!el || !p) return;
     var canChallenge = (state.area === "arena") && ((p.scene || "arena") === "arena");
     var canInvite = (state.area || "bank") === "bank" && partyState && partyState.id && partyState.code && partyState.status !== "started";
-    el.innerHTML = '<div class="ctx-title">' + escapeHtml(p.username || "Adventurer") + "</div>" +
+    var canTrade = (state.area || "bank") === "bank" && ((p.scene || "bank") === "bank") &&
+      global.XscapeTrade && typeof XscapeTrade.canTradeNow === "function" && XscapeTrade.canTradeNow();
+    var name = p.username || "Adventurer";
+    el.innerHTML = '<div class="ctx-title">' + escapeHtml(name) + "</div>" +
+      (canTrade ? '<button type="button" data-act="trade">Trade with ' + escapeHtml(name) + "</button>" : "") +
       (canChallenge ? '<button type="button" data-act="challenge">Challenge</button>' : "") +
       (canInvite ? '<button type="button" data-act="invite">Invite to party</button>' : "") +
-      '<button type="button" data-act="examine">Examine</button>';
+      '<button type="button" data-act="examine">Examine</button>' +
+      '<button type="button" data-act="cancel">Cancel</button>';
     el.classList.remove("hidden");
     var lay = state.layout || layout(cssWSafe(), cssHSafe());
     var pos = tilePx(p.col, p.row, lay);
@@ -1299,11 +1313,16 @@
         e.preventDefault();
         e.stopPropagation();
         hideCtx();
-        if (btn.getAttribute("data-act") === "challenge") {
+        var act = btn.getAttribute("data-act");
+        if (act === "trade") {
+          if (global.XscapeTrade && XscapeTrade.requestTrade) XscapeTrade.requestTrade(p.id, p.username);
+        } else if (act === "challenge") {
           if (global.XscapeDuel && XscapeDuel.offerTo) XscapeDuel.offerTo(p.id, p.username);
           else if (global.XscapeCloud && XscapeCloud.challengeUser) XscapeCloud.challengeUser(p.id);
-        } else if (btn.getAttribute("data-act") === "invite") {
+        } else if (act === "invite") {
           inviteToParty(p.id, p.username);
+        } else if (act === "cancel") {
+          /* menu already closed */
         } else if (typeof flashMsg === "function") {
           flashMsg("It's " + (p.username || "an adventurer") + ".", "#ffe9a0");
         }
@@ -1494,12 +1513,40 @@
       el.innerHTML = '<div class="chat-line" style="color:#8a7a50">Public chat</div>';
     } else {
       el.innerHTML = lines.map(function (row) {
+        if (row.kind === "trade_wish") {
+          return '<div class="chat-line chat-trade-wish" data-trade-id="' + escapeHtml(row.tradeId || "") + '">' +
+            escapeHtml(row.text) + "</div>";
+        }
         return '<div class="chat-line"><span class="nm">' + escapeHtml(row.name) + ":</span> " +
           escapeHtml(row.text) + "</div>";
       }).join("");
     }
     el.classList.remove("hidden");
     el.scrollTop = el.scrollHeight;
+    el.querySelectorAll(".chat-trade-wish").forEach(function (line) {
+      line.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = line.getAttribute("data-trade-id");
+        if (id && global.XscapeTrade && XscapeTrade.acceptRequest) XscapeTrade.acceptRequest(id);
+      });
+    });
+  }
+
+  function appendTradeWish(name, tradeId) {
+    setChatOpen(true);
+    if (!state.chatLog) state.chatLog = [];
+    state.chatLog = state.chatLog.filter(function (row) { return row.kind !== "trade_wish" || row.tradeId !== tradeId; });
+    var who = name || "A player";
+    state.chatLog.push({
+      name: who,
+      text: who + " wishes to trade with you.",
+      kind: "trade_wish",
+      tradeId: tradeId,
+      t: Date.now()
+    });
+    if (state.chatLog.length > CHAT_LOG_MAX) state.chatLog = state.chatLog.slice(-CHAT_LOG_MAX);
+    renderChatLog();
   }
 
   function showOverhead(id, text) {
@@ -1574,10 +1621,16 @@
   }
   function syncChatHistoryButton() {
     var btn = $("btn-chat-history");
-    if (!btn) return;
+    var tbtn = $("btn-trade-history");
     var on = isChatAdmin();
-    btn.classList.toggle("hidden", !on);
-    btn.style.display = on ? "" : "none";
+    if (btn) {
+      btn.classList.toggle("hidden", !on);
+      btn.style.display = on ? "" : "none";
+    }
+    if (tbtn) {
+      tbtn.classList.toggle("hidden", !on);
+      tbtn.style.display = on ? "" : "none";
+    }
   }
   function closeChatHistory() {
     var ov = $("overlay-chat-history");
@@ -1637,6 +1690,7 @@
         if (bar) {
           bar.innerHTML = '<div class="chat-blocked">Sign in to chat</div>' +
             '<button type="button" class="btn secondary hidden" id="btn-chat-history" title="Chat history">History</button>' +
+            '<button type="button" class="btn secondary hidden" id="btn-trade-history" title="Trade history">Trades</button>' +
             '<button type="button" class="btn secondary" id="hub-chat-close">X</button>';
           bindChatBar();
           syncChatHistoryButton();
@@ -1648,6 +1702,7 @@
         bar.innerHTML = '<input id="hub-chat-input" type="text" maxlength="80" autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true" enterkeyhint="send" placeholder="Enter message..." />' +
           '<button type="button" class="btn" id="hub-chat-send">Send</button>' +
           '<button type="button" class="btn secondary hidden" id="btn-chat-history" title="Chat history">History</button>' +
+            '<button type="button" class="btn secondary hidden" id="btn-trade-history" title="Trade history">Trades</button>' +
           '<button type="button" class="btn secondary" id="hub-chat-close" aria-label="Close chat">X</button>';
         bindChatBar();
         syncChatHistoryButton();
@@ -1679,6 +1734,8 @@
     if (close) close.onclick = function (e) { e.preventDefault(); e.stopPropagation(); setChatOpen(false); };
     var hist = $("btn-chat-history");
     if (hist) hist.onclick = function (e) { e.preventDefault(); e.stopPropagation(); openChatHistory(); };
+    var thist = $("btn-trade-history");
+    if (thist) thist.onclick = function (e) { e.preventDefault(); e.stopPropagation(); if (global.XscapeTrade && XscapeTrade.openTradeHistory) XscapeTrade.openTradeHistory(); };
     if (input && !input._bound) {
       input._bound = true;
       input.addEventListener("keydown", function (e) {
@@ -2324,6 +2381,9 @@
   }
 
   function leave() {
+    if (global.XscapeTrade && typeof XscapeTrade.cancelOpen === "function") {
+      try { XscapeTrade.cancelOpen("left"); } catch (e) {}
+    }
     state.active = false;
     state.justSpawned = false;
     unhookSharedTicks();
@@ -2498,6 +2558,10 @@
     var hc = $("btn-chat-history-close");
     if (hx) hx.addEventListener("click", function (e) { e.preventDefault(); closeChatHistory(); });
     if (hc) hc.addEventListener("click", function (e) { e.preventDefault(); closeChatHistory(); });
+    var tx = $("btn-trade-history-x");
+    var tc = $("btn-trade-history-close");
+    if (tx) tx.addEventListener("click", function (e) { e.preventDefault(); if (global.XscapeTrade) XscapeTrade.closeTradeHistory(); });
+    if (tc) tc.addEventListener("click", function (e) { e.preventDefault(); if (global.XscapeTrade) XscapeTrade.closeTradeHistory(); });
     syncChatHistoryButton();
     api.ready = true;
   }
@@ -2528,6 +2592,7 @@
     startTalk: startTalk,
     onHubChat: onHubChat,
     sendHubChat: sendHubChat,
+    appendTradeWish: appendTradeWish,
     openChat: openChat,
     openChatHistory: openChatHistory,
     closeChatHistory: closeChatHistory,

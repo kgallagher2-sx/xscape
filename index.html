@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110223618-2d2e91e";</script>
+  <script>window.XSCAPE_BUILD = "20261110230422-9d87450";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -319,7 +319,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -707,6 +707,61 @@
     .chat-history-meta .tm { color: #8a7a58; font-size: 10px; white-space: nowrap; }
     .chat-history-text { color: #f5f0d8; font-size: 13px; margin-top: 4px; word-wrap: break-word; }
     .chat-history-empty { color: #8a7a58; text-align: center; padding: 16px 8px; font-size: 13px; }
+
+    #overlay-trade { z-index: 100; background: #140c08; padding: 10px 8px; }
+    #overlay-trade-history { z-index: 100; }
+    #trade-screen-1.hidden, #trade-screen-2.hidden { display: none !important; }
+    #overlay-trade .sheet-card, #overlay-trade-history .sheet-card {
+      width: 100%; max-width: 360px; max-height: calc(var(--app-height) - 20px);
+      background: linear-gradient(#3a2c1c, #1a120a);
+      border: 3px solid #c9a24a;
+    }
+    #overlay-trade h2 { font-size: 16px; margin: 0 0 6px; color: #ffe44a; }
+    #overlay-trade h3 { font-size: 12px; margin: 8px 0 4px; color: #c9a24a; letter-spacing: 0; }
+    #overlay-trade .trade-space, #overlay-trade .trade-status, #overlay-trade .trade-val, #overlay-trade .trade-gp-line {
+      font-size: 12px; color: #f5f0d8; margin: 4px 0; text-align: center;
+    }
+    #overlay-trade .trade-status { color: #ffe44a; min-height: 16px; font-weight: 700; }
+    #overlay-trade.accepted-them .trade-status { color: #7CFF6B; }
+    #trade-their-offer, #trade-your-offer, #trade-give-grid, #trade-recv-grid, #trade-inv-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+    }
+    #trade-inv-grid .osrs-slot, #overlay-trade .trade-slot {
+      min-height: 38px;
+    }
+    #overlay-trade .osrs-slot canvas, #overlay-trade .trade-slot canvas {
+      width: 32px; height: 32px;
+    }
+    #overlay-trade .trade-slot.trade-flash {
+      animation: tradeFlash 0.35s linear 4;
+      box-shadow: 0 0 0 2px #fff inset, 0 0 10px #ffe44a;
+    }
+    @keyframes tradeFlash {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(2.1); background: #5a4a20; }
+    }
+    #trade-qty-menu {
+      position: absolute; z-index: 30; min-width: 140px;
+      background: linear-gradient(#3a2a18, #1e140c);
+      border: 3px solid #c9a24a; box-shadow: 0 4px 16px #000;
+      padding: 4px; display: flex; flex-direction: column; gap: 2px;
+    }
+    #trade-qty-menu.hidden { display: none; }
+    #trade-qty-menu button {
+      display: block; width: 100%; text-align: left; margin: 0; min-width: 0;
+      height: auto; padding: 8px 10px; font-size: 13px; letter-spacing: 0;
+      font-family: "Trebuchet MS", sans-serif; color: #ffe9a0;
+      background: #2a1c10; border: 1px solid #6a5428; border-radius: 2px;
+    }
+    .chat-trade-wish { color: #00ffff !important; text-decoration: underline; cursor: pointer; font-weight: 700; }
+    .chat-trade-wish .nm { display: none; }
+    #hub-chat-bar #btn-trade-history { min-width: 0; padding: 0 8px; font-size: 12px; letter-spacing: 0; }
+    #hub-chat-bar #btn-trade-history.hidden { display: none !important; }
+    #trade-actions { display: flex; gap: 8px; justify-content: center; }
+    #trade-actions .btn { flex: 1; }
+    #overlay-trade.accepted-you #btn-trade-accept-1,
+    #overlay-trade.accepted-you #btn-trade-accept-2 { filter: brightness(1.25); box-shadow: 0 0 0 2px #7CFF6B; }
+
     #overlay-hub.chat-open #hub-dock { display: none; }
     #overlay-hub.chat-open #hub-chat-bar { display: flex; }
     #overlay-hub.chat-open #hub-chat-log {
@@ -763,7 +818,7 @@
     #overlay-shop .shop-row { grid-template-columns: 36px minmax(0, 1fr) auto auto; }
     .loot-with-icon { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
     .osrs-slot:active { filter: brightness(1.2); }
-    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-hub.is-world #hub-dock { display: flex; }
     #overlay-hub.is-world #hub-gp-chip { display: block; }
     #hub-dock, #hub-gp-chip { display: none; }
@@ -974,6 +1029,7 @@
         <input id="hub-chat-input" type="text" maxlength="80" autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true" enterkeyhint="send" placeholder="Enter message..." />
         <button type="button" class="btn" id="hub-chat-send">Send</button>
         <button type="button" class="btn secondary hidden" id="btn-chat-history" title="Chat history">History</button>
+        <button type="button" class="btn secondary hidden" id="btn-trade-history" title="Trade history">Trades</button>
         <button type="button" class="btn secondary" id="hub-chat-close" aria-label="Close chat">X</button>
       </div>
       <div id="hub-ctx" class="hidden" role="menu"></div>
@@ -1157,6 +1213,59 @@
         <div class="sheet-scroll" id="chat-history-list"></div>
         <div class="sheet-actions">
           <button class="btn" id="btn-chat-history-close" type="button">EXIT</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="overlay hidden" id="overlay-trade">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-trade-x" type="button" aria-label="Decline">×</button>
+        <h2 id="trade-title">Trade</h2>
+        <div class="sheet-scroll" id="trade-scroll">
+          <div id="trade-screen-1">
+            <h3>Their offer</h3>
+            <div id="trade-their-offer" class="osrs-grid"></div>
+            <h3>Your offer</h3>
+            <div id="trade-your-offer" class="osrs-grid"></div>
+            <div class="trade-space" id="trade-their-space"></div>
+            <h3 id="trade-inv-title">Your inventory</h3>
+            <div id="trade-inv-grid" class="osrs-grid"></div>
+            <div class="trade-gp-line">
+              <span id="trade-your-gp">Your coins: 0</span>
+              <button type="button" class="btn secondary" id="btn-trade-gold">Offer gold</button>
+            </div>
+            <div class="trade-status" id="trade-status-1"></div>
+            <div class="sheet-actions" id="trade-actions">
+              <button type="button" class="btn" id="btn-trade-accept-1">Accept</button>
+              <button type="button" class="btn secondary" id="btn-trade-decline-1">Decline</button>
+            </div>
+          </div>
+          <div id="trade-screen-2" class="hidden">
+            <h3>You are about to give</h3>
+            <div id="trade-give-grid" class="osrs-grid"></div>
+            <div class="trade-val" id="trade-give-val"></div>
+            <h3>In return you will receive</h3>
+            <div id="trade-recv-grid" class="osrs-grid"></div>
+            <div class="trade-val" id="trade-recv-val"></div>
+            <div class="trade-status" id="trade-status-2"></div>
+            <div class="sheet-actions" id="trade-actions-2" style="display:flex;gap:8px;justify-content:center">
+              <button type="button" class="btn" id="btn-trade-accept-2">Accept</button>
+              <button type="button" class="btn secondary" id="btn-trade-decline-2">Decline</button>
+            </div>
+          </div>
+        </div>
+        <div id="trade-qty-menu" class="hidden" role="menu"></div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-trade-history">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-trade-history-x" type="button" aria-label="Close">×</button>
+        <h2>Trade history</h2>
+        <div class="sheet-scroll" id="trade-history-list"></div>
+        <div class="sheet-actions">
+          <button class="btn" id="btn-trade-history-close" type="button">EXIT</button>
         </div>
       </div>
     </div>
@@ -1675,6 +1784,16 @@ function canStakeItem(id) {
   return true;
 }
 window.canStakeItem = canStakeItem;
+
+function canTradeItem(id) {
+  if (!id) return false;
+  if (id === "coins" || id === "gp") return true;
+  if (id === "blue_partyhat" || /partyhat/i.test(String(id))) return false;
+  const it = (typeof ITEMS !== "undefined" && ITEMS[id]) || null;
+  if (it && (it.unstakeable || it.untradeable || it.unique || it.tier === "partyhat" || it.kind === "partyhat")) return false;
+  return true;
+}
+window.canTradeItem = canTradeItem;
 
 function defaultLevels() {
   return { attack: 99, strength: 99, defence: 99, ranged: 99, magic: 99, hitpoints: 99, prayer: 99 };
@@ -5688,6 +5807,9 @@ function inHubScene() {
 }
 
 function teardownHubForFight(scene) {
+  if (window.XscapeTrade && typeof XscapeTrade.cancelOpen === "function") {
+    try { XscapeTrade.cancelOpen("left"); } catch (e) {}
+  }
   if (window.XscapeHub && typeof XscapeHub.leave === "function") {
     try { XscapeHub.leave(); } catch (e) {}
   }
@@ -5709,7 +5831,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -6456,6 +6578,8 @@ if ($("overlay-supply-shop")) bindBackdropClose($("overlay-supply-shop"), () => 
 if ($("overlay-hotkeys")) bindBackdropClose($("overlay-hotkeys"), () => { if (window.XscapeSupplies && XscapeSupplies.closeHotkeys) XscapeSupplies.closeHotkeys(); });
 if ($("overlay-quick-edit")) bindBackdropClose($("overlay-quick-edit"), () => { if (window.XscapeSupplies && XscapeSupplies.hidePicker) XscapeSupplies.hidePicker(); });
 if ($("overlay-chat-history")) bindBackdropClose($("overlay-chat-history"), () => { if (window.XscapeHub && XscapeHub.closeChatHistory) XscapeHub.closeChatHistory(); });
+if ($("overlay-trade-history")) bindBackdropClose($("overlay-trade-history"), () => { if (window.XscapeTrade && XscapeTrade.closeTradeHistory) XscapeTrade.closeTradeHistory(); });
+
 if ($("shop-list")) $("shop-list").addEventListener("click", (e) => {
   const btn = e.target.closest && e.target.closest("[data-shop]");
   if (!btn) return;
@@ -6842,6 +6966,7 @@ applyOpenQuery();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="cloud.js"></script>
+<script src="trade.js"></script>
 <script>
 if (navigator.serviceWorker) {
   var swUrl = "sw.js?v=" + encodeURIComponent(window.XSCAPE_BUILD || "dev");
