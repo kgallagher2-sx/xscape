@@ -122,15 +122,15 @@
   }
 
   function layout(cssW, cssH) {
-    var safeTop = 0, safeBot = 0;
+    var hudTop = 20, hudBot = 18;
     try {
       var cs = getComputedStyle(document.documentElement);
-      safeTop = parseFloat(cs.getPropertyValue("--safe-top")) || 0;
-      safeBot = parseFloat(cs.getPropertyValue("--safe-bottom")) || 0;
+      hudTop = parseFloat(cs.getPropertyValue("--hud-top")) || hudTop;
+      hudBot = parseFloat(cs.getPropertyValue("--hud-bottom")) || hudBot;
     } catch (e) {}
-    var padT = 54 + safeTop;
-    var padB = 58 + safeBot;
-    var padX = 6;
+    var padT = 44 + hudTop;
+    var padB = 52 + hudBot;
+    var padX = 10;
     var availW = Math.max(80, cssW - padX * 2);
     var availH = Math.max(80, cssH - padT - padB);
     var tw = Math.floor(Math.min(availW / COLS, availH / ROWS));

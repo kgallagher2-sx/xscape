@@ -1,5 +1,5 @@
 /* Xscape service worker. Cache name is stamped per deploy (see scripts/stamp-build.sh). */
-var BUILD = "20261110152253-39c5b10";
+var BUILD = "20261110153726-3b99cb6";
 var CACHE = "xscape-" + BUILD;
 var LAB_RE = /(?:^|\/)(lab\.html|lab-gear\.js)(?:\?|$)/;
 var NO_CACHE_RE = /(?:^|\/)version\.json(?:\?|$)/;
@@ -22,13 +22,15 @@ self.addEventListener("fetch", function (event) {
   var url;
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== location.origin) return;
+  // Let the page fetch version.json itself (cache: no-store + cache-bust).
+  // Intercepting it can hang a check or serve a stale Pages cache.
+  if (NO_CACHE_RE.test(url.pathname)) return;
 
   event.respondWith((async function () {
     var isLab = LAB_RE.test(url.pathname);
-    var noStore = NO_CACHE_RE.test(url.pathname);
     try {
-      var fresh = await fetch(req, { cache: "no-store" });
-      if (fresh && fresh.ok && !isLab && !noStore) {
+      var fresh = await fetch(new Request(req, { cache: "no-store" }));
+      if (fresh && fresh.ok && !isLab) {
         var copy = fresh.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
       }
