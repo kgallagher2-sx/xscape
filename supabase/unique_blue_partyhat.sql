@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS game.unique_item_owners (
 );
 
 REVOKE ALL ON TABLE game.unique_item_owners FROM PUBLIC, anon, authenticated;
+ALTER TABLE game.unique_item_owners ENABLE ROW LEVEL SECURITY;
 
 CREATE OR REPLACE FUNCTION game.is_unique_item(p_id text)
 RETURNS boolean
@@ -51,6 +52,7 @@ $$;
 CREATE OR REPLACE FUNCTION game.sanitize_unique_items()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
