@@ -1332,8 +1332,11 @@ function drawHeroWhip(c, t, st, facing) {
   const sway = Math.sin((t || 0) * 3.2) * 0.08;
   c.save();
   if (facing === "front") {
-    c.translate(11, -8);
-    c.rotate(0.55 + sway);
+    // Character's right hand = screen-left. Mirror the back-side hang so the
+    // lash falls outward (further left), not across the torso.
+    c.translate(-12.2, -10);
+    c.scale(-1, 1);
+    c.rotate(0.35 + sway);
   } else if (facing === "right") {
     c.translate(8, -10);
     c.rotate(0.95 + sway);
@@ -1359,9 +1362,9 @@ function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase) {
   const recoil = recoilBase || 0;
   c.save();
   if (facing === "front") {
-    // Hold at the right shoulder, prod up, stock down — readable beside the torso
-    c.translate(12.4, -18 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
-    c.rotate(-0.18 + recoil * 0.2);
+    // Character's right hand = screen-left; prod up, stock down, in front of the torso
+    c.translate(-12.4, -18 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
+    c.rotate(0.18 - recoil * 0.2);
   } else if (facing === "right") {
     c.translate(12.5, -16 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
     c.rotate(-0.15 + recoil * 0.2);
@@ -1919,8 +1922,7 @@ function drawHeroArms(c, id, facing, stride) {
     return; // right vamb drawn later after weapon in back view
   }
   if (facing === "front") {
-    vamb(-11.6, -15.2 + s * 0.15, 0.2, 4.0, 5.4);
-    hand(-12.4, -9.6 + s * 0.15);
+    // Far arm (character's left = screen-right). Weapon-hand arm is drawn later.
     vamb(11.4, -15.0 - s * 0.15, -0.2, 4.0, 5.4);
     hand(12.2, -9.4 - s * 0.15);
     return;
@@ -1931,12 +1933,35 @@ function drawHeroArms(c, id, facing, stride) {
 }
 
 function drawHeroNearArm(c, id, facing, stride) {
-  if (facing !== "right") return;
+  if (facing !== "right" && facing !== "front") return;
   const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2a4018", scale: 1 };
   const p = pal(st);
   const it = labItem(id);
   const s = stride || 0;
   const sk = skinPal();
+  if (facing === "front") {
+    // Character's right arm = screen-left, drawn in front of the weapon grip
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.ellipse(-11.6, -15.2 + s * 0.15, 4.0, 5.4, 0.2, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.ellipse(-11.6, -14.0 + s * 0.15, 2.4, 3.1, 0.2, 0, Math.PI * 2);
+    c.fill();
+    if (it && (it.kind === "armadyl" || it.kind === "veilhide")) {
+      c.strokeStyle = p.trim;
+      c.lineWidth = 0.85;
+      c.beginPath();
+      c.ellipse(-11.6, -15.2 + s * 0.15, 3.7, 5.0, 0.2, 0.2, Math.PI * 1.4);
+      c.stroke();
+    }
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.ellipse(-12.4, -9.6 + s * 0.15, 2.1, 2.4, 0, 0, Math.PI * 2);
+    c.fill();
+    return;
+  }
   c.fillStyle = p.main;
   c.beginPath();
   c.ellipse(6.4, -15.2 - s * 0.15, 4.0, 5.5, -0.35, 0, Math.PI * 2);
@@ -2201,11 +2226,12 @@ function drawLabPlayerFront(ctx, t, opt) {
   drawHeroCape(ctx, t, eq, opt, "front");
   drawHeroLegs(ctx, eq.legs, "front", stride);
   drawHeroBoots(ctx, eq.feet, "front", stride);
-  drawHeroArms(ctx, eq.hands, "front", stride);
-  drawHeroWeapon(ctx, t, eq, opt, "front");
+  drawHeroArms(ctx, eq.hands, "front", stride); // far arm (character's left)
   drawHeroBody(ctx, eq.body, "front");
   drawHeroNeck(ctx, eq.neck, "front");
   drawHeroHead(ctx, eq.head, "front");
+  drawHeroWeapon(ctx, t, eq, opt, "front"); // in front of body/legs, screen-left
+  drawHeroNearArm(ctx, eq.hands, "front", stride); // right hand over the grip
   drawHeroRing(ctx, eq.ring, "front");
   ctx.restore();
 }
