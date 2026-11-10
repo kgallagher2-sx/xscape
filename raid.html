@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0a0614" />
+  <title>Xscape — Gloamhold</title>
+  <style>
+
+    :root {
+      --bg: #120805;
+      --panel: #3b2c1a;
+      --gold: #ffd84a;
+      --beige: #ebd7a4;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden; background: #070403; color: var(--beige);
+      font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+      touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    #app {
+      width: 100%; max-width: 430px; height: 100%;
+      margin: 0 auto; position: relative; display: flex; flex-direction: column;
+      background: #1a0c08; overflow: hidden;
+    }
+    #top-hud {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 4px;
+      background: linear-gradient(#2c1d12, #1e140c); border-bottom: 2px solid #0e0906;
+      min-height: 36px; z-index: 2;
+    }
+    #top-hud .brand {
+      font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+      color: var(--gold); letter-spacing: 0.5px; font-size: 16px;
+      text-shadow: 0 1px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 0 0 8px #a06000;
+    }
+    #top-hud .stat { font-size: 12px; color: #f0e0b0; white-space: nowrap; }
+    #top-hud .stat b { color: var(--gold); font-weight: 700; }
+    #arena-wrap { flex: 1 1 auto; position: relative; min-height: 0; background: #140a06; }
+    #arena { display: block; width: 100%; height: 100%; }
+    #mid {
+      flex: 0 0 auto; background: linear-gradient(#2a1d13, #1a120c);
+      border-top: 2px solid #4a3824; border-bottom: 2px solid #0e0906;
+      padding: 6px 10px 4px;
+    }
+    .bars { display: flex; flex-direction: column; gap: 4px; }
+    .bar-row { display: flex; align-items: center; gap: 6px; }
+    .bar-lab { width: 28px; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; color: #d8c48a; }
+    .bar-track {
+      flex: 1; height: 16px; background: #1a0e08; border: 2px solid #0a0604;
+      box-shadow: inset 0 1px 3px #000; position: relative; overflow: hidden;
+    }
+    .bar-fill { height: 100%; width: 100%; transform-origin: left center; }
+    #hp-fill { background: linear-gradient(#6dff6d, #1ea01e); }
+    #hp-fill.low { background: linear-gradient(#ffb03a, #c06010); }
+    #hp-fill.crit { background: linear-gradient(#ff6a6a, #a01010); }
+    #prayer-fill { background: linear-gradient(#7af0ff, #1a90c8); }
+    .bar-txt {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; pointer-events: none;
+    }
+    .gear-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+    .gear-label { font-size: 9px; color: #a09070; width: 28px; letter-spacing: 0.3px; }
+    #gear { flex: 1; display: flex; gap: 4px; justify-content: space-between; }
+    .gslot {
+      width: 28px; height: 28px; background: #1a120a; border: 1px solid #6a5434;
+      box-shadow: inset 0 0 0 1px #0a0604; border-radius: 2px;
+    }
+    .gslot canvas { width: 100%; height: 100%; display: block; }
+    #consumables {
+      flex: 0 0 auto; display: flex; gap: 8px; padding: 6px 10px; background: #22160e;
+    }
+    .item-btn {
+      flex: 1; height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(#4a3824, #2c2014); border: 2px solid #7a6238;
+      border-bottom-color: #1a1208; border-right-color: #1a1208; color: var(--beige);
+      font-weight: 700; font-size: 14px; border-radius: 4px; cursor: pointer; font-family: inherit;
+      position: relative; overflow: hidden;
+    }
+    .item-btn:active, .item-btn.flash { filter: brightness(1.35); }
+    .item-btn:disabled { opacity: 0.4; filter: grayscale(0.4); }
+    .item-btn .qty {
+      background: #1a1008; border: 1px solid #000; color: var(--gold);
+      min-width: 22px; padding: 1px 5px; font-size: 13px; border-radius: 2px;
+      position: relative; z-index: 2;
+    }
+    .item-btn .cd-sweep {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0;
+      background: conic-gradient(rgba(0,0,0,0.72) var(--cd, 0%), rgba(0,0,0,0.12) var(--cd, 0%));
+    }
+    .item-btn.cooling .cd-sweep { opacity: 1; }
+    .item-btn.pending .cd-sweep {
+      opacity: 1;
+      background: conic-gradient(rgba(40,20,0,0.7) 100%, rgba(40,20,0,0.7) 0%);
+    }
+    #atk-fill { background: linear-gradient(#e8d060, #b89020); }
+    #atk-fill.delayed { background: linear-gradient(#ff9a3a, #c05010); }
+    .atk-track { height: 14px; }
+    #prayers {
+      flex: 0 0 auto; display: flex; gap: 8px;
+      padding: 6px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: #160e0a; border-top: 2px solid #3a2a18;
+    }
+    .pray-btn {
+      flex: 1; height: 92px; background: linear-gradient(#3a2c1c, #22180e);
+      border: 3px solid #5a4630; border-radius: 8px; color: #d8c8a0; cursor: pointer;
+      font-family: inherit; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 2px; padding: 4px;
+    }
+    .pray-btn canvas { width: 48px; height: 48px; display: block; }
+    .pray-btn .pkey { font-size: 9px; color: #8a7a58; letter-spacing: 0.5px; }
+    .pray-btn .plab { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
+    .pray-btn.active-mage { border-color: #5ac0ff; box-shadow: 0 0 12px #1a80ff, inset 0 0 10px #0a3060; background: linear-gradient(#2a3a50, #152030); }
+    .pray-btn.active-range { border-color: #e8d44a; box-shadow: 0 0 12px #a09020, inset 0 0 10px #403800; background: linear-gradient(#4a4020, #2a2410); }
+    .pray-btn.active-melee { border-color: #ff7050; box-shadow: 0 0 12px #c03010, inset 0 0 10px #401000; background: linear-gradient(#502820, #301410); }
+    .pray-btn:active { transform: scale(0.97); }
+
+    /* Cutscene letterbox + OSRS chat / item pop */
+    #cutscene-layer {
+      position: absolute; inset: 0; z-index: 14; pointer-events: none;
+    }
+    #cutscene-layer.hidden { display: none; }
+    #letterbox-top, #letterbox-bot {
+      position: absolute; left: 0; right: 0; background: #000; z-index: 1;
+      pointer-events: auto;
+    }
+    #letterbox-top { top: 0; height: 0; }
+    #letterbox-bot { bottom: 0; height: 0; }
+    #btn-skip-cs {
+      pointer-events: auto; position: absolute; top: 10px; right: 10px; z-index: 3;
+      background: linear-gradient(#4a3824, #2c2014); border: 2px solid #c9a24a;
+      color: #ffe9a0; font-weight: 700; font-family: inherit; font-size: 13px;
+      padding: 6px 14px; border-radius: 4px; cursor: pointer;
+    }
+    #btn-skip-cs.hidden { display: none; }
+    #osrs-chat {
+      pointer-events: auto; position: absolute; left: 8px; right: 8px; bottom: 11%;
+      z-index: 3; display: flex; gap: 8px; align-items: stretch;
+      background: linear-gradient(#3a2a18, #26180e);
+      border: 3px solid #c9a24a; box-shadow: inset 0 0 0 1px #5a4018, 0 2px 8px #000;
+      padding: 6px 8px; min-height: 68px; border-radius: 2px;
+    }
+    #osrs-chat.hidden { display: none; }
+    #chat-head {
+      width: 56px; height: 56px; flex: 0 0 56px; background: #140c08;
+      border: 2px solid #8a6a30;
+    }
+    .chat-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    #chat-name {
+      color: #ffff00; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 0 #000; margin-bottom: 2px;
+    }
+    #chat-line {
+      color: #f5f0d8; font-size: 14px; font-weight: 600; line-height: 1.25;
+      text-shadow: 0 1px 0 #000;
+    }
+    #chat-hint { color: #8a7a50; font-size: 10px; margin-top: 4px; letter-spacing: 0.3px; }
+    #chat-hint.hidden { display: none; }
+    #item-popup {
+      pointer-events: auto; position: absolute; left: 50%; top: 42%;
+      transform: translate(-50%, -50%); z-index: 4;
+      background: linear-gradient(#3a2a18, #1e140c);
+      border: 3px solid #c9a24a; box-shadow: 0 4px 16px #000;
+      padding: 12px 16px 10px; min-width: 230px; max-width: 86%;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    #item-popup.hidden { display: none; }
+    #item-icon { width: 44px; height: 44px; }
+    #item-popup-text {
+      color: #ffe9a0; font-weight: 700; font-size: 13px; text-align: center;
+      text-shadow: 0 1px 2px #000;
+    }
+    #item-popup .tap-hint { color: #8a7a50; font-size: 10px; }
+
+    .overlay {
+      position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+      background: rgba(8, 4, 2, 0.95); overflow: auto; touch-action: pan-y;
+    }
+    .overlay.hidden { display: none; }
+    .logo {
+      position: relative;
+      font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+      font-size: clamp(52px, 16vw, 76px); font-weight: 400; letter-spacing: 1.5px;
+      line-height: 0.95; color: #ffe44a; text-align: center; margin: 0 0 10px;
+      text-shadow:
+        0 0 2px #fff6a0,
+        3px 0 0 #3a2200, -3px 0 0 #3a2200, 0 3px 0 #3a2200, 0 -3px 0 #3a2200,
+        3px 3px 0 #3a2200, -3px 3px 0 #3a2200, 3px -3px 0 #3a2200, -3px -3px 0 #3a2200,
+        5px 5px 0 #1a0e00, 0 0 20px #ff8800;
+    }
+    .logo .logo-x, #top-hud .brand .logo-x {
+      display: inline-block;
+      font-size: 1.22em;
+      color: #fff3a0;
+      letter-spacing: 0;
+      margin-right: 1px;
+      transform: translateY(0.03em);
+      text-shadow:
+        0 0 3px #fff8c0,
+        3px 0 0 #3a2200, -3px 0 0 #3a2200, 0 3px 0 #3a2200, 0 -3px 0 #3a2200,
+        3px 3px 0 #3a2200, -3px 3px 0 #3a2200, 3px -3px 0 #3a2200, -3px -3px 0 #3a2200,
+        5px 5px 0 #1a0e00, 0 0 24px #ff9900;
+    }
+    #top-hud .brand .logo-x {
+      font-size: 1.18em;
+      text-shadow: 0 1px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 0 0 10px #ff9900;
+    }
+    .tagline { color: #e8c060; font-size: 15px; letter-spacing: 1px; text-shadow: 0 1px 2px #000; margin: 0 0 18px; text-align: center; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 200px; height: 48px; padding: 0 20px; margin: 6px 0;
+      background: linear-gradient(#5a4328, #2e2014); border: 3px solid #c9a24a;
+      color: var(--gold); font-family: Impact, "Arial Black", sans-serif;
+      font-size: 22px; letter-spacing: 1px; text-shadow: 0 2px 0 #000;
+      border-radius: 4px; cursor: pointer;
+    }
+    .btn:active { filter: brightness(1.2); transform: translateY(1px); }
+    .btn.secondary {
+      background: linear-gradient(#2e2818, #1a160e); border-color: #6a5a38;
+      color: #d8c8a0; font-size: 16px; height: 40px; min-width: 160px;
+      font-family: "Trebuchet MS", sans-serif;
+    }
+    .mode-list { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; margin: 6px 0 8px; }
+    .mode-btn { width: 100%; min-width: 0; height: auto; padding: 10px 14px; flex-direction: column; gap: 2px; }
+    .mode-btn .sub { font-family: "Trebuchet MS", sans-serif; font-size: 11px; letter-spacing: 0.4px; color: #d8c8a0; font-weight: 400; text-shadow: none; }
+    .mode-btn.locked, .mode-btn:disabled {
+      background: linear-gradient(#3a3a38, #242220); border-color: #6a6a62; color: #8a8a84;
+      cursor: not-allowed; filter: grayscale(0.55); opacity: 0.75;
+    }
+    .mode-btn.locked .coming, .mode-btn:disabled .coming { color: #c9a24a; font-size: 11px; letter-spacing: 1px; }
+    .gp-line { font-size: 16px; font-weight: 700; margin: 2px 0 8px; text-shadow: 0 1px 2px #000; color: #c8b070; }
+    .gp-amt { font-weight: 700; letter-spacing: 0.3px; text-shadow: 0 1px 0 #000, 0 0 6px #000; }
+    .gp-yellow { color: #ffff00; }
+    .gp-white { color: #ffffff; }
+    .gp-green { color: #00ff00; }
+    .result-grid .v.gp-yellow { color: #ffff00; font-size: 16px; }
+    .result-grid .v.gp-white { color: #ffffff; font-size: 16px; }
+    .result-grid .v.gp-green { color: #00ff00; font-size: 16px; }
+    .gp-line span { color: #fff4c0; }
+    .name-row { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0 14px; width: 100%; max-width: 280px; }
+    .name-row label { font-size: 12px; color: #b0a078; }
+    .name-row input {
+      width: 100%; height: 44px; font-size: 16px; text-align: center;
+      background: #1a120a; border: 2px solid #8a7038; color: var(--gold);
+      border-radius: 4px; font-family: inherit; font-weight: 700;
+      touch-action: manipulation; user-select: text; -webkit-user-select: text;
+    }
+    .hint { font-size: 12px; color: #a09070; text-align: center; max-width: 300px; line-height: 1.4; }
+    .best-line { color: var(--gold); font-size: 13px; margin-top: 10px; text-align: center; }
+    .tut-card, .share-card {
+      width: 100%; max-width: 340px;
+      background: linear-gradient(#3a2c1c, #24180e);
+      border: 3px solid #c9a24a; box-shadow: 0 8px 24px #000, inset 0 0 0 1px #1a1008;
+      border-radius: 8px; padding: 16px 16px 14px; color: var(--beige);
+    }
+    .tut-card h2, .share-card h2 {
+      font-family: Impact, "Arial Black", sans-serif; color: var(--gold);
+      text-align: center; margin: 0 0 10px; font-size: 26px; letter-spacing: 1px;
+      text-shadow: 0 2px 0 #000;
+    }
+    .tut-card p { margin: 0 0 8px; font-size: 14px; line-height: 1.45; }
+    .tut-card .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 2px; }
+    .share-card { text-align: center; }
+    .share-card .logo { font-size: 40px; margin-bottom: 4px; letter-spacing: 1px; }
+    .share-card .win-title {
+      font-family: Impact, "Arial Black", sans-serif; font-size: 28px; color: #ffe44a;
+      text-shadow: 0 2px 0 #000, 0 0 12px #ff8800; margin: 4px 0 8px; letter-spacing: 0.5px;
+    }
+    .share-card .lose-title {
+      font-family: Impact, "Arial Black", sans-serif; font-size: 26px; color: #ff6a4a;
+      text-shadow: 0 2px 0 #000; margin: 6px 0 10px;
+    }
+    #cape-canvas { display: block; margin: 4px auto 8px; }
+    .result-grid {
+      display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; text-align: left;
+      background: #140e08; border: 1px solid #6a5430; border-radius: 4px;
+      padding: 10px 12px; margin: 8px 0 4px; font-size: 14px;
+    }
+    .result-grid .k { color: #b8a878; }
+    .result-grid .v { color: #fff4c0; font-weight: 700; text-align: right; }
+    .result-grid .v.gold { color: var(--gold); font-size: 16px; }
+    .share-hint { font-size: 11px; color: #8a7a58; margin: 6px 0 8px; }
+    #sound-btn {
+      position: static; z-index: 25; width: 28px; height: 24px; border-radius: 4px;
+      background: rgba(20,12,8,0.7); border: 1px solid #6a5430; color: #d8c8a0;
+      font-size: 13px; cursor: pointer; flex: 0 0 auto; line-height: 1;
+    }
+    .float-msg {
+      position: absolute; left: 50%; top: 8%; transform: translateX(-50%);
+      font-family: Impact, "Arial Black", sans-serif; font-size: 28px; color: var(--gold);
+      text-shadow: 0 2px 0 #000, 0 0 8px #000; pointer-events: none; z-index: 5; opacity: 0;
+    }
+
+    #hub-gear {
+      width: 100%; max-width: 340px;
+      background: #140e08; border: 1px solid #6a5430; border-radius: 4px;
+      padding: 8px 10px; margin: 0 0 10px; text-align: left;
+    }
+    #hub-gear .hub-gear-title {
+      color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+      text-align: center; margin-bottom: 6px;
+    }
+    #hub-gear-slots {
+      display: grid; grid-template-columns: 72px 1fr; gap: 2px 8px; font-size: 12px;
+    }
+    #hub-gear-slots .k { color: #8a7a58; }
+    #hub-gear-slots .v { color: #fff4c0; font-weight: 700; }
+    #hub-gear-bonuses {
+      margin-top: 6px; font-size: 11px; color: #d8c48a;
+      display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center;
+    }
+    #hub-gear-bonuses b { color: var(--gold); }
+    #hub-gear .hub-gear-note {
+      font-size: 10px; color: #8a7a58; text-align: center; margin-top: 6px; line-height: 1.35;
+    }
+    #debug-combat {
+      position: absolute; left: 6px; top: 6px; z-index: 7;
+      background: rgba(8,4,2,0.78); border: 1px solid #6a5430; border-radius: 3px;
+      color: #c8e8a0; font: 10px/1.35 ui-monospace, Menlo, Consolas, monospace;
+      padding: 4px 6px; pointer-events: none; white-space: pre;
+    }
+    #debug-combat.hidden { display: none; }
+    #move-pad { display: none; position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+    #move-pad.visible { display: block; }
+    #move-pad button {
+      pointer-events: auto; position: absolute;
+      background: linear-gradient(#4a3824, #2c2014);
+      border: 2px solid #7a6238; color: #ffe9a0;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+      border-radius: 6px;
+    }
+    #btn-move-left, #btn-move-right {
+      width: 44px; height: 44px; bottom: 8px; font-size: 18px; line-height: 1;
+    }
+    #btn-move-left { left: 6px; }
+    #btn-move-right { right: 6px; }
+    #btn-run {
+      left: 6px; bottom: 56px; height: 26px; padding: 0 8px;
+      font-size: 10px; letter-spacing: 0.4px;
+    }
+    #btn-run.running { border-color: #c9a24a; color: #ffe44a; }
+    #move-pad button:active { filter: brightness(1.25); }
+
+    @media (max-height: 700px) {
+      .pray-btn { height: 78px; }
+      .pray-btn canvas { width: 40px; height: 40px; }
+      .item-btn { height: 42px; }
+      .logo { font-size: 52px; }
+    }
+  </style>
+  <style>
+    #consumables { flex-wrap: wrap; }
+    .item-btn { min-width: 30%; flex: 1 1 30%; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="top-hud">
+      <div class="brand"><span class="logo-x">X</span>scape</div>
+      <div class="stat">Time <b id="hud-time">0:00</b></div>
+      <div class="stat">Score <b id="hud-score">Gloamhold</b></div>
+    </div>
+    <div id="arena-wrap">
+      <canvas id="arena"></canvas>
+      <div class="float-msg" id="float-msg"></div>
+      <div id="move-pad" class="visible">
+        <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
+        <button type="button" id="btn-move-left" aria-label="Step left">◀</button>
+        <button type="button" id="btn-move-right" aria-label="Step right">▶</button>
+      </div>
+    </div>
+    <div id="mid">
+      <div class="bars">
+        <div class="bar-row">
+          <div class="bar-lab">HP</div>
+          <div class="bar-track"><div class="bar-fill" id="hp-fill"></div><div class="bar-txt" id="hp-txt">99/99</div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-lab">Pray</div>
+          <div class="bar-track"><div class="bar-fill" id="prayer-fill"></div><div class="bar-txt" id="prayer-txt">99/99</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="consumables">
+      <button class="item-btn" id="btn-shark" type="button"><span class="cd-sweep"></span>Shark <span class="qty" id="qty-shark">5</span></button>
+      <button class="item-btn" id="btn-pot" type="button"><span class="cd-sweep"></span>Prayer pot <span class="qty" id="qty-pot">3</span></button>
+      <button class="item-btn" id="btn-brew" type="button"><span class="cd-sweep"></span>Brew <span class="qty" id="qty-brew">0</span></button>
+      <button class="item-btn" id="btn-range-pot" type="button"><span class="cd-sweep"></span>Range pot <span class="qty" id="qty-range">0</span></button>
+    </div>
+    <div id="prayers">
+      <button class="pray-btn" id="btn-mage" type="button" aria-label="Protect from Magic"><span class="plab">Magic</span><span class="pkey">1</span></button>
+      <button class="pray-btn" id="btn-range" type="button" aria-label="Protect from Missiles"><span class="plab">Missiles</span><span class="pkey">2</span></button>
+      <button class="pray-btn" id="btn-melee" type="button" aria-label="Protect from Melee"><span class="plab">Melee</span><span class="pkey">3</span></button>
+    </div>
+
+    <div class="overlay hidden" id="overlay-win">
+      <div class="share-card">
+        <div class="logo"><span class="logo-x">X</span>scape</div>
+        <div class="win-title">GLOAMHOLD CLEARED</div>
+        <div class="result-grid" id="win-stats"></div>
+      </div>
+      <button class="btn" id="btn-again-win" type="button">PLAY AGAIN</button>
+      <button class="btn secondary" id="btn-title-win" type="button">Title screen</button>
+    </div>
+    <div class="overlay hidden" id="overlay-lose">
+      <div class="share-card">
+        <div class="logo"><span class="logo-x">X</span>scape</div>
+        <div class="lose-title">Oh dear, you are dead!</div>
+        <div class="result-grid" id="lose-stats"></div>
+      </div>
+      <button class="btn" id="btn-again-lose" type="button">RETRY ROOM</button>
+      <button class="btn secondary" id="btn-title-lose" type="button">Title screen</button>
+    </div>
+    <div class="overlay" id="overlay-brief">
+      <div class="tut-card">
+        <h2>Gloamhold</h2>
+        <p>A sealed crypt-fortress under a drowned moon. Its master, <b>Morvane the Unsleeping</b>, still answers the stones.</p>
+        <p><b>Tap a floor tile</b> or use ◀ ▶ / A D to step (one tile per tick). Watch the telegraphs and walk off marked tiles before they land.</p>
+        <p>Switch protection prayers <b>before</b> the hit: 1 Magic, 2 Missiles, 3 Melee. Pose and audio are the tells.</p>
+        <p>Your crossbow fires on its own. Eat sharks (F), sip prayer pots (P), brews (B), or a ranging pot (R). Each sip or bite delays the next shot.</p>
+        <p>Supply chests along the way are limited. Starter gear makes the final fight nearly impossible. Vault-forged gear and clean execution can just clear it.</p>
+        <div style="text-align:center;margin-top:10px">
+          <button class="btn" id="btn-brief-ok" type="button">ENTER THE VAULT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<script src="partyhat-img.js"></script>
+<script src="whip-img.js"></script>
+<script src="sprites.js"></script>
+<script src="raid-sprites.js"></script>
+<script src="raid.js"></script>
+<script>
+(function () {
+  const canvas = document.getElementById("arena");
+  const ctx = canvas.getContext("2d");
+  let dpr = 1, cssW = 390, cssH = 500, raf = 0;
+
+  function fit() {
+    const app = document.getElementById("app");
+    const wrap = document.getElementById("arena-wrap");
+    const vv = window.visualViewport;
+    const width = Math.max(280, Math.min(430, Math.round((vv && vv.width) || window.innerWidth || 390)));
+    const height = Math.max(360, Math.round((vv && vv.height) || window.innerHeight || 700));
+    app.style.position = "fixed";
+    app.style.left = "50%";
+    app.style.top = "0";
+    app.style.transform = "translateX(-50%)";
+    app.style.width = width + "px";
+    app.style.height = height + "px";
+    const r = wrap.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    cssW = Math.max(160, r.width);
+    cssH = Math.max(160, r.height);
+    canvas.style.width = cssW + "px";
+    canvas.style.height = cssH + "px";
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", fit);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", fit);
+
+  const Raid = window.XscapeRaid;
+  function go(opts) {
+    document.getElementById("overlay-brief").classList.add("hidden");
+    document.getElementById("overlay-win").classList.add("hidden");
+    document.getElementById("overlay-lose").classList.add("hidden");
+    Raid.bindHost({
+      draw: function (st, ts) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cssW, cssH);
+        Raid.draw(ctx, cssW, cssH, ts / 1000);
+      },
+      flashMsg: function (t, c) {
+        const el = document.getElementById("float-msg");
+        el.textContent = t; el.style.color = c || "#ffe44a"; el.style.opacity = "1";
+      },
+      updateHud: function (st) {
+        document.getElementById("hp-txt").textContent = st.player.hp + "/99";
+        document.getElementById("prayer-txt").textContent = st.player.prayerPts + "/99";
+        document.getElementById("hp-fill").style.transform = "scaleX(" + (st.player.hp / 99) + ")";
+        document.getElementById("prayer-fill").style.transform = "scaleX(" + (st.player.prayerPts / 99) + ")";
+        document.getElementById("qty-shark").textContent = st.inv.sharks;
+        document.getElementById("qty-pot").textContent = st.inv.pots;
+        document.getElementById("qty-brew").textContent = st.inv.brews;
+        document.getElementById("qty-range").textContent = st.inv.ranging;
+        const sec = Math.floor(st.ticks * 0.6);
+        document.getElementById("hud-time").textContent = Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+        document.getElementById("hud-score").textContent = (Raid.ROOM_ORDER && st.room) ? (st.room) : "Gloamhold";
+        ["mage","range","melee"].forEach(function (k) {
+          const b = document.getElementById("btn-" + (k === "range" ? "range" : k));
+          if (!b) return;
+          b.classList.remove("active-mage","active-range","active-melee");
+          if (st.prayer === k) b.classList.add("active-" + k);
+        });
+      },
+      onWin: function () { document.getElementById("overlay-win").classList.remove("hidden"); },
+      onLose: function () { document.getElementById("overlay-lose").classList.remove("hidden"); },
+      getContext: function () { return ctx; },
+      width: cssW, height: cssH
+    });
+    if (!Raid.bootFromQuery(opts || { room: "gate" })) Raid.start(opts || { room: "gate" });
+    Raid.startLoop();
+  }
+
+  document.getElementById("btn-brief-ok").addEventListener("click", function () { go(); });
+  document.getElementById("btn-again-win").addEventListener("click", function () { go({ room: "gate" }); });
+  document.getElementById("btn-again-lose").addEventListener("click", function () { if (Raid.retryRoom) Raid.retryRoom(); });
+  document.getElementById("btn-title-win").addEventListener("click", function () { location.href = "index.html"; });
+  document.getElementById("btn-title-lose").addEventListener("click", function () { location.href = "index.html"; });
+  document.getElementById("btn-shark").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.eat(); });
+  document.getElementById("btn-pot").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.sip(); });
+  document.getElementById("btn-brew").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.brew(); });
+  document.getElementById("btn-range-pot").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.ranging(); });
+  document.getElementById("btn-mage").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("mage"); });
+  document.getElementById("btn-range").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("range"); });
+  document.getElementById("btn-melee").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("melee"); });
+  document.getElementById("btn-move-left").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.stepDir(-1, 0); });
+  document.getElementById("btn-move-right").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.stepDir(1, 0); });
+  canvas.addEventListener("pointerdown", function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (cssW / rect.width);
+    const y = (e.clientY - rect.top) * (cssH / rect.height);
+    Raid.clickPx(x, y, cssW, cssH);
+  });
+  window.addEventListener("keydown", function (e) {
+    if (e.target && e.target.tagName === "INPUT") return;
+    if (e.key === "1") Raid.setPrayer("mage");
+    if (e.key === "2") Raid.setPrayer("range");
+    if (e.key === "3") Raid.setPrayer("melee");
+    if (e.key === "f" || e.key === "F") Raid.eat();
+    if (e.key === "p" || e.key === "P") Raid.sip();
+    if (e.key === "b" || e.key === "B") Raid.brew();
+    if (e.key === "r" || e.key === "R") Raid.ranging();
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); Raid.stepDir(-1, 0); }
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); Raid.stepDir(1, 0); }
+  });
+
+  // Bind host so startLoop can draw before brief is dismissed if ?test=
+  Raid.bindHost({
+    getContext: function () { return ctx; },
+    width: cssW, height: cssH,
+    updateHud: function () {},
+    flashMsg: function () {},
+    onWin: function () { document.getElementById("overlay-win").classList.remove("hidden"); },
+    onLose: function () { document.getElementById("overlay-lose").classList.remove("hidden"); }
+  });
+  fit();
+  const test = Raid.testFlag();
+  if (test && test.indexOf("raid") === 0) {
+    go();
+  }
+  window.Xscape = window.Xscape || {};
+  window.Xscape.raid = Raid;
+})();
+</script>
+</body>
+</html>
