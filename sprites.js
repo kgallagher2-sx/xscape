@@ -776,7 +776,7 @@ function drawPartyhat(c, baseY) {
     const prev = c.imageSmoothingEnabled;
     c.imageSmoothingEnabled = true;
     if (c.imageSmoothingQuality) c.imageSmoothingQuality = "high";
-    // Anchor the bottom of the band at the hairline, sunk slightly so it sits ON the head.
+    // Anchor the bottom of the band at baseY (hairline / just above the forehead).
     c.drawImage(img, -destW / 2, baseY - destH + 2.6, destW, destH);
     c.imageSmoothingEnabled = prev;
     return;
@@ -874,10 +874,32 @@ function drawPartyhat(c, baseY) {
 }
 
 function drawAbyssalWhip(c, tm, opt) {
-  // Original thick segmented whip. Not a wire: chunky links, wrapped handle, gem pommel.
+  // Prefer the cropped reference whip (WHIP_IMG from whip-img.js).
+  // Falls back to the procedural segmented whip if the image is not loaded.
   opt = opt || {};
   const bust = !!opt.bust;
   const walking = !!opt.walk;
+  const img = (typeof WHIP_IMG !== "undefined") ? WHIP_IMG : null;
+  if (img && img.complete && img.naturalWidth > 0) {
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const hx = 82, hy = 14; // grip on the handle, where the fist held it
+    const targetHang = bust ? 17 : 32;
+    const sc = targetHang / (ih - hy);
+    const swayR = Math.sin((tm || 0) * 2.5) * (bust ? 0.04 : 0.10);
+    const crackR = bust ? 0 : (walking ? Math.pow(Math.max(0, Math.sin((tm || 0) * 6.0 - 0.35)), 3) : 0);
+    c.save();
+    c.rotate(swayR - crackR * 0.55 - 0.35); // hang the lash out beside the hip
+    // Flip so the lash hangs outside the body (positive-x, away from the torso),
+    // matching the reference where it drops beside the leg, not across the vest.
+    c.scale(-1, 1);
+    const prev = c.imageSmoothingEnabled;
+    c.imageSmoothingEnabled = false;
+    c.drawImage(img, -hx * sc, -hy * sc, iw * sc, ih * sc);
+    c.imageSmoothingEnabled = prev;
+    c.restore();
+    return;
+  }
+  // Original thick segmented whip. Not a wire: chunky links, wrapped handle, gem pommel.
   const sway = Math.sin((tm || 0) * 2.5) * (bust ? 1.1 : 3.0);
   const crack = bust ? 0 : (walking ? Math.pow(Math.max(0, Math.sin((tm || 0) * 6.0 - 0.35)), 3) : 0);
 
