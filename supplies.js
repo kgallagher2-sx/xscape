@@ -70,7 +70,6 @@
     return !!familyOf(id);
   }
 
-  // Legacy dosed ids (super_attack_4 … _1) still parse so old bags can migrate.
   function parseDose(id) {
     if (!id || typeof id !== "string") return null;
     const m = id.match(new RegExp("^(" + POTION_IDS + ")_([1-4])$"));
@@ -78,9 +77,20 @@
     return { family: m[1], dose: Number(m[2]) };
   }
 
+  // Bare family ids (from the brief single-use period) become a full 4-dose bottle.
+  // Already-dosed ids are left alone.
   function canonicalSupplyId(id) {
+    if (!id) return id;
+    if (parseDose(id)) return id;
+    if (POTION_FAMILIES[id]) return id + "_4";
+    return id;
+  }
+
+  function doseOf(id) {
     const d = parseDose(id);
-    return d ? d.family : id;
+    if (d) return d.dose;
+    if (POTION_FAMILIES[id]) return 4;
+    return 0;
   }
 
   function familyOf(id) {
@@ -91,6 +101,8 @@
     if (id === "swordfish" || id === "shark" || id === "dark_crab") return id;
     return null;
   }
+
+  function doseId(family, dose) { return family + "_" + dose; }
 
   function invArr() {
     const P = profile();
@@ -111,6 +123,37 @@
     const arr = list || invArr();
     for (let i = 0; i < arr.length; i++) if (familyOf(arr[i]) === fam) return i;
     return -1;
+  }
+
+  // Always sip the bottle of this type with the fewest doses left.
+  function lowestDoseIndex(fam, list) {
+    const arr = list || invArr();
+    let best = -1, bestD = 99;
+    for (let i = 0; i < arr.length; i++) {
+      if (familyOf(arr[i]) !== fam) continue;
+      const d = doseOf(arr[i]);
+      if (d > 0 && d < bestD) { best = i; bestD = d; }
+    }
+    return best;
+  }
+
+  function lowestDose(fam, list) {
+    const i = lowestDoseIndex(fam, list);
+    if (i < 0) return 0;
+    return doseOf((list || invArr())[i]);
+  }
+
+  // Hot bar shows total doses across all carried bottles of this type.
+  function totalDoses(fam, list) {
+    if (isJad() && JAD_KIT[fam] != null) return jadCount(fam);
+    let n = 0;
+    const arr = list || invArr();
+    for (let i = 0; i < arr.length; i++) {
+      if (familyOf(arr[i]) === fam) n += doseOf(arr[i]);
+    }
+    // Raid chest finds are counted as leftover sips, not full bottles.
+    n += raidExtra(fam) || 0;
+    return n;
   }
 
   function isJad() { return !!(global.G && global.G.scene === "jad"); }
@@ -142,12 +185,12 @@
       ITEMS[id] = { id: id, name: name, slot: "inventory", tier: "supply", kind: "food", consumable: true, heal: heal };
     }
     function pot(family, label) {
+      // Names stay unadorned (no "(4)"). Dose is shown on the vial icon.
       const rec = { id: family, name: label, slot: "inventory", tier: "supply", kind: "potion", consumable: true, family: family };
       ITEMS[family] = rec;
-      // Keep leftover dose ids recognized (same name, no dose label) so a stale bag still renders.
       for (let d = 4; d >= 1; d--) {
         const id = family + "_" + d;
-        ITEMS[id] = { id: id, name: label, slot: "inventory", tier: "supply", kind: "potion", consumable: true, family: family, legacyDose: d };
+        ITEMS[id] = { id: id, name: label, slot: "inventory", tier: "supply", kind: "potion", consumable: true, family: family, dose: d };
       }
     }
     food("swordfish", "Swordfish", 14);
@@ -378,9 +421,11 @@
       markDirty();
       return true;
     }
-    const i = firstIndex(fam, arr);
+    const i = lowestDoseIndex(fam, arr);
     if (i < 0) return false;
-    arr.splice(i, 1);
+    const d = doseOf(arr[i]);
+    if (d > 1) arr[i] = doseId(fam, d - 1);
+    else arr.splice(i, 1);
     markDirty();
     return true;
   }
@@ -572,10 +617,11 @@
       }
       return;
     }
-    drawItemIcon(ctx, slot.id, w, h);
+    const dose = (isJad() && JAD_KIT[slot.id] != null) ? 0 : (isFood(slot.id) ? 0 : lowestDose(slot.id));
+    drawItemIcon(ctx, slot.id, w, h, dose || undefined);
   }
 
-  function drawItemIcon(ctx, fam, w, h) {
+  function drawItemIcon(ctx, fam, w, h, dose) {
     ctx.save();
     ctx.translate(w / 2, h / 2);
     const s = Math.min(w, h) / 32;
@@ -592,27 +638,53 @@
       ctx.moveTo(10, -1); ctx.lineTo(16, -6); ctx.lineTo(15, 3); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#1a1008";
       ctx.beginPath(); ctx.arc(-7, 0, 1.2, 0, Math.PI * 2); ctx.fill();
-    } else {
-      const meta = POTION_FAMILIES[fam] || { color: "#4a8a3a" };
-      ctx.fillStyle = "#c8c0b0";
-      ctx.fillRect(-5, -12, 10, 6);
-      ctx.fillStyle = "#8a8070";
-      ctx.fillRect(-3, -14, 6, 3);
-      ctx.fillStyle = meta.color;
+      ctx.restore();
+      return;
+    }
+    const meta = POTION_FAMILIES[fam] || { color: "#4a8a3a" };
+    const d = (dose == null || dose === "") ? 4 : Math.max(0, Math.min(4, Number(dose) || 0));
+    ctx.fillStyle = "#c8c0b0";
+    ctx.fillRect(-5, -12, 10, 6);
+    ctx.fillStyle = "#8a8070";
+    ctx.fillRect(-3, -14, 6, 3);
+    function flaskPath() {
       ctx.beginPath();
       ctx.moveTo(-6, -6);
       ctx.lineTo(-8, 10);
       ctx.quadraticCurveTo(0, 14, 8, 10);
       ctx.lineTo(6, -6);
       ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = "#2a2010";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,0.25)";
-      ctx.fillRect(-4, -4, 2.2, 8);
     }
+    ctx.fillStyle = "rgba(210, 214, 220, 0.4)";
+    flaskPath(); ctx.fill();
+    if (d > 0) {
+      ctx.save();
+      flaskPath(); ctx.clip();
+      const frac = d / 4;
+      const topY = 12 - 18 * frac;
+      ctx.fillStyle = meta.color;
+      ctx.fillRect(-10, topY, 20, 28);
+      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      ctx.fillRect(-4, topY + 1, 2.2, Math.max(3, 10 * frac));
+      ctx.restore();
+    }
+    ctx.strokeStyle = "#2a2010";
+    ctx.lineWidth = 1;
+    flaskPath(); ctx.stroke();
     ctx.restore();
+    if (d > 0) {
+      ctx.save();
+      const fs = Math.max(9, Math.round(h * 0.28));
+      ctx.font = "bold " + fs + "px Trebuchet MS, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#100800";
+      ctx.fillStyle = "#ffe44a";
+      ctx.strokeText(String(d), w - 1, h - 1);
+      ctx.fillText(String(d), w - 1, h - 1);
+      ctx.restore();
+    }
   }
 
   function labelFor(slot) {
@@ -622,12 +694,14 @@
       return p ? p.name : slot.id;
     }
     if (isFood(slot.id)) return slot.id === "dark_crab" ? "Dark crab" : slot.id.charAt(0).toUpperCase() + slot.id.slice(1);
-    return (POTION_FAMILIES[slot.id] || { name: slot.id }).name;
+    const short = { super_attack: "Attack", super_strength: "Strength", super_defence: "Defence", ranging_potion: "Ranging", magic_potion: "Magic", super_restore: "Restore", saradomin_brew: "Brew", prayer_potion: "Prayer" };
+    return short[slot.id] || (POTION_FAMILIES[slot.id] || { name: slot.id }).name;
   }
 
   function qtyFor(slot) {
     if (!slot || slot.type !== "item") return "";
-    return String(available(slot.id));
+    if (isFood(slot.id) || (isJad() && JAD_KIT[slot.id] != null)) return String(available(slot.id));
+    return String(totalDoses(slot.id));
   }
 
   function refresh() {
@@ -939,11 +1013,29 @@
   function decorateSlotButton(btn, id) {
     if (!btn || !isSupplyId(id)) return;
     const fam = familyOf(id);
+    const d = isFood(fam) ? 0 : doseOf(id);
+    btn.textContent = "";
     const cv = document.createElement("canvas");
-    cv.width = 40; cv.height = 40;
+    cv.width = 44; cv.height = 44;
     cv.className = "osrs-slot-icon";
-    drawItemIcon(cv.getContext("2d"), fam, 40, 40);
-    if (!btn.querySelector("canvas")) btn.insertBefore(cv, btn.firstChild);
+    drawItemIcon(cv.getContext("2d"), fam, 44, 44, d || undefined);
+    btn.appendChild(cv);
+    if (isFood(fam)) {
+      const lab = document.createElement("span");
+      lab.className = "slot-short";
+      lab.textContent = fam === "dark_crab" ? "Crab" : fam.charAt(0).toUpperCase() + fam.slice(1);
+      btn.appendChild(lab);
+    }
+  }
+
+  function decorateContainer(root) {
+    if (!root || !root.querySelectorAll) return;
+    const buttons = root.querySelectorAll(".osrs-slot[data-withdraw], .osrs-slot[data-deposit], .osrs-slot[data-equip], .osrs-slot[data-inv-item]");
+    for (let i = 0; i < buttons.length; i++) {
+      const btn = buttons[i];
+      const id = btn.getAttribute("data-withdraw") || btn.getAttribute("data-deposit") || btn.getAttribute("data-equip") || btn.getAttribute("data-inv-item");
+      if (id && isSupplyId(id)) decorateSlotButton(btn, id);
+    }
   }
 
   function bindUi() {
@@ -1003,6 +1095,10 @@
     toggleEdit: toggleEdit,
     drawItemIcon: drawItemIcon,
     decorateSlotButton: decorateSlotButton,
+    decorateContainer: decorateContainer,
+    lowestDose: lowestDose,
+    totalDoses: totalDoses,
+    doseOf: doseOf,
     labelFor: labelFor,
     init: init,
     applyBuyProfile: applyBuyProfile

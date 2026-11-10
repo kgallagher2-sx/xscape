@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110211136-e76c4c8";</script>
+  <script>window.XSCAPE_BUILD = "20261110212720-2f4b681";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -731,13 +731,17 @@
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
     }
     .osrs-slot {
-      min-height: 52px; padding: 4px 5px; margin: 0; min-width: 0;
+      position: relative;
+      min-height: 52px; padding: 4px 3px 3px; margin: 0; min-width: 0;
       background: linear-gradient(#3a2a18, #22180e);
       border: 2px solid #6a5428; color: #efe0b0; font-size: 10px;
       font-family: "Trebuchet MS", sans-serif; text-align: center;
-      line-height: 1.2; cursor: pointer; border-radius: 3px;
+      line-height: 1.15; cursor: pointer; border-radius: 3px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
     .osrs-slot.empty { opacity: 0.4; cursor: default; }
+    .osrs-slot canvas.osrs-slot-icon { width: 32px; height: 32px; display: block; }
+    .osrs-slot .slot-short { font-size: 9px; color: #d8c8a0; margin-top: 1px; }
     .osrs-slot:active { filter: brightness(1.2); }
     #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-hub.is-world #hub-dock { display: flex; }
@@ -2676,6 +2680,7 @@ function renderEquipmentOverlay() {
       }
     }
     invEl.innerHTML = slots.join("");
+    if (window.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(invEl);
   }
   // Bank contents belong only in overlay-bank (booth / banker).
 }

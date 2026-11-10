@@ -26,7 +26,26 @@ $$;
 REVOKE ALL ON FUNCTION game.is_supply_item(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION game.is_supply_item(text) TO authenticated;
 
--- Collapse leftover dose suffixes (super_attack_4 → super_attack). Each bottle is one sip.
+-- Bare single-use ids (super_attack) become a full 4-dose bottle. Dosed ids are kept.
+CREATE OR REPLACE FUNCTION game.redose_supply_id(p_id text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT CASE
+    WHEN p_id IN (
+      'super_attack','super_strength','super_defence',
+      'ranging_potion','magic_potion','super_restore','saradomin_brew','prayer_potion'
+    ) THEN p_id || '_4'
+    ELSE p_id
+  END;
+$$;
+
+REVOKE ALL ON FUNCTION game.redose_supply_id(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION game.redose_supply_id(text) TO authenticated;
+
+-- Kept so older clients that still call it do not break; not used on save.
 CREATE OR REPLACE FUNCTION game.undose_supply_id(p_id text)
 RETURNS text
 LANGUAGE sql
@@ -64,7 +83,7 @@ BEGIN
     IF NOT game.ok_item_id(v_id) THEN
       CONTINUE;
     END IF;
-    v_id := game.undose_supply_id(v_id);
+    v_id := game.redose_supply_id(v_id);
     IF game.is_supply_item(v_id) THEN
       v := v || v_id;
     ELSIF NOT v_id = ANY (v_seen) THEN
@@ -173,17 +192,17 @@ LANGUAGE sql
 IMMUTABLE
 SET search_path = public, pg_temp
 AS $$
-  SELECT CASE game.undose_supply_id(p_item_id)
+  SELECT CASE game.redose_supply_id(game.undose_supply_id(p_item_id))
     WHEN 'swordfish' THEN 'swordfish'
     WHEN 'shark' THEN 'shark'
     WHEN 'dark_crab' THEN 'dark_crab'
-    WHEN 'super_attack' THEN 'super_attack'
-    WHEN 'super_strength' THEN 'super_strength'
-    WHEN 'super_defence' THEN 'super_defence'
-    WHEN 'ranging_potion' THEN 'ranging_potion'
-    WHEN 'magic_potion' THEN 'magic_potion'
-    WHEN 'super_restore' THEN 'super_restore'
-    WHEN 'saradomin_brew' THEN 'saradomin_brew'
+    WHEN 'super_attack_4' THEN 'super_attack_4'
+    WHEN 'super_strength_4' THEN 'super_strength_4'
+    WHEN 'super_defence_4' THEN 'super_defence_4'
+    WHEN 'ranging_potion_4' THEN 'ranging_potion_4'
+    WHEN 'magic_potion_4' THEN 'magic_potion_4'
+    WHEN 'super_restore_4' THEN 'super_restore_4'
+    WHEN 'saradomin_brew_4' THEN 'saradomin_brew_4'
     ELSE NULL
   END;
 $$;

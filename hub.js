@@ -1692,7 +1692,9 @@
         else slots.push('<div class="osrs-slot empty"></div>');
       }
       invEl.innerHTML = slots.join("");
+      if (global.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(invEl);
     }
+    if (bankEl && global.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(bankEl);
     var cap = $("hub-bank-cap");
     if (cap && typeof inventorySpace === "function") {
       cap.textContent = "Inventory " + (28 - inventorySpace()) + "/28";
@@ -1715,6 +1717,7 @@
       else slots.push('<div class="osrs-slot empty"></div>');
     }
     el.innerHTML = slots.join("");
+    if (global.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(el);
     var title = $("hub-inv-title");
     if (title) title.textContent = "Inventory " + inv.length + "/28";
   }
