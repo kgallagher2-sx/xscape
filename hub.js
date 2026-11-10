@@ -1514,7 +1514,83 @@
     if (cloud && typeof cloud.broadcast === "function") {
       try { cloud.broadcast("hub-chat", payload); } catch (e) {}
     }
+    if (cloud && typeof cloud.rpc === "function" && cloud.canHubChat && cloud.canHubChat()) {
+      try { cloud.rpc("post_chat_message", { p_text: text, p_scene: payload.scene }); } catch (e) {}
+    }
     return true;
+  }
+
+  var CHAT_ADMIN_UID = "dbb8136b-912f-4482-a608-342b6958d8c1";
+  function isChatAdmin() {
+    var cloud = global.XscapeCloud;
+    var id = cloud && typeof cloud.userId === "function" ? cloud.userId() : null;
+    return !!(id && String(id) === CHAT_ADMIN_UID);
+  }
+  function formatChatTime(iso) {
+    try {
+      var d = iso instanceof Date ? iso : new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      var s = d.toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+      return s + " America/New_York";
+    } catch (e) { return ""; }
+  }
+  function syncChatHistoryButton() {
+    var btn = $("btn-chat-history");
+    if (!btn) return;
+    var on = isChatAdmin();
+    btn.classList.toggle("hidden", !on);
+    btn.style.display = on ? "" : "none";
+  }
+  function closeChatHistory() {
+    var ov = $("overlay-chat-history");
+    if (ov) ov.classList.add("hidden");
+  }
+  function renderChatHistory(rows) {
+    var list = $("chat-history-list");
+    if (!list) return;
+    if (!rows || !rows.length) {
+      list.innerHTML = '<div class="chat-history-empty">No messages stored yet.</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function (row) {
+      var name = escapeHtml(row.display_name || row.displayName || "Player");
+      var text = escapeHtml(row.text || "");
+      var when = escapeHtml(formatChatTime(row.created_at || row.createdAt));
+      return '<div class="chat-history-row"><div class="chat-history-meta"><span class="nm">' +
+        name + '</span><span class="tm">' + when + '</span></div><div class="chat-history-text">' +
+        text + '</div></div>';
+    }).join("");
+  }
+  function openChatHistory() {
+    if (!isChatAdmin()) return;
+    var ov = $("overlay-chat-history");
+    if (!ov) return;
+    ov.classList.remove("hidden");
+    renderChatHistory([]);
+    var list = $("chat-history-list");
+    if (list) list.innerHTML = '<div class="chat-history-empty">Loading…</div>';
+    var cloud = global.XscapeCloud;
+    if (!cloud || typeof cloud.rpc !== "function") {
+      if (list) list.innerHTML = '<div class="chat-history-empty">Could not reach the cloud.</div>';
+      return;
+    }
+    Promise.resolve(cloud.rpc("admin_chat_history", { p_limit: 200 })).then(function (res) {
+      if (!res || !res.ok) {
+        if (list) list.innerHTML = '<div class="chat-history-empty">' +
+          escapeHtml((res && res.error) || "Not allowed") + "</div>";
+        return;
+      }
+      renderChatHistory(res.messages || []);
+    }).catch(function () {
+      if (list) list.innerHTML = '<div class="chat-history-empty">Could not load history.</div>';
+    });
   }
 
   function setChatOpen(open) {
@@ -2165,6 +2241,7 @@
     refreshHubChrome();
     publishPresence();
     renderChatLog();
+    syncChatHistoryButton();
     var cloud = global.XscapeCloud;
     hookSharedTicks();
     if (cloud && typeof cloud.startLobby === "function") {
@@ -2177,6 +2254,7 @@
       Promise.resolve(cloud.reloadProfile()).then(function () {
         try { renderBank(); } catch (e) {}
         try { renderInv(); } catch (e) {}
+        try { syncChatHistoryButton(); } catch (e) {}
         if (typeof refreshGearViews === "function") {
           try { refreshGearViews(); } catch (e2) {}
         }
@@ -2252,6 +2330,7 @@
         if (act === "inv") openInventory();
         else if (act === "gear") { if (typeof openEquipmentView === "function") openEquipmentView(); }
         else if (act === "chat") openChat();
+        else if (act === "chat-history") openChatHistory();
         else if (act === "online") openOnline();
       });
     }
@@ -2367,6 +2446,11 @@
 
   function install() {
     bindUi();
+    var hx = $("btn-chat-history-x");
+    var hc = $("btn-chat-history-close");
+    if (hx) hx.addEventListener("click", function (e) { e.preventDefault(); closeChatHistory(); });
+    if (hc) hc.addEventListener("click", function (e) { e.preventDefault(); closeChatHistory(); });
+    syncChatHistoryButton();
     api.ready = true;
   }
 
@@ -2397,6 +2481,10 @@
     onHubChat: onHubChat,
     sendHubChat: sendHubChat,
     openChat: openChat,
+    openChatHistory: openChatHistory,
+    closeChatHistory: closeChatHistory,
+    syncChatHistoryButton: syncChatHistoryButton,
+    isChatAdmin: isChatAdmin,
     publishPresence: publishPresence,
     onMoveIntent: onMoveIntent,
     onMoveSnapshot: onMoveSnapshot,

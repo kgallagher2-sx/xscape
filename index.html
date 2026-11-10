@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110210833-f8baa44";</script>
+  <script>window.XSCAPE_BUILD = "20261110211136-e76c4c8";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -317,7 +317,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-chat-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -678,6 +678,21 @@
       flex: 1; color: #ffe9a0; font-size: 13px; font-weight: 700;
       text-shadow: 0 1px 0 #000;
     }
+    #btn-chat-history { letter-spacing: 0; }
+    #overlay-chat-history .sheet-card { width: 100%; max-width: 340px; }
+    #chat-history-list {
+      max-height: 58vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 4px 0 8px;
+    }
+    .chat-history-row {
+      background: #140e08; border: 1px solid #6a5430; border-radius: 3px;
+      padding: 8px 8px 7px; margin: 0 0 6px; text-align: left;
+    }
+    .chat-history-meta { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .chat-history-meta .nm { color: #ffe44a; font-weight: 700; font-size: 13px; }
+    .chat-history-meta .tm { color: #8a7a58; font-size: 10px; white-space: nowrap; }
+    .chat-history-text { color: #f5f0d8; font-size: 13px; margin-top: 4px; word-wrap: break-word; }
+    .chat-history-empty { color: #8a7a58; text-align: center; padding: 16px 8px; font-size: 13px; }
     #overlay-hub.chat-open #hub-dock { display: none; }
     #overlay-hub.chat-open #hub-chat-bar { display: flex; }
     #overlay-hub.chat-open #hub-chat-log {
@@ -927,6 +942,7 @@
         <button type="button" class="btn secondary" data-dock="inv">Inv</button>
         <button type="button" class="btn secondary" data-dock="gear">Gear</button>
         <button type="button" class="btn secondary" data-dock="chat">Chat</button>
+        <button type="button" class="btn secondary hidden" id="btn-chat-history" data-dock="chat-history">Chat history</button>
         <button type="button" class="btn secondary" data-dock="online">Online</button>
       </div>
       <div id="hub-chat-log" class="hub-chrome hidden" aria-live="polite"></div>
@@ -1092,6 +1108,17 @@
         <button class="overlay-x" id="btn-quick-edit-close" type="button" aria-label="Close">×</button>
         <h2>Assign slot</h2>
         <div class="sheet-scroll" id="quick-edit-list"></div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-chat-history">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-chat-history-x" type="button" aria-label="Close">×</button>
+        <h2>Chat history</h2>
+        <div class="sheet-scroll" id="chat-history-list"></div>
+        <div class="sheet-actions">
+          <button class="btn" id="btn-chat-history-close" type="button">EXIT</button>
+        </div>
       </div>
     </div>
 
@@ -5624,7 +5651,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-quick-edit","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-quick-edit","overlay-chat-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -6369,6 +6396,7 @@ bindTap($("btn-shop-x"), () => { audio.unlock(); closeShop(); });
 bindBackdropClose($("overlay-shop"), () => { audio.unlock(); closeShop(); });
 if ($("overlay-supply-shop")) bindBackdropClose($("overlay-supply-shop"), () => { audio.unlock(); if (window.closeSupplyShop) closeSupplyShop(); });
 if ($("overlay-quick-edit")) bindBackdropClose($("overlay-quick-edit"), () => { if (window.XscapeSupplies) XscapeSupplies.endEdit(); });
+if ($("overlay-chat-history")) bindBackdropClose($("overlay-chat-history"), () => { if (window.XscapeHub && XscapeHub.closeChatHistory) XscapeHub.closeChatHistory(); });
 if ($("shop-list")) $("shop-list").addEventListener("click", (e) => {
   const btn = e.target.closest && e.target.closest("[data-shop]");
   if (!btn) return;
