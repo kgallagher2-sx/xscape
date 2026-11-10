@@ -46,6 +46,62 @@
   }
   .preview-wrap { display: flex; justify-content: center; background: #100806; border-radius: 8px; border: 1px solid #3a2414; overflow: hidden; }
   #gear-preview { width: min(280px, 100%); height: auto; touch-action: none; }
+
+  .preview-trio {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    background: #100806;
+    border-radius: 8px;
+    border: 1px solid #3a2414;
+    padding: 6px;
+  }
+  .preview-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+  }
+  .preview-cell canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 160 / 200;
+    background: #0c0604;
+    border-radius: 6px;
+    border: 1px solid #2a1810;
+  }
+  .preview-cell span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #ffcf3a;
+    text-shadow: 0 1px 0 #000;
+  }
+  .facing-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 4px;
+  }
+  .facing-row button {
+    flex: 1 1 0;
+    min-height: 40px;
+    min-width: 64px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid #6a4a20;
+    background: #2a1810;
+    color: #f0e0b0;
+    font: 700 13px/1 "Trebuchet MS", sans-serif;
+    cursor: pointer;
+  }
+  .facing-row button.on { background: #5a3a10; border-color: #ffcf3a; color: #ffe44a; }
+  @media (max-width: 360px) {
+    .preview-trio { gap: 4px; padding: 4px; }
+    .preview-cell span { font-size: 9px; }
+  }
+
   .presets, .slot-grid, .tweak-row, .sheet-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .presets { margin: 10px 0 4px; }
   .cape-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: #c8a878; }
@@ -101,7 +157,7 @@
 <body>
 <header>
   <h1>Xscape sprite lab</h1>
-  <div class="sub">Loads <code>sprites.js</code> (same file the game uses). Gear previews below are lab-only — they do not change how the live game looks yet. 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
+  <div class="sub">Loads <code>sprites.js</code> and <code>lab-gear.js</code> (same drawings the bank, equipment view, and duel use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
   <nav class="jump">
     <a href="#gear">Gear</a>
     <a href="#sprites">Sprites</a>
@@ -119,12 +175,29 @@
 
 <section class="gear-sec" id="gear">
   <h2>Gear</h2>
-  <p class="lead">Back view, same pose as in a fight. Pick a tier preset or swap a slot, tap an item to tweak its colours and size, then Copy settings and send me the JSON.</p>
+  <p class="lead">Front, back and side views update live as you swap gear or tweak colours. Side walks so you can check the stride. Pick a tier preset, tap an item to tweak it, then Copy settings and send me the JSON.</p>
 
   <div class="gear-card" id="gear-preview-card">
     <div class="h2-row"><h2>Player preview</h2><span class="sub" id="preset-label">Starter</span></div>
-    <div class="preview-wrap">
-      <canvas id="gear-preview" width="240" height="288"></canvas>
+    <div class="preview-trio" id="preview-trio">
+      <div class="preview-cell">
+        <canvas id="gear-preview-front" width="160" height="200"></canvas>
+        <span>FRONT</span>
+      </div>
+      <div class="preview-cell">
+        <canvas id="gear-preview-back" width="160" height="200"></canvas>
+        <span>BACK</span>
+      </div>
+      <div class="preview-cell">
+        <canvas id="gear-preview-side" width="160" height="200"></canvas>
+        <span>SIDE</span>
+      </div>
+    </div>
+    <div class="facing-row" id="facing-row" aria-label="Focus a facing">
+      <button type="button" data-facing="front">Front</button>
+      <button type="button" data-facing="back" class="on">Back</button>
+      <button type="button" data-facing="left">Left</button>
+      <button type="button" data-facing="right">Right</button>
     </div>
     <div class="presets" id="presets">
       <button type="button" data-preset="starter" class="on">Starter</button>
@@ -252,8 +325,15 @@ function zoom(src, dst) {
 
 /* ---- Gear UI ---- */
 const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Armadyl", gloamhold: "Gloamhold", custom: "Custom" };
-const preview = document.getElementById("gear-preview");
-const previewCtx = preview.getContext("2d");
+const PREVIEW_VIEWS = [
+  { id: "gear-preview-front", facing: "front", walk: false },
+  { id: "gear-preview-back", facing: "back", walk: false },
+  { id: "gear-preview-side", facing: "right", walk: true }
+];
+const previewCanvases = PREVIEW_VIEWS.map((v) => {
+  const el = document.getElementById(v.id);
+  return { ...v, el, ctx: el.getContext("2d") };
+});
 const jsonBox = document.getElementById("gear-json");
 const toast = document.getElementById("copy-toast");
 const sheetCanvases = [];
@@ -385,6 +465,9 @@ function syncGearUi() {
   });
   const capeBox = document.getElementById("show-cape");
   if (capeBox) capeBox.checked = LabGear.showCape !== false;
+  document.querySelectorAll("#facing-row [data-facing]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.facing === (LabGear.facing || "back"));
+  });
   fillTweakControls();
   refreshJson();
 }
@@ -394,17 +477,33 @@ function refreshJson() {
 }
 
 function paintPreview(t) {
-  const c = previewCtx;
-  const w = preview.width, h = preview.height;
-  c.setTransform(1, 0, 0, 1, 0, 0);
-  bg(c, w, h);
-  c.save();
-  c.translate(w * 0.5, h * 0.86);
-  c.scale(sP * 3.55, sP * 3.55);
   const paused = document.getElementById("pause").checked;
   const shot = paused ? shotAnimAt(99) : shotAnimAt(((t / TICK) % 8 < 4) ? 99 : ((t / TICK) % 4), 4);
-  drawLabPlayer(c, t, { equipment: LabGear.equipment, shot });
-  c.restore();
+  const focus = LabGear.facing || "back";
+  for (const view of previewCanvases) {
+    const c = view.ctx;
+    const w = view.el.width, h = view.el.height;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    bg(c, w, h);
+    // Highlight the focused facing with a thin gold edge
+    if ((focus === "left" && view.facing === "right") || focus === view.facing) {
+      c.strokeStyle = "#ffcf3a";
+      c.lineWidth = 3;
+      c.strokeRect(1.5, 1.5, w - 3, h - 3);
+    }
+    c.save();
+    c.translate(w * 0.5, h * 0.90);
+    c.scale(sP * 3.05, sP * 3.05);
+    const facing = (focus === "left" && view.id === "gear-preview-side") ? "left" : view.facing;
+    drawLabPlayer(c, t, {
+      equipment: LabGear.equipment,
+      shot: view.facing === "back" ? shot : { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 },
+      facing,
+      walk: view.walk && !paused,
+      showCape: LabGear.showCape !== false
+    });
+    c.restore();
+  }
 }
 
 function iconBg(c, w, h) {
@@ -447,6 +546,12 @@ document.getElementById("presets").addEventListener("click", (e) => {
 document.getElementById("show-cape").addEventListener("change", (e) => {
   LabGear.showCape = !!e.target.checked;
   refreshJson();
+});
+document.getElementById("facing-row").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-facing]");
+  if (!b) return;
+  labSetFacing(b.dataset.facing);
+  syncGearUi();
 });
 document.getElementById("tweak-item").addEventListener("change", (e) => {
   labSelectItem(e.target.value);
@@ -526,6 +631,7 @@ window.XscapeLab = {
   setPreset: labSetPreset,
   setSlot: labSetSlot,
   selectItem: labSelectItem,
+  setFacing: labSetFacing,
   sync: syncGearUi
 };
 requestAnimationFrame(frame);

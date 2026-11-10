@@ -1,7 +1,7 @@
-/* Xscape sprite lab — gear preview (lab only).
-   Does not change in-game drawing. Reuses player proportions, the fire-cape
-   silhouette, and the held-crossbow geometry from sprites.js so designs can
-   drop into the game later. */
+/* Xscape sprite lab + in-game player views.
+   Back, front, and side facings for the base body and every gear piece.
+   Lab tweaks (colours/scale) apply in the lab; the game uses the same
+   drawers with default palettes unless tweaks are present. */
 "use strict";
 
 const LAB_SLOTS = ["head", "cape", "neck", "body", "legs", "hands", "feet", "weapon", "ammo", "ring"];
@@ -42,7 +42,10 @@ const LAB_ITEMS = {
   veilhide_vambs:     { id: "veilhide_vambs", name: "Veilhide vambraces", slot: "hands", tier: "unique", kind: "veilhide" },
   crownshard_boots:   { id: "crownshard_boots", name: "Crownshard boots", slot: "feet", tier: "unique", kind: "crownshard" },
   unsleeping_stole:   { id: "unsleeping_stole", name: "Unsleeping stole", slot: "neck", tier: "unique", kind: "stole" },
-  gloamheart_cape:    { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", kind: "gloam" }
+  gloamheart_cape:    { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", kind: "gloam" },
+
+  abyssal_whip:       { id: "abyssal_whip", name: "Abyssal whip", slot: "weapon", tier: "other", kind: "whip" },
+  blue_partyhat:      { id: "blue_partyhat", name: "Blue partyhat", slot: "head", tier: "other", kind: "partyhat" }
 };
 
 const LAB_LOADOUTS = {
@@ -116,7 +119,10 @@ const LAB_DEFAULTS = {
   veilhide_vambs:     { main: "#3a2860", trim: "#c8b8f0", scale: 1 },
   crownshard_boots:   { main: "#3a2a1c", trim: "#b8d8f0", scale: 1 },
   unsleeping_stole:   { main: "#1a1028", trim: "#e8e0c8", scale: 1 },
-  gloamheart_cape:    { main: "#14081e", trim: "#e8c878", scale: 1 }
+  gloamheart_cape:    { main: "#14081e", trim: "#e8c878", scale: 1 },
+
+  abyssal_whip:       { main: "#1a0c10", trim: "#6a1020", scale: 1 },
+  blue_partyhat:      { main: "#1e48d8", trim: "#0a2060", scale: 1 }
 };
 
 const LAB_STORAGE_KEY = "xscape-lab-gear-tweaks";
@@ -127,6 +133,7 @@ const LabGear = {
   tweaks: loadTweaks(),
   selectedId: "green_dhide_body",
   showCape: true,
+  facing: "back",
   ready: true
 };
 
@@ -975,7 +982,7 @@ function drawLabRing(c, id) {
   });
 }
 
-function drawLabPlayer(ctx, t, opt) {
+function drawLabPlayerBack(ctx, t, opt) {
   opt = opt || {};
   const eq = opt.equipment || LabGear.equipment;
   const shot = opt.shot || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
@@ -989,19 +996,16 @@ function drawLabPlayer(ctx, t, opt) {
   drawLabBoots(ctx, eq.feet);
   drawLabVamb(ctx, eq.hands, -1);
 
-  const recoil = opt.recoilBase || 0;
-  const bowX = typeof PLAYER_BOW_X === "number" ? PLAYER_BOW_X : 13.4;
-  const bowY = typeof PLAYER_BOW_Y === "number" ? PLAYER_BOW_Y : -21.5;
-  ctx.save();
-  ctx.translate(bowX, bowY - (shot.raise || 0) * 3.5 + (shot.recoil || 0) * 1.5);
-  ctx.rotate(recoil * 0.25 - (shot.raise || 0) * 0.04 + (shot.recoil || 0) * 0.08 - 0.10);
-  if (eq.weapon) drawLabCrossbow(ctx, shot, eq.weapon, eq.ammo);
-  ctx.restore();
+  if (eq.weapon) drawHeroWeapon(ctx, t, eq, opt, "back");
 
   drawLabBody(ctx, eq.body);
-  if (opt.showCape !== false && LabGear.showCape !== false) drawLabCape(ctx, t, eq.cape);
+  if (opt.showCape !== false && (opt.showCape === true || typeof LabGear === "undefined" || LabGear.showCape !== false)) {
+    drawLabCape(ctx, t, eq.cape);
+  }
   drawLabNeck(ctx, eq.neck);
   drawLabHead(ctx, eq.head);
+  const headIt = labItem(eq.head);
+  if (headIt && headIt.kind === "partyhat") drawPartyhatOnHead(ctx, "back", labStyle(eq.head));
   drawLabVamb(ctx, eq.hands, 1);
   drawLabRing(ctx, eq.ring);
 
@@ -1170,7 +1174,13 @@ function drawLabItemIcon(c, id, t) {
   } else if (slot === "weapon") {
     c.translate(0, -2);
     c.scale(1.15, 1.15);
-    drawLabCrossbow(c, { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 }, id, null);
+    if (kind === "whip") {
+      c.translate(-4, -10);
+      c.rotate(0.55);
+      if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: 1.1 });
+    } else {
+      drawLabCrossbow(c, { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 }, id, null);
+    }
   } else if (slot === "cape") {
     c.translate(0, 4);
     c.scale(1.25, 1.25);
@@ -1213,7 +1223,8 @@ function drawLabItemIcon(c, id, t) {
   } else if (slot === "head") {
     c.translate(0, 24);
     c.scale(1.55, 1.55);
-    drawLabHead(c, id);
+    if (kind === "partyhat") drawHeroHead(c, id, "front");
+    else drawLabHead(c, id);
   } else if (slot === "body") {
     c.translate(0, 12);
     c.scale(1.55, 1.55);
@@ -1250,6 +1261,12 @@ function labSetPreset(name) {
   LabGear.equipment = labCloneEq(LAB_LOADOUTS[name]);
 }
 
+function labSetFacing(dir) {
+  const f = resolveFacing({ facing: dir });
+  LabGear.facing = f;
+  return f;
+}
+
 function labSetSlot(slot, id) {
   if (LAB_SLOTS.indexOf(slot) === -1) return;
   LabGear.equipment[slot] = id || null;
@@ -1282,9 +1299,956 @@ function labSettingsJson() {
   return {
     preset: LabGear.preset,
     showCape: LabGear.showCape !== false,
+    facing: LabGear.facing || "back",
     equipment: labCloneEq(LabGear.equipment),
     tweaks: JSON.parse(JSON.stringify(LabGear.tweaks || {}))
   };
+}
+
+
+function resolveFacing(opt) {
+  const raw = (opt && opt.facing) || (typeof LabGear !== "undefined" && LabGear.facing) || "back";
+  const s = String(raw || "back").toLowerCase();
+  if (s === "front" || s === "south" || s === "s" || s === "down") return "front";
+  if (s === "left" || s === "west" || s === "w") return "left";
+  if (s === "right" || s === "east" || s === "e") return "right";
+  if (s === "north" || s === "n" || s === "up") return "back";
+  return "back";
+}
+
+function skinPal() {
+  return { skin: "#d2a878", mid: "#c49868", dark: "#8a6844", hair: "#3a2414", eye: "#1a1008", lip: "#8a4a3a" };
+}
+
+function weaponKind(id) {
+  if (!id) return null;
+  const it = labItem(id);
+  if (it && it.kind === "whip") return "whip";
+  if (String(id).indexOf("whip") !== -1) return "whip";
+  return "bow";
+}
+
+function drawHeroWhip(c, t, st, facing) {
+  const sway = Math.sin((t || 0) * 3.2) * 0.08;
+  c.save();
+  if (facing === "front") {
+    c.translate(11, -8);
+    c.rotate(0.55 + sway);
+  } else if (facing === "right") {
+    c.translate(8, -10);
+    c.rotate(0.95 + sway);
+  } else {
+    c.translate(11, -14);
+    c.rotate(0.35 + sway);
+  }
+  if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: (st && st.scale) || 1 });
+  else {
+    c.strokeStyle = (st && st.main) || "#1a0c10";
+    c.lineWidth = 2.4;
+    c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.quadraticCurveTo(4, 10, 2, 22);
+    c.stroke();
+  }
+  c.restore();
+}
+
+function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase) {
+  const shotA = shot || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
+  const recoil = recoilBase || 0;
+  c.save();
+  if (facing === "front") {
+    // Hold at the right shoulder, prod up, stock down — readable beside the torso
+    c.translate(12.4, -18 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
+    c.rotate(-0.18 + recoil * 0.2);
+  } else if (facing === "right") {
+    c.translate(12.5, -16 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
+    c.rotate(-0.15 + recoil * 0.2);
+  } else {
+    const bowX = typeof PLAYER_BOW_X === "number" ? PLAYER_BOW_X : 13.4;
+    const bowY = typeof PLAYER_BOW_Y === "number" ? PLAYER_BOW_Y : -21.5;
+    c.translate(bowX, bowY - (shotA.raise || 0) * 3.5 + (shotA.recoil || 0) * 1.5);
+    c.rotate(recoil * 0.25 - (shotA.raise || 0) * 0.04 + (shotA.recoil || 0) * 0.08 - 0.10);
+  }
+  if (typeof drawLabCrossbow === "function") drawLabCrossbow(c, shotA, weaponId, ammoId);
+  c.restore();
+}
+
+function drawHeroWeapon(c, t, eq, opt, facing) {
+  const kind = weaponKind(eq && eq.weapon);
+  if (!kind) return;
+  if (kind === "whip") drawHeroWhip(c, t, labStyle(eq.weapon), facing);
+  else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase);
+}
+
+function drawPartyhatOnHead(c, facing, st) {
+  c.save();
+  if (facing === "front") c.translate(0, -34.2);
+  else if (facing === "right") c.translate(1.2, -33.6);
+  else c.translate(0, -34.6);
+  if (typeof drawPartyhat === "function") {
+    c.scale(0.92, 0.92);
+    drawPartyhat(c, 0);
+  } else {
+    const main = (st && st.main) || "#1e48d8";
+    c.fillStyle = main;
+    c.beginPath();
+    c.moveTo(0, -12);
+    c.lineTo(8, 2);
+    c.lineTo(-8, 2);
+    c.closePath();
+    c.fill();
+  }
+  c.restore();
+}
+
+function drawFireCapeFacing(c, t, st, facing) {
+  const def = LAB_DEFAULTS.fire_cape;
+  if (facing === "back") {
+    drawLabFireCape(c, t, st);
+    return;
+  }
+  const main = (st && st.main) || def.main;
+  const trim = (st && st.trim) || def.trim;
+  const pulse = 0.5 + 0.5 * Math.sin((t || 0) * 5.2);
+  c.save();
+  if (facing === "front") {
+    // Collar + side drapes, flames peeking at the edges
+    const cg = c.createLinearGradient(-14, -28, 14, 16);
+    cg.addColorStop(0, "#4a0404");
+    cg.addColorStop(0.35, main);
+    cg.addColorStop(0.7, "#2a0202");
+    cg.addColorStop(1, "#100000");
+    function drape(dir) {
+      c.fillStyle = cg;
+      c.beginPath();
+      c.moveTo(dir * 5, -29);
+      c.quadraticCurveTo(dir * 18, -8, dir * 15, 16);
+      c.quadraticCurveTo(dir * 8, 12, dir * 4, -2);
+      c.quadraticCurveTo(dir * 6, -18, dir * 5, -29);
+      c.closePath();
+      c.fill();
+      c.strokeStyle = trim;
+      c.globalAlpha = 0.45 + 0.35 * pulse;
+      c.lineWidth = 1.1;
+      c.beginPath();
+      c.moveTo(dir * 8, -22);
+      c.quadraticCurveTo(dir * 14, -2, dir * 11, 10);
+      c.stroke();
+      c.globalAlpha = 1;
+    }
+    drape(-1);
+    drape(1);
+    c.fillStyle = "#6a0808";
+    c.beginPath();
+    c.moveTo(-7, -30);
+    c.lineTo(7, -30);
+    c.lineTo(6, -24);
+    c.lineTo(-6, -24);
+    c.closePath();
+    c.fill();
+  } else {
+    // trailing cape to the left (behind when facing right)
+    const cg = c.createLinearGradient(4, -30, -22, 18);
+    cg.addColorStop(0, "#4a0404");
+    cg.addColorStop(0.25, main);
+    cg.addColorStop(0.7, "#2a0202");
+    cg.addColorStop(1, "#100000");
+    c.fillStyle = cg;
+    c.beginPath();
+    c.moveTo(-4, -28);
+    c.lineTo(8, -27);
+    c.quadraticCurveTo(6, -4, -2, 16);
+    c.quadraticCurveTo(-16, 20, -20, 6);
+    c.quadraticCurveTo(-16, -12, -4, -28);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = trim;
+    c.globalAlpha = 0.5 + 0.35 * pulse;
+    c.lineWidth = 1.15;
+    c.beginPath();
+    c.moveTo(2, -22);
+    c.quadraticCurveTo(-8, -2, -14, 12);
+    c.stroke();
+    c.globalAlpha = 1;
+  }
+  c.restore();
+}
+
+function drawGloamCapeFacing(c, t, id, facing) {
+  if (facing === "back") {
+    if (id === "avas_accumulator") drawLabAvas(c, t, labStyle(id));
+    else if (id === "gloamheart_cape") drawLabGloamCape(c, t, labStyle(id));
+    else drawLabCape(c, t, id);
+    return;
+  }
+  const st = labStyle(id);
+  const p = pal(st);
+  c.save();
+  if (facing === "front") {
+    function drape(dir) {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(dir * 5.5, -28);
+      c.quadraticCurveTo(dir * 15, -8, dir * 11, 12);
+      c.lineTo(dir * 5, 8);
+      c.quadraticCurveTo(dir * 7, -10, dir * 5.5, -28);
+      c.closePath();
+      c.fill();
+      c.strokeStyle = p.trim;
+      c.globalAlpha = 0.6;
+      c.lineWidth = 0.9;
+      c.beginPath();
+      c.moveTo(dir * 7, -22);
+      c.quadraticCurveTo(dir * 12, -4, dir * 9, 8);
+      c.stroke();
+      c.globalAlpha = 1;
+    }
+    drape(-1); drape(1);
+    c.fillStyle = p.main;
+    c.fillRect(-6.5, -30, 13, 5.5);
+    c.fillStyle = p.trim;
+    c.fillRect(-6.5, -30, 13, 1.2);
+  } else {
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-3, -28);
+    c.lineTo(7, -27);
+    c.quadraticCurveTo(4, 0, -4, 16);
+    c.quadraticCurveTo(-16, 14, -18, 2);
+    c.quadraticCurveTo(-14, -14, -3, -28);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = p.trim;
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(2, -22);
+    c.quadraticCurveTo(-8, -2, -12, 10);
+    c.stroke();
+  }
+  c.restore();
+}
+
+function drawHeroCape(c, t, eq, opt, facing) {
+  const id = eq && eq.cape;
+  if (!id) return;
+  if (opt && opt.showCape === false) return;
+  if (!(opt && "showCape" in opt) && typeof LabGear !== "undefined" && LabGear.showCape === false) return;
+  if (id === "fire_cape") drawFireCapeFacing(c, t, labStyle(id), facing);
+  else drawGloamCapeFacing(c, t, id, facing);
+}
+
+function drawHeroNeck(c, id, facing) {
+  if (!id) return;
+  if (facing === "back") { drawLabNeck(c, id); return; }
+  const st = labStyle(id);
+  const p = pal(st);
+  const it = labItem(id);
+  c.save();
+  withScale(c, 0, facing === "right" ? -18 : -16, st.scale, () => {
+    if (facing === "right") {
+      c.strokeStyle = p.main;
+      c.lineWidth = 1.4;
+      c.beginPath();
+      c.arc(1.6, -20, 5.5, 0.15, 1.2);
+      c.stroke();
+      c.fillStyle = p.trim;
+      c.beginPath();
+      c.arc(5.4, -14.5, it && it.kind === "fury" ? 2.4 : 2.0, 0, Math.PI * 2);
+      c.fill();
+    } else {
+      // front: chain + pendant on the chest
+      c.strokeStyle = p.main;
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.arc(0, -22, 6.2, 0.2, Math.PI - 0.2);
+      c.stroke();
+      if (it && it.kind === "fury") {
+        c.fillStyle = p.main;
+        c.beginPath();
+        c.moveTo(0, -12);
+        c.lineTo(4.2, -17);
+        c.lineTo(0, -20.5);
+        c.lineTo(-4.2, -17);
+        c.closePath();
+        c.fill();
+        c.fillStyle = p.trim;
+        c.beginPath(); c.arc(0, -16.6, 2.2, 0, Math.PI * 2); c.fill();
+      } else if (it && it.kind === "stole") {
+        c.fillStyle = p.dark;
+        c.fillRect(-3.4, -21, 6.8, 18);
+        c.fillStyle = p.main;
+        c.fillRect(-2.8, -20.4, 5.6, 16.8);
+        c.fillStyle = p.trim;
+        c.fillRect(-2.8, -20.4, 5.6, 1.4);
+        c.fillRect(-2.8, -5.2, 5.6, 1.4);
+        c.fillRect(-0.5, -20.4, 1.0, 16.8);
+      } else {
+        // glory
+        c.fillStyle = p.main;
+        c.beginPath();
+        c.moveTo(0, -11.5);
+        c.lineTo(5, -16.8);
+        c.lineTo(0, -21);
+        c.lineTo(-5, -16.8);
+        c.closePath();
+        c.fill();
+        const gems = ["#c02020", "#2060c0", "#20a040", p.trim];
+        for (let i = 0; i < 4; i++) {
+          const a = -Math.PI / 2 + i * Math.PI / 2;
+          c.fillStyle = gems[i];
+          c.beginPath();
+          c.arc(Math.cos(a) * 2.3, -16.8 + Math.sin(a) * 2.3, 1.05, 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+    }
+  });
+  c.restore();
+}
+
+function drawHeroBoots(c, id, facing, stride) {
+  if (facing === "back") { drawLabBoots(c, id); return; }
+  const st = id ? labStyle(id) : { main: "#2a1c10", trim: "#4a3420", scale: 1 };
+  const p = pal(st);
+  const it = labItem(id);
+  const s = stride || 0;
+  withScale(c, 0, 11, st.scale, () => {
+    function bootFront(x, dy) {
+      c.save();
+      c.translate(0, dy || 0);
+      c.fillStyle = p.ink;
+      c.beginPath();
+      c.ellipse(x + 4, 11.6, 5.2, 3.1, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.ellipse(x + 4, 11.2, 4.6, 2.6, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = p.light;
+      c.beginPath();
+      c.ellipse(x + 4, 10.2, 3.4, 1.3, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = p.dark;
+      c.fillRect(x + 0.6, 8.6, 6.8, 3.2);
+      if (it && it.kind === "crownshard") {
+        c.fillStyle = p.trimLt;
+        c.beginPath();
+        c.moveTo(x + 4, 7.6);
+        c.lineTo(x + 5.4, 10.6);
+        c.lineTo(x + 4, 9.8);
+        c.lineTo(x + 2.6, 10.6);
+        c.closePath();
+        c.fill();
+      }
+      c.restore();
+    }
+    function bootSide(toeSign, dy) {
+      c.save();
+      c.translate(0, dy || 0);
+      c.fillStyle = p.ink;
+      c.beginPath();
+      c.moveTo(-5, 8.4);
+      c.lineTo(4, 8.4);
+      c.lineTo(4, 11);
+      c.lineTo(11, 11.2);
+      c.lineTo(11.4, 14.2);
+      c.lineTo(-5.2, 14.2);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-4.2, 8.8);
+      c.lineTo(3.4, 8.8);
+      c.lineTo(3.4, 11);
+      c.lineTo(10.2, 11.2);
+      c.lineTo(10.4, 13.4);
+      c.lineTo(-4.2, 13.4);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.light;
+      c.fillRect(-4.2, 8.8, 7.6, 1.3);
+      c.fillStyle = p.dark;
+      c.fillRect(-4.2, 12.4, 14.6, 1.1);
+      c.restore();
+    }
+    if (facing === "front") {
+      bootFront(-9.2, s * 0.15);
+      bootFront(1.2, -s * 0.15);
+    } else {
+      bootSide(1, s * 0.2);
+    }
+  });
+}
+
+function drawHeroLegs(c, id, facing, stride) {
+  if (facing === "back") { drawLabLegs(c, id); return; }
+  const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2e4e1c", scale: 1 };
+  const p = pal(st);
+  const it = labItem(id);
+  const kind = it ? it.kind : "hide";
+  const s = stride || 0;
+  withScale(c, 0, 4, st.scale, () => {
+    if (facing === "right") {
+      const far = -s * 0.7, near = s * 0.7;
+      c.fillStyle = p.dark;
+      c.fillRect(-3.2, -2 + far, 6.2, 12);
+      c.fillStyle = p.main;
+      c.fillRect(-2.5, -1 + far, 5, 10.4);
+      c.fillStyle = p.dark;
+      c.fillRect(-3.6, -2 + near, 7, 12.2);
+      c.fillStyle = p.main;
+      c.fillRect(-2.8, -1 + near, 5.6, 10.6);
+      if (kind === "armadyl") {
+        c.strokeStyle = p.ink;
+        c.lineWidth = 0.7;
+        for (let y = 0.6; y <= 8; y += 2.6) {
+          c.beginPath(); c.moveTo(-2.6, y + near); c.lineTo(2.4, y + near); c.stroke();
+        }
+        c.fillStyle = p.trim;
+        c.fillRect(-4.2, -2.2, 8.6, 1.2);
+      }
+      return;
+    }
+    // front
+    function leg(x, dy) {
+      c.save();
+      c.translate(0, dy || 0);
+      if (kind === "armadyl") {
+        c.fillStyle = p.dark;
+        c.fillRect(x - 0.4, -2, 7.4, 12.2);
+        c.fillStyle = p.main;
+        c.fillRect(x + 0.2, -1.4, 6.2, 11);
+        c.fillStyle = p.light;
+        c.fillRect(x + 0.2, -1.4, 1.5, 11);
+        c.strokeStyle = p.ink;
+        c.lineWidth = 0.7;
+        for (let y = 0.6; y <= 8.2; y += 2.6) {
+          c.beginPath(); c.moveTo(x + 0.4, y); c.lineTo(x + 6, y); c.stroke();
+        }
+      } else if (kind === "veilhide") {
+        c.fillStyle = p.dark;
+        c.beginPath();
+        c.moveTo(x - 0.4, -2);
+        c.quadraticCurveTo(x - 1.2, 5, x - 0.2, 11.2);
+        c.lineTo(x + 6.6, 11.2);
+        c.lineTo(x + 6.6, -2);
+        c.closePath();
+        c.fill();
+        c.fillStyle = p.main;
+        c.fillRect(x + 0.4, -1.2, 5.4, 11);
+      } else {
+        c.fillStyle = p.dark;
+        c.fillRect(x, -2, 6.2, 12);
+        c.fillStyle = p.main;
+        c.fillRect(x + 0.7, -1, 4.8, 10);
+        c.fillStyle = p.trim;
+        c.fillRect(x, -2, 6.2, 1.15);
+      }
+      c.restore();
+    }
+    if (kind === "armadyl") {
+      c.fillStyle = p.trim;
+      c.fillRect(-8.6, -2.4, 17.2, 1.3);
+    }
+    leg(-8.2, s * 0.12);
+    leg(2.0, -s * 0.12);
+  });
+}
+
+function drawHeroBody(c, id, facing) {
+  if (facing === "back") { drawLabBody(c, id); return; }
+  const st = id ? labStyle(id) : { main: "#4a7a30", trim: "#2e4e1c", scale: 1 };
+  const p = pal(st);
+  const it = labItem(id);
+  const kind = it ? it.kind : "hide";
+  const sk = skinPal();
+  withScale(c, 0, -11, st.scale, () => {
+    if (facing === "right") {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-6.5, -21.2);
+      c.lineTo(8.4, -21.2);
+      c.quadraticCurveTo(10.2, -10, 7.6, -1.2);
+      c.lineTo(-5.8, -1.2);
+      c.quadraticCurveTo(-7.6, -10, -6.5, -21.2);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-5.4, -20.4);
+      c.lineTo(7.4, -20.4);
+      c.quadraticCurveTo(8.8, -10, 6.6, -2);
+      c.lineTo(-4.8, -2);
+      c.quadraticCurveTo(-6.4, -10, -5.4, -20.4);
+      c.closePath();
+      c.fill();
+      if (kind === "armadyl") {
+        c.fillStyle = p.trim;
+        c.fillRect(-1, -20, 2, 16);
+        c.strokeStyle = p.trim;
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(6.8, -18);
+        c.quadraticCurveTo(10.4, -12, 6.2, -4);
+        c.stroke();
+      } else if (kind === "hide" || !kind) {
+        c.fillStyle = p.trim;
+        c.fillRect(-0.6, -19, 1.4, 15);
+      }
+      return;
+    }
+    // front chest
+    if (kind === "armadyl") {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-12.2, -21.6);
+      c.lineTo(12.2, -21.6);
+      c.quadraticCurveTo(13.4, -10, 11.2, -1.2);
+      c.lineTo(-11.2, -1.2);
+      c.quadraticCurveTo(-13.4, -10, -12.2, -21.6);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-11, -20.8);
+      c.lineTo(11, -20.8);
+      c.quadraticCurveTo(12, -10, 10, -2);
+      c.lineTo(-10, -2);
+      c.quadraticCurveTo(-12, -10, -11, -20.8);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.light;
+      c.beginPath();
+      c.moveTo(-4, -20);
+      c.lineTo(4, -20);
+      c.lineTo(2.2, -6);
+      c.lineTo(-2.2, -6);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.trim;
+      c.fillRect(-7.2, -20.6, 14.4, 1.5);
+      c.fillRect(-1.1, -20, 2.2, 16);
+      c.strokeStyle = p.trim;
+      c.lineWidth = 1.05;
+      c.beginPath();
+      c.moveTo(-11, -18);
+      c.quadraticCurveTo(-13.6, -10, -10.2, -3.2);
+      c.moveTo(11, -18);
+      c.quadraticCurveTo(13.6, -10, 10.2, -3.2);
+      c.stroke();
+      return;
+    }
+    if (kind === "veilhide") {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-11.6, -21.4);
+      c.quadraticCurveTo(0, -23, 11.6, -21.4);
+      c.quadraticCurveTo(13, -10, 11, -1.4);
+      c.quadraticCurveTo(0, 0.6, -11, -1.4);
+      c.quadraticCurveTo(-13, -10, -11.6, -21.4);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-10.4, -20.4);
+      c.quadraticCurveTo(0, -21.8, 10.4, -20.4);
+      c.quadraticCurveTo(11.6, -10, 10, -2.2);
+      c.quadraticCurveTo(0, -0.6, -10, -2.2);
+      c.quadraticCurveTo(-11.6, -10, -10.4, -20.4);
+      c.closePath();
+      c.fill();
+      c.strokeStyle = p.trim;
+      c.globalAlpha = 0.55;
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(-5, -19);
+      c.quadraticCurveTo(0, -8, 5, -19);
+      c.moveTo(0, -20);
+      c.lineTo(0, -3);
+      c.stroke();
+      c.globalAlpha = 1;
+      return;
+    }
+    c.fillStyle = p.dark;
+    c.fillRect(-11, -21, 22, 20);
+    c.fillStyle = p.main;
+    c.fillRect(-10, -20, 20, 18);
+    c.fillStyle = p.trim;
+    c.fillRect(-10, -20, 20, 1.4);
+    // neck hole so the skin shows
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.ellipse(0, -21.2, 4.2, 2.4, 0, 0, Math.PI * 2);
+    c.fill();
+  });
+}
+
+function drawHeroArms(c, id, facing, stride) {
+  const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+  const p = pal(st);
+  const it = labItem(id);
+  const s = stride || 0;
+  const sk = skinPal();
+  function vamb(x, y, rot, rx, ry) {
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.ellipse(x, y, rx || 4.1, ry || 5.3, rot, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.ellipse(x, y + 1.2, (rx || 4.1) * 0.6, (ry || 5.3) * 0.58, rot, 0, Math.PI * 2);
+    c.fill();
+    if (it && (it.kind === "armadyl" || it.kind === "veilhide")) {
+      c.strokeStyle = p.trim;
+      c.lineWidth = 0.85;
+      c.beginPath();
+      c.ellipse(x, y, (rx || 4.1) * 0.92, (ry || 5.3) * 0.92, rot, 0.2, Math.PI * 1.4);
+      c.stroke();
+    }
+  }
+  function hand(x, y) {
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.ellipse(x, y, 2.1, 2.4, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  if (facing === "back") {
+    drawLabVamb(c, id, -1);
+    return; // right vamb drawn later after weapon in back view
+  }
+  if (facing === "front") {
+    vamb(-11.6, -15.2 + s * 0.15, 0.2, 4.0, 5.4);
+    hand(-12.4, -9.6 + s * 0.15);
+    vamb(11.4, -15.0 - s * 0.15, -0.2, 4.0, 5.4);
+    hand(12.2, -9.4 - s * 0.15);
+    return;
+  }
+  // right-facing: far arm first, near arm later
+  vamb(-1.2, -16 + s * 0.2, 0.5, 3.4, 5.0);
+  hand(-2.4, -10.5 + s * 0.2);
+}
+
+function drawHeroNearArm(c, id, facing, stride) {
+  if (facing !== "right") return;
+  const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+  const p = pal(st);
+  const it = labItem(id);
+  const s = stride || 0;
+  const sk = skinPal();
+  c.fillStyle = p.main;
+  c.beginPath();
+  c.ellipse(6.4, -15.2 - s * 0.15, 4.0, 5.5, -0.35, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = p.dark;
+  c.beginPath();
+  c.ellipse(7.2, -13.6 - s * 0.15, 2.4, 3.1, -0.35, 0, Math.PI * 2);
+  c.fill();
+  if (it && (it.kind === "armadyl" || it.kind === "veilhide")) {
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.85;
+    c.beginPath();
+    c.ellipse(6.4, -15.2, 3.7, 5.1, -0.35, 0.2, Math.PI * 1.4);
+    c.stroke();
+  }
+  c.fillStyle = sk.skin;
+  c.beginPath();
+  c.ellipse(9.6, -9.8 - s * 0.15, 2.2, 2.5, 0, 0, Math.PI * 2);
+  c.fill();
+}
+
+function drawHeroHead(c, id, facing) {
+  if (facing === "back") { drawLabHead(c, id); return; }
+  const st = id ? labStyle(id) : { main: "#4a7a30", trim: "#2e4e1c", scale: 1 };
+  const p = pal(st);
+  const it = labItem(id);
+  const kind = it ? it.kind : "coif";
+  const sk = skinPal();
+  withScale(c, 0, -26, st.scale, () => {
+    if (facing === "right") {
+      // profile skull
+      if (kind === "armadyl") {
+        c.fillStyle = p.dark;
+        c.beginPath();
+        c.ellipse(1.2, -26.2, 9.4, 10.4, 0.05, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = p.main;
+        c.beginPath();
+        c.ellipse(1.4, -26.6, 8.2, 9.0, 0.05, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = p.trim;
+        c.beginPath();
+        c.moveTo(0.2, -36);
+        c.lineTo(2.2, -36);
+        c.lineTo(2.6, -26);
+        c.lineTo(-0.2, -26);
+        c.closePath();
+        c.fill();
+        // visor slit
+        c.fillStyle = "#0e1216";
+        c.fillRect(4.6, -28.4, 5.2, 1.6);
+        // beak / chin
+        c.fillStyle = p.main;
+        c.beginPath();
+        c.moveTo(8.6, -26);
+        c.lineTo(13.4, -23.6);
+        c.lineTo(8.2, -22.2);
+        c.closePath();
+        c.fill();
+        c.fillStyle = p.trim;
+        c.fillRect(-4, -24.2, 12, 1.3);
+        return;
+      }
+      if (kind === "partyhat") {
+        c.fillStyle = sk.dark;
+        c.beginPath(); c.ellipse(0.8, -25.6, 7.2, 8.0, 0.05, 0, Math.PI * 2); c.fill();
+        c.fillStyle = sk.skin;
+        c.beginPath(); c.ellipse(1.4, -25.2, 6.4, 7.2, 0.05, 0, Math.PI * 2); c.fill();
+        c.fillStyle = sk.hair;
+        c.beginPath(); c.ellipse(-1.2, -30.2, 5.2, 3.4, -0.2, 0, Math.PI * 2); c.fill();
+        c.fillStyle = sk.dark;
+        c.beginPath(); c.ellipse(5.6, -26.2, 0.7, 0.9, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = sk.skin;
+        c.beginPath();
+        c.moveTo(7.2, -24.6);
+        c.lineTo(9.4, -23.4);
+        c.lineTo(7.0, -22.6);
+        c.closePath();
+        c.fill();
+        drawPartyhatOnHead(c, "right", st);
+        return;
+      }
+      // coif profile
+      c.fillStyle = p.dark;
+      c.beginPath(); c.ellipse(0.6, -25.8, 8.6, 9.2, 0.04, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(0.8, -26.2, 7.5, 8.1, 0.04, 0, Math.PI * 2); c.fill();
+      // face opening
+      c.fillStyle = sk.skin;
+      c.beginPath();
+      c.ellipse(4.2, -25.0, 4.4, 5.2, 0.1, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = sk.dark;
+      c.beginPath(); c.ellipse(6.2, -26.0, 0.7, 0.9, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath();
+      c.moveTo(8.0, -24.2);
+      c.lineTo(10.0, -23.0);
+      c.lineTo(7.8, -22.2);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.mid;
+      c.beginPath();
+      c.moveTo(-4, -20.8);
+      c.lineTo(5.4, -20.4);
+      c.lineTo(4.2, -16.2);
+      c.lineTo(-3.2, -16.6);
+      c.closePath();
+      c.fill();
+      return;
+    }
+
+    // FRONT
+    if (kind === "armadyl") {
+      c.fillStyle = p.dark;
+      c.beginPath(); c.ellipse(0, -26.2, 10.2, 10.6, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(0, -26.6, 8.8, 9.2, 0, 0, Math.PI * 2); c.fill();
+      // crest
+      c.fillStyle = p.trim;
+      c.beginPath();
+      c.moveTo(-1.3, -35.8);
+      c.lineTo(1.3, -35.8);
+      c.lineTo(1.8, -26);
+      c.lineTo(-1.8, -26);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.trimLt;
+      c.fillRect(-0.45, -35.4, 0.9, 9.2);
+      function flange(dir) {
+        c.fillStyle = p.dark;
+        c.beginPath();
+        c.moveTo(dir * 7.2, -30);
+        c.quadraticCurveTo(dir * 15.4, -32.5, dir * 14.2, -24.5);
+        c.quadraticCurveTo(dir * 11.2, -22.2, dir * 7.6, -23.6);
+        c.closePath();
+        c.fill();
+        c.fillStyle = p.main;
+        c.beginPath();
+        c.moveTo(dir * 7.6, -29.2);
+        c.quadraticCurveTo(dir * 13.8, -31.2, dir * 13.0, -25.2);
+        c.quadraticCurveTo(dir * 10.4, -23.4, dir * 7.8, -24.4);
+        c.closePath();
+        c.fill();
+      }
+      flange(-1); flange(1);
+      // visor + face
+      c.fillStyle = p.trim;
+      c.fillRect(-6.8, -30.2, 13.6, 1.5);
+      c.fillStyle = "#0e1216";
+      c.fillRect(-5.6, -28.8, 11.2, 2.4);
+      c.fillStyle = sk.skin;
+      c.beginPath();
+      c.ellipse(0, -23.4, 5.0, 4.2, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = sk.dark;
+      c.beginPath(); c.arc(-1.8, -24.0, 0.7, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(1.8, -24.0, 0.7, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.trim;
+      c.fillRect(-6.8, -20.8, 13.6, 1.4);
+      return;
+    }
+    if (kind === "partyhat") {
+      c.fillStyle = sk.dark;
+      c.beginPath(); c.arc(0, -25.4, 8.4, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath(); c.arc(0, -25.0, 7.6, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.hair;
+      c.beginPath(); c.ellipse(0, -30.4, 7.2, 3.6, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.hair;
+      c.fillRect(-6.6, -30, 2.2, 6);
+      c.fillRect(4.4, -30, 2.2, 6);
+      c.fillStyle = "#fff8ee";
+      c.beginPath(); c.arc(-2.3, -25.6, 1.5, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(2.3, -25.6, 1.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.eye;
+      c.beginPath(); c.arc(-2.2, -25.4, 0.7, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(2.2, -25.4, 0.7, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.lip;
+      c.beginPath(); c.ellipse(0, -21.6, 1.5, 0.55, 0, 0, Math.PI * 2); c.fill();
+      drawPartyhatOnHead(c, "front", st);
+      return;
+    }
+    // coif with face opening
+    c.fillStyle = p.dark;
+    c.beginPath(); c.arc(0, -26, 9.2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath(); c.arc(0, -26.4, 8, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.ellipse(0, -24.6, 5.3, 5.6, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = sk.mid;
+    c.beginPath();
+    c.ellipse(0, -22.8, 4.4, 3.4, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "#fff8ee";
+    c.beginPath(); c.arc(-2.15, -25.4, 1.45, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.15, -25.4, 1.45, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.eye;
+    c.beginPath(); c.arc(-2.05, -25.25, 0.7, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.05, -25.25, 0.7, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.lip;
+    c.beginPath(); c.ellipse(0, -21.5, 1.55, 0.55, 0, 0, Math.PI * 2); c.fill();
+    // coif chin / sides
+    c.fillStyle = p.mid;
+    c.beginPath();
+    c.moveTo(-7.2, -22);
+    c.lineTo(-5.2, -18.4);
+    c.lineTo(-3.2, -16.2);
+    c.lineTo(3.2, -16.2);
+    c.lineTo(5.2, -18.4);
+    c.lineTo(7.2, -22);
+    c.lineTo(5.4, -20.4);
+    c.lineTo(0, -19.2);
+    c.lineTo(-5.4, -20.4);
+    c.closePath();
+    c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.ellipse(0, -29.4, 5.4, 3.0, 0, 0, Math.PI * 2);
+    c.fill();
+  });
+}
+
+function drawHeroRing(c, id, facing) {
+  if (!id || facing === "back") {
+    if (facing === "back") drawLabRing(c, id);
+    return;
+  }
+  const st = labStyle(id);
+  const p = pal(st);
+  c.save();
+  const x = facing === "right" ? 11.2 : 13.4;
+  const y = facing === "right" ? -9.2 : -9.0;
+  c.translate(x, y);
+  c.strokeStyle = p.main;
+  c.lineWidth = 1.3;
+  c.beginPath(); c.arc(0, 0, 1.7, 0, Math.PI * 2); c.stroke();
+  c.fillStyle = p.trim;
+  c.beginPath(); c.arc(0, 0, 0.8, 0, Math.PI * 2); c.fill();
+  c.restore();
+}
+
+function walkAmount(opt, t) {
+  if (!opt) return 0;
+  if (opt.walk === false) return 0;
+  if (opt.stride != null) return opt.stride;
+  if (opt.walk) return Math.sin((t || 0) * 6.0);
+  return 0;
+}
+
+function drawLabPlayerFront(ctx, t, opt) {
+  const eq = opt.equipment || LabGear.equipment;
+  const shot = opt.shot || {};
+  const stride = walkAmount(opt, t) * 3.2;
+  const bob = Math.abs(walkAmount(opt, t)) * 1.3;
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.translate(0, -bob + (shot.recoil || 0) * 6);
+  drawHeroCape(ctx, t, eq, opt, "front");
+  drawHeroLegs(ctx, eq.legs, "front", stride);
+  drawHeroBoots(ctx, eq.feet, "front", stride);
+  drawHeroArms(ctx, eq.hands, "front", stride);
+  drawHeroWeapon(ctx, t, eq, opt, "front");
+  drawHeroBody(ctx, eq.body, "front");
+  drawHeroNeck(ctx, eq.neck, "front");
+  drawHeroHead(ctx, eq.head, "front");
+  drawHeroRing(ctx, eq.ring, "front");
+  ctx.restore();
+}
+
+function drawLabPlayerSide(ctx, t, opt) {
+  const eq = opt.equipment || LabGear.equipment;
+  const shot = opt.shot || {};
+  const stride = walkAmount(opt, t) * 3.6;
+  const bob = Math.abs(walkAmount(opt, t)) * 1.4;
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.beginPath(); ctx.ellipse(1, 10, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.translate(0, -bob + (shot.recoil || 0) * 6);
+  drawHeroCape(ctx, t, eq, opt, "right");
+  drawHeroArms(ctx, eq.hands, "right", stride); // far arm
+  drawHeroLegs(ctx, eq.legs, "right", stride);
+  drawHeroBoots(ctx, eq.feet, "right", stride);
+  drawHeroBody(ctx, eq.body, "right");
+  drawHeroNeck(ctx, eq.neck, "right");
+  drawHeroHead(ctx, eq.head, "right");
+  drawHeroWeapon(ctx, t, eq, opt, "right");
+  drawHeroNearArm(ctx, eq.hands, "right", stride);
+  drawHeroRing(ctx, eq.ring, "right");
+  ctx.restore();
+}
+
+function drawLabPlayer(ctx, t, opt) {
+  opt = opt || {};
+  const facing = resolveFacing(opt);
+  if (facing === "front") return drawLabPlayerFront(ctx, t, opt);
+  if (facing === "right") return drawLabPlayerSide(ctx, t, opt);
+  if (facing === "left") {
+    ctx.save();
+    ctx.scale(-1, 1);
+    drawLabPlayerSide(ctx, t, opt);
+    ctx.restore();
+    return;
+  }
+  return drawLabPlayerBack(ctx, t, opt);
+}
+
+function drawPlayerFacing(ctx, t, opt) {
+  return drawLabPlayer(ctx, t, opt || {});
 }
 
 window.LabGear = LabGear;
@@ -1295,10 +2259,14 @@ window.LAB_DEFAULTS = LAB_DEFAULTS;
 window.LAB_TIER_ORDER = LAB_TIER_ORDER;
 window.LAB_TIER_LABEL = LAB_TIER_LABEL;
 window.drawLabPlayer = drawLabPlayer;
+window.drawLabPlayerBack = drawLabPlayerBack;
+window.drawPlayerFacing = drawPlayerFacing;
+window.resolveFacing = resolveFacing;
 window.drawLabItemIcon = drawLabItemIcon;
 window.labStyle = labStyle;
 window.labItem = labItem;
 window.labSetPreset = labSetPreset;
+window.labSetFacing = labSetFacing;
 window.labSetSlot = labSetSlot;
 window.labSelectItem = labSelectItem;
 window.labSetTweak = labSetTweak;
