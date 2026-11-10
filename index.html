@@ -195,7 +195,7 @@
     #overlay-hub { justify-content: flex-start; }
     #overlay-hub > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-tut, #overlay-raid-tut { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -365,13 +365,13 @@
       margin-top: 8px; padding-top: 8px; border-top: 1px solid #6a5430;
     }
     .sheet-actions .btn, .tut-actions .btn, .gear-actions .btn { margin: 0; }
-    #overlay-gear .gear-card {
+    #overlay-gear .gear-card, #overlay-shop .shop-card {
       width: 100%; max-width: 340px;
       background: linear-gradient(#3a2c1c, #24180e);
       border: 3px solid #c9a24a; box-shadow: 0 8px 24px #000, inset 0 0 0 1px #1a1008;
       border-radius: 8px; padding: 14px 14px 12px; color: var(--beige);
     }
-    #overlay-gear .gear-card h2 {
+    #overlay-gear .gear-card h2, #overlay-shop .shop-card h2 {
       font-family: Impact, "Arial Black", sans-serif; color: var(--gold);
       text-align: center; margin: 0 0 6px; font-size: 26px; letter-spacing: 1px;
       text-shadow: 0 2px 0 #000;
@@ -408,6 +408,25 @@
     .bank-item.unique { border-color: #8a60c0; }
     .bank-item.upgrade { border-color: #4a7a38; }
     .slot-btn.jad, .bank-item.jad { border-color: #c06020; }
+    .slot-btn.tier1, .bank-item.tier1, .shop-row.tier1 { border-color: #3a6a2a; }
+    .slot-btn.tier2, .bank-item.tier2, .shop-row.tier2 { border-color: #5a5a72; }
+    .slot-btn.mid, .bank-item.mid { border-color: #4a7a38; }
+    .bank-item .tier, .shop-row .tier, .slot-btn .tier { display: block; font-size: 10px; color: #8a7a58; margin-top: 2px; }
+    .shop-row.tier2 .tier { color: #a0a0c0; }
+    #overlay-shop .shop-card { width: 100%; max-width: 340px; }
+    #shop-gp { text-align: center; margin: 0 0 8px; font-size: 14px; }
+    #shop-list { display: flex; flex-direction: column; gap: 6px; }
+    .shop-row {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
+      background: #140e08; border: 1px solid #6a5430; color: #fff4c0;
+      padding: 8px 8px; border-radius: 3px; text-align: left;
+    }
+    .shop-row .shop-price { color: var(--gold); font-weight: 700; font-size: 13px; white-space: nowrap; }
+    .shop-row .btn { min-width: 72px; height: 34px; font-size: 14px; margin: 0; }
+    .shop-row.owned { opacity: 0.72; }
+    .shop-row.owned .shop-owned { color: #8a7a58; font-size: 12px; letter-spacing: 0.3px; }
+    .shop-foot { font-size: 10px; color: #8a7a58; text-align: center; margin-top: 8px; line-height: 1.35; }
+    #btn-shop { min-width: 200px; }
     #gear-bank-empty { font-size: 11px; color: #8a7a58; text-align: center; width: 100%; margin: 4px 0; }
     .gear-foot { font-size: 10px; color: #8a7a58; text-align: center; margin-top: 8px; line-height: 1.35; }
     #debug-combat {
@@ -511,8 +530,9 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">Clear Gloamhold for a chance at better gear. Equip it from your bank.</div>
+      <div class="hub-gear-note" id="hub-gear-note">Earn GP from Jad and Gloamhold, then buy Black d'hide in the Shop. Equip it from your bank.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
+      <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
         <button class="btn mode-btn" id="btn-mode-jad" type="button">
           TzTok-Jad
@@ -568,12 +588,27 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="overlay-shop">
+      <div class="gear-card shop-card sheet-card">
+        <button class="overlay-x" id="btn-shop-x" type="button" aria-label="Close">×</button>
+        <h2>Shop</h2>
+        <div id="shop-gp" class="gp-line">GP: <span id="shop-gp-amt" class="gp-amt gp-yellow">0</span></div>
+        <div class="sheet-scroll" id="shop-scroll">
+          <div id="shop-list"></div>
+          <div class="shop-foot">Pretend GP from Jad and Gloamhold only — nothing real is ever charged. New kit goes to your bank.</div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn" id="btn-shop-close" type="button">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="overlay-raid-tut">
       <div class="tut-card brief-card sheet-card">
         <button class="overlay-x" id="btn-raid-tut-x" type="button" aria-label="Close">×</button>
         <h2>Gloamhold</h2>
         <div class="tut-scroll sheet-scroll">
-        <p>A sealed crypt-fortress under a drowned moon. Clear its rooms and defeat <b>Morvane the Unsleeping</b> to open the Vault Chest. Starter gear makes the throne nearly impossible — vault-forged kit and clean execution can just clear it.</p>
+        <p>A sealed crypt-fortress under a drowned moon. Clear its rooms and defeat <b>Morvane the Unsleeping</b> to open the Vault Chest. Starter kit makes a clean clear unlikely — Black d'hide from the Shop, plus vault-forged kit and clean execution, can just clear it.</p>
         <p><b>Rooms, in order:</b> The Veil Gate → Supply Alcove → The Wailing Court → Supply Alcove → The Eclipse Corridor → The Last Alcove → The Hollow Throne → The Vault Chest. A small map at the top shows where you are. Dying lets you retry the room from when you entered it, or return to the hub. Loot still needs a Morvane kill.</p>
         <p><b>Move:</b> tap a floor tile to walk (one tile per tick, two if Run is on). A yellow X marks your destination. Keyboard A/D or arrow keys also work. Watch telegraphs and walk off marked tiles before they land.</p>
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons.</p>
@@ -589,7 +624,7 @@
         <p><b>Nightfall</b> (10–28%): quicker flicks, sometimes a one-tick tell, and an occasional Magic → Missiles → Melee combo. After a hit, your tile is marked — walk off. Seek the moon tile or your prayer drains. Rows of tiles go unsafe.</p>
         <p><b>The Eye Opens</b> (last 10%): enrage. Very fast, one-tick tells. Eye beams mark your tile. Prayer drains faster. Stillness is punished sooner.</p>
         <p><b>Supplies:</b> chests along the way are limited. F / Shark heals 20. P / Prayer pot restores 31 prayer. B / Brew heals 16 but costs 5 prayer. R / Range pot boosts your ranged. On-screen buttons work too. Each bite or sip delays your next shot.</p>
-        <p><b>Loot:</b> the vault always drops a Gloamhold unique (a small chance of a second) plus GP. Mid-tier upgrade pieces can appear in earlier chests. New gear goes to your bank — open Equipment on the hub to put it on.</p>
+        <p><b>Loot:</b> the vault always drops a Gloamhold unique (a small chance of a second) plus GP. Mid pieces can appear in earlier chests. Spend GP in the Shop on Black d'hide. New gear goes to your bank — open Equipment on the hub to put it on.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · B brew · R range pot</p>
         </div>
         <div class="tut-actions">
@@ -815,47 +850,109 @@ function emptyBonuses() {
 function b(partial) { return Object.assign(emptyBonuses(), partial); }
 
 /*
-  Item table. Starter pieces are slightly nerfed so Jad is a longer fight and
-  upgrades matter. Upgrade-tier numbers are in the spirit of public OSRS
-  bonuses (black d'hide, rune crossbow, rune bolts, Ava's accumulator).
-  TODO: award an upgrade after a milestone (first cape, a shop, a drop).
-  Call equipLoadout("upgrade") or set Profile.equipment[slot] = itemId.
+  Item table. Tiers:
+    1 starter  — green d'hide + rune crossbow + mithril bolts (always owned)
+    2          — black d'hide + rune bolts + amulet of glory (Shop, pretend GP)
+    armadyl    — defined for a future Kree'arra drop; hidden from shop and bank
+    unique     — Gloamhold vault uniques (tier 4)
+  Attack/defence bonuses follow public OSRS figures. Mithril bolt ranged
+  strength is arcade-tuned so a starter Jad kill lands near 1:45–2:00
+  against 360-HP arcade Jad (OSRS mithril bolts are +82).
 */
 const ITEMS = {
-  leather_cowl:       { id: "leather_cowl", name: "Leather cowl", slot: "head", tier: "starter", bonuses: b({ arange: 1, dstab: 2, dslash: 3, dcrush: 4, dmagic: 2, drange: 3 }) },
-  leather_body:       { id: "leather_body", name: "Leather body", slot: "body", tier: "starter", bonuses: b({ arange: 2, dstab: 8, dslash: 9, dcrush: 10, dmagic: 4, drange: 9 }) },
-  leather_chaps:      { id: "leather_chaps", name: "Leather chaps", slot: "legs", tier: "starter", bonuses: b({ arange: 2, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 1 }) },
-  leather_vambraces:  { id: "leather_vambraces", name: "Leather vambraces", slot: "hands", tier: "starter", bonuses: b({ arange: 3, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 0 }) },
-  leather_boots:      { id: "leather_boots", name: "Leather boots", slot: "feet", tier: "starter", bonuses: b({ dstab: 1, dslash: 1, dcrush: 2, dmagic: 0, drange: 0 }) },
-  bronze_crossbow:    { id: "bronze_crossbow", name: "Bronze crossbow", slot: "weapon", tier: "starter", twohand: false, speed: 4, bonuses: b({ arange: 16 }) },
-  bronze_bolts:       { id: "bronze_bolts", name: "Bronze bolts", slot: "ammo", tier: "starter", bonuses: b({ rstr: 14 }) },
+  green_dhide_coif:   { id: "green_dhide_coif", name: "Green d'hide coif", slot: "head", tier: "starter", bonuses: b({ arange: 2, amagic: -1, dstab: 4, dslash: 6, dcrush: 8, dmagic: 4, drange: 4 }) },
+  green_dhide_body:   { id: "green_dhide_body", name: "Green d'hide body", slot: "body", tier: "starter", bonuses: b({ arange: 15, amagic: -15, dstab: 18, dslash: 27, dcrush: 24, dmagic: 20, drange: 35 }) },
+  green_dhide_chaps:  { id: "green_dhide_chaps", name: "Green d'hide chaps", slot: "legs", tier: "starter", bonuses: b({ arange: 8, amagic: -10, dstab: 12, dslash: 15, dcrush: 18, dmagic: 8, drange: 17 }) },
+  green_dhide_vambs:  { id: "green_dhide_vambs", name: "Green d'hide vambs", slot: "hands", tier: "starter", bonuses: b({ arange: 8, amagic: -10, dstab: 1, dslash: 2, dcrush: 2, dmagic: 2, drange: 0 }) },
+  green_dhide_boots:  { id: "green_dhide_boots", name: "Green d'hide boots", slot: "feet", tier: "starter", bonuses: b({ arange: 3, dstab: 1, dslash: 1, dcrush: 2, dmagic: 0, drange: 1 }) },
+  rune_crossbow:      { id: "rune_crossbow", name: "Rune crossbow", slot: "weapon", tier: "starter", twohand: false, speed: 4, bonuses: b({ arange: 90 }) },
+  mithril_bolts:      { id: "mithril_bolts", name: "Mithril bolts", slot: "ammo", tier: "starter", bonuses: b({ rstr: 40 }) },
 
-  coif:               { id: "coif", name: "Coif", slot: "head", tier: "upgrade", bonuses: b({ arange: 7, dstab: 4, dslash: 6, dcrush: 8, dmagic: 4, drange: 4 }) },
-  avas_accumulator:   { id: "avas_accumulator", name: "Ava's accumulator", slot: "cape", tier: "upgrade", bonuses: b({ arange: 4, dstab: 0, dslash: 1, dcrush: 0, dmagic: 4, drange: 0 }) },
+  black_dhide_coif:   { id: "black_dhide_coif", name: "Black d'hide coif", slot: "head", tier: "tier2", bonuses: b({ arange: 6, amagic: -1, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
+  black_dhide_body:   { id: "black_dhide_body", name: "Black d'hide body", slot: "body", tier: "tier2", bonuses: b({ arange: 30, amagic: -15, dstab: 30, dslash: 38, dcrush: 45, dmagic: 45, drange: 30 }) },
+  black_dhide_chaps:  { id: "black_dhide_chaps", name: "Black d'hide chaps", slot: "legs", tier: "tier2", bonuses: b({ arange: 17, amagic: -10, dstab: 18, dslash: 20, dcrush: 26, dmagic: 23, drange: 26 }) },
+  black_dhide_vambs:  { id: "black_dhide_vambs", name: "Black d'hide vambs", slot: "hands", tier: "tier2", bonuses: b({ arange: 11, dstab: 6, dslash: 5, dcrush: 7, dmagic: 8, drange: 0 }) },
+  black_dhide_boots:  { id: "black_dhide_boots", name: "Black d'hide boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
+  rune_bolts:         { id: "rune_bolts", name: "Rune bolts", slot: "ammo", tier: "tier2", bonuses: b({ rstr: 115 }) },
+  amulet_of_glory:    { id: "amulet_of_glory", name: "Amulet of glory", slot: "neck", tier: "tier2", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 3, dslash: 3, dcrush: 3, dmagic: 3, drange: 3, str: 6 }) },
+
   fire_cape:          { id: "fire_cape", name: "Fire cape", slot: "cape", tier: "jad", bonuses: b({ astab: 1, aslash: 1, acrush: 1, amagic: 1, arange: 1, dstab: 11, dslash: 11, dcrush: 11, dmagic: 11, drange: 11, str: 4 }) },
-  amulet_of_fury:     { id: "amulet_of_fury", name: "Amulet of fury", slot: "neck", tier: "upgrade", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 15, dslash: 15, dcrush: 15, dmagic: 15, drange: 15, str: 8 }) },
-  black_dhide_body:   { id: "black_dhide_body", name: "Black d'hide body", slot: "body", tier: "upgrade", bonuses: b({ arange: 30, amagic: -15, dstab: 30, dslash: 38, dcrush: 45, dmagic: 45, drange: 30 }) },
-  black_dhide_chaps:  { id: "black_dhide_chaps", name: "Black d'hide chaps", slot: "legs", tier: "upgrade", bonuses: b({ arange: 17, amagic: -10, dstab: 18, dslash: 20, dcrush: 26, dmagic: 23, drange: 26 }) },
-  black_dhide_vambs:  { id: "black_dhide_vambs", name: "Black d'hide vambs", slot: "hands", tier: "upgrade", bonuses: b({ arange: 11, dstab: 6, dslash: 5, dcrush: 7, dmagic: 8, drange: 0 }) },
-  snakeskin_boots:    { id: "snakeskin_boots", name: "Snakeskin boots", slot: "feet", tier: "upgrade", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
-  rune_crossbow:      { id: "rune_crossbow", name: "Rune crossbow", slot: "weapon", tier: "upgrade", twohand: false, speed: 4, bonuses: b({ arange: 90 }) },
-  rune_bolts:         { id: "rune_bolts", name: "Rune bolts", slot: "ammo", tier: "upgrade", bonuses: b({ rstr: 115 }) },
-  archers_ring:       { id: "archers_ring", name: "Archers ring", slot: "ring", tier: "upgrade", bonuses: b({ arange: 8 }) }
+
+  /* Kept if a profile already owns them (older mid-chest / upgrade grants). Not sold. */
+  coif:               { id: "coif", name: "Coif", slot: "head", tier: "tier2", bonuses: b({ arange: 2, amagic: -1, dstab: 4, dslash: 6, dcrush: 8, dmagic: 4, drange: 4 }) },
+  avas_accumulator:   { id: "avas_accumulator", name: "Ava's accumulator", slot: "cape", tier: "tier2", bonuses: b({ arange: 4, dstab: 0, dslash: 1, dcrush: 0, dmagic: 4, drange: 0 }) },
+  amulet_of_fury:     { id: "amulet_of_fury", name: "Amulet of fury", slot: "neck", tier: "tier2", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 15, dslash: 15, dcrush: 15, dmagic: 15, drange: 15, str: 8 }) },
+  snakeskin_boots:    { id: "snakeskin_boots", name: "Snakeskin boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
+  archers_ring:       { id: "archers_ring", name: "Archers ring", slot: "ring", tier: "tier2", bonuses: b({ arange: 8 }) },
+
+  /* Future Kree'arra drop — hidden from shop and bank until that boss ships. */
+  armadyl_helmet:     { id: "armadyl_helmet", name: "Armadyl helmet", slot: "head", tier: "armadyl", hidden: true, bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
+  armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", hidden: true, bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
+  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", hidden: true, bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
+  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", hidden: true, twohand: false, speed: 4, bonuses: b({ arange: 100 }) },
+
+  /* Legacy starter — migrated off; hidden if a stale id remains. */
+  leather_cowl:       { id: "leather_cowl", name: "Leather cowl", slot: "head", tier: "legacy", hidden: true, bonuses: b({ arange: 1, dstab: 2, dslash: 3, dcrush: 4, dmagic: 2, drange: 3 }) },
+  leather_body:       { id: "leather_body", name: "Leather body", slot: "body", tier: "legacy", hidden: true, bonuses: b({ arange: 2, dstab: 8, dslash: 9, dcrush: 10, dmagic: 4, drange: 9 }) },
+  leather_chaps:      { id: "leather_chaps", name: "Leather chaps", slot: "legs", tier: "legacy", hidden: true, bonuses: b({ arange: 2, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 1 }) },
+  leather_vambraces:  { id: "leather_vambraces", name: "Leather vambraces", slot: "hands", tier: "legacy", hidden: true, bonuses: b({ arange: 3, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 0 }) },
+  leather_boots:      { id: "leather_boots", name: "Leather boots", slot: "feet", tier: "legacy", hidden: true, bonuses: b({ dstab: 1, dslash: 1, dcrush: 2, dmagic: 0, drange: 0 }) },
+  bronze_crossbow:    { id: "bronze_crossbow", name: "Bronze crossbow", slot: "weapon", tier: "legacy", hidden: true, twohand: false, speed: 4, bonuses: b({ arange: 16 }) },
+  bronze_bolts:       { id: "bronze_bolts", name: "Bronze bolts", slot: "ammo", tier: "legacy", hidden: true, bonuses: b({ rstr: 14 }) }
+};
+
+const LEGACY_STARTER_MAP = {
+  leather_cowl: "green_dhide_coif",
+  leather_body: "green_dhide_body",
+  leather_chaps: "green_dhide_chaps",
+  leather_vambraces: "green_dhide_vambs",
+  leather_boots: "green_dhide_boots",
+  bronze_crossbow: "rune_crossbow",
+  bronze_bolts: "mithril_bolts"
 };
 
 const LOADOUTS = {
   starter: {
-    head: "leather_cowl", cape: null, neck: null, ammo: "bronze_bolts",
-    weapon: "bronze_crossbow", body: "leather_body", shield: null,
-    legs: "leather_chaps", hands: "leather_vambraces", feet: "leather_boots", ring: null
+    head: "green_dhide_coif", cape: null, neck: null, ammo: "mithril_bolts",
+    weapon: "rune_crossbow", body: "green_dhide_body", shield: null,
+    legs: "green_dhide_chaps", hands: "green_dhide_vambs", feet: "green_dhide_boots", ring: null
   },
-  // TODO: award this (or individual pieces) after a milestone. No shop yet.
-  upgrade: {
-    head: "coif", cape: "avas_accumulator", neck: "amulet_of_fury", ammo: "rune_bolts",
+  tier2: {
+    head: "black_dhide_coif", cape: null, neck: "amulet_of_glory", ammo: "rune_bolts",
     weapon: "rune_crossbow", body: "black_dhide_body", shield: null,
-    legs: "black_dhide_chaps", hands: "black_dhide_vambs", feet: "snakeskin_boots", ring: "archers_ring"
+    legs: "black_dhide_chaps", hands: "black_dhide_vambs", feet: "black_dhide_boots", ring: null
+  },
+  armadyl: {
+    head: "armadyl_helmet", cape: "fire_cape", neck: "amulet_of_glory", ammo: "rune_bolts",
+    weapon: "armadyl_crossbow", body: "armadyl_chestplate", shield: null,
+    legs: "armadyl_chainskirt", hands: "black_dhide_vambs", feet: "black_dhide_boots", ring: null
+  },
+  gloamhold: {
+    head: "black_dhide_coif", cape: "gloamheart_cape", neck: "unsleeping_stole", ammo: "hollow_bolts",
+    weapon: "hollowbolt_xbow", body: "veilhide_body", shield: null,
+    legs: "veilhide_chaps", hands: "veilhide_vambs", feet: "crownshard_boots", ring: "archers_ring"
   }
 };
+LOADOUTS.upgrade = LOADOUTS.tier2;
+
+const SHOP = [
+  { id: "black_dhide_coif", price: 800000 },
+  { id: "black_dhide_body", price: 2500000 },
+  { id: "black_dhide_chaps", price: 1500000 },
+  { id: "black_dhide_vambs", price: 800000 },
+  { id: "black_dhide_boots", price: 800000 },
+  { id: "rune_bolts", price: 1500000 },
+  { id: "amulet_of_glory", price: 2000000 }
+];
+const SHOP_BUNDLE = {
+  name: "Black d'hide kit",
+  ids: ["black_dhide_coif","black_dhide_body","black_dhide_chaps","black_dhide_vambs","black_dhide_boots","rune_bolts","amulet_of_glory"],
+  price: 9000000
+};
+
+function itemIsHidden(it) {
+  return !!(it && (it.hidden || it.tier === "armadyl" || it.tier === "legacy"));
+}
 
 function defaultLevels() {
   return { attack: 99, strength: 99, defence: 99, ranged: 99, magic: 99, hitpoints: 99, prayer: 99 };
@@ -977,7 +1074,7 @@ function bankList() {
     const id = eq[EQUIP_SLOTS[i]];
     if (id) worn[id] = true;
   }
-  return (Profile.bank || []).filter((id) => ITEMS[id] && !worn[id]);
+  return (Profile.bank || []).filter((id) => ITEMS[id] && !worn[id] && !itemIsHidden(ITEMS[id]));
 }
 
 function unequipSlot(slot, silent) {
@@ -1594,8 +1691,20 @@ function refreshGearViews() {
 function gearTierClass(tier) {
   if (tier === "unique") return "unique";
   if (tier === "jad") return "jad";
-  if (tier === "upgrade" || tier === "mid") return "upgrade";
+  if (tier === "tier2" || tier === "upgrade") return "tier2";
+  if (tier === "mid") return "mid";
+  if (tier === "starter" || tier === "tier1") return "tier1";
   return "";
+}
+function gearTierLabel(it) {
+  if (!it) return "";
+  const t = it.tier;
+  if (t === "unique") return "Tier 4 · Gloamhold unique";
+  if (t === "jad") return "TzTok-Jad";
+  if (t === "tier2" || t === "upgrade") return "Tier 2";
+  if (t === "mid") return "Gloamhold mid";
+  if (t === "armadyl") return "Tier 3 · Armadyl";
+  return "Tier 1 · Starter";
 }
 
 function renderEquipmentOverlay() {
@@ -1620,7 +1729,7 @@ function renderEquipmentOverlay() {
       const act = it ? "Unequip" : "";
       return '<button type="button" class="' + klass + '" data-slot="' + s + '">' +
         '<span class="k">' + SLOT_LABELS[s] + "</span>" +
-        "<span>" + name + "</span>" +
+        "<span>" + name + (it ? '<span class="tier">' + gearTierLabel(it) + "</span>" : "") + "</span>" +
         '<span class="act">' + act + "</span></button>";
     }).join("");
   }
@@ -1632,7 +1741,7 @@ function renderEquipmentOverlay() {
       bankEl.innerHTML = items.map((id) => {
         const it = ITEMS[id];
         const klass = "bank-item " + gearTierClass(it.tier);
-        const tier = it.tier === "unique" ? "Gloamhold unique" : it.tier === "jad" ? "TzTok-Jad" : it.tier === "upgrade" || it.tier === "mid" ? "Upgrade" : "Starter";
+        const tier = gearTierLabel(it);
         return '<button type="button" class="' + klass + '" data-item="' + id + '">' +
           it.name + '<span class="tier">' + tier + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></button>";
       }).join("");
@@ -1652,6 +1761,77 @@ function closeEquipmentView() {
   el.classList.add("hidden");
   swallowNextTaps();
   if (G.scene === "hub" || G.mode === "hub") $("overlay-hub").classList.remove("hidden");
+}
+
+function openShop() {
+  hideAllOverlays();
+  renderShop();
+  $("overlay-shop").classList.remove("hidden");
+}
+function closeShop() {
+  const el = $("overlay-shop");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  swallowNextTaps();
+  if (G.scene === "hub" || G.mode === "hub") $("overlay-hub").classList.remove("hidden");
+}
+function shopRemaining() {
+  return SHOP_BUNDLE.ids.filter((id) => !isOwned(id));
+}
+function buyShopItem(id) {
+  const row = SHOP.find((s) => s.id === id);
+  const it = ITEMS[id];
+  if (!row || !it) return false;
+  if (isOwned(id)) { if (typeof flashMsg === "function") flashMsg("Already owned", "#c9a24a"); return false; }
+  if ((Profile.gp || 0) < row.price) { if (typeof flashMsg === "function") flashMsg("Not enough GP", "#ff8a70"); return false; }
+  awardGp(-row.price);
+  ownItem(id);
+  saveProfile();
+  renderShop();
+  refreshHub();
+  if (typeof flashMsg === "function") flashMsg("Bought " + it.name, "#ffe44a");
+  return true;
+}
+function buyShopBundle() {
+  const left = shopRemaining();
+  if (!left.length) { if (typeof flashMsg === "function") flashMsg("Already owned", "#c9a24a"); return false; }
+  const price = (left.length === SHOP_BUNDLE.ids.length) ? SHOP_BUNDLE.price : left.reduce((s, id) => s + (SHOP.find((x) => x.id === id) || { price: 0 }).price, 0);
+  if ((Profile.gp || 0) < price) { if (typeof flashMsg === "function") flashMsg("Not enough GP", "#ff8a70"); return false; }
+  awardGp(-price);
+  left.forEach(ownItem);
+  saveProfile();
+  renderShop();
+  refreshHub();
+  if (typeof flashMsg === "function") flashMsg("Bought " + SHOP_BUNDLE.name, "#ffe44a");
+  return true;
+}
+function renderShop() {
+  const amt = $("shop-gp-amt");
+  if (amt) {
+    const s = gpStyle(Profile.gp);
+    amt.textContent = s.text;
+    amt.className = "gp-amt " + s.class;
+  }
+  const list = $("shop-list");
+  if (!list) return;
+  const rows = SHOP.map((row) => {
+    const it = ITEMS[row.id];
+    const owned = isOwned(row.id);
+    const klass = "shop-row " + gearTierClass(it.tier) + (owned ? " owned" : "");
+    const action = owned
+      ? '<span class="shop-owned">Owned</span>'
+      : '<span class="shop-price">' + fmtGp(row.price) + '</span><button type="button" class="btn secondary" data-shop="' + row.id + '">Buy</button>';
+    return '<div class="' + klass + '"><div>' + it.name + '<span class="tier">' + gearTierLabel(it) + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></div>" + action + "</div>";
+  }).join("");
+  const left = shopRemaining();
+  let bundle = "";
+  if (left.length) {
+    const price = (left.length === SHOP_BUNDLE.ids.length) ? SHOP_BUNDLE.price : left.reduce((s, id) => s + (SHOP.find((x) => x.id === id) || { price: 0 }).price, 0);
+    bundle = '<div class="shop-row tier2"><div>' + SHOP_BUNDLE.name + '<span class="tier">Tier 2 · all remaining pieces</span></div><span class="shop-price">' + fmtGp(price) + '</span><button type="button" class="btn secondary" data-shop="bundle">Buy all</button></div>';
+  } else {
+    bundle = '<div class="shop-row tier2 owned"><div>' + SHOP_BUNDLE.name + '<span class="tier">Tier 2 · complete</span></div><span class="shop-owned">Owned</span></div>';
+  }
+  list.innerHTML = bundle + rows;
 }
 
 function overlayIsOpen(id) {
@@ -1749,7 +1929,12 @@ function allowsMenuScroll(target) {
 }
 
 function gearSlotColor(tier) {
-  return tier === "upgrade" ? "#3a5a28" : "#5a3a1c";
+  if (tier === "unique") return "#4a2a6a";
+  if (tier === "jad") return "#8a3a10";
+  if (tier === "tier2" || tier === "upgrade") return "#2a2a38";
+  if (tier === "mid") return "#3a5a28";
+  if (tier === "starter" || tier === "tier1") return "#2a4a1c";
+  return "#5a3a1c";
 }
 
 
@@ -1777,6 +1962,40 @@ function awardFireCape(opts) {
   else saveProfile();
   if (typeof updateRaidLock === "function") updateRaidLock();
   return !had;
+}
+
+function migrateLegacyStarter() {
+  let changed = false;
+  const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const s = EQUIP_SLOTS[i];
+    const mapped = LEGACY_STARTER_MAP[eq[s]];
+    if (mapped) { eq[s] = mapped; changed = true; }
+  }
+  const ids = starterOwnedIds();
+  for (let i = 0; i < ids.length; i++) ownItem(ids[i]);
+  if (Array.isArray(Profile.bank)) {
+    const seen = {};
+    const next = [];
+    for (let i = 0; i < Profile.bank.length; i++) {
+      let id = Profile.bank[i];
+      if (LEGACY_STARTER_MAP[id]) { id = LEGACY_STARTER_MAP[id]; changed = true; }
+      const it = ITEMS[id];
+      if (it && (it.tier === "legacy" || (it.hidden && it.tier === "armadyl" && !isOwned(id)))) continue;
+      if (!id || seen[id]) continue;
+      seen[id] = true;
+      next.push(id);
+    }
+    for (let i = 0; i < ids.length; i++) {
+      if (!seen[ids[i]]) { next.push(ids[i]); seen[ids[i]] = true; changed = true; }
+    }
+    Profile.bank = next;
+  }
+  if (Array.isArray(Profile.unlockedItems)) {
+    Profile.unlockedItems = Profile.unlockedItems.map((id) => LEGACY_STARTER_MAP[id] || id);
+  }
+  if (changed) saveProfile();
+  return changed;
 }
 
 function maybeGrantLegacyFireCape() {
@@ -1849,6 +2068,7 @@ function loadProfile() {
     Profile.unlockedItems = [];
     Profile.bank = migrateOwned(null, Profile.equipment, []);
   }
+  migrateLegacyStarter();
   maybeGrantLegacyFireCape();
   syncPlayerCaps();
   G.name = Profile.name;
@@ -2723,7 +2943,7 @@ function applyBoltHit(target, dmg) {
   if (target.kind === "jad" && G.jad && G.jad.hp > 0) {
     G.jad.hp = clamp(G.jad.hp - dmg, 0, JAD_MAX_HP);
     G.jad.hurt = 0.2;
-    spawnSplat(G.jad.x + (Math.random() - 0.5) * 0.12, G.jad.y - 0.08, dmg, "red");
+    spawnSplat(G.jad.x + (Math.random() - 0.5) * 0.12, G.jad.y - 0.08, dmg, dmg > 0 ? "red" : "blue");
     burst(G.jad.x * cssW, (G.jad.y - 0.05) * cssH, "#ffaa44", 8);
     maybeSpawnHealers();
     if (G.jad.hp <= 0) endWin();
@@ -2732,7 +2952,7 @@ function applyBoltHit(target, dmg) {
     if (!h.alive) { G.target = "jad"; return; }
     h.hp -= dmg;
     h.aggro = true;
-    spawnSplat(h.x, h.y - 0.04, dmg, "red");
+    spawnSplat(h.x, h.y - 0.04, dmg, dmg > 0 ? "red" : "blue");
     if (h.hp <= 0) {
       h.alive = false;
       h.hp = 0;
@@ -2961,6 +3181,10 @@ function updatePrayerButtons() {
 }
 
 function spawnSplat(nx, ny, value, color) {
+  // OSRS convention: 0 (miss / blocked) is the blue splat; damage stays red; heals stay green.
+  if (color !== "green" && color !== "#80ff80" && color !== "#2a8a2a") {
+    color = (value > 0) ? "red" : "blue";
+  }
   G.splats.push({ x: nx * cssW, y: ny * cssH, value, color, t: 0, life: 0.85 });
 }
 function burst(x, y, color, n) {
@@ -3892,13 +4116,13 @@ function drawGearIcons(force) {
       g.strokeStyle = it ? "#e0c040" : "#5a4a28"; g.lineWidth = 2; g.beginPath(); g.arc(14, 12, 7, 0.2, Math.PI-0.2); g.stroke();
       if (it) { g.fillStyle = "#c03020"; g.beginPath(); g.arc(14, 20, 3, 0, Math.PI*2); g.fill(); }
     } else if (id === "cape") {
-      g.fillStyle = it ? (it.tier === "upgrade" ? "#3a6a28" : col) : "#2a2014";
+      g.fillStyle = it ? (it.id === "fire_cape" ? "#c06020" : col) : "#2a2014";
       g.beginPath(); g.moveTo(10,6); g.lineTo(8,24); g.lineTo(20,24); g.lineTo(18,6); g.fill();
     } else if (id === "body") {
       g.fillStyle = col; g.fillRect(6, 6, 16, 18); g.fillStyle = "#1e140c"; g.fillRect(6, 14, 16, 3);
     } else if (id === "weapon") {
       g.fillStyle = "#5a3214"; g.fillRect(12, 6, 4, 16);
-      g.fillStyle = it && it.tier === "upgrade" ? "#6a7a88" : "#8a5a28";
+      g.fillStyle = it && (it.id === "rune_crossbow" || it.id === "armadyl_crossbow" || it.id === "hollowbolt_xbow") ? "#6a7a88" : "#8a5a28";
       g.beginPath(); g.moveTo(4, 7); g.lineTo(4, 11); g.quadraticCurveTo(14, 4, 24, 11); g.lineTo(24, 7); g.quadraticCurveTo(14, 2, 4, 7); g.fill();
       g.strokeStyle = "#e8e0d0"; g.lineWidth = 1;
       g.beginPath(); g.moveTo(5, 8); g.lineTo(14, 16); g.lineTo(23, 8); g.stroke();
@@ -3908,7 +4132,7 @@ function drawGearIcons(force) {
     } else if (id === "feet") {
       g.fillStyle = col; g.fillRect(5, 14, 8, 7); g.fillRect(15, 14, 8, 7);
     } else if (id === "ammo") {
-      g.fillStyle = it && it.tier === "upgrade" ? "#6a7a88" : "#8a6a40";
+      g.fillStyle = it && (it.id === "rune_bolts" || it.id === "mithril_bolts" || it.id === "hollow_bolts") ? "#6a7a88" : "#8a6a40";
       g.fillRect(8, 8, 12, 4); g.fillStyle = "#c0a040"; g.fillRect(18, 8, 4, 4);
     }
   }
@@ -4147,7 +4371,7 @@ function refreshTitleBest() {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-gear","overlay-win","overlay-lose"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-gear","overlay-shop","overlay-win","overlay-lose"].forEach((id) => {
     const el = $(id);
     if (el) el.classList.add("hidden");
   });
@@ -4725,6 +4949,18 @@ bindTap($("btn-how"), () => {
   $("overlay-tut").classList.remove("hidden");
 });
 if ($("btn-equipment")) bindTap($("btn-equipment"), () => { audio.unlock(); openEquipmentView(); });
+if ($("btn-shop")) bindTap($("btn-shop"), () => { audio.unlock(); openShop(); });
+bindTap($("btn-shop-close"), () => { audio.unlock(); closeShop(); });
+bindTap($("btn-shop-x"), () => { audio.unlock(); closeShop(); });
+bindBackdropClose($("overlay-shop"), () => { audio.unlock(); closeShop(); });
+if ($("shop-list")) $("shop-list").addEventListener("click", (e) => {
+  const btn = e.target.closest && e.target.closest("[data-shop]");
+  if (!btn) return;
+  audio.unlock();
+  const id = btn.getAttribute("data-shop");
+  if (id === "bundle") buyShopBundle();
+  else buyShopItem(id);
+});
 bindTap($("btn-gear-close"), () => { audio.unlock(); closeEquipmentView(); });
 bindTap($("btn-gear-x"), () => { audio.unlock(); closeEquipmentView(); });
 bindBackdropClose($("overlay-gear"), () => { audio.unlock(); closeEquipmentView(); });
@@ -4814,6 +5050,7 @@ function closeHowToPlay() {
 }
 function dismissTopOverlay() {
   if (overlayIsOpen("overlay-gear")) { audio.unlock(); closeEquipmentView(); return true; }
+  if (overlayIsOpen("overlay-shop")) { audio.unlock(); closeShop(); return true; }
   if (overlayIsOpen("overlay-tut")) { closeHowToPlay(); return true; }
   if (overlayIsOpen("overlay-raid-tut")) { audio.unlock(); closeRaidBriefing(); return true; }
   return false;
@@ -4914,7 +5151,7 @@ window.KellenScape = {
   launchTileAttack, testFireball, queueMoveTo, queueMoveBy, setRunning,
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
-  ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView,
+  ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
   ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape,
   setDebug(on) { G.debugCombat = !!on; updateDebugCombat(); },
   getState() {

@@ -87,12 +87,6 @@
   const UNIQUES = ["hollowbolt-xbow","veilhide-body","veilhide-chaps","veilhide-vambs","crownshard-boots","unsleeping-stole","gloamheart-cape"];
   const MIDS = ["tempered-xbow","duskhide-body","duskhide-chaps","duskhide-vambs"];
   function midPool() {
-    if (typeof global.LOADOUTS !== "undefined" && global.LOADOUTS.upgrade) {
-      const u = global.LOADOUTS.upgrade;
-      const ids = [];
-      for (const slot in u) if (u[slot]) ids.push(u[slot]);
-      return ids;
-    }
     return MIDS;
   }
   function uniquePool() {
@@ -202,6 +196,20 @@
       if (b.atk) for (const k of Object.keys(atk)) atk[k] += b.atk[k] || 0;
       if (b.def) for (const k of Object.keys(def)) def[k] += b.def[k] || 0;
       if (b.other) for (const k of Object.keys(other)) other[k] += b.other[k] || 0;
+      if (b.arange != null || b.rstr != null || b.str != null) {
+        atk.range += b.arange || 0;
+        atk.magic += b.amagic || 0;
+        atk.stab += b.astab || 0;
+        atk.slash += b.aslash || 0;
+        atk.crush += b.acrush || 0;
+        def.stab += b.dstab || 0;
+        def.slash += b.dslash || 0;
+        def.crush += b.dcrush || 0;
+        def.magic += b.dmagic || 0;
+        def.range += b.drange || 0;
+        other.rangeStr += b.rstr || 0;
+        other.meleeStr += b.str || 0;
+      }
     }
     return { atk: atk, def: def, other: other };
   }
@@ -344,7 +352,7 @@
   function newState(opts) {
     opts = opts || {};
     const P = loadRaidProfile();
-    const loadout = opts.loadout ? deep(opts.loadout) : (P.gear ? deep(P.gear) : deep(STARTER_LOADOUT));
+    const loadout = opts.loadout ? deep(opts.loadout) : (P.equipment ? deep(P.equipment) : (P.gear ? deep(P.gear) : deep(STARTER_LOADOUT)));
     for (const slot of Object.keys(STARTER_LOADOUT)) {
       if (!loadout[slot]) loadout[slot] = STARTER_LOADOUT[slot];
     }
@@ -426,7 +434,11 @@
     if (host && host.flashMsg) host.flashMsg(text, color || "#ffe44a");
   }
   function splat(st, col, row, value, color) {
-    st.splats.push({ col: col, row: row, value: value, color: color || "#ff3030", t: 0 });
+    let kind = color;
+    if (color === "green" || color === "#80ff80" || color === "#2a8a2a") kind = "green";
+    else if (!(value > 0)) kind = "blue";
+    else kind = "red";
+    st.splats.push({ col: col, row: row, value: value, color: kind, t: 0 });
   }
   function hurtPlayer(st, dmg, reason) {
     if (st.god || dmg <= 0 || st.mode !== "playing") return;
@@ -1231,7 +1243,7 @@
     const P = profileObj();
     if (typeof global.ITEMS !== "undefined" && global.ITEMS) {
       if (!P.equipment) P.equipment = {};
-      const rank = { starter: 1, upgrade: 2, mid: 2, unique: 3 };
+      const rank = { starter: 1, mid: 2, upgrade: 3, tier2: 3, jad: 3, unique: 4 };
       for (let i = 0; i < loot.items.length; i++) {
         const it = global.ITEMS[loot.items[i]];
         if (!it || !it.slot) continue;
@@ -1436,14 +1448,23 @@
     for (let i = 0; i < st.splats.length; i++) {
       const s = st.splats[i];
       const p = tilePos(s.col, s.row, W, H);
+      const k = clamp(s.t / 0.8, 0, 1);
+      const fill = (s.color === "green") ? "#2a8a2a" : (s.value <= 0 || s.color === "blue") ? "#3a6adf" : "#c02820";
       ctx.save();
-      ctx.globalAlpha = clamp(1 - s.t / 0.8, 0, 1);
-      ctx.font = "bold 16px Trebuchet MS, sans-serif";
+      ctx.globalAlpha = 1 - k;
+      ctx.translate(p.x, p.y - 28 - s.t * 20);
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 16, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#1a0808";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 13px Trebuchet MS, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillStyle = "#000";
-      ctx.fillText(String(s.value), p.x + 1, p.y - 28 - s.t * 20 + 1);
-      ctx.fillStyle = s.color || "#ff3030";
-      ctx.fillText(String(s.value), p.x, p.y - 28 - s.t * 20);
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(s.value), 0, 1);
       ctx.restore();
       s.t += 0.016;
     }
