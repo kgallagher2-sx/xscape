@@ -3,6 +3,7 @@
   "use strict";
 
   var AWAY_MS = 120000;
+  var GONE_MS = 8000;
   var PRAY_DRAIN = 3;
   var MIN_SETTLE_TICKS = 8;
   var REMOTE_BUFFER = 50;
@@ -802,6 +803,10 @@
       maybeWatchdog(tick);
       return;
     }
+    maybeWatchdog(tick);
+    // A silent opponent is frozen, not KO'd. The remaining player waits out
+    // the 2-minute disconnect and wins by forfeit.
+    if (f.lastOppAt && Date.now() - f.lastOppAt > GONE_MS) return;
     if (tick <= f.lastSimTick) return;
     var from = f.lastSimTick + 1;
     if (from < f.startTick) from = f.startTick;
@@ -809,7 +814,6 @@
     for (var t = from; t <= tick; t++) simTick(t);
     f.lastSimTick = tick;
     sendFightMsg("duel-input", inputPayload());
-    maybeWatchdog(tick);
   }
 
   function simTick(tick) {
@@ -1034,7 +1038,7 @@
     drawFighter(ctx, t, f.them, rightX, floorY, "left", false, tickProgress(REMOTE_BUFFER));
     drawSplats(ctx, f, leftX, rightX, floorY - 90);
 
-    var gone = f.lastOppAt && (Date.now() - f.lastOppAt > 8000);
+    var gone = f.lastOppAt && (Date.now() - f.lastOppAt > GONE_MS);
     if (gone && !f.over) {
       ctx.font = "bold 12px Trebuchet MS, sans-serif";
       ctx.fillStyle = "#ffd84a";
