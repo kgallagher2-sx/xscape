@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110221404-82f80ca";</script>
+  <script>window.XSCAPE_BUILD = "20261110223618-2d2e91e";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -754,8 +754,14 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
     .osrs-slot.empty { opacity: 0.4; cursor: default; }
-    .osrs-slot canvas.osrs-slot-icon { width: 32px; height: 32px; display: block; }
-    .osrs-slot .slot-short { font-size: 9px; color: #d8c8a0; margin-top: 1px; }
+    .osrs-slot canvas.osrs-slot-icon { width: 36px; height: 36px; display: block; image-rendering: pixelated; }
+    .osrs-slot .slot-short { display: none; }
+    .slot-btn canvas.osrs-slot-icon, .shop-row canvas.item-icon, .loot-icon {
+      width: 36px; height: 36px; display: block; image-rendering: pixelated; flex: 0 0 36px;
+    }
+    .slot-btn { grid-template-columns: 58px 36px 1fr auto; }
+    #overlay-shop .shop-row { grid-template-columns: 36px minmax(0, 1fr) auto auto; }
+    .loot-with-icon { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
     .osrs-slot:active { filter: brightness(1.2); }
     #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-hub.is-world #hub-dock { display: flex; }
@@ -2689,9 +2695,11 @@ function renderEquipmentOverlay() {
       const name = it ? it.name : "Empty";
       const klass = "slot-btn" + (it ? " " + gearTierClass(it.tier) : " empty");
       const act = it ? "Unequip" : "";
-      return '<button type="button" class="' + klass + '" data-slot="' + s + '">' +
+      const icon = it ? '<canvas class="osrs-slot-icon" width="44" height="44" data-item-id="' + eq[s] + '"></canvas>' : '<span></span>';
+      return '<button type="button" class="' + klass + '" data-slot="' + s + '" data-item-id="' + (eq[s] || "") + '" title="' + name + '">' +
         '<span class="k">' + SLOT_LABELS[s] + "</span>" +
-        "<span>" + name + (it ? '<span class="tier">' + gearTierLabel(it) + "</span>" : "") + "</span>" +
+        icon +
+        "<span>" + (it ? '<span class="tier">' + gearTierLabel(it) + "</span>" : "Empty") + "</span>" +
         '<span class="act">' + act + "</span></button>";
     }).join("");
   }
@@ -2703,13 +2711,21 @@ function renderEquipmentOverlay() {
       const id = items[i];
       const it = id && ITEMS[id];
       if (it) {
-        slots.push('<button type="button" class="osrs-slot" data-inv-item="' + id + '">' + it.name + "</button>");
+        slots.push('<button type="button" class="osrs-slot" data-inv-item="' + id + '" title="' + it.name + '"></button>');
       } else {
         slots.push('<div class="osrs-slot empty"></div>');
       }
     }
     invEl.innerHTML = slots.join("");
     if (window.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(invEl);
+    if (window.XscapeIcons) {
+      if (worn) {
+        worn.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
+          XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
+        });
+      }
+      if (XscapeIcons.bindExamine) XscapeIcons.bindExamine(document.getElementById("overlay-gear"));
+    }
   }
   // Bank contents belong only in overlay-bank (booth / banker).
 }
@@ -2786,7 +2802,7 @@ function renderShop() {
     const action = owned
       ? '<span class="shop-owned">Owned</span>'
       : '<span class="shop-price">' + fmtGp(row.price) + '</span><button type="button" class="btn secondary" data-shop="' + row.id + '">Buy</button>';
-    return '<div class="' + klass + '"><div>' + it.name + '<span class="tier">' + gearTierLabel(it) + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></div>" + action + "</div>";
+    return '<div class="' + klass + '" data-item-id="' + row.id + '"><canvas class="item-icon" width="44" height="44" data-icon="' + row.id + '"></canvas><div>' + it.name + '<span class="tier">' + gearTierLabel(it) + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></div>" + action + "</div>";
   }).join("");
   const left = shopRemaining();
   let bundle = "";
@@ -2797,6 +2813,12 @@ function renderShop() {
     bundle = '<div class="shop-row tier2 owned"><div>' + SHOP_BUNDLE.name + '<span class="tier">Tier 2 · complete</span></div><span class="shop-owned">Owned</span></div>';
   }
   list.innerHTML = bundle + rows;
+  if (window.XscapeIcons) {
+    list.querySelectorAll("canvas[data-icon]").forEach(function (cv) {
+      XscapeIcons.paintCanvas(cv, cv.getAttribute("data-icon"));
+    });
+    if (XscapeIcons.bindExamine) XscapeIcons.bindExamine(list);
+  }
 }
 
 function overlayIsOpen(id) {
@@ -6779,6 +6801,7 @@ window.wearingFireCape = wearingFireCape;
 window.gloamholdLockReason = gloamholdLockReason;
 window.tryEnterGloamhold = tryEnterGloamhold;
 </script>
+<script src="item-icons.js"></script>
 <script src="supplies.js"></script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>

@@ -646,7 +646,7 @@
     rows.push(["GP earned", "+" + gs.text, gs.class]);
     if (awarded.length) {
       awarded.forEach(function (it) {
-        rows.push(["Drop", it.name + (it.already ? " (already owned)" : ""), "gold"]);
+        rows.push(["Drop", it.name + (it.already ? " (already owned)" : ""), "gold", it.id]);
       });
     } else {
       rows.push(["Drop", "Supplies only", ""]);
@@ -654,8 +654,17 @@
     if (grid) {
       grid.innerHTML = rows.map(function (r) {
         const extra = r[2] ? " " + r[2] : "";
-        return '<div class="k">' + r[0] + '</div><div class="v' + extra + '">' + r[1] + "</div>";
+        let val = r[1];
+        if (r[3] && global.XscapeIcons) {
+          val = '<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + r[3] + '"></canvas><span>' + r[1] + "</span></span>";
+        }
+        return '<div class="k">' + r[0] + '</div><div class="v' + extra + '">' + val + "</div>";
       }).join("");
+      if (global.XscapeIcons) {
+        grid.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
+          XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
+        });
+      }
     }
     if (typeof global.hideAllOverlays === "function") hideAllOverlays();
     ov.classList.remove("hidden");

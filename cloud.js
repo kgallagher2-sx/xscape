@@ -225,16 +225,17 @@
     }
     var raw = {};
     try { raw = JSON.parse(localStorage.getItem("kellenscape-profile") || "null") || {}; } catch (e) { raw = {}; }
+    var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
     return {
       name: P.name || raw.name || "",
-      gp: Math.max(P.gp || 0, Number(raw.gp) || 0),
+      gp: funds ? funds.gp : Math.max(P.gp || 0, Number(raw.gp) || 0),
       hasFireCape: !!(P.hasFireCape || raw.hasFireCape),
       seenFirstKill: !!(P.seenFirstKill || raw.seenFirstKill),
       levels: P.levels || raw.levels || {},
       equipment: (P.equipment && Object.keys(P.equipment).length ? P.equipment : null) || raw.equipment || {},
       unlockedItems: (P.unlockedItems && P.unlockedItems.length ? P.unlockedItems : null) || raw.unlockedItems || [],
       bank: (P.bank && P.bank.length ? P.bank : null) || raw.bank || [],
-      inventory: (P.inventory && P.inventory.length ? P.inventory : null) || raw.inventory || [],
+      inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : ((P.inventory && P.inventory.length ? P.inventory : null) || raw.inventory || []),
       raidCompletions: P.raidCompletions || Number(raw.raidCompletions) || 0,
       raidBestTicks: P.raidBestTicks || raw.raidBestTicks || null,
       kreeKills: P.kreeKills || Number(raw.kreeKills) || 0,
@@ -282,6 +283,9 @@
     if (Array.isArray(p.unlockedItems)) P.unlockedItems = p.unlockedItems.slice();
     if (Array.isArray(p.bank)) P.bank = p.bank.slice();
     if (Array.isArray(p.inventory)) P.inventory = p.inventory.slice();
+    if (global.XscapeSupplies && typeof XscapeSupplies.relayerPendingBuys === "function") {
+      try { XscapeSupplies.relayerPendingBuys(opts); } catch (e) {}
+    }
     if (p.settings && Array.isArray(p.settings.quickSlots) && global.XscapeSupplies && XscapeSupplies.loadLayout) {
       try { XscapeSupplies.loadLayout(p.settings.quickSlots); } catch (e) {}
     }
@@ -2111,13 +2115,14 @@
       var qs = XscapeSupplies.settingsSlice();
       if (qs && qs.quickSlots) settings.quickSlots = qs.quickSlots;
     }
+    var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
     var res = await rpc("save_player_state", {
       p_payload: {
         levels: P.levels || {},
         equipment: P.equipment || {},
         unlockedItems: P.unlockedItems || [],
         bank: P.bank || [],
-        inventory: P.inventory || [],
+        inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : (P.inventory || []),
         settings: settings,
         revision: saveRevision
       }

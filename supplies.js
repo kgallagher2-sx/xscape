@@ -317,11 +317,13 @@
   }
 
   function layoutForFight() {
-    // Fights use the saved 8-slot lineup. Only Jad still fills leftover empty
-    // slots with its free kit so a first-time fight still has food and pots.
+    // Fights keep the saved 8-slot lineup (assigned but uncarried items stay
+    // dimmed at 0). Empty slots are filled from whatever is actually in the
+    // 28 carried slots so supplies show up and can be used without a prior
+    // Hotkeys assign. Jad still fills leftovers with its free kit.
     const slots = layout.map(function (s) { return s ? { type: s.type, id: s.id } : null; });
     if (isJad()) return fillItemSlots(slots, ["shark", "prayer_potion", "ranging_potion"]);
-    return slots;
+    return fillItemSlots(slots, carriedFamilies());
   }
 
   function loadLayout(raw) {
@@ -622,6 +624,10 @@
   }
 
   function drawItemIcon(ctx, fam, w, h, dose) {
+    if (global.XscapeIcons && typeof XscapeIcons.draw === "function") {
+      XscapeIcons.draw(ctx, fam, w, h, { dose: dose });
+      return;
+    }
     ctx.save();
     ctx.translate(w / 2, h / 2);
     const s = Math.min(w, h) / 32;
@@ -1036,7 +1042,22 @@
       drawItemIcon(cv.getContext("2d"), cv.getAttribute("data-icon"), cv.width, cv.height);
     });
     list.querySelectorAll("[data-buy]").forEach(function (btn) {
-      btn.addEventListener("click", function () { buy(btn.getAttribute("data-buy"), currentQty()); });
+      btn.addEventListener("pointerdown", function (e) {
+        if (e.button != null && e.button !== 0) return;
+        e.preventDefault();
+        btn._buyAt = (typeof performance !== "undefined" ? performance.now() : Date.now());
+        buy(btn.getAttribute("data-buy"), currentQty());
+      });
+      btn.addEventListener("click", function (e) {
+        const at = btn._buyAt || 0;
+        const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+        if (at && now - at < 700) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        buy(btn.getAttribute("data-buy"), currentQty());
+      });
     });
     ["1", "5", "10", "x"].forEach(function (k) {
       const b = $("supply-qty-" + k);
@@ -1064,42 +1085,171 @@
     renderShop();
   }
 
-  async function buy(shopId, qty) {
-    qty = Math.floor(Number(qty) || 0);
-    if (qty < 1) return;
-    const space = (typeof global.inventorySpace === "function") ? inventorySpace() : Math.max(0, CAP - invArr().length);
-    if (space < qty) {
-      if (typeof flashMsg === "function") flashMsg("Inventory full", "#ff8a70");
-      return;
-    }
-    const cloud = global.XscapeCloud;
-    if (!cloud || typeof cloud.rpc !== "function") {
-      if (typeof flashMsg === "function") flashMsg("Sign in to buy supplies", "#ff8a70");
-      return;
-    }
-    const res = await cloud.rpc("buy_supply_item", { p_item_id: shopId, p_qty: qty });
-    if (!res || !res.ok) {
-      const err = (res && res.error) || "Could not buy that";
-      if (typeof flashMsg === "function") flashMsg(err, "#ff8a70");
-      else alert(err);
-      if (res && res.profile && typeof cloud.reloadProfile !== "function") {
-        /* payload may still include profile */
-      }
-      renderShop();
-      return;
-    }
-    if (res.profile) {
-      if (typeof cloud.applyProfile === "function") {
-        try { cloud.applyProfile(res.profile, { fromAward: true }); } catch (e) { applyBuyProfile(res.profile); }
-      } else applyBuyProfile(res.profile);
-    }
-    const name = (SHOP_ROWS.filter(function (r) { return r.id === shopId; })[0] || {}).name || shopId;
-    if (typeof flashMsg === "function") flashMsg("Bought " + qty + " × " + name, "#ffe44a");
+  // Rapid taps must all register immediately. Optimistic GP/inventory update,
+  // then settle buy_supply_item calls in order. The server remains
+  // authoritative: a failed RPC rolls that tap back, and cloud saves never
+  // push an optimistic (uncharged) inventory.
+  let buyChain = Promise.resolve();
+  const pendingBuys = [];
+  let lastConfirmed = null;
+
+  function snapshotConfirmed() {
+    const P = profile();
+    lastConfirmed = {
+      gp: Number(P.gp) || 0,
+      inventory: (P.inventory || []).slice()
+    };
+  }
+  function buyQueueActive() { return pendingBuys.length > 0; }
+  function confirmedFunds() {
+    if (!buyQueueActive()) return null;
+    if (!lastConfirmed) snapshotConfirmed();
+    return { gp: lastConfirmed.gp, inventory: lastConfirmed.inventory.slice() };
+  }
+  function shopItemId(shopId) { return canonicalSupplyId(shopId); }
+  function shopUnitPrice(shopId) { return Number(PRICES[shopId] || PRICES[familyOf(shopId)] || 0); }
+
+  function paintBuy() {
     renderShop();
     if (global.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
     if (typeof global.refreshGearViews === "function") refreshGearViews();
     if (typeof global.refreshHub === "function") refreshHub();
+    if (typeof global.renderInv === "function") {
+      try { renderInv(); } catch (e) {}
+    } else if (global.XscapeHub && XscapeHub.renderInv) {
+      try { XscapeHub.renderInv(); } catch (e) {}
+    }
     refresh();
+  }
+
+  function rollbackBuy(rec, err) {
+    if (!rec || rec.cancelled) return;
+    rec.cancelled = true;
+    const P = profile();
+    if (!Array.isArray(P.inventory)) P.inventory = [];
+    for (let i = 0; i < rec.items.length; i++) {
+      const idx = P.inventory.lastIndexOf(rec.items[i]);
+      if (idx >= 0) P.inventory.splice(idx, 1);
+    }
+    P.gp = Math.max(0, (Number(P.gp) || 0) + rec.cost);
+    if (global.G) G.gp = P.gp;
+    const at = pendingBuys.indexOf(rec);
+    if (at >= 0) pendingBuys.splice(at, 1);
+    if (typeof flashMsg === "function") flashMsg(err || "Could not buy that", "#ff8a70");
+    paintBuy();
+  }
+
+  function applyConfirmedProfile(p) {
+    const cloud = global.XscapeCloud;
+    lastConfirmed = {
+      gp: p && p.gp != null ? Number(p.gp) || 0 : (profile().gp || 0),
+      inventory: (p && Array.isArray(p.inventory) ? p.inventory.slice() : (profile().inventory || []).slice())
+    };
+    if (p && cloud && typeof cloud.applyProfile === "function") {
+      try { cloud.applyProfile(p, { fromAward: true, fromSupplyBuy: true }); } catch (e) { applyBuyProfile(p); }
+    } else if (p) applyBuyProfile(p);
+  }
+
+  function overlayPendingOn(serverInv, serverGp) {
+    const P = profile();
+    const remainder = [];
+    let cost = 0;
+    for (let i = 0; i < pendingBuys.length; i++) {
+      if (pendingBuys[i].cancelled) continue;
+      remainder.push.apply(remainder, pendingBuys[i].items);
+      cost += pendingBuys[i].cost;
+    }
+    P.inventory = (serverInv || []).slice().concat(remainder);
+    if (serverGp != null && !isNaN(Number(serverGp))) {
+      P.gp = Math.max(0, Number(serverGp) - cost);
+      if (global.G) G.gp = P.gp;
+    }
+  }
+
+  function relayerPendingBuys(opts) {
+    opts = opts || {};
+    if (!buyQueueActive() || opts.fromSupplyBuy) return;
+    const P = profile();
+    lastConfirmed = {
+      gp: Number(P.gp) || 0,
+      inventory: (P.inventory || []).slice()
+    };
+    overlayPendingOn(lastConfirmed.inventory, lastConfirmed.gp);
+  }
+
+  async function settleBuy(rec) {
+    if (!rec || rec.cancelled) return;
+    const cloud = global.XscapeCloud;
+    let res = null;
+    try {
+      res = await cloud.rpc("buy_supply_item", { p_item_id: rec.shopId, p_qty: rec.qty });
+    } catch (e) {
+      rollbackBuy(rec, "Could not buy that");
+      return;
+    }
+    if (rec.cancelled) return;
+    if (!res || !res.ok) {
+      rollbackBuy(rec, (res && res.error) || "Could not buy that");
+      return;
+    }
+    rec.settled = true;
+    const at = pendingBuys.indexOf(rec);
+    if (at >= 0) pendingBuys.splice(at, 1);
+    if (res.profile && res.profile.revision != null && cloud && typeof cloud.noteRevision === "function") {
+      try { cloud.noteRevision(res.profile.revision); } catch (e) {}
+    }
+    if (res.profile) {
+      lastConfirmed = {
+        gp: res.profile.gp != null ? Number(res.profile.gp) || 0 : lastConfirmed && lastConfirmed.gp,
+        inventory: Array.isArray(res.profile.inventory) ? res.profile.inventory.slice() : (lastConfirmed && lastConfirmed.inventory) || []
+      };
+    }
+    if (pendingBuys.length === 0) {
+      if (res.profile) applyConfirmedProfile(res.profile);
+    } else if (res.profile) {
+      overlayPendingOn(res.profile.inventory || [], res.profile.gp);
+    }
+    paintBuy();
+  }
+
+  function buy(shopId, qty) {
+    qty = Math.floor(Number(qty) || 0);
+    if (qty < 1) return false;
+    const cloud = global.XscapeCloud;
+    if (!cloud || typeof cloud.rpc !== "function") {
+      if (typeof flashMsg === "function") flashMsg("Sign in to buy supplies", "#ff8a70");
+      return false;
+    }
+    const itemId = shopItemId(shopId);
+    const unit = shopUnitPrice(shopId);
+    const cost = unit * qty;
+    const P = profile();
+    const space = (typeof global.inventorySpace === "function") ? inventorySpace() : Math.max(0, CAP - invArr().length);
+    if (space < qty) {
+      if (typeof flashMsg === "function") flashMsg("Inventory full", "#ff8a70");
+      return false;
+    }
+    if ((Number(P.gp) || 0) < cost) {
+      if (typeof flashMsg === "function") flashMsg("Not enough GP", "#ff8a70");
+      return false;
+    }
+    if (!buyQueueActive()) snapshotConfirmed();
+    const rec = { shopId: shopId, qty: qty, itemId: itemId, cost: cost, items: [] };
+    if (!Array.isArray(P.inventory)) P.inventory = [];
+    for (let i = 0; i < qty; i++) {
+      rec.items.push(itemId);
+      P.inventory.push(itemId);
+    }
+    P.gp = Math.max(0, (Number(P.gp) || 0) - cost);
+    if (global.G) G.gp = P.gp;
+    pendingBuys.push(rec);
+    const name = (SHOP_ROWS.filter(function (r) { return r.id === shopId; })[0] || {}).name || shopId;
+    if (typeof flashMsg === "function") flashMsg("Bought " + qty + " \u00d7 " + name, "#ffe44a");
+    paintBuy();
+    buyChain = buyChain.then(function () { return settleBuy(rec); }).catch(function () {
+      rollbackBuy(rec, "Could not buy that");
+    });
+    return true;
   }
 
   function applyBuyProfile(p) {
@@ -1116,7 +1266,13 @@
 
   /* ---------- icons for bank slots ---------- */
   function decorateSlotButton(btn, id) {
-    if (!btn || !isSupplyId(id)) return;
+    if (!btn || !id) return;
+    if (global.XscapeIcons && typeof XscapeIcons.fillSlot === "function") {
+      const qty = Number(btn.getAttribute("data-qty") || 0);
+      XscapeIcons.fillSlot(btn, id, qty > 1 ? qty : 0);
+      return;
+    }
+    if (!isSupplyId(id)) return;
     const fam = familyOf(id);
     const d = isFood(fam) ? 0 : doseOf(id);
     btn.textContent = "";
@@ -1125,21 +1281,19 @@
     cv.className = "osrs-slot-icon";
     drawItemIcon(cv.getContext("2d"), fam, 44, 44, d || undefined);
     btn.appendChild(cv);
-    if (isFood(fam)) {
-      const lab = document.createElement("span");
-      lab.className = "slot-short";
-      lab.textContent = fam === "dark_crab" ? "Crab" : fam.charAt(0).toUpperCase() + fam.slice(1);
-      btn.appendChild(lab);
-    }
   }
 
   function decorateContainer(root) {
     if (!root || !root.querySelectorAll) return;
+    if (global.XscapeIcons && typeof XscapeIcons.decorateRoot === "function") {
+      XscapeIcons.decorateRoot(root);
+      return;
+    }
     const buttons = root.querySelectorAll(".osrs-slot[data-withdraw], .osrs-slot[data-deposit], .osrs-slot[data-equip], .osrs-slot[data-inv-item]");
     for (let i = 0; i < buttons.length; i++) {
       const btn = buttons[i];
       const id = btn.getAttribute("data-withdraw") || btn.getAttribute("data-deposit") || btn.getAttribute("data-equip") || btn.getAttribute("data-inv-item");
-      if (id && isSupplyId(id)) decorateSlotButton(btn, id);
+      if (id) decorateSlotButton(btn, id);
     }
   }
 
@@ -1189,6 +1343,8 @@
     startJadKit: startJadKit,
     clearJadKit: clearJadKit,
     startBroughtSupplies: startBroughtSupplies,
+    layoutForFight: layoutForFight,
+    carriedFamilies: carriedFamilies,
     raidInvFromCarried: raidInvFromCarried,
     queueUse: queueUse,
     resolvePending: resolvePending,
@@ -1206,6 +1362,10 @@
     drawItemIcon: drawItemIcon,
     decorateSlotButton: decorateSlotButton,
     decorateContainer: decorateContainer,
+    buyQueueActive: buyQueueActive,
+    confirmedFunds: confirmedFunds,
+    relayerPendingBuys: relayerPendingBuys,
+    buy: buy,
     lowestDose: lowestDose,
     totalDoses: totalDoses,
     doseOf: doseOf,

@@ -272,9 +272,13 @@
   }
   function loadRaidProfile() {
     const P = profileObj();
-    if (typeof global.loadProfile === "function") {
+    // Use the already-loaded session profile. Re-reading localStorage here
+    // can replace a just-purchased or just-sipped inventory with a stale copy
+    // so carried supplies vanish when the raid starts.
+    const live = !!(P && (P.name || (Array.isArray(P.inventory) && P.inventory.length) || P.hasFireCape || P.gp));
+    if (!live && typeof global.loadProfile === "function") {
       try { global.loadProfile(); } catch (e) {}
-    } else {
+    } else if (!live) {
       try {
         const raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null");
         if (raw && typeof raw === "object") {
@@ -314,6 +318,7 @@
       raw.unlockedItems = P.unlockedItems || [];
       if (P.bank) raw.bank = P.bank;
       if (P.equipment) raw.equipment = P.equipment;
+      if (Array.isArray(P.inventory)) raw.inventory = P.inventory;
       raw.gear = P.gear || raw.gear;
       raw.raidCompletions = P.raidCompletions || 0;
       if (P.raidBestTicks != null) raw.raidBestTicks = P.raidBestTicks;
@@ -553,7 +558,8 @@
     var me = fighterById(st, localId) || st.fighters[0];
     if (me) {
       me.loadout = st.player.loadout;
-      me.inv = st.inv || me.inv;
+      if (!st.inv) st.inv = carriedInv();
+      me.inv = st.inv;
       pushFighter(st, me);
     }
   }
@@ -3045,8 +3051,13 @@
       const bits = [];
       if (loot.died || loot.halfGp) bits.push("Died, half GP");
       const rares = (loot.items || []).filter(function (id) { return id && id !== "hollow_bolts"; });
-      if (rares.length) rares.forEach(function (id) { bits.push(lootLabel(id)); });
-      else if (!(loot.died || loot.halfGp)) bits.push("No rare this time");
+      if (rares.length) {
+        rares.forEach(function (id) {
+          if (global.XscapeIcons) {
+            bits.push('<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + id + '"></canvas><span>' + lootLabel(id) + "</span></span>");
+          } else bits.push(lootLabel(id));
+        });
+      } else if (!(loot.died || loot.halfGp)) bits.push("No rare this time");
       lootTxt = bits.join(" · ") || "—";
     }
     const gpTxt = loot && loot.gp
@@ -3060,7 +3071,14 @@
       (kind === "win" ? row("Loot", lootTxt || "—") : row("Fell in", ROOM_TITLE[(result && result.room)] || (result && result.room) || "—"));
     if (kind === "win" && win) {
       if (titleW) titleW.textContent = "GLOAMHOLD CLEARED";
-      if (gridW) gridW.innerHTML = html;
+      if (gridW) {
+        gridW.innerHTML = html;
+        if (global.XscapeIcons) {
+          gridW.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
+            XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
+          });
+        }
+      }
       win.classList.remove("hidden");
     } else if (lose) {
       if (titleL) titleL.textContent = "Oh dear, you are dead!";

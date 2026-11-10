@@ -235,10 +235,6 @@ BEGIN
   END IF;
   SELECT * INTO r FROM public.profiles WHERE id = uid FOR UPDATE;
   SELECT * INTO st FROM public.player_state WHERE user_id = uid FOR UPDATE;
-  IF r.last_purchase_at IS NOT NULL AND r.last_purchase_at > now() - interval '2 seconds' THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'Slow down', 'profile', game.profile_payload(uid));
-  END IF;
-
   v_id := game.supply_shop_id(p_item_id);
   v_unit := game.supply_price(p_item_id);
   IF v_id IS NULL OR v_unit IS NULL THEN

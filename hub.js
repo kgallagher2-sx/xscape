@@ -1717,7 +1717,7 @@
       var bank = (typeof bankList === "function" ? bankList() : ((Profile.bank) || []));
       if (!bank.length) bankEl.innerHTML = '<div class="osrs-slot empty">Empty</div>';
       else bankEl.innerHTML = bank.map(function (id) {
-        return '<button type="button" class="osrs-slot" data-withdraw="' + escapeHtml(id) + '">' + escapeHtml(itemLabel(id)) + "</button>";
+        return '<button type="button" class="osrs-slot" data-withdraw="' + escapeHtml(id) + '" title="' + escapeHtml(itemLabel(id)) + '"></button>';
       }).join("");
     }
     if (invEl) {
@@ -1725,7 +1725,7 @@
       var slots = [];
       for (var i = 0; i < 28; i++) {
         var id = inv[i];
-        if (id) slots.push('<button type="button" class="osrs-slot" data-deposit="' + escapeHtml(id) + '">' + escapeHtml(itemLabel(id)) + "</button>");
+        if (id) slots.push('<button type="button" class="osrs-slot" data-deposit="' + escapeHtml(id) + '" title="' + escapeHtml(itemLabel(id)) + '"></button>');
         else slots.push('<div class="osrs-slot empty"></div>');
       }
       invEl.innerHTML = slots.join("");
@@ -1741,6 +1741,7 @@
   function openBank() {
     renderBank();
     openSheet("overlay-bank");
+    if (global.XscapeIcons && XscapeIcons.bindExamine) XscapeIcons.bindExamine($("overlay-bank") || $("hub-bank-grid"));
   }
 
   function renderInv() {
@@ -1750,7 +1751,7 @@
     var slots = [];
     for (var i = 0; i < 28; i++) {
       var id = inv[i];
-      if (id) slots.push('<button type="button" class="osrs-slot" data-equip="' + escapeHtml(id) + '">' + escapeHtml(itemLabel(id)) + "</button>");
+      if (id) slots.push('<button type="button" class="osrs-slot" data-equip="' + escapeHtml(id) + '" title="' + escapeHtml(itemLabel(id)) + '"></button>');
       else slots.push('<div class="osrs-slot empty"></div>');
     }
     el.innerHTML = slots.join("");
@@ -1762,6 +1763,7 @@
   function openInventory() {
     renderInv();
     openSheet("overlay-inv");
+    if (global.XscapeIcons && XscapeIcons.bindExamine) XscapeIcons.bindExamine($("overlay-inv") || $("hub-inv-grid"));
   }
 
   function openBossMenu() {

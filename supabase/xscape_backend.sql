@@ -665,10 +665,6 @@ BEGIN
   PERFORM game.ensure_profile(uid);
   SELECT * INTO r FROM public.profiles WHERE id = uid FOR UPDATE;
   SELECT * INTO st FROM public.player_state WHERE user_id = uid;
-  IF r.last_purchase_at IS NOT NULL AND r.last_purchase_at > now() - interval '2 seconds' THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'Slow down', 'profile', game.profile_payload(uid));
-  END IF;
-
   IF p_item_id = 'bundle' THEN
     v_ids := game.shop_bundle_ids();
     FOREACH v_id IN ARRAY v_ids LOOP
