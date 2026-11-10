@@ -201,8 +201,8 @@
       touch-action: pan-y; -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
-    #overlay-hub { justify-content: flex-start; }
-    #overlay-hub > * { flex-shrink: 0; }
+    #overlay-hub, #overlay-login { justify-content: flex-start; }
+    #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
     #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help { overflow: hidden; }
     .overlay.hidden { display: none; }
@@ -639,6 +639,7 @@
         <p><b>Magic (1)</b> · <b>Missiles (2)</b> · <b>Melee (3)</b></p>
         <p><b>Supplies:</b> sharks heal 20 (F). Prayer pots restore 31 prayer (P). Range pots boost your ranged for a while (R). Each bite or sip delays your next shot. On-screen buttons work too.</p>
         <p>Open <b>Equipment</b> to wear gear from your bank, and the <b>Shop</b> to spend pretend GP. Nothing real is ever charged.</p>
+        <p>Your account is shown as a chip on the title screen — it reads your adventurer name, or <b>Guest</b>. Use <b>Sign out</b> there if you want to switch accounts. Guests can fight TzTok-Jad in starter gear; sign in to unlock the rest and keep your progress.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
         <div class="sheet-actions">
@@ -4828,8 +4829,20 @@ function showTitle() {
   loadProfile();
   G._retryKree = false;
   if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
-  if (Profile.name) enterScene("hub");
-  else enterScene("login");
+  // Test modes skip the sign-in screen so ?test= URLs still jump into a fight.
+  if (typeof testFlag === "function" && testFlag()) {
+    if (Profile.name) enterScene("hub");
+    else enterScene("login");
+    return;
+  }
+  // Let the cloud client decide once it is ready. Until then, stay on the
+  // sign-in screen even if a local name exists (legacy players are prompted
+  // to sign in, with Continue as guest keeping their progress).
+  if (window.XscapeCloud && typeof XscapeCloud.routeTitle === "function") {
+    XscapeCloud.routeTitle();
+    return;
+  }
+  enterScene("login");
 }
 
 function commitLogin() {
@@ -5342,7 +5355,11 @@ function startPlaying() {
 $("btn-login").addEventListener("click", () => { audio.unlock(); commitLogin(); });
 $("btn-mode-jad").addEventListener("click", () => { audio.unlock(); enterScene("jad"); });
 $("btn-mode-duel").addEventListener("click", (e) => { e.preventDefault(); });
-$("btn-change-name").addEventListener("click", () => { audio.unlock(); enterScene("login"); });
+$("btn-change-name").addEventListener("click", () => {
+  audio.unlock();
+  if (window.XscapeCloud && typeof XscapeCloud.showNameEditor === "function") XscapeCloud.showNameEditor();
+  else enterScene("login");
+});
 function openJadGuide() {
   audio.unlock();
   tutReturnToTitle = true;

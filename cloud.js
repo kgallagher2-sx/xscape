@@ -29,6 +29,36 @@
 
   function $(id) { return document.getElementById(id); }
   function on(el, ev, fn) { if (el) el.addEventListener(ev, fn); }
+  function tap(el, fn) {
+    if (!el) return;
+    if (typeof global.bindTap === "function") global.bindTap(el, fn);
+    else on(el, "click", fn);
+  }
+  function isTestMode() {
+    try { return !!(new URLSearchParams(location.search).get("test") || "").trim(); }
+    catch (e) { return false; }
+  }
+  function isDevLogin() {
+    try {
+      var q = new URLSearchParams(location.search);
+      return q.get("dev") === "1" || q.get("devlogin") === "1";
+    } catch (e) {
+      return /(?:\?|&)(dev|devlogin)=1(?:&|$)/.test(location.search || "");
+    }
+  }
+  function cleanAuthParams() {
+    try {
+      var q = new URLSearchParams(location.search);
+      var dirty = q.has("code") || q.has("error") || q.has("error_description");
+      var hash = location.hash || "";
+      var hashDirty = hash.indexOf("access_token") >= 0 || hash.indexOf("error=") >= 0;
+      if (!dirty && !hashDirty) return;
+      ["code", "error", "error_description", "state"].forEach(function (k) { q.delete(k); });
+      var search = q.toString();
+      var url = location.pathname + (search ? "?" + search : "") + (hashDirty ? "" : hash);
+      history.replaceState({}, "", url);
+    } catch (e) {}
+  }
 
   function appRedirectUrl() {
     var path = (location.pathname || "/").replace(/index\.html$/, "").replace(/raid\.html$/, "");
@@ -48,6 +78,17 @@
   var LEGACY_FLAG = "kellenscape-legacy-device";
   var LEGACY_CHECKED = "kellenscape-legacy-checked";
   var MIGRATED_FLAG = "kellenscape-cloud-migrated";
+  var GUEST_CONTINUE = "kellenscape-guest-continue";
+
+  function markGuestContinue() {
+    try { localStorage.setItem(GUEST_CONTINUE, "1"); } catch (e) {}
+  }
+  function hasGuestContinue() {
+    try { return localStorage.getItem(GUEST_CONTINUE) === "1"; } catch (e) { return false; }
+  }
+  function clearGuestContinue() {
+    try { localStorage.removeItem(GUEST_CONTINUE); } catch (e) {}
+  }
 
   function stampLegacyDevice() {
     try {
@@ -258,11 +299,11 @@
       if (!r.ok) return;
       var j = await r.json();
       authSettings.external = j.external || {};
-      authSettings.anonymous = !!(j.external && j.external.anonymous) || !!j.disable_signup === false && (j.anonymous_users === true || (j && j.mailer_autoconfirm !== undefined && j.anonymous_users));
-      // GoTrue exposes this as `external` plus some boolean flags. Be liberal:
+      authSettings.anonymous = false;
       if (typeof j.anonymous_users === "boolean") authSettings.anonymous = j.anonymous_users;
+      if (j.external && typeof j.external.anonymous_users === "boolean") authSettings.anonymous = j.external.anonymous_users;
+      if (j.external && typeof j.external.anonymous === "boolean") authSettings.anonymous = authSettings.anonymous || j.external.anonymous;
       if (typeof j.disable_signup === "boolean") authSettings.signup = !j.disable_signup;
-      if (j.external && typeof j.external.anonymous === "boolean") authSettings.anonymous = j.external.anonymous;
       authSettings.email = !(j.external && j.external.email === false);
       authSettings.raw = j;
     } catch (e) {
@@ -305,13 +346,38 @@
     setAuthMsg("Signing in as guest…");
     var res = await sb.auth.signInAnonymously();
     if (res.error) {
-      setAuthMsg(friendlyAuthError(res.error, "guest"));
-      // Still allow offline play: drop through to name entry
+      markGuestContinue();
+      hideAuthMsg();
       showNameStage({ offline: true });
       return;
     }
     session = res.data && res.data.session;
+    markGuestContinue();
     await afterSignedIn({ fresh: true });
+  }
+
+  async function continueAsGuest() {
+    // Legacy players keep full access. We still try a guest session so a later
+    // sign-in can copy this phone's save, but a failure must not block them.
+    if (isLegacyLocal()) {
+      setAuthMsg("Opening your saved adventurer…");
+      if (sb && !session) {
+        try {
+          var res = await sb.auth.signInAnonymously();
+          if (!res.error && res.data && res.data.session) {
+            session = res.data.session;
+            markGuestContinue();
+            await afterSignedIn({ fresh: true, keepLocal: true });
+            return;
+          }
+        } catch (e) {}
+      }
+      markGuestContinue();
+      hideAuthMsg();
+      showSignedInHub();
+      return;
+    }
+    return playAsGuest();
   }
 
   async function sendMagicLink() {
@@ -359,6 +425,7 @@
       var mine = await rpc("my_profile", {});
       if (mine.ok && mine.profile) cloudProfile = mine.profile;
       var hasName = !!(cloudProfile && cloudProfile.username);
+      var localName = (global.Profile && Profile.name) || "";
       if (hasName) {
         // Do not overwrite a richer local save with an empty cloud row before import.
         if (cloudHasCharacter(cloudProfile) || alreadyMigratedHere()) {
@@ -368,7 +435,17 @@
         showSignedInHub();
         return;
       }
-      showNameStage({ prefill: (global.Profile && Profile.name) || "" });
+      // Legacy / returning local players already have a name. Try to claim it,
+      // but never hold them on the name screen if this is Continue as guest.
+      if (localName && (opts.keepLocal || isLegacyLocal())) {
+        var claimed = await rpc("claim_display_name", { p_name: localName });
+        if (claimed.ok && claimed.profile) applyCloudProfile(claimed.profile);
+        await maybeMigrate();
+        showSignedInHub();
+        return;
+      }
+      if (typeof global.enterScene === "function") global.enterScene("login");
+      showNameStage({ prefill: localName });
     })();
     try {
       await signInGate;
@@ -438,12 +515,16 @@
     if (!n) { if (input) input.focus(); setAuthMsg("Enter an adventurer name."); return; }
     if (!session) {
       // Offline fallback
+      markGuestContinue();
       if (typeof global.commitLogin === "function" && global.commitLogin._raw) {
-        return global.commitLogin._raw();
+        global.commitLogin._raw();
+        refreshCloudChrome();
+        return;
       }
       if (global.Profile) { Profile.name = n; }
       if (typeof global.saveProfile === "function") global.saveProfile();
       if (typeof global.enterScene === "function") global.enterScene("hub");
+      refreshCloudChrome();
       return;
     }
     setAuthMsg("Saving name…");
@@ -460,6 +541,10 @@
   function showSignedInHub() {
     hideAuthMsg();
     if (page !== "hub") return;
+    if (inActiveTestFight()) {
+      refreshCloudChrome();
+      return;
+    }
     if (typeof global.enterScene === "function") global.enterScene("hub");
     else if (typeof global.showTitle === "function" && global.showTitle._raw) {
       // showTitle would bounce to login if name missing; name is set now
@@ -478,17 +563,28 @@
 
 
   var STYLES = [
-    "#cloud-auth{width:86%;max-width:320px;margin:0 auto 8px;display:flex;flex-direction:column;gap:7px}",
-    "#cloud-auth-msg{color:#ffd84a;font-size:12px;text-align:center;min-height:0;margin:2px 0 0;text-shadow:0 1px 2px #000}",
-    ".cloud-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;",
-    "padding:8px 10px;border:2px solid #8a7038;background:linear-gradient(#3a2a14,#24180a);color:#ffd84a;",
-    "font-family:Impact,'Arial Black',sans-serif;font-size:15px;letter-spacing:.4px;cursor:pointer;",
-    "box-shadow:inset 0 1px 0 #c4a25a,0 2px 0 #000;border-radius:3px}",
+    "#cloud-auth{width:90%;max-width:320px;margin:0 auto 10px;display:flex;flex-direction:column;gap:10px}",
+    "#cloud-auth-msg{color:#ffd84a;font-size:13px;text-align:center;min-height:0;margin:2px 0 0;text-shadow:0 1px 2px #000}",
+    "#cloud-auth-note{color:#c8b070;font-size:13px;text-align:center;line-height:1.35;margin:0}",
+    ".cloud-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;",
+    "min-height:48px;padding:12px 12px;border:2px solid #8a7038;background:linear-gradient(#3a2a14,#24180a);color:#ffd84a;",
+    "font-family:Impact,'Arial Black',sans-serif;font-size:17px;letter-spacing:.4px;cursor:pointer;",
+    "box-shadow:inset 0 1px 0 #c4a25a,0 2px 0 #000;border-radius:4px;touch-action:manipulation}",
     ".cloud-btn:active{transform:translateY(1px)}",
     ".cloud-btn[disabled]{opacity:.55;cursor:default;filter:grayscale(.2)}",
-    ".cloud-btn .soon{font-family:Arial,sans-serif;font-size:10px;color:#c8b070;letter-spacing:0;margin-left:6px;font-style:italic}",
-    ".cloud-btn.guest{background:linear-gradient(#2a2418,#16120c);color:#fff4c0}",
-    ".cloud-ico{width:16px;height:16px;flex:0 0 16px}",
+    ".cloud-btn.guest{background:linear-gradient(#2a2418,#16120c);color:#fff4c0;border-color:#6a5a38}",
+    ".cloud-ico{width:20px;height:20px;flex:0 0 20px}",
+    "#cloud-account{display:flex;align-items:center;justify-content:space-between;gap:8px;",
+    "width:90%;max-width:300px;margin:0 auto 10px;padding:6px 6px 6px 14px;",
+    "background:#1a120a;border:2px solid #8a7038;border-radius:22px;color:#fff4c0;font-size:13px;",
+    "box-shadow:0 2px 0 #000;flex-shrink:0}",
+    "#cloud-account .cloud-chip-who{min-width:0;flex:1 1 auto;font-weight:700;color:#fff4c0;",
+    "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}",
+    "#cloud-account .cloud-chip-who .sub{display:block;font-weight:400;font-size:11px;color:#c8b070}",
+    "#cloud-chip-action{flex:0 0 auto;min-height:36px;min-width:76px;margin:0;padding:0 12px;",
+    "border:2px solid #8a7038;border-radius:16px;background:linear-gradient(#3a2a14,#24180a);",
+    "color:#ffd84a;font-family:Impact,'Arial Black',sans-serif;font-size:13px;letter-spacing:.3px;",
+    "cursor:pointer;touch-action:manipulation}",
     ".cloud-or{text-align:center;color:#8a7038;font-size:11px;margin:2px 0}",
     "#cloud-email-row,#cloud-dev-row{display:none;flex-direction:column;gap:6px}",
     "#cloud-email-row.open,#cloud-dev-row.open{display:flex}",
@@ -536,9 +632,9 @@
   }
 
   function providerButton(id, label) {
-    var on = providerEnabled(id);
-    return '<button type="button" class="cloud-btn" data-provider="' + id + '" ' + (on ? "" : "disabled") + ">" +
-      ico(id) + "Sign in with " + label + (on ? "" : '<span class="soon">Coming soon</span>') + "</button>";
+    if (!providerEnabled(id)) return "";
+    return '<button type="button" class="cloud-btn" data-provider="' + id + '">' +
+      ico(id) + "Sign in with " + label + "</button>";
   }
 
   function ensureLoginUi() {
@@ -548,21 +644,24 @@
     var box = document.createElement("div");
     box.id = "cloud-auth";
     var apple = ENABLE_APPLE ? providerButton("apple", "Apple") : "";
-    var dev = (location.search || "").indexOf("devlogin=1") >= 0;
+    var dev = isDevLogin();
     box.innerHTML =
-      '<p class="tagline" id="cloud-auth-tag" style="margin:0 0 6px">Sign in to save your adventurer</p>' +
+      '<p class="tagline" id="cloud-auth-tag" style="margin:0 0 2px">Sign in to play</p>' +
+      '<p id="cloud-auth-note">Guests can fight TzTok-Jad in starter gear. Sign in to save your adventurer and unlock everything else.</p>' +
       providerButton("google", "Google") +
       providerButton("discord", "Discord") +
       providerButton("github", "GitHub") +
       apple +
-      '<button type="button" class="cloud-btn guest" id="cloud-guest">Play as guest</button>' +
+      '<button type="button" class="cloud-btn guest" id="cloud-guest">Continue as guest</button>' +
       '<div id="cloud-auth-msg" hidden></div>' +
-      '<button type="button" class="cloud-link" id="cloud-email-toggle">Or email a login link</button>' +
-      '<div id="cloud-email-row">' +
-        '<input id="cloud-email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" />' +
-        '<button type="button" class="cloud-btn" id="cloud-email-send">Send login link</button>' +
-        '<div class="cloud-or">Uses Supabase\'s built-in email (a few messages per hour on the free plan)</div>' +
-      "</div>" +
+      (authSettings.email !== false
+        ? ('<button type="button" class="cloud-link" id="cloud-email-toggle">Or email a login link</button>' +
+           '<div id="cloud-email-row">' +
+             '<input id="cloud-email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" />' +
+             '<button type="button" class="cloud-btn" id="cloud-email-send">Send login link</button>' +
+             '<div class="cloud-or">Uses a login link sent to your email</div>' +
+           "</div>")
+        : "") +
       (dev ? ('<div id="cloud-dev-row" class="open">' +
         '<input id="cloud-dev-user" placeholder="username" autocomplete="username" />' +
         '<input id="cloud-dev-pass" type="password" placeholder="password" autocomplete="current-password" />' +
@@ -571,22 +670,22 @@
       "</div>") : "");
     var nameRow = overlay.querySelector(".name-row");
     var tag = overlay.querySelector(".tagline");
-    if (tag) tag.style.display = "none";
+    if (tag && tag.id !== "cloud-auth-tag") tag.style.display = "none";
     overlay.insertBefore(box, nameRow || overlay.firstChild);
     box.querySelectorAll("[data-provider]").forEach(function (btn) {
-      on(btn, "click", function () {
+      tap(btn, function () {
         if (btn.disabled) return;
         startOAuth(btn.getAttribute("data-provider"), false);
       });
     });
-    on($("cloud-guest"), "click", function () { playAsGuest(); });
-    on($("cloud-email-toggle"), "click", function () {
+    tap($("cloud-guest"), function () { continueAsGuest(); });
+    tap($("cloud-email-toggle"), function () {
       var row = $("cloud-email-row");
       if (row) row.classList.toggle("open");
     });
-    on($("cloud-email-send"), "click", function () { sendMagicLink(); });
-    on($("cloud-dev-in"), "click", function () { devPasswordLogin(false); });
-    on($("cloud-dev-up"), "click", function () { devPasswordLogin(true); });
+    tap($("cloud-email-send"), function () { sendMagicLink(); });
+    tap($("cloud-dev-in"), function () { devPasswordLogin(false); });
+    tap($("cloud-dev-up"), function () { devPasswordLogin(true); });
     setLoginStage("auth");
   }
 
@@ -599,7 +698,8 @@
     var enter = $("btn-login");
     var auth = $("cloud-auth");
     if (stage === "name") {
-      if (auth) auth.style.display = opts.offline ? "block" : "block";
+      if (auth) auth.style.display = "";
+      setAuthActionsVisible(!!opts.offline);
       if (nameRow) nameRow.style.display = "";
       if (enter) {
         enter.style.display = "";
@@ -609,18 +709,97 @@
       if (tag) tag.textContent = opts.offline
         ? "Playing offline — pick a name (progress stays on this phone until you sign in)"
         : "Choose a unique adventurer name";
+      var note = $("cloud-auth-note");
+      if (note) {
+        note.textContent = opts.offline
+          ? "You can sign in later from the title screen. Your progress stays on this phone."
+          : "This name shows on the leaderboard and to players in the lobby.";
+        note.style.display = "";
+      }
       var input = $("name-input");
       if (input && opts.prefill && !input.value) input.value = opts.prefill;
       if (input) input.focus();
     } else {
+      if (auth) auth.style.display = "";
+      setAuthActionsVisible(true);
       if (nameRow) nameRow.style.display = "none";
       if (enter) enter.style.display = "none";
       var tag2 = $("cloud-auth-tag");
-      if (tag2) tag2.textContent = "Sign in to save your adventurer";
+      var note2 = $("cloud-auth-note");
+      var legacy = isLegacyLocal();
+      if (tag2) tag2.textContent = legacy
+        ? "Sign in to keep your progress"
+        : "Sign in to play";
+      if (note2) {
+        note2.textContent = legacy
+          ? "Sign in so this phone's save follows you. Continue as guest keeps everything you already have — you will not be limited to Jad."
+          : "Guests can fight TzTok-Jad in starter gear. Sign in to save your adventurer and unlock the Shop, better gear, Kree'arra, Gloamhold, and the lobby.";
+        note2.style.display = "";
+      }
+    }
+  }
+
+  function setAuthActionsVisible(on) {
+    var box = $("cloud-auth");
+    if (!box) return;
+    var nodes = box.querySelectorAll("[data-provider], #cloud-guest, #cloud-email-toggle, #cloud-email-row, #cloud-dev-row");
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].id === "cloud-dev-row") nodes[i].style.display = on && isDevLogin() ? "flex" : "none";
+      else if (nodes[i].id === "cloud-email-row") {
+        if (!on) nodes[i].style.display = "none";
+        else if (!nodes[i].classList.contains("open")) nodes[i].style.display = "none";
+        else nodes[i].style.display = "flex";
+      } else {
+        nodes[i].style.display = on ? "" : "none";
+      }
     }
   }
 
   function showNameStage(opts) { setLoginStage("name", opts || {}); }
+
+  function inActiveTestFight() {
+    if (!isTestMode()) return false;
+    var scene = global.G && G.scene;
+    return !!(scene && scene !== "hub" && scene !== "login");
+  }
+
+  function showSignInScreen() {
+    setLoginStage("auth");
+    if (typeof global.enterScene === "function") global.enterScene("login");
+  }
+
+  function showNameEditor() {
+    if (typeof global.enterScene === "function") global.enterScene("login");
+    showNameStage({ prefill: (global.Profile && Profile.name) || "", offline: !session });
+  }
+
+  function routeTitle() {
+    if (isTestMode()) {
+      if (inActiveTestFight()) return;
+      if (global.Profile && Profile.name && typeof global.enterScene === "function") global.enterScene("hub");
+      else if (typeof global.enterScene === "function") global.enterScene("login");
+      refreshCloudChrome();
+      return;
+    }
+    if (!session && hasGuestContinue() && global.Profile && Profile.name) {
+      showSignedInHub();
+      return;
+    }
+    if (session && cloudProfile && cloudProfile.username) {
+      showSignedInHub();
+      return;
+    }
+    if (session && isLegacyLocal() && global.Profile && Profile.name) {
+      showSignedInHub();
+      return;
+    }
+    if (session && !(cloudProfile && cloudProfile.username)) {
+      if (typeof global.enterScene === "function") global.enterScene("login");
+      showNameStage({ prefill: (global.Profile && Profile.name) || "" });
+      return;
+    }
+    showSignInScreen();
+  }
 
   function ensurePromptUi() {
     if ($("cloud-signin-prompt")) return;
@@ -658,9 +837,9 @@
   function promptButtonsHtml() {
     var bits = [];
     ["google", "discord", "github"].forEach(function (p) {
-      var onP = providerEnabled(p);
-      bits.push('<button type="button" class="cloud-btn" data-prompt-provider="' + p + '" ' + (onP ? "" : "disabled") + ">" +
-        ico(p) + "Sign in with " + cap(p) + (onP ? "" : '<span class="soon">Coming soon</span>') + "</button>");
+      if (!providerEnabled(p)) return;
+      bits.push('<button type="button" class="cloud-btn" data-prompt-provider="' + p + '">' +
+        ico(p) + "Sign in with " + cap(p) + "</button>");
     });
     if (session && isAnonymousUser(session.user)) {
       bits.push('<p class="cloud-or">This links your guest character so nothing is lost.</p>');
@@ -680,7 +859,7 @@
     if (btns) {
       btns.innerHTML = promptButtonsHtml();
       btns.querySelectorAll("[data-prompt-provider]").forEach(function (btn) {
-        on(btn, "click", function () {
+        tap(btn, function () {
           if (btn.disabled) return;
           var link = !!(session && isAnonymousUser(session.user));
           startOAuth(btn.getAttribute("data-prompt-provider"), link);
@@ -725,22 +904,35 @@
 
   function ensureHubChrome() {
     var hub = $("overlay-hub");
-    if (!hub || $("cloud-status")) return;
+    if (!hub || $("cloud-account")) return;
     injectStyles();
+    var chip = document.createElement("div");
+    chip.id = "cloud-account";
+    chip.innerHTML = '<div class="cloud-chip-who" id="cloud-chip-who">Guest</div>' +
+      '<button type="button" id="cloud-chip-action">Sign in</button>';
+    var welcome = $("hub-welcome");
+    if (welcome && welcome.parentNode) welcome.parentNode.insertBefore(chip, welcome.nextSibling);
+    else hub.insertBefore(chip, hub.firstChild);
+    tap(chip.querySelector("#cloud-chip-action"), function () {
+      var action = $("cloud-chip-action");
+      var kind = action && action.getAttribute("data-action");
+      if (kind === "signout") signOut();
+      else showSignInScreen();
+    });
     var status = document.createElement("div");
     status.id = "cloud-status";
-    status.innerHTML = '<span class="off">Local save only</span>';
-    var welcome = $("hub-welcome");
-    if (welcome && welcome.parentNode) welcome.parentNode.insertBefore(status, welcome.nextSibling);
-    else hub.insertBefore(status, hub.firstChild);
+    status.hidden = true;
 
     var banner = document.createElement("div");
     banner.id = "cloud-banner";
     banner.hidden = true;
     banner.innerHTML = '<div>Sign in to save your progress so it follows you to any phone.</div>' +
       '<button type="button" class="cloud-btn" id="cloud-banner-btn">Sign in to save your progress</button>';
-    if (status.parentNode) status.parentNode.insertBefore(banner, status.nextSibling);
-    on(banner.querySelector("#cloud-banner-btn"), "click", function () {
+    var chipEl = $("cloud-account");
+    if (chipEl && chipEl.parentNode) chipEl.parentNode.insertBefore(banner, chipEl.nextSibling);
+    else if (welcome && welcome.parentNode) welcome.parentNode.insertBefore(banner, welcome.nextSibling);
+    else hub.insertBefore(banner, hub.firstChild);
+    tap(banner.querySelector("#cloud-banner-btn"), function () {
       showSignInPrompt({ title: "Sign in to save your progress" });
     });
 
@@ -761,29 +953,6 @@
     if (best && best.parentNode) best.parentNode.insertBefore(panel, best);
     else hub.appendChild(panel);
 
-    var change = $("btn-change-name");
-    if (change && !$("btn-cloud-signout")) {
-      var out = document.createElement("button");
-      out.id = "btn-cloud-signout";
-      out.type = "button";
-      out.className = "btn secondary";
-      out.textContent = "Sign out";
-      change.parentNode.insertBefore(out, change.nextSibling);
-      on(out, "click", function () { signOut(); });
-    }
-    if (change && !$("btn-cloud-signin")) {
-      var inn = document.createElement("button");
-      inn.id = "btn-cloud-signin";
-      inn.type = "button";
-      inn.className = "btn secondary";
-      inn.textContent = "Sign in to save";
-      change.parentNode.insertBefore(inn, change);
-      on(inn, "click", function () {
-        setLoginStage("auth");
-        if (typeof global.enterScene === "function") global.enterScene("login");
-      });
-    }
-
     var duel = $("btn-mode-duel");
     if (duel) {
       duel.disabled = false;
@@ -801,23 +970,41 @@
   function refreshCloudChrome() {
     if (page !== "hub") return;
     ensureHubChrome();
-    var st = $("cloud-status");
-    if (st) {
-      if (session && cloudProfile && cloudProfile.username) {
-        var guest = isAnonymousUser(session.user) && linkedProviders(session.user).length === 0;
-        st.innerHTML = '<span class="ok">Saved to cloud</span> · ' +
-          escapeHtml(cloudProfile.username) +
-          (guest ? " · Guest" : "");
-      } else if (session) {
-        st.innerHTML = '<span class="ok">Signed in</span> — pick a name to save';
+    var who = $("cloud-chip-who");
+    var action = $("cloud-chip-action");
+    var localName = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "";
+    var guest = !!(session && isAnonymousUser(session.user) && linkedProviders(session.user).length === 0);
+    var offlineGuest = !session && !isPermanentUser() && !isLegacyLocal();
+    if (who) {
+      if (localName && session && isPermanentUser()) {
+        who.innerHTML = escapeHtml(localName) + '<span class="sub">Saved to cloud</span>';
+      } else if (localName && (guest || offlineGuest)) {
+        who.innerHTML = escapeHtml(localName) + '<span class="sub">Guest</span>';
+      } else if (localName && isLegacyLocal() && !isPermanentUser()) {
+        who.innerHTML = escapeHtml(localName) + '<span class="sub">On this phone</span>';
+      } else if (session && isPermanentUser()) {
+        who.innerHTML = 'Signed in<span class="sub">Pick a name to save</span>';
+      } else if (guest || offlineGuest) {
+        who.innerHTML = 'Guest<span class="sub">Starter gear · Jad only</span>';
+      } else if (localName) {
+        who.textContent = localName;
       } else {
-        st.innerHTML = '<span class="off">Local save only</span>';
+        who.textContent = "Guest";
+      }
+    }
+    if (action) {
+      if (session || hasGuestContinue()) {
+        action.textContent = "Sign out";
+        action.setAttribute("data-action", "signout");
+      } else {
+        action.textContent = "Sign in";
+        action.setAttribute("data-action", "signin");
       }
     }
     var signInBtn = $("btn-cloud-signin");
     var signOutBtn = $("btn-cloud-signout");
-    if (signInBtn) signInBtn.style.display = session && isPermanentUser() ? "none" : "";
-    if (signOutBtn) signOutBtn.style.display = session ? "" : "none";
+    if (signInBtn) signInBtn.style.display = "none";
+    if (signOutBtn) signOutBtn.style.display = "none";
     var banner = $("cloud-banner");
     if (banner) {
       var showBanner = !isPermanentUser();
@@ -849,14 +1036,12 @@
     }
     var bits = ['<span class="cloud-sec" style="width:100%;text-align:center;margin:0">Keep this character</span>'];
     ["google", "discord", "github"].forEach(function (p) {
-      var on = providerEnabled(p);
-      bits.push('<button type="button" class="cloud-btn" data-link="' + p + '" ' + (on ? "" : "disabled") + ">" +
-        (on ? "Link " + cap(p) : cap(p) + ' <span class="soon">soon</span>') + "</button>");
+      if (!providerEnabled(p)) return;
+      bits.push('<button type="button" class="cloud-btn" data-link="' + p + '">Link ' + cap(p) + "</button>");
     });
     row.innerHTML = bits.join("");
     row.querySelectorAll("[data-link]").forEach(function (btn) {
-      on(btn, "click", function () {
-        if (btn.disabled) return;
+      tap(btn, function () {
         startOAuth(btn.getAttribute("data-link"), true);
       });
     });
@@ -1061,6 +1246,7 @@
     if (sb) await sb.auth.signOut();
     session = null;
     cloudProfile = null;
+    clearGuestContinue();
     refreshCloudChrome();
     setLoginStage("auth");
     if (typeof global.enterScene === "function") global.enterScene("login");
@@ -1087,24 +1273,8 @@
     if (typeof global.showTitle === "function" && !global.showTitle._cloud) {
       var rawTitle = global.showTitle;
       var wrappedTitle = function () {
-        if (session && cloudProfile && cloudProfile.username) {
-          if (global.Profile && !Profile.name) applyCloudProfile(cloudProfile);
-          if (typeof global.enterScene === "function") {
-            global.enterScene("hub");
-            startLobby();
-            refreshCloudChrome();
-            loadLeaderboard();
-            return;
-          }
-        }
         rawTitle.apply(this, arguments);
-        if (session && !(cloudProfile && cloudProfile.username)) {
-          if (typeof global.enterScene === "function") global.enterScene("login");
-          showNameStage({ prefill: (global.Profile && Profile.name) || "" });
-        } else if (!session) {
-          setLoginStage("auth");
-        }
-        refreshCloudChrome();
+        if (!isTestMode()) refreshCloudChrome();
       };
       wrappedTitle._cloud = true;
       wrappedTitle._raw = rawTitle;
@@ -1351,8 +1521,14 @@
       });
     }
     if (typeof global.supabase === "undefined" || typeof global.supabase.createClient !== "function") {
-      setAuthMsg("Cloud library failed to load. You can still play offline.");
-      setLoginStage("name", { offline: true, prefill: (global.Profile && Profile.name) || "" });
+      if (!isTestMode()) {
+        setAuthMsg("Cloud library failed to load. You can still play offline.");
+        if (isLegacyLocal() && global.Profile && Profile.name) {
+          setLoginStage("auth");
+        } else {
+          setLoginStage("name", { offline: true, prefill: (global.Profile && Profile.name) || "" });
+        }
+      }
       ready = true;
       return;
     }
@@ -1367,25 +1543,27 @@
     }
     var got = await sb.auth.getSession();
     session = got.data && got.data.session;
-    if (session) await afterSignedIn({ fresh: false });
-    else if (page === "hub") {
-      var alreadyNamed = global.Profile && Profile.name;
-      var onHub = $("overlay-hub") && !$("overlay-hub").classList.contains("hidden");
-      if (alreadyNamed && onHub) {
-        refreshCloudChrome();
-        loadLeaderboard();
-      } else if (!alreadyNamed) {
-        setLoginStage("auth");
-        if (typeof global.enterScene === "function") global.enterScene("login");
-      } else {
-        refreshCloudChrome();
-        loadLeaderboard();
+    cleanAuthParams();
+    if (isTestMode()) {
+      if (session) {
+        try {
+          var mine = await rpc("my_profile", {});
+          if (mine.ok && mine.profile) {
+            cloudProfile = mine.profile;
+            if (cloudHasCharacter(cloudProfile) || alreadyMigratedHere()) applyCloudProfile(cloudProfile);
+          }
+        } catch (e) {}
       }
+      refreshCloudChrome();
+    } else if (session) {
+      await afterSignedIn({ fresh: false });
+    } else if (page === "hub") {
+      routeTitle();
     }
 
     sb.auth.onAuthStateChange(function (event, sess) {
       session = sess;
-      if (event === "SIGNED_IN" && sess) afterSignedIn({ fresh: false });
+      if (event === "SIGNED_IN" && sess && !isTestMode()) afterSignedIn({ fresh: false });
       if (event === "SIGNED_OUT") {
         cloudProfile = null;
         refreshCloudChrome();
@@ -1403,6 +1581,10 @@
     get ready() { return ready; },
     get session() { return session; },
     get profile() { return cloudProfile; },
+    hasSession: function () { return !!session; },
+    routeTitle: routeTitle,
+    showNameEditor: showNameEditor,
+    showSignInScreen: showSignInScreen,
     client: function () { return sb; },
     reloadLeaderboard: loadLeaderboard,
     startLobby: startLobby
