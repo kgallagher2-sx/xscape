@@ -765,10 +765,22 @@ function drawBandosCharacter(c, t, opt) {
 }
 
 function drawPartyhat(c, baseY) {
-  // Original paper party crown. Geometry is invented here — a thin band
-  // hugging the hairline, five big triangular points in a single zig-zag
-  // (tallest in the middle), two darker back points peeking in the valleys.
+  // Prefer the cropped reference partyhat (PARTYHAT_IMG from partyhat-img.js).
+  // Falls back to the procedural crown if the image is not loaded.
   baseY = baseY || 0;
+  const img = (typeof PARTYHAT_IMG !== "undefined") ? PARTYHAT_IMG : null;
+  if (img && img.complete && img.naturalWidth > 0) {
+    // Skull is ~19.2 wide. Hat sits a bit wider so hair shows at the sides.
+    const destW = 19.2 * 1.20;
+    const destH = destW * (img.naturalHeight / img.naturalWidth);
+    const prev = c.imageSmoothingEnabled;
+    c.imageSmoothingEnabled = true;
+    if (c.imageSmoothingQuality) c.imageSmoothingQuality = "high";
+    // Anchor the bottom of the band at the hairline, sunk slightly so it sits ON the head.
+    c.drawImage(img, -destW / 2, baseY - destH + 2.6, destW, destH);
+    c.imageSmoothingEnabled = prev;
+    return;
+  }
   const W = 12.4;
   const bandH = 3.2;
   const bandTop = baseY - bandH;
