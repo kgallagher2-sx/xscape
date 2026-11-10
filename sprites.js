@@ -1428,18 +1428,19 @@ function drawXscapeLogo(c, w, h) {
   c.fill();
   c.restore();
 
+  // Sword first (behind the stones): shallow diagonal along the lower edge
+  // so only the hilt (left of X) and tip (past E) poke out. Letters stay fully readable.
+  const sx = startX - rw * 0.92;
+  const sy = cy + rh * 0.50;
+  const slen = span * 0.99 + rw * 0.55;
+  const sang = 0.085;
+  _drawLogoSword(c, sx, sy, slen, sang);
+
   for (let i = 0; i < n; i++) {
     const x = startX + i * gap;
     const y = cy + stagger[i] * rh * 1.15;
     _drawLogoStone(c, x, y, rw * fat[i], rh * fat[i], letters[i], tilt[i], 11 + i * 17);
   }
-
-  // Sword: shallow diagonal, hilt just left of X, tip past E
-  const sx = startX - rw * 0.75;
-  const sy = cy - rh * 0.36;
-  const slen = span * 0.92 + rw * 0.15;
-  const sang = 0.18;
-  _drawLogoSword(c, sx, sy, slen, sang);
   c.restore();
 }
 

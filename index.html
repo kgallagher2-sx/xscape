@@ -257,6 +257,7 @@
       background: linear-gradient(#3a3a38, #242220); border-color: #6a6a62; color: #8a8a84;
       cursor: not-allowed; filter: grayscale(0.55); opacity: 0.75;
     }
+    .mode-btn.locked.needs-equip { cursor: pointer; opacity: 0.92; filter: grayscale(0.2); }
     .mode-btn.locked .coming, .mode-btn:disabled .coming { color: #c9a24a; font-size: 11px; letter-spacing: 1px; }
     .gp-line { font-size: 16px; font-weight: 700; margin: 2px 0 8px; text-shadow: 0 1px 2px #000; color: #c8b070; }
     .gp-amt { font-weight: 700; letter-spacing: 0.3px; text-shadow: 0 1px 0 #000, 0 0 6px #000; }
@@ -1086,6 +1087,7 @@ function unequipSlot(slot, silent) {
   if (!silent) {
     saveProfile();
     refreshGearViews();
+    if (typeof updateRaidLock === "function") updateRaidLock();
   }
   return true;
 }
@@ -1104,6 +1106,7 @@ function equipItem(id) {
   eq[it.slot] = id;
   saveProfile();
   refreshGearViews();
+  if (typeof updateRaidLock === "function") updateRaidLock();
   return true;
 }
 
@@ -2012,21 +2015,54 @@ function maybeGrantLegacyFireCape() {
   const hadItem = isOwned("fire_cape");
   Profile.hasFireCape = true;
   ownItem("fire_cape");
-  // Keep the old always-on look for veterans whose cape slot is empty.
-  if (!itemInSlot("cape")) equipItem("fire_cape");
+  // First-time legacy grant only: don't re-equip a cape the player has taken off.
+  if (!hadItem && !itemInSlot("cape")) equipItem("fire_cape");
   else if (!hadItem) saveProfile();
   return true;
+}
+
+function gloamholdLockReason() {
+  if (wearingFireCape()) return "ok";
+  if (ownsFireCape()) return "not-equipped";
+  return "no-cape";
+}
+
+function tryEnterGloamhold() {
+  try { if (typeof audio !== "undefined" && audio.unlock) audio.unlock(); } catch (e) {}
+  const test = (typeof testFlag === "function") ? testFlag() : "";
+  if (test && String(test).indexOf("raid") === 0) {
+    if (typeof enterScene === "function") enterScene("raid");
+    return true;
+  }
+  const reason = gloamholdLockReason();
+  if (reason === "ok") {
+    if (typeof enterScene === "function") enterScene("raid");
+    return true;
+  }
+  if (reason === "not-equipped") {
+    if (typeof flashMsg === "function") flashMsg("Equip your Fire cape to enter", "#ffd84a");
+    if (typeof openEquipmentView === "function") openEquipmentView();
+    return false;
+  }
+  if (typeof flashMsg === "function") flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+  return false;
 }
 
 function updateRaidLock() {
   const b = document.getElementById("btn-mode-raid");
   if (!b) return;
-  const locked = !ownsFireCape();
+  const reason = gloamholdLockReason();
+  const locked = reason !== "ok";
   b.classList.toggle("locked", locked);
-  b.disabled = locked;
-  b.setAttribute("aria-disabled", locked ? "true" : "false");
-  if (locked) {
+  b.classList.toggle("needs-equip", reason === "not-equipped");
+  // Owned-but-not-worn stays enabled so a tap can open Equipment.
+  b.disabled = reason === "no-cape";
+  // Keep owned-but-not-worn clickable (opens Equipment); aria must match.
+  b.setAttribute("aria-disabled", reason === "no-cape" ? "true" : "false");
+  if (reason === "no-cape") {
     b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>';
+  } else if (reason === "not-equipped") {
+    b.innerHTML = 'Gloamhold<span class="coming">Equip your Fire cape to enter</span>';
   } else {
     b.innerHTML = 'Gloamhold<span class="sub">The Unsleeping · Raid</span>';
   }
@@ -2172,27 +2208,88 @@ const audio = {
       this._noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const d = this._noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const onState = () => {
+        if (this.ctx && this.ctx.state === "running") this._onCtxRunning();
+        else this.armUnlock();
+      };
+      try { this.ctx.addEventListener("statechange", onState); } catch (e) {
+        this.ctx.onstatechange = onState;
+      }
     }
-    if (this.ctx.state === "suspended") this.ctx.resume();
+    if (this.ctx.state === "suspended" || this.ctx.state === "interrupted") {
+      try { this.ctx.resume(); } catch (e) {}
+    }
     return this.ctx;
   },
-  /* iOS Safari: must create/resume context and play a buffer during a user gesture. */
+  _onCtxRunning() {
+    this._tapped = true;
+    this._disarmUnlock();
+    if (!this.muted && typeof G !== "undefined" && G.mode === "playing") {
+      if (!this.ambientOn) this.startAmbient();
+      else if (this.scheduleMusic) this.scheduleMusic();
+    }
+  },
+  _kickSilent(ctx) {
+    try {
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(this.master || ctx.destination);
+      src.start(0);
+    } catch (e) {}
+  },
+  /* iOS Safari: create/resume and play a silent buffer inside a real user
+     gesture (touchend/click). touchstart and pointerup are not counted on
+     all iOS versions, especially if a later preventDefault cancels the click.
+     Keep kicking until ctx.state === "running". */
   unlock() {
     const ctx = this.ensure();
     if (!ctx) return null;
-    if (ctx.state === "suspended") ctx.resume();
-    if (!this._tapped) {
-      this._tapped = true;
+    if (ctx.state === "suspended" || ctx.state === "interrupted") {
       try {
-        const buf = ctx.createBuffer(1, 1, 22050);
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.connect(ctx.destination);
-        src.start(0);
+        const p = ctx.resume();
+        if (p && p.then) p.then(() => {
+          if (ctx.state === "running") this._onCtxRunning();
+        }).catch(() => {});
       } catch (e) {}
-      // Fight music starts with the fight, not on the title/hub tap.
     }
+    if (ctx.state !== "running") this._kickSilent(ctx);
+    else this._onCtxRunning();
+    if (ctx.state === "running") this._tapped = true;
     return ctx;
+  },
+  _unlockEvents: ["touchstart", "touchend", "pointerdown", "click", "keydown"],
+  armUnlock() {
+    if (this._unlockArmed) return;
+    this._unlockArmed = true;
+    if (!this._unlockHandler) this._unlockHandler = () => { this.unlock(); };
+    this._unlockEvents.forEach((ev) => {
+      document.addEventListener(ev, this._unlockHandler, { capture: true, passive: true });
+    });
+    if (!this._visArmed) {
+      this._visArmed = true;
+      const resumeIfLive = () => {
+        this.armUnlock();
+        // Do not create a context outside a gesture — iOS will leave it
+        // suspended forever. Only resume an existing context.
+        if (this.ctx) this.unlock();
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) resumeIfLive();
+      });
+      window.addEventListener("pageshow", resumeIfLive);
+      window.addEventListener("focus", resumeIfLive);
+    }
+  },
+  _disarmUnlock() {
+    if (!this._unlockArmed || !this._unlockHandler) return;
+    // Stay armed if the context can still drop back to suspended/interrupted.
+    if (this.ctx && this.ctx.state === "running") {
+      this._unlockArmed = false;
+      this._unlockEvents.forEach((ev) => {
+        document.removeEventListener(ev, this._unlockHandler, { capture: true });
+      });
+    }
   },
   out() { return this.master || this.ctx.destination; },
   tone(freq, dur, type, vol, at, slide) {
@@ -4929,6 +5026,14 @@ function applyLetterbox() {
   bot.style.height = Math.round(a * bh) + "px";
 }
 
+function applyOpenQuery() {
+  try {
+    const q = new URLSearchParams(location.search);
+    if ((q.get("open") || "").toLowerCase() !== "equipment") return;
+    if (typeof openEquipmentView === "function") openEquipmentView();
+  } catch (e) {}
+}
+
 function applyTestQuery() {
   const test = testFlag();
   if (!test) return;
@@ -5108,13 +5213,9 @@ $("sound-btn").addEventListener("click", () => {
 });
 $("sound-btn").textContent = audio.muted ? "x" : "♪";
 
-function unlockAudioFromGesture() { audio.unlock(); }
-["pointerdown", "touchstart", "keydown"].forEach((ev) => {
-  document.addEventListener(ev, unlockAudioFromGesture, { capture: true, passive: true });
-});
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) audio.unlock();
-});
+window.audio = audio;
+audio.armUnlock();
+if (audio.ctx && audio.ctx.state === "running") audio._onCtxRunning();
 
 window.KellenScape = {
   startFight() {
@@ -5183,7 +5284,7 @@ window.KellenScape = {
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
   ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
-  ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape,
+  ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape, gloamholdLockReason, tryEnterGloamhold,
   setDebug(on) { G.debugCombat = !!on; updateDebugCombat(); },
   getState() {
     const vs = (Profile.equipment) ? combatVsMonster("tztok-jad", "ranged") : null;
@@ -5238,6 +5339,8 @@ window.ownsFireCape = ownsFireCape;
 window.awardFireCape = awardFireCape;
 window.updateRaidLock = updateRaidLock;
 window.wearingFireCape = wearingFireCape;
+window.gloamholdLockReason = gloamholdLockReason;
+window.tryEnterGloamhold = tryEnterGloamhold;
 </script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
@@ -5257,6 +5360,7 @@ showTitle();
 refreshTitleBest();
 requestAnimationFrame(frame);
 applyTestQuery();
+applyOpenQuery();
 </script>
 </body>
 </html>

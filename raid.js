@@ -534,7 +534,12 @@
     ensure: function () {
       const a = audioObj();
       if (a && a.ensure) return a.ensure();
-      if (this._ctx) return this._ctx;
+      if (this._ctx) {
+        if (this._ctx.state === "suspended" || this._ctx.state === "interrupted") {
+          try { this._ctx.resume(); } catch (e) {}
+        }
+        return this._ctx;
+      }
       try {
         const AC = global.AudioContext || global.webkitAudioContext;
         if (!AC) return null;
@@ -542,8 +547,41 @@
         this._master = this._ctx.createGain();
         this._master.gain.value = 0.8;
         this._master.connect(this._ctx.destination);
+        const self = this;
+        const onState = function () {
+          if (self._ctx && self._ctx.state === "running") self._tapped = true;
+        };
+        try { this._ctx.addEventListener("statechange", onState); } catch (e) {
+          this._ctx.onstatechange = onState;
+        }
         return this._ctx;
       } catch (e) { return null; }
+    },
+    unlock: function () {
+      const a = audioObj();
+      if (a && a.unlock) return a.unlock();
+      const ctx = this.ensure();
+      if (!ctx) return null;
+      if (ctx.state === "suspended" || ctx.state === "interrupted") {
+        try {
+          const p = ctx.resume();
+          if (p && p.then) p.then(function () {
+            if (ctx.state === "running") raidAudio._tapped = true;
+          }).catch(function () {});
+        } catch (e) {}
+      }
+      if (ctx.state !== "running") {
+        try {
+          const buf = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(this._master || ctx.destination);
+          src.start(0);
+        } catch (e) {}
+      } else {
+        this._tapped = true;
+      }
+      return ctx;
     },
     out: function () {
       const a = audioObj();
@@ -1876,19 +1914,40 @@
       } catch (e) {}
       return false;
     },
+    wearingFireCape: function () {
+      if (typeof global.wearingFireCape === "function") {
+        try { return !!global.wearingFireCape(); } catch (e) {}
+      }
+      const P = profileObj();
+      return !!(P && P.equipment && P.equipment.cape === "fire_cape");
+    },
+    gloamholdLockReason: function () {
+      if (typeof global.gloamholdLockReason === "function") {
+        try { return global.gloamholdLockReason(); } catch (e) {}
+      }
+      if (api.wearingFireCape()) return "ok";
+      if (api.ownsFireCape()) return "not-equipped";
+      return "no-cape";
+    },
     updateRaidLock: function () {
       if (typeof global.updateRaidLock === "function") {
         try { global.updateRaidLock(); return; } catch (e) {}
       }
       const b = global.document && document.getElementById("btn-mode-raid");
       if (!b) return;
-      const locked = !api.ownsFireCape();
+      const reason = api.gloamholdLockReason();
+      const locked = reason !== "ok";
       b.classList.toggle("locked", locked);
-      b.disabled = locked;
-      b.setAttribute("aria-disabled", locked ? "true" : "false");
-      b.innerHTML = locked
-        ? 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>'
-        : 'Gloamhold<span class="sub">The Unsleeping · Raid</span>';
+      b.classList.toggle("needs-equip", reason === "not-equipped");
+      b.disabled = reason === "no-cape";
+      b.setAttribute("aria-disabled", reason === "no-cape" ? "true" : "false");
+      if (reason === "no-cape") {
+        b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>';
+      } else if (reason === "not-equipped") {
+        b.innerHTML = 'Gloamhold<span class="coming">Equip your Fire cape to enter</span>';
+      } else {
+        b.innerHTML = 'Gloamhold<span class="sub">The Unsleeping · Raid</span>';
+      }
     },
     installHubButton: function () {
       try {
@@ -1901,7 +1960,23 @@
         b.innerHTML = 'Gloamhold<span class="sub">The Unsleeping · Raid</span>';
         b.addEventListener("click", function (e) {
           e.preventDefault();
+          if (typeof global.tryEnterGloamhold === "function") {
+            global.tryEnterGloamhold();
+            return;
+          }
           try { if (typeof audio !== "undefined" && audio.unlock) audio.unlock(); } catch (err) {}
+          const test = api.testFlag && api.testFlag();
+          const bypass = !!(test && test.indexOf("raid") === 0);
+          const reason = bypass ? "ok" : api.gloamholdLockReason();
+          if (reason === "not-equipped") {
+            if (typeof global.openEquipmentView === "function") global.openEquipmentView();
+            if (typeof global.flashMsg === "function") global.flashMsg("Equip your Fire cape to enter", "#ffd84a");
+            return;
+          }
+          if (reason !== "ok") {
+            if (typeof global.flashMsg === "function") global.flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+            return;
+          }
           if (typeof global.enterScene === "function" && global.Scenes && global.Scenes.raid) {
             global.enterScene("raid");
             return;
@@ -2045,11 +2120,19 @@
     opts = opts || { room: "gate" };
     const test = api.testFlag();
     const bypassLock = !!(opts.fromQuery || opts.skipLock || (test && test.indexOf("raid") === 0));
-    if (!bypassLock && !api.ownsFireCape()) {
-      api.updateRaidLock();
-      if (typeof global.showTitle === "function") global.showTitle();
-      if (typeof global.flashMsg === "function") global.flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
-      return;
+    if (!bypassLock) {
+      const reason = api.gloamholdLockReason();
+      if (reason !== "ok") {
+        api.updateRaidLock();
+        if (typeof global.showTitle === "function") global.showTitle();
+        if (reason === "not-equipped") {
+          if (typeof global.flashMsg === "function") global.flashMsg("Equip your Fire cape to enter", "#ffd84a");
+          if (typeof global.openEquipmentView === "function") global.openEquipmentView();
+        } else if (typeof global.flashMsg === "function") {
+          global.flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+        }
+        return;
+      }
     }
     const skipBrief = !!(opts.skipBrief || opts.fromQuery);
     const seen = (typeof global.raidBriefSeen === "function") ? global.raidBriefSeen() : false;
@@ -2127,6 +2210,10 @@
     if (jadBtn) {
       jadBtn.onclick = function (e) {
         e.preventDefault();
+        if (typeof global.tryEnterGloamhold === "function") {
+          global.tryEnterGloamhold();
+          return;
+        }
         try { if (typeof audio !== "undefined" && audio.unlock) audio.unlock(); } catch (err) {}
         if (typeof global.enterScene === "function") global.enterScene("raid");
         else startRaidInGame({ room: "gate" });
@@ -2172,9 +2259,36 @@
     if (global.KellenScape) global.KellenScape.raid = api;
   }
   hookXscape();
+  function kickUnlock() {
+    try {
+      const a = audioObj();
+      if (a && a.unlock) a.unlock();
+      else raidAudio.unlock();
+    } catch (e) {}
+  }
+  function armRaidUnlock() {
+    if (armRaidUnlock._armed) return;
+    armRaidUnlock._armed = true;
+    ["touchstart", "touchend", "pointerdown", "click", "keydown"].forEach(function (ev) {
+      document.addEventListener(ev, kickUnlock, { capture: true, passive: true });
+    });
+    function resumeIfLive() {
+      const a = audioObj();
+      const hasCtx = (a && a.ctx) || (raidAudio && raidAudio._ctx);
+      if (hasCtx) kickUnlock();
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) resumeIfLive();
+    });
+    global.addEventListener("pageshow", resumeIfLive);
+    global.addEventListener("focus", resumeIfLive);
+  }
+  api.armAudioUnlock = armRaidUnlock;
+  api.unlockAudio = kickUnlock;
   if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", hookXscape);
     setTimeout(hookXscape, 0);
     setTimeout(hookXscape, 100);
+    armRaidUnlock();
   }
 })(typeof window !== "undefined" ? window : globalThis);

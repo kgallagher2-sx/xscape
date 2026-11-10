@@ -467,10 +467,11 @@
         <button class="overlay-x" id="btn-locked-x" type="button" aria-label="Close">×</button>
         <h2>Gloamhold</h2>
         <div class="sheet-scroll">
-        <p>Requires a Fire cape — defeat TzTok-Jad</p>
-        <p>Clear the arcade Fight Caves and kill TzTok-Jad first. The cape goes to your bank; wear it from the Equipment tab, then return here.</p>
+        <p id="locked-reason">Requires a Fire cape — defeat TzTok-Jad</p>
+        <p id="locked-detail">Clear the arcade Fight Caves and kill TzTok-Jad first. The cape goes to your bank; wear it from the Equipment tab, then return here.</p>
         </div>
         <div class="tut-actions sheet-actions">
+          <button class="btn hidden" id="btn-locked-equip" type="button">Equipment</button>
           <button class="btn" id="btn-locked-hub" type="button">Title screen</button>
         </div>
       </div>
@@ -741,16 +742,32 @@
     onLose: function () { document.getElementById("overlay-lose").classList.remove("hidden"); }
   });
   if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
+  if (Raid.armAudioUnlock) Raid.armAudioUnlock();
   fit();
   try { if (Raid.loadProfile) Raid.loadProfile(); } catch (e) {}
   const test = Raid.testFlag();
-  const locked = !(test && test.indexOf("raid") === 0) && Raid.ownsFireCape && !Raid.ownsFireCape();
+  const reason = (test && test.indexOf("raid") === 0) ? "ok" : (Raid.gloamholdLockReason ? Raid.gloamholdLockReason() : ((Raid.ownsFireCape && Raid.ownsFireCape()) ? "ok" : "no-cape"));
+  function applyLockedCopy(why) {
+    const reasonEl = document.getElementById("locked-reason");
+    const detailEl = document.getElementById("locked-detail");
+    const equipBtn = document.getElementById("btn-locked-equip");
+    if (why === "not-equipped") {
+      if (reasonEl) reasonEl.textContent = "Equip your Fire cape to enter";
+      if (detailEl) detailEl.textContent = "You already have a Fire cape. Wear it in the cape slot from the Equipment tab, then return here.";
+      if (equipBtn) equipBtn.classList.remove("hidden");
+    } else {
+      if (reasonEl) reasonEl.textContent = "Requires a Fire cape — defeat TzTok-Jad";
+      if (detailEl) detailEl.textContent = "Clear the arcade Fight Caves and kill TzTok-Jad first. The cape goes to your bank; wear it from the Equipment tab, then return here.";
+      if (equipBtn) equipBtn.classList.add("hidden");
+    }
+  }
   if (test && test.indexOf("raid") === 0) {
     document.getElementById("overlay-brief").classList.add("hidden");
     document.getElementById("overlay-locked").classList.add("hidden");
     briefOpen = false;
     go();
-  } else if (locked) {
+  } else if (reason !== "ok") {
+    applyLockedCopy(reason);
     document.getElementById("overlay-brief").classList.add("hidden");
     document.getElementById("overlay-locked").classList.remove("hidden");
   } else if (briefSeen()) {
@@ -761,6 +778,7 @@
   }
   bindTap(document.getElementById("btn-locked-hub"), goTitle);
   bindTap(document.getElementById("btn-locked-x"), goTitle);
+  bindTap(document.getElementById("btn-locked-equip"), function () { location.href = "index.html?open=equipment"; });
   bindBackdropClose(document.getElementById("overlay-locked"), goTitle);
   window.Xscape = window.Xscape || {};
   window.Xscape.raid = Raid;
