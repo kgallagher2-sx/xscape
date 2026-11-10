@@ -195,7 +195,7 @@
     #overlay-hub { justify-content: flex-start; }
     #overlay-hub > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -259,6 +259,7 @@
     }
     .mode-btn.locked.needs-equip { cursor: pointer; opacity: 0.92; filter: grayscale(0.2); }
     .mode-btn.locked .coming, .mode-btn:disabled .coming { color: #c9a24a; font-size: 11px; letter-spacing: 1px; }
+    .mode-btn .hint { font-family: "Trebuchet MS", sans-serif; font-size: 11px; letter-spacing: 0.3px; color: #c9a24a; font-weight: 400; text-shadow: none; }
     .gp-line { font-size: 16px; font-weight: 700; margin: 2px 0 8px; text-shadow: 0 1px 2px #000; color: #c8b070; }
     .gp-amt { font-weight: 700; letter-spacing: 0.3px; text-shadow: 0 1px 0 #000, 0 0 6px #000; }
     .gp-yellow { color: #ffff00; }
@@ -344,6 +345,12 @@
       font-family: inherit; padding: 0;
     }
     #btn-raid-help.visible { display: inline-flex; align-items: center; justify-content: center; }
+    #btn-kree-help {
+      display: none; width: 28px; height: 28px; border-radius: 50%;
+      background: #2a2430; border: 1px solid #c9a24a; color: #ffe44a;
+      font-weight: 700; font-size: 16px; cursor: pointer;
+    }
+    #btn-kree-help.visible { display: inline-flex; align-items: center; justify-content: center; }
     .sheet-card,
     .tut-card.brief-card,
     #overlay-tut .tut-card,
@@ -477,6 +484,7 @@
         <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
       </div>
       <button id="btn-raid-help" type="button" aria-label="Gloamhold instructions">?</button>
+      <button id="btn-kree-help" type="button" aria-label="Kree'arra instructions">?</button>
     </div>
     <div id="mid">
       <div class="bars">
@@ -497,6 +505,7 @@
     <div id="consumables">
       <button class="item-btn" id="btn-shark" type="button"><span class="cd-sweep" id="cd-shark"></span>Shark <span class="qty" id="qty-shark">3</span></button>
       <button class="item-btn" id="btn-pot" type="button"><span class="cd-sweep" id="cd-pot"></span>Prayer pot <span class="qty" id="qty-pot">2</span></button>
+      <button class="item-btn hidden" id="btn-range-pot" type="button"><span class="cd-sweep" id="cd-range"></span>Range pot <span class="qty" id="qty-range">1</span></button>
     </div>
     <div id="prayers">
       <button class="pray-btn" id="btn-mage" type="button" aria-label="Protect from Magic">
@@ -531,13 +540,18 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Spend it in the Shop, or earn more in Gloamhold.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 1.5–3M GP — Tier 2 is recommended. Spend GP in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
         <button class="btn mode-btn" id="btn-mode-jad" type="button">
           TzTok-Jad
           <span class="sub">Arcade Fight Caves · Wave 63</span>
+        </button>
+        <button class="btn mode-btn" id="btn-mode-kree" type="button">
+          Kree'arra
+          <span class="sub">Armadyl's Eyrie · God Wars</span>
+          <span class="hint">Recommended: Tier 2 gear</span>
         </button>
         <button class="btn mode-btn locked" id="btn-mode-duel" type="button" disabled aria-disabled="true">
           Duel Arena
@@ -546,6 +560,7 @@
       </div>
       <button class="btn secondary" id="btn-how" type="button">How to play</button>
       <button class="btn secondary" id="btn-how-raid" type="button">Gloamhold guide</button>
+      <button class="btn secondary" id="btn-how-kree" type="button">Kree'arra guide</button>
       <button class="btn secondary" id="btn-change-name" type="button">Change name</button>
       <div class="best-line" id="title-best"></div>
     </div>
@@ -634,6 +649,40 @@
       </div>
     </div>
 
+    <div class="overlay hidden" id="overlay-kree-tut">
+      <div class="tut-card brief-card sheet-card">
+        <button class="overlay-x" id="btn-kree-tut-x" type="button" aria-label="Close">×</button>
+        <h2>Kree'arra</h2>
+        <div class="tut-scroll sheet-scroll">
+        <p>High in <b>Armadyl's Eyrie</b>, the aviansie general <b>Kree'arra</b> guards the Armadyl God Wars. Entry is open to any adventurer. <b>Tier 2 gear is recommended</b> — starter kit can get a kill, but it is slow and a missed prayer is deadly.</p>
+        <p><b>He flies.</b> Only ranged or magic can hit him. Your crossbow is fine. Tap Kree'arra or a bodyguard to set your target (a red X). Tap a floor tile to move (yellow X). Keyboard A/D or arrows also work.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Listen for the tell.</p>
+        <p><b>Missiles (2):</b> feathers and a tearing wind. This is his main attack and hits very hard (up to 71). Protect from Missiles blocks it.</p>
+        <p><b>Magic (1):</b> a blue wind blast that <b>punches through Protect from Missiles</b>. You must flick to Protect from Magic or you will take it.</p>
+        <p><b>Melee (3):</b> if you stand close (the middle tiles) he may dive, hit you, and <b>knock you back one tile</b>. Protect from Melee.</p>
+        <p><b>Tornadoes:</b> he marks your tile with a swirling gale. Walk off before it lands — prayer will not save you from this one.</p>
+        <p><b>Bodyguards:</b> Wingman Skree (Magic), Flockleader Geerin (Missiles), and Flight Kilisa (Melee). They have little HP. Killing them first makes the fight cleaner; you can ignore them and go straight for Kree'arra if you prefer.</p>
+        <p><b>Supplies:</b> sharks heal 20, prayer pots restore 31, and a ranging potion boosts your ranged for a while. Each bite or sip delays your next shot. F / P / R, or the on-screen buttons.</p>
+        <p><b>Loot:</b> every kill pays 1.5–3M pretend GP. Armadyl helmet, chestplate, and chainskirt are about 1/12 each; the Armadyl crossbow is about 1/25. This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
+        </div>
+        <div class="tut-actions sheet-actions">
+          <button class="btn" id="btn-kree-tut-ok" type="button">GOT IT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-kree-loot">
+      <div class="share-card" id="kree-loot-card">
+        <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
+        <div class="win-title" id="kree-loot-title">KREE'ARRA DEFEATED</div>
+        <div class="result-grid" id="kree-loot-stats"></div>
+        <div class="share-hint">Screenshot this card and share your drop</div>
+      </div>
+      <button class="btn" id="btn-kree-again" type="button">FIGHT AGAIN</button>
+      <button class="btn secondary" id="btn-kree-title" type="button">Title screen</button>
+    </div>
+
     <div class="overlay hidden" id="overlay-win">
       <div class="share-card" id="share-card">
         <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
@@ -681,6 +730,7 @@
 <script src="partyhat-img.js"></script>
 <script src="whip-img.js"></script>
 <script src="sprites.js"></script>
+<script src="kree-sprites.js"></script>
 <script>
 
 /* ============================================================
@@ -749,7 +799,8 @@ const STORAGE = {
   muted: "kellenscape-muted",
   profile: "kellenscape-profile",
   intro: "kellenscape-intro-seen",
-  raidBrief: "kellenscape-raid-brief-seen"
+  raidBrief: "kellenscape-raid-brief-seen",
+  kreeBrief: "kellenscape-kree-brief-seen"
 };
 
 function computeScore(result) {
@@ -854,7 +905,7 @@ function b(partial) { return Object.assign(emptyBonuses(), partial); }
   Item table. Tiers:
     1 starter  — green d'hide + rune crossbow + mithril bolts (always owned)
     2          — black d'hide + rune bolts + amulet of glory (Shop, pretend GP)
-    armadyl    — defined for a future Kree'arra drop; hidden from shop and bank
+    armadyl    — Kree'arra drop only; never sold in the Shop
     unique     — Gloamhold vault uniques (tier 4)
   Attack/defence bonuses follow public OSRS figures. Mithril bolt ranged
   strength is arcade-tuned so a starter Jad kill lands near 1:45–2:00
@@ -886,11 +937,11 @@ const ITEMS = {
   snakeskin_boots:    { id: "snakeskin_boots", name: "Snakeskin boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
   archers_ring:       { id: "archers_ring", name: "Archers ring", slot: "ring", tier: "tier2", bonuses: b({ arange: 8 }) },
 
-  /* Future Kree'arra drop — hidden from shop and bank until that boss ships. */
-  armadyl_helmet:     { id: "armadyl_helmet", name: "Armadyl helmet", slot: "head", tier: "armadyl", hidden: true, bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
-  armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", hidden: true, bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
-  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", hidden: true, bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
-  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", hidden: true, twohand: false, speed: 4, bonuses: b({ arange: 100 }) },
+  /* Kree'arra drop only — never listed in the Shop. */
+  armadyl_helmet:     { id: "armadyl_helmet", name: "Armadyl helmet", slot: "head", tier: "armadyl", bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
+  armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
+  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
+  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
 
   /* Legacy starter — migrated off; hidden if a stale id remains. */
   leather_cowl:       { id: "leather_cowl", name: "Leather cowl", slot: "head", tier: "legacy", hidden: true, bonuses: b({ arange: 1, dstab: 2, dslash: 3, dcrush: 4, dmagic: 2, drange: 3 }) },
@@ -952,7 +1003,12 @@ const SHOP_BUNDLE = {
 };
 
 function itemIsHidden(it) {
-  return !!(it && (it.hidden || it.tier === "armadyl" || it.tier === "legacy"));
+  if (!it) return false;
+  if (it.tier === "legacy") return true;
+  // Armadyl is earned from Kree'arra and should show in the bank once owned.
+  // The Shop is a fixed list, so these are never sold.
+  if (it.tier === "armadyl") return false;
+  return !!it.hidden;
 }
 
 function defaultLevels() {
@@ -1160,6 +1216,40 @@ const MONSTERS = {
     defBonuses: b({ drange: 0 }),
     maxHit: { melee: 14 },
     attackSpeed: 4
+  },
+  "kree-arra": {
+    id: "kree-arra",
+    name: "Kree'arra",
+    hitpoints: 255,
+    attack: 300,
+    strength: 200,
+    defence: 260,      // OSRS; arcade ranged defence bonus is tuned for a ~2–3 min Tier 2 kill
+    osrsDefence: 260,
+    magic: 200,
+    ranged: 260,
+    flying: true,
+    bonuses: b({ arange: 80, amagic: 40, str: 20 }),
+    defBonuses: b({ drange: 110, dmagic: 20, dstab: 72, dslash: 80, dcrush: 90 }),
+    maxHit: { mage: 21, ranged: 71, melee: 26 },
+    attackSpeed: 5
+  },
+  "wingman-skree": {
+    id: "wingman-skree", name: "Wingman Skree",
+    hitpoints: 28, attack: 80, strength: 50, defence: 40, magic: 120, ranged: 20,
+    flying: true, bonuses: b({ amagic: 30 }), defBonuses: b({ drange: 10 }),
+    maxHit: { mage: 8 }, attackSpeed: 7
+  },
+  "flockleader-geerin": {
+    id: "flockleader-geerin", name: "Flockleader Geerin",
+    hitpoints: 28, attack: 80, strength: 50, defence: 40, magic: 20, ranged: 120,
+    flying: true, bonuses: b({ arange: 30 }), defBonuses: b({ drange: 10 }),
+    maxHit: { ranged: 12 }, attackSpeed: 7
+  },
+  "flight-kilisa": {
+    id: "flight-kilisa", name: "Flight Kilisa",
+    hitpoints: 28, attack: 120, strength: 80, defence: 40, magic: 20, ranged: 20,
+    flying: true, bonuses: b({ str: 20 }), defBonuses: b({ drange: 10 }),
+    maxHit: { melee: 10 }, attackSpeed: 7
   }
 };
 
@@ -1226,7 +1316,9 @@ function combatVsMonster(monsterId, style) {
   const stance = 0; // Rapid
   let atkLevel, atkBonus, strBonus, max;
   if (style === "ranged" || style === "range") {
-    atkLevel = effectivePlayerLevel(lv.ranged, 1, stance);
+    let rangedLv = lv.ranged;
+    if (typeof G !== "undefined" && G.scene === "kree" && G.rangingLeft > 0) rangedLv += 10;
+    atkLevel = effectivePlayerLevel(rangedLv, 1, stance);
     atkBonus = pb.arange;
     strBonus = pb.rstr;
     max = maxHitFrom(atkLevel, strBonus);
@@ -1620,6 +1712,10 @@ function drawTileHazards(t) {
     const h = G.tileHazards[i];
     const rec = tileRect(h.col, h.row);
     const cx = rec.x + rec.w / 2, cy = rec.y + rec.h / 2;
+    if ((h.kind === "tornado" || h.kind === "feathers") && typeof drawTornadoMark === "function") {
+      drawTornadoMark(ctx, rec, t, h.delay);
+      continue;
+    }
     const pulse = 0.55 + Math.sin((t || 0) * 8 + h.delay) * 0.25;
     ctx.save();
     ctx.globalAlpha = 0.35 + pulse * 0.25;
@@ -2068,7 +2164,7 @@ function updateRaidLock() {
   }
 }
 
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds() };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), kreeKills: 0 };
 
 function loadProfile() {
   try {
@@ -2083,6 +2179,7 @@ function loadProfile() {
       Profile.unlockedItems = Array.isArray(raw.unlockedItems) ? raw.unlockedItems.slice() : [];
       Profile.raidCompletions = Number(raw.raidCompletions) || 0;
       Profile.raidBestTicks = raw.raidBestTicks || null;
+      Profile.kreeKills = Number(raw.kreeKills) || 0;
       Profile.bank = migrateOwned(raw.bank, Profile.equipment, Profile.unlockedItems);
     } else {
       Profile.name = loadName();
@@ -2104,6 +2201,7 @@ function loadProfile() {
     Profile.unlockedItems = [];
     Profile.bank = migrateOwned(null, Profile.equipment, []);
   }
+  if (!Profile.kreeKills) Profile.kreeKills = Profile.kreeKills || 0;
   migrateLegacyStarter();
   maybeGrantLegacyFireCape();
   syncPlayerCaps();
@@ -2124,7 +2222,8 @@ function saveProfile() {
       unlockedItems: Profile.unlockedItems || [],
       bank: Profile.bank || migrateOwned(null, Profile.equipment, Profile.unlockedItems),
       raidCompletions: Profile.raidCompletions || 0,
-      raidBestTicks: Profile.raidBestTicks || null
+      raidBestTicks: Profile.raidBestTicks || null,
+      kreeKills: Profile.kreeKills || 0
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
   } catch (e) {}
@@ -2439,11 +2538,16 @@ const audio = {
      uses audioCtx.currentTime; rAF only wakes it. Music sits on its own quieter bus. */
   _hz(semi) { return 73.416 * Math.pow(2, semi / 12); }, // 0 = D2
   _musicState() {
+    if (this._theme === "kree") {
+      const frac = (G.kree && G.kree.maxHp) ? G.kree.hp / G.kree.maxHp : 1;
+      return { l75: frac <= 0.75, l50: frac <= 0.5, urgent: frac <= 0.4, frac, theme: "kree" };
+    }
     const frac = (G.jad && JAD_MAX_HP) ? G.jad.hp / JAD_MAX_HP : 1;
     const urgent = !!(G.healersSpawned || (G.healers && G.healers.some((h) => h.alive)));
     return { l75: frac <= 0.75, l50: frac <= 0.5, urgent, frac };
   },
-  startAmbient() {
+  startAmbient(theme) {
+    this._theme = theme || "jad";
     if (this.muted || this.ambientOn) return;
     const ctx = this.ensure();
     if (!ctx) return;
@@ -2738,6 +2842,16 @@ const audio = {
   lavaPop() {
     this.tone(180 + Math.random() * 80, 0.08, "sine", 0.04, 0, 120);
     this.noise(0.07, 0.04, 0, "lowpass", 700, 0.2, 400);
+  },
+  tornado() {
+    this.noise(0.48, 0.16, 0, "bandpass", 680, 0.7, 1800);
+    this.tone(170, 0.36, "sine", 0.07, 0, 70);
+    this.tone(410, 0.24, "triangle", 0.04, 0.05, 140);
+  },
+  wind() {
+    this.noise(0.42, 0.13, 0, "highpass", 900, 0.35, 2400);
+    this.tone(520, 0.32, "sine", 0.06, 0, 190);
+    this.tone(880, 0.22, "triangle", 0.04, 0.04, 380);
   },
   setMuted(on) {
     this.muted = !!on;
@@ -3058,6 +3172,7 @@ function boltTarget() {
 
 function applyBoltHit(target, dmg) {
   if (G.mode !== "playing") return;
+  if (window.XscapeKree && XscapeKree.applyBoltHit && XscapeKree.applyBoltHit(target, dmg)) return;
   if (target.kind === "jad" && G.jad && G.jad.hp > 0) {
     G.jad.hp = clamp(G.jad.hp - dmg, 0, JAD_MAX_HP);
     G.jad.hurt = 0.2;
@@ -3159,6 +3274,7 @@ function tickHealers() {
 
 function gameTick() {
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.hostTick(); return; }
+  if (G.scene === "kree" && window.XscapeKree) { window.XscapeKree.hostTick(); return; }
   if (G.mode !== "playing") return;
   G.ticks++;
 
@@ -3371,7 +3487,7 @@ function fillResultGrid(el, result, score, survived) {
   const best = loadBest();
   const rows = [
     ["Adventurer", result.name],
-    ["Boss", "TzTok-Jad"],
+    ["Boss", result.bossName || "TzTok-Jad"],
     ["Time", fmtTime(result.killTimeSeconds) + "  (" + result.killTimeSeconds + "s · " + result.killTimeTicks + " ticks)"],
     ["Damage taken", String(result.damageTaken)],
     ["Perfect prayers", String(result.perfectPrayers)]
@@ -3419,6 +3535,7 @@ function endWin() {
 
 function endLose() {
   if (G.mode !== "playing") return;
+  if (G.scene === "kree" && window.XscapeKree && XscapeKree.lose) { XscapeKree.lose(); return; }
   setPlayingChrome(false);
   G.mode = "lose";
   G.player.hp = 0;
@@ -4272,6 +4389,10 @@ function frame(ts) {
     window.XscapeRaid.hostFrame(ts, ctx, cssW, cssH, dpr);
     return;
   }
+  if (G.scene === "kree" && window.XscapeKree) {
+    window.XscapeKree.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
 
   if (G.mode === "playing") {
     G.elapsedMs = ts - G.startMs;
@@ -4341,6 +4462,10 @@ bindPrayer("btn-melee", "melee");
 
 $("btn-shark").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); eatShark(); });
 $("btn-pot").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); sipPot(); });
+if ($("btn-range-pot")) $("btn-range-pot").addEventListener("pointerdown", (e) => {
+  e.preventDefault(); audio.unlock();
+  if (window.XscapeKree && XscapeKree.sipRange) XscapeKree.sipRange();
+});
 if ($("btn-run")) $("btn-run").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); setRunning(!G.running); });
 
 window.addEventListener("pointerup", () => { if (G.cs) G.cs.holding = false; });
@@ -4367,6 +4492,9 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "b" || e.key === "B") { window.XscapeRaid.brew(); return; }
     if (e.key === "r" || e.key === "R") { window.XscapeRaid.ranging(); return; }
   }
+  if (G.scene === "kree" && window.XscapeKree) {
+    if (e.key === "r" || e.key === "R") { window.XscapeKree.sipRange(); return; }
+  }
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
   if (e.key === "3") setPrayer("melee");
@@ -4383,6 +4511,12 @@ canvas.addEventListener("pointerdown", (e) => {
     const pt = eventToArena(e);
     window.XscapeRaid.clickPx(pt.x, pt.y, cssW, cssH);
     if (typeof addClickMark === "function") addClickMark(pt.x, pt.y, "ground");
+    return;
+  }
+  if (G.scene === "kree" && window.XscapeKree) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeKree.clickPx(pt.x, pt.y, cssW, cssH);
     return;
   }
   if (G.mode === "intro") {
@@ -4494,7 +4628,7 @@ function refreshTitleBest() {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-gear","overlay-shop","overlay-win","overlay-lose"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-win","overlay-lose"].forEach((id) => {
     const el = $(id);
     if (el) el.classList.add("hidden");
   });
@@ -4567,6 +4701,7 @@ function enterScene(id) {
 
 function showTitle() {
   loadProfile();
+  G._retryKree = false;
   if (Profile.name) enterScene("hub");
   else enterScene("login");
 }
@@ -5045,6 +5180,10 @@ function applyTestQuery() {
     window.XscapeRaid.startRaidInGame({ fromQuery: true });
     return;
   }
+  if ((test === "kree" || test === "kree-loot") && window.XscapeKree) {
+    window.XscapeKree.startFight({ fromQuery: true, skipBrief: true, loot: test === "kree-loot" });
+    return;
+  }
   if (test === "intro") {
     resetFight();
     startIntro({ force: true });
@@ -5170,6 +5309,57 @@ window.raidBriefSeen = raidBriefSeen;
 window.markRaidBriefSeen = markRaidBriefSeen;
 window.setRaidHelpVisible = setRaidHelpVisible;
 
+function kreeBriefSeen() {
+  try { return localStorage.getItem(STORAGE.kreeBrief) === "1"; } catch (e) { return false; }
+}
+function markKreeBriefSeen() {
+  try { localStorage.setItem(STORAGE.kreeBrief, "1"); } catch (e) {}
+}
+let kreeBriefReturn = { start: false, opts: null, fromHub: false };
+function showKreeBriefing(opts) {
+  opts = opts || {};
+  kreeBriefReturn = { start: !!opts.start, opts: opts.startOpts || null, fromHub: !!opts.fromHub };
+  audio.unlock();
+  hideAllOverlays();
+  $("overlay-kree-tut").classList.remove("hidden");
+  if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
+}
+function closeKreeBriefing(opts) {
+  const el = $("overlay-kree-tut");
+  if (!el || el.classList.contains("hidden")) return;
+  markKreeBriefSeen();
+  el.classList.add("hidden");
+  const cancel = !!(opts && opts.cancel);
+  if (!cancel && kreeBriefReturn.start) {
+    const startOpts = Object.assign({}, kreeBriefReturn.opts || {}, { skipBrief: true });
+    kreeBriefReturn = { start: false, opts: null };
+    if (window.XscapeKree && XscapeKree.startFight) XscapeKree.startFight(startOpts);
+    return;
+  }
+  kreeBriefReturn = { start: false, opts: null };
+  if (G.scene === "kree" && G.mode === "playing") return;
+  swallowNextTaps();
+  showTitle();
+}
+function closeKreeLoot() {
+  const el = $("overlay-kree-loot");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  swallowNextTaps();
+  showTitle();
+}
+if ($("btn-how-kree")) bindTap($("btn-how-kree"), () => { showKreeBriefing({ fromHub: true }); });
+if ($("btn-kree-tut-ok")) bindTap($("btn-kree-tut-ok"), () => { audio.unlock(); closeKreeBriefing(); });
+if ($("btn-kree-tut-x")) bindTap($("btn-kree-tut-x"), () => { audio.unlock(); closeKreeBriefing({ cancel: true }); });
+if ($("overlay-kree-tut")) bindBackdropClose($("overlay-kree-tut"), () => { audio.unlock(); closeKreeBriefing({ cancel: true }); });
+if ($("btn-kree-help")) bindTap($("btn-kree-help"), () => { showKreeBriefing({ fromHub: false }); });
+if ($("btn-kree-again")) bindTap($("btn-kree-again"), () => { audio.unlock(); if (window.XscapeKree) XscapeKree.startFight({ skipBrief: true }); });
+if ($("btn-kree-title")) bindTap($("btn-kree-title"), () => { audio.unlock(); closeKreeLoot(); });
+window.showKreeBriefing = showKreeBriefing;
+window.kreeBriefSeen = kreeBriefSeen;
+window.markKreeBriefSeen = markKreeBriefSeen;
+window.closeKreeBriefing = closeKreeBriefing;
+
 function closeHowToPlay() {
   const el = $("overlay-tut");
   if (!el || el.classList.contains("hidden")) return;
@@ -5189,13 +5379,23 @@ function dismissTopOverlay() {
   if (overlayIsOpen("overlay-shop")) { audio.unlock(); closeShop(); return true; }
   if (overlayIsOpen("overlay-tut")) { closeHowToPlay(); return true; }
   if (overlayIsOpen("overlay-raid-tut")) { audio.unlock(); closeRaidBriefing(); return true; }
+  if (overlayIsOpen("overlay-kree-tut")) { audio.unlock(); closeKreeBriefing({ cancel: true }); return true; }
+  if (overlayIsOpen("overlay-kree-loot")) { audio.unlock(); closeKreeLoot(); return true; }
   return false;
 }
 bindTap($("btn-tut-ok"), closeHowToPlay);
 bindTap($("btn-tut-x"), closeHowToPlay);
 bindBackdropClose($("overlay-tut"), closeHowToPlay);
-$("btn-again-win").addEventListener("click", () => { audio.unlock(); startPlaying(); });
-$("btn-again-lose").addEventListener("click", () => { audio.unlock(); startPlaying(); });
+$("btn-again-win").addEventListener("click", () => {
+  audio.unlock();
+  if ((G.scene === "kree" || G._retryKree) && window.XscapeKree) { XscapeKree.startFight({ skipBrief: true }); return; }
+  startPlaying();
+});
+$("btn-again-lose").addEventListener("click", () => {
+  audio.unlock();
+  if ((G.scene === "kree" || G._retryKree) && window.XscapeKree) { XscapeKree.startFight({ skipBrief: true }); return; }
+  startPlaying();
+});
 $("btn-title-win").addEventListener("click", () => { showTitle(); });
 $("btn-title-lose").addEventListener("click", () => { showTitle(); });
 
@@ -5344,10 +5544,16 @@ window.tryEnterGloamhold = tryEnterGloamhold;
 </script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
+<script src="kree.js"></script>
 <script>
 if (window.XscapeRaid) {
   XscapeRaid.installIntoGame();
   if (window.Xscape) window.Xscape.raid = XscapeRaid;
+}
+if (window.XscapeKree) {
+  XscapeKree.install();
+  if (window.Xscape) window.Xscape.kree = XscapeKree;
+  if (window.KellenScape) window.KellenScape.kree = XscapeKree;
 }
 
 drawGearIcons();
@@ -5355,6 +5561,7 @@ refreshPrayIcons();
 if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
 $("top-hud").appendChild($("sound-btn"));
 if ($("btn-raid-help")) $("top-hud").appendChild($("btn-raid-help"));
+if ($("btn-kree-help")) $("top-hud").appendChild($("btn-kree-help"));
 resize();
 showTitle();
 refreshTitleBest();
