@@ -854,75 +854,113 @@ function drawAbyssalWhip(c, tm, opt) {
   c.fillStyle = "#6a6258";
   c.fillRect(-2.05, -8.15, 4.1, 0.7);
 
-  // Lash path: confident hanging curve past the knee, or a snap-arc while walking off
-  const len = bust ? 15 : 26;
-  const n = bust ? 8 : 12;
-  const pts = [];
-  for (let i = 0; i <= n; i++) {
-    const u = i / n;
-    const restX = (1 - Math.cos(u * Math.PI)) * 5.2 + Math.sin(u * Math.PI * 1.1) * 4.2 + sway * u;
+  // Lash: a chain of SEPARATE rounded-diamond links along a hanging curve.
+  // Each link has its own dark outline, a gap/seam, a highlight, and shrinks toward the tip.
+  const len = bust ? 16 : 34;
+  const denseN = 40;
+  const dense = [];
+  for (let i = 0; i <= denseN; i++) {
+    const u = i / denseN;
+    const restX = (1 - Math.cos(u * Math.PI)) * 6.0 + Math.sin(u * Math.PI * 1.15) * 4.6 + sway * u;
     const restY = -8.3 + u * len;
     const snapX = Math.sin(u * Math.PI) * 17 + u * 5;
     const snapY = -8.3 + u * len * 0.7 - Math.sin(u * Math.PI) * 10;
-    pts.push({
+    dense.push({
       x: restX + (snapX - restX) * crack,
       y: restY + (snapY - restY) * crack
     });
   }
+  const cum = [0];
+  for (let i = 1; i < dense.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(dense[i].x - dense[i - 1].x, dense[i].y - dense[i - 1].y));
+  }
+  const total = cum[cum.length - 1] || 1;
 
-  const slate = "#2c3542";
-  const slateHi = "#4a5666";
-  const teal = "#1a4c4e";
-  const tealHi = "#2a6a66";
-  const ink = "#0a1014";
-
-  function widthAt(u) {
-    // ~6.4 local units near the handle => a bit over 3px at world scale; tapers to a fine tip
-    return bust ? (3.0 * (1 - u * 0.72) + 0.7) : (6.4 * (1 - u * 0.82) + 1.0);
+  function pointAt(s) {
+    const t = Math.max(0, Math.min(total, s));
+    let i = 0;
+    while (i < cum.length - 2 && cum[i + 1] < t) i++;
+    const span = cum[i + 1] - cum[i] || 1;
+    const u = (t - cum[i]) / span;
+    return {
+      x: dense[i].x + (dense[i + 1].x - dense[i].x) * u,
+      y: dense[i].y + (dense[i + 1].y - dense[i].y) * u
+    };
   }
 
-  function capsule(a, b, hw, col) {
-    const ang = Math.atan2(b.y - a.y, b.x - a.x);
-    const seg = Math.hypot(b.x - a.x, b.y - a.y);
+  const slate = "#3a4658";
+  const slateHi = "#c0c8d4";
+  const teal = "#1e746c";
+  const tealHi = "#8ae0d4";
+  const ink = "#070a0d";
+  const nLinks = bust ? 8 : 11;
+
+  const links = [];
+  for (let i = 0; i < nLinks; i++) {
+    const u = i / Math.max(1, nLinks - 1);
+    const shrink = 1 - u * 0.58;
+    links.push({
+      // Slightly longer than wide, but bead-like so they don't fuse into a hose
+      halfLen: (bust ? 1.00 : 1.35) * shrink + (bust ? 0.45 : 0.55),
+      halfW: (bust ? 1.40 : 2.35) * shrink + (bust ? 0.45 : 0.60),
+      gap: bust ? 1.15 : 1.55
+    });
+  }
+  let needed = 0;
+  for (let i = 0; i < links.length; i++) needed += links[i].halfLen * 2 + (i < links.length - 1 ? links[i].gap : 0);
+  // If the curve is short, shrink the beads first and keep a minimum gap so they stay separate
+  if (needed > total - 0.3) {
+    const gapKeep = (nLinks - 1) * (bust ? 1.0 : 1.35);
+    const scale = Math.max(0.55, (total - 0.3 - gapKeep) / (needed - (nLinks - 1) * links[0].gap));
+    for (const L of links) {
+      L.halfLen *= scale;
+      L.halfW *= scale;
+      L.gap = bust ? 1.0 : 1.35;
+    }
+  }
+
+  let s = 0.15;
+  const placed = [];
+  for (let i = 0; i < nLinks; i++) {
+    const L = links[i];
+    const mid = s + L.halfLen;
+    const p = pointAt(mid);
+    const p2 = pointAt(Math.min(total, mid + 0.5));
+    placed.push({
+      x: p.x, y: p.y,
+      ang: Math.atan2(p2.y - p.y, p2.x - p.x),
+      halfLen: L.halfLen, halfW: L.halfW,
+      odd: i % 2
+    });
+    s += L.halfLen * 2 + L.gap;
+  }
+
+  function drawLink(L) {
     c.save();
-    c.translate(a.x, a.y);
-    c.rotate(ang);
-    c.fillStyle = col;
+    c.translate(L.x, L.y);
+    c.rotate(L.ang);
+    const hl = L.halfLen, hw = L.halfW;
     c.beginPath();
-    c.moveTo(0, -hw);
-    c.lineTo(seg, -hw);
-    c.arc(seg, 0, hw, -Math.PI / 2, Math.PI / 2);
-    c.lineTo(0, hw);
-    c.arc(0, 0, hw, Math.PI / 2, -Math.PI / 2);
+    c.moveTo(hl, 0);
+    c.quadraticCurveTo(hl * 0.35, hw, 0, hw);
+    c.quadraticCurveTo(-hl * 0.35, hw, -hl, 0);
+    c.quadraticCurveTo(-hl * 0.35, -hw, 0, -hw);
+    c.quadraticCurveTo(hl * 0.35, -hw, hl, 0);
     c.closePath();
+    c.fillStyle = L.odd ? teal : slate;
+    c.fill();
+    c.strokeStyle = ink;
+    c.lineWidth = Math.max(0.85, Math.min(1.25, hw * 0.45));
+    c.lineJoin = "round";
+    c.lineCap = "round";
+    c.stroke();
+    c.fillStyle = L.odd ? tealHi : slateHi;
+    c.beginPath();
+    c.ellipse(-hl * 0.12, -hw * 0.38, Math.max(0.4, hl * 0.40), Math.max(0.28, hw * 0.28), 0, 0, Math.PI * 2);
     c.fill();
     c.restore();
   }
-
-  for (let i = 0; i < pts.length - 1; i++) {
-    const u = i / (pts.length - 1);
-    capsule(pts[i], pts[i + 1], widthAt(u) / 2 + 0.7, ink);
-  }
-  for (let i = 0; i < pts.length - 1; i++) {
-    const u = i / (pts.length - 1);
-    const odd = i % 2;
-    capsule(pts[i], pts[i + 1], widthAt(u) / 2, odd ? teal : slate);
-    // thin highlight along the top of each link
-    const a = pts[i], b = pts[i + 1];
-    const ang = Math.atan2(b.y - a.y, b.x - a.x);
-    const seg = Math.hypot(b.x - a.x, b.y - a.y);
-    c.save();
-    c.translate(a.x, a.y);
-    c.rotate(ang);
-    c.strokeStyle = odd ? tealHi : slateHi;
-    c.lineWidth = Math.max(0.6, widthAt(u) * 0.22);
-    c.lineCap = "round";
-    c.beginPath();
-    c.moveTo(0.4, -widthAt(u) * 0.28);
-    c.lineTo(seg - 0.4, -widthAt(u) * 0.28);
-    c.stroke();
-    c.restore();
-  }
+  for (const L of placed) drawLink(L);
 
   c.restore();
 }
