@@ -3,12 +3,15 @@
 (function (global) {
   "use strict";
 
-  var COLS = 9;
-  var ROWS = 10;
+  var BANK_COLS = 9, BANK_ROWS = 10;
+  var ARENA_COLS = 11, ARENA_ROWS = 11;
+  var COLS = BANK_COLS;
+  var ROWS = BANK_ROWS;
   var TICK = (typeof TICK_MS === "number" ? TICK_MS : 600);
 
   var state = {
     active: false,
+    area: "bank",
     col: 4,
     row: 7,
     prevCol: 4,
@@ -67,8 +70,65 @@
   function $(id) { return document.getElementById(id); }
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
+  function setArea(area) {
+    var next = area === "arena" ? "arena" : "bank";
+    var changed = state.area !== next;
+    state.area = next;
+    if (next === "arena") { COLS = ARENA_COLS; ROWS = ARENA_ROWS; }
+    else { COLS = BANK_COLS; ROWS = BANK_ROWS; }
+    if (changed) {
+      state.peerMoves = {};
+      state.layout = null;
+      state.path = [];
+      state.pending = null;
+      state.destCol = null;
+      state.destRow = null;
+      state.moving = false;
+    }
+  }
+
+  function bankPortal() {
+    return { col: 7, row: 9, dest: "arena", name: "Duel Arena portal",
+      examine: "A swirling portal to the Duel Arena. It feels like a ring of duelling." };
+  }
+  function arenaPortal() {
+    return { col: 5, row: 10, dest: "bank", name: "Bank portal",
+      examine: "A portal back to the West Bank." };
+  }
+  function currentPortal() {
+    return state.area === "arena" ? arenaPortal() : bankPortal();
+  }
+  function portalAt(col, row) {
+    var p = currentPortal();
+    return (p.col === col && p.row === row) ? p : null;
+  }
+  function portalUseTiles(p) {
+    p = p || currentPortal();
+    var dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+    var out = [];
+    for (var i = 0; i < dirs.length; i++) {
+      var ac = p.col + dirs[i][0], ar = p.row + dirs[i][1];
+      if (walkable(ac, ar)) out.push({ c: ac, r: ar });
+    }
+    return out;
+  }
+  function inPortalRange(col, row, p) {
+    p = p || currentPortal();
+    var tiles = portalUseTiles(p);
+    for (var i = 0; i < tiles.length; i++) {
+      if (tiles[i].c === col && tiles[i].r === row) return true;
+    }
+    return false;
+  }
+
   function blockedAt(col, row) {
     if (col < 0 || row < 0 || col >= COLS || row >= ROWS) return true;
+    if (portalAt(col, row)) return true;
+    if (state.area === "arena") {
+      if (row === 0 || row === ROWS - 1 || col === 0 || col === COLS - 1) return true;
+      if ((col === 3 || col === 7) && (row === 3 || row === 8)) return true;
+      return false;
+    }
     // North wall and windows
     if (row === 0) return true;
     // Bank booths / counters along the north (row 1 is staff, row 2 is the desk)
@@ -182,10 +242,14 @@
   function bfs(sc, sr, tc, tr) {
     var npc = npcAt(tc, tr);
     var booth = boothAt(tc, tr);
-    if (!walkable(tc, tr) && !npc && !booth) return [];
+    var portal = portalAt(tc, tr);
+    if (!walkable(tc, tr) && !npc && !booth && !portal) return [];
     var goalWalk = walkable(tc, tr) ? { c: tc, r: tr } : null;
     var goals = {};
-    if (booth) {
+    if (portal) {
+      var use = portalUseTiles(portal);
+      for (var pi = 0; pi < use.length; pi++) goals[use[pi].c + "," + use[pi].r] = true;
+    } else if (booth) {
       var stand = boothStandTile(tc);
       if (stand) goals[stand.c + "," + stand.r] = true;
     } else if (npc) {
@@ -290,7 +354,8 @@
       destRow: state.destRow,
       path: packPath(state.path),
       facing: state.facing,
-      username: (global.Profile && Profile.name) || null
+      username: (global.Profile && Profile.name) || null,
+      scene: state.area || "bank"
     });
   }
 
@@ -309,7 +374,8 @@
       path: packPath(state.path),
       facing: state.facing,
       moving: !!state.moving,
-      username: (global.Profile && Profile.name) || null
+      username: (global.Profile && Profile.name) || null,
+      scene: state.area || "bank"
     });
   }
 
@@ -388,7 +454,9 @@
   function onMoveIntent(p) {
     if (!p || !p.uid) return;
     if (myUid() && p.uid === myUid()) return;
+    if (p.scene && p.scene !== (state.area || "bank")) return;
     var peer = getPeer(p.uid);
+    if (p.scene) peer.scene = p.scene;
     peer.col = p.col;
     peer.row = p.row;
     peer.prevCol = p.col;
@@ -408,7 +476,9 @@
   function onMoveSnapshot(p) {
     if (!p || !p.uid) return;
     if (myUid() && p.uid === myUid()) return;
+    if (p.scene && p.scene !== (state.area || "bank")) return;
     var peer = getPeer(p.uid);
+    if (p.scene) peer.scene = p.scene;
     if (p.username) peer.username = p.username;
     if (p.facing) peer.facing = p.facing;
     peer.destCol = p.destCol;
@@ -452,6 +522,7 @@
     else if (job.type === "examine" && job.npc) examineNpc(job.npc);
     else if (job.type === "bank") openBank();
     else if (job.type === "examine-booth") examineBooth();
+    else if (job.type === "teleport" && job.dest) teleportTo(job.dest);
   }
 
   function markClick(px, py, kind) {
@@ -505,11 +576,47 @@
     });
   }
 
+
+  function teleportTo(dest) {
+    hideCtx();
+    dest = dest === "arena" ? "arena" : "bank";
+    setArea(dest);
+    applySpawn(pickSpawnTile());
+    state.justSpawned = true;
+    state.spawnedAt = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    publishPresence();
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.flushHeartbeat === "function") {
+      try { cloud.flushHeartbeat(); } catch (e) {}
+    }
+    if (typeof fitViewport === "function") fitViewport();
+    else if (typeof resizeCanvas === "function") resizeCanvas();
+    var msg = dest === "arena" ? "You teleport to the Duel Arena." : "You teleport back to the West Bank.";
+    if (typeof flashMsg === "function") flashMsg(msg, "#ffe44a");
+  }
+
+  function usePortal(p) {
+    p = p || currentPortal();
+    if (!p) return false;
+    if (inPortalRange(state.col, state.row, p)) {
+      teleportTo(p.dest);
+      return true;
+    }
+    state.pending = { type: "teleport", dest: p.dest };
+    setMovePath(bfs(state.col, state.row, p.col, p.row), p.col, p.row);
+    return true;
+  }
+
   function clickTile(col, row, opts) {
     opts = opts || {};
     hideCtx();
     col = clamp(col, 0, COLS - 1);
     row = clamp(row, 0, ROWS - 1);
+    var portal = portalAt(col, row);
+    if (portal && !opts.walkOnly) {
+      markClick(opts.px, opts.py, "action");
+      return usePortal(portal);
+    }
     var npc = npcAt(col, row);
     if (boothAt(col, row) && !opts.walkOnly) {
       markClick(opts.px, opts.py, "action");
@@ -594,7 +701,7 @@
     if (!cloud || !cloud.setPresenceExtra) return;
     var eq = (global.Profile && Profile.equipment) || {};
     cloud.setPresenceExtra({
-      scene: "bank",
+      scene: state.area || "bank",
       col: state.col,
       row: state.row,
       facing: state.facing,
@@ -616,10 +723,9 @@
     for (var i = 0; i < rows.length; i++) {
       var p = rows[i];
       if (!p || (me && p.id === me)) continue;
+      var want = state.area || "bank";
+      if ((p.scene || "bank") !== want) continue;
       var mv = state.peerMoves && state.peerMoves[p.id];
-      if (p.scene && p.scene !== "bank") {
-        if (!(mv && mv.col != null && (mv.moving || (mv.path && mv.path.length)))) continue;
-      }
       var merged = {
         id: p.id,
         username: p.username,
@@ -651,6 +757,7 @@
         if (seen[id] || (me && id === me)) return;
         var mv = state.peerMoves[id];
         if (!mv || mv.col == null || mv.row == null) return;
+        if ((mv.scene || "bank") !== (state.area || "bank")) return;
         list.push({
           id: id,
           username: mv.username || "Player",
@@ -661,7 +768,7 @@
           facing: mv.facing,
           equipment: mv.equipment,
           moving: !!mv.moving,
-          scene: "bank"
+          scene: mv.scene || want
         });
         seen[id] = true;
       });
@@ -676,7 +783,100 @@
   }
 
   /* ---------- Drawing ---------- */
-  function drawFloor(ctx, lay) {
+  function drawPortal(ctx, p, lay, t) {
+    if (!p || !lay) return;
+    var tw = lay.tw;
+    var x = lay.x0 + p.col * tw, y = lay.y0 + p.row * tw;
+    var cx = x + tw / 2, cy = y + tw / 2, r = tw * 0.36;
+    ctx.save();
+    var g = ctx.createRadialGradient(cx, cy, 2, cx, cy, r + 4);
+    if (p.dest === "arena") {
+      g.addColorStop(0, "rgba(180,255,170,0.95)");
+      g.addColorStop(0.45, "rgba(40,160,80,0.85)");
+      g.addColorStop(1, "rgba(10,50,20,0.3)");
+    } else {
+      g.addColorStop(0, "rgba(255,230,150,0.95)");
+      g.addColorStop(0.45, "rgba(180,120,40,0.85)");
+      g.addColorStop(1, "rgba(60,30,8,0.3)");
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 2, r, r * 0.72, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = p.dest === "arena" ? "#b8ff9a" : "#ffe44a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 2, r, r * 0.72, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 2, r * 0.55, r * 0.4, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    var spin = (t || 0) * 2.2;
+    ctx.strokeStyle = "rgba(255,255,220,0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 2, r * 0.8, r * 0.58, spin, 0, Math.PI * 1.2);
+    ctx.stroke();
+    ctx.fillStyle = "#fff4c0";
+    ctx.font = "bold " + Math.max(7, Math.floor(tw * 0.22)) + "px Trebuchet MS, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(p.dest === "arena" ? "DUEL" : "BANK", cx, y + tw - Math.max(10, tw * 0.28));
+    ctx.restore();
+  }
+
+  function drawArenaFloor(ctx, lay, t) {
+    var tw = lay.tw, x0 = lay.x0, y0 = lay.y0;
+    ctx.fillStyle = "#5a3a18";
+    ctx.fillRect(0, 0, lay.cssW, lay.cssH);
+    var sky = ctx.createLinearGradient(0, 0, 0, y0 + tw);
+    sky.addColorStop(0, "#c4a06a");
+    sky.addColorStop(1, "#8a5a28");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, lay.cssW, y0 + tw);
+    ctx.fillStyle = "#6a4a24";
+    ctx.fillRect(x0 - 6, y0 - 8, lay.gridW + 12, lay.gridH + 16);
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var x = x0 + c * tw, y = y0 + r * tw;
+        if (blockedAt(c, r) && !portalAt(c, r)) {
+          ctx.fillStyle = r === 0 ? "#8a6230" : "#5a3c1c";
+          ctx.fillRect(x, y, tw, tw);
+          ctx.fillStyle = "rgba(255,210,120,0.12)";
+          ctx.fillRect(x + 2, y + 2, tw - 4, 4);
+          continue;
+        }
+        var sand = ((c + r) % 2 === 0) ? "#d2b07a" : "#c4a068";
+        ctx.fillStyle = sand;
+        ctx.fillRect(x + 0.5, y + 0.5, tw - 1, tw - 1);
+        ctx.strokeStyle = "rgba(90,50,16,0.25)";
+        ctx.strokeRect(x + 0.5, y + 0.5, tw - 1, tw - 1);
+      }
+    }
+    // Pillars
+    [[3, 3], [7, 3], [3, 8], [7, 8]].forEach(function (pt) {
+      var px = x0 + pt[0] * tw, py = y0 + pt[1] * tw;
+      ctx.fillStyle = "#7a5230";
+      ctx.fillRect(px + 4, py + 2, tw - 8, tw - 6);
+      ctx.fillStyle = "#c9a24a";
+      ctx.fillRect(px + 3, py + 2, tw - 6, 5);
+    });
+    ctx.save();
+    ctx.fillStyle = "#2a1a0c";
+    ctx.fillRect(x0 + tw * 3.4, y0 + 4, tw * 4.2, 14);
+    ctx.strokeStyle = "#c9a24a";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x0 + tw * 3.4, y0 + 4, tw * 4.2, 14);
+    ctx.fillStyle = "#ffe44a";
+    ctx.font = "bold 9px Trebuchet MS, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("DUEL ARENA", x0 + tw * 5.5, y0 + 14);
+    ctx.restore();
+    drawPortal(ctx, arenaPortal(), lay, t);
+  }
+
+  function drawFloor(ctx, lay, t) {
+    if (state.area === "arena") { drawArenaFloor(ctx, lay, t); return; }
     var tw = lay.tw, x0 = lay.x0, y0 = lay.y0;
     // Room fill
     ctx.fillStyle = "#2a1c12";
@@ -747,6 +947,7 @@
     ctx.textAlign = "center";
     ctx.fillText("BANK OF XSCAPE", x0 + tw * 4.5, y0 + 12);
     ctx.restore();
+    drawPortal(ctx, bankPortal(), lay, t);
   }
 
   function drawDestX(ctx, lay) {
@@ -960,11 +1161,13 @@
 
   function drawWorld(ctx, t, cssW, cssH) {
     var lay = layout(cssW, cssH);
-    drawFloor(ctx, lay);
+    drawFloor(ctx, lay, t);
     // depth: north (small row) first
     var sprites = [];
-    for (var i = 0; i < NPCS.length; i++) {
-      sprites.push({ row: NPCS[i].row, kind: "npc", npc: NPCS[i] });
+    if (state.area !== "arena") {
+      for (var i = 0; i < NPCS.length; i++) {
+        sprites.push({ row: NPCS[i].row, kind: "npc", npc: NPCS[i] });
+      }
     }
     var others = othersInBank();
     for (var j = 0; j < others.length; j++) {
@@ -1017,8 +1220,9 @@
   function showPlayerCtx(p, px, py) {
     var el = $("hub-ctx");
     if (!el || !p) return;
+    var canChallenge = (state.area === "arena") && ((p.scene || "arena") === "arena");
     el.innerHTML = '<div class="ctx-title">' + escapeHtml(p.username || "Adventurer") + "</div>" +
-      '<button type="button" data-act="challenge">Challenge to duel</button>' +
+      (canChallenge ? '<button type="button" data-act="challenge">Challenge</button>' : "") +
       '<button type="button" data-act="examine">Examine</button>';
     el.classList.remove("hidden");
     var lay = state.layout || layout(cssWSafe(), cssHSafe());
@@ -1210,6 +1414,7 @@
 
   function onHubChat(p) {
     if (!p) return;
+    if (p.scene && p.scene !== (state.area || "bank")) return;
     var text = sanitizeChat(p.text);
     if (!text) return;
     var id = p.id || p.userId;
@@ -1235,7 +1440,8 @@
       id: selfChatId(),
       username: (global.Profile && Profile.name) || "Player",
       text: text,
-      t: now
+      t: now,
+      scene: state.area || "bank"
     };
     onHubChat(payload);
     var cloud = global.XscapeCloud;
@@ -1686,12 +1892,17 @@
 
   // South doorway first, then a ring spreading along the entrance, then
   // further into the lobby if the doorway is packed.
-  var SPAWN_CANDIDATES = [
+  var BANK_SPAWNS = [
     [4, 8], [3, 8], [5, 8], [2, 8], [6, 8], [1, 8], [7, 8], [0, 8], [8, 8],
-    [4, 9], [3, 9], [5, 9], [2, 9], [6, 9], [1, 9], [7, 9], [0, 9], [8, 9],
+    [4, 9], [3, 9], [5, 9], [2, 9], [6, 9], [1, 9], [0, 9], [8, 9],
     [4, 7], [3, 7], [5, 7], [2, 7], [6, 7], [1, 7], [7, 7], [0, 7], [8, 7],
     [4, 5], [3, 5], [5, 5], [2, 5], [6, 5], [1, 5], [7, 5], [0, 5], [8, 5]
   ];
+  var ARENA_SPAWNS = [
+    [5, 6], [4, 6], [6, 6], [5, 5], [4, 5], [6, 5], [5, 7], [4, 7], [6, 7],
+    [3, 6], [7, 6], [5, 4], [3, 5], [7, 5], [3, 7], [7, 7], [4, 4], [6, 4]
+  ];
+  var SPAWN_CANDIDATES = BANK_SPAWNS;
 
   function occupiedSpawnTiles() {
     var taken = {};
@@ -1706,13 +1917,13 @@
 
   function pickSpawnTile() {
     var taken = occupiedSpawnTiles();
-    var list = SPAWN_CANDIDATES;
+    var list = state.area === "arena" ? ARENA_SPAWNS : BANK_SPAWNS;
     var rot = hashSpawnKey(mySpawnKey()) % list.length;
     var i, c, r;
     for (i = 0; i < list.length; i++) {
       var spot = list[(rot + i) % list.length];
       c = spot[0]; r = spot[1];
-      if (!walkable(c, r) || npcAt(c, r)) continue;
+      if (!walkable(c, r) || npcAt(c, r) || portalAt(c, r)) continue;
       if (taken[c + "," + r]) continue;
       return { c: c, r: r };
     }
@@ -1762,6 +1973,7 @@
     state.path = [];
     state.pending = null;
     state.talk = null;
+    setArea(state.area === "arena" ? "arena" : "bank");
     if (!wasActive) {
       applySpawn(pickSpawnTile());
       state.justSpawned = true;
@@ -2021,6 +2233,10 @@
         lastWorldTick: state.lastWorldTick
       };
     },
+    area: function () { return state.area || "bank"; },
+    setArea: setArea,
+    teleportTo: teleportTo,
+    portalTile: function () { return currentPortal(); },
     getPeerTiles: function () {
       var rows = othersInBank() || [];
       return rows.map(function (p) {

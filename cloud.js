@@ -617,7 +617,7 @@
     "#cloud-panel h3{margin:0 0 6px;color:#ffd84a;font-family:Impact,'Arial Black',sans-serif;font-size:18px;letter-spacing:.5px;text-align:center}",
     "#cloud-panel .cloud-sec{color:#8a7038;font-size:11px;letter-spacing:.6px;font-weight:700;margin:8px 0 4px;text-transform:uppercase}",
     "#cloud-online-list,#cloud-challenge-list,#cloud-board{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow:auto}",
-    ".cloud-row{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fff4c0;font-size:13px;padding:3px 0;border-bottom:1px solid #2a1c0c}",
+    ".cloud-where{color:#c8b070;font-size:11px;flex:0 0 auto;margin-left:8px}.cloud-row{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fff4c0;font-size:13px;padding:3px 0;border-bottom:1px solid #2a1c0c}",
     ".cloud-row button{flex:0 0 auto;padding:3px 8px;font-size:11px;font-family:Impact,'Arial Black',sans-serif;border:1px solid #8a7038;background:#2a1c0c;color:#ffd84a;cursor:pointer}",
     ".cloud-empty{color:#8a7038;font-size:12px;text-align:center;padding:4px}",
     "#cloud-invite{display:none;margin:8px 0;padding:8px;border:1px solid #c8b070;background:#2a1a08;color:#fff4c0;font-size:13px;text-align:center}",
@@ -951,10 +951,10 @@
       duel.removeAttribute("aria-disabled");
       duel.classList.remove("locked");
       var coming = duel.querySelector(".coming");
-      if (coming) coming.textContent = "Open the lobby";
+      if (coming) coming.textContent = "Portal in the bank";
       duel.onclick = function (e) {
         if (e) e.preventDefault();
-        if ($("cloud-panel")) $("cloud-panel").scrollIntoView({ block: "nearest", behavior: "smooth" });
+        if (typeof flashMsg === "function") flashMsg("Walk to the portal in the bank to go to the Duel Arena.", "#ffe44a");
       };
     }
   }
@@ -1040,6 +1040,16 @@
   }
 
 
+  function areaLabel(scene) {
+    if (scene === "arena") return "Duel Arena";
+    if (scene === "duel") return "Dueling";
+    if (scene === "jad") return "Jad";
+    if (scene === "kree") return "Kree'arra";
+    if (scene === "raid") return "Gloamhold";
+    if (scene === "bank") return "Bank";
+    return "Online";
+  }
+
   function renderPresence() {
     var list = $("cloud-online-list");
     if (!list) return;
@@ -1065,12 +1075,9 @@
     list.className = "";
     list.innerHTML = others.map(function (p) {
       return '<div class="cloud-row" data-user="' + escapeHtml(p.id) + '"><span>' +
-        escapeHtml(p.username) + "</span>" +
-        '<button type="button" data-challenge="' + escapeHtml(p.id) + '">Challenge to duel</button></div>';
+        escapeHtml(p.username) + '</span><span class="cloud-where">' +
+        escapeHtml(areaLabel(p.scene)) + "</span></div>";
     }).join("");
-    list.querySelectorAll("[data-challenge]").forEach(function (btn) {
-      on(btn, "click", function () { challengeUser(btn.getAttribute("data-challenge")); });
-    });
   }
 
   function renderChallenges() {
@@ -2245,6 +2252,7 @@
     flushSave: flushSave,
     canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,
+    flushHeartbeat: function () { return tickHeartbeat(); },
     trackPresence: trackPresence,
     getPresenceMap: getPresenceMap,
     getPresenceList: getPresenceList,

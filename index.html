@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110170239-b22cce4";</script>
+  <script>window.XSCAPE_BUILD = "20261110171538-9e9401c";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -5551,7 +5551,14 @@ function enterScene(id) {
   const next = Scenes[id];
   if (!next || next.locked) return;
   const prev = G.scene && Scenes[G.scene];
-  if (prev && prev.exit && prev.id !== next.id) prev.exit();
+  if (prev && prev.exit && prev.id !== next.id) {
+    // Leaving the world for a boss or raid returns you to the bank, not the arena.
+    // A duel fight should drop you back in the arena you came from.
+    if (window.XscapeHub && id !== "duel" && id !== "hub" && typeof XscapeHub.setArea === "function") {
+      XscapeHub.setArea("bank");
+    }
+    prev.exit();
+  }
   G.scene = id;
   next.enter();
   if (typeof checkXscapeVersion === "function") checkXscapeVersion();

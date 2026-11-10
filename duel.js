@@ -401,9 +401,27 @@
   }
 
   /* ---------- Challenge flow ---------- */
+  function inArena() {
+    var hub = global.XscapeHub;
+    return !!(hub && typeof hub.area === "function" && hub.area() === "arena");
+  }
+  function presenceScene(userId) {
+    var c = cloud();
+    var list = (c && c.getPresenceList && c.getPresenceList()) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === userId) return list[i].scene || "bank";
+    }
+    return null;
+  }
   function offerTo(userId, name) {
     if (!canDuel()) { flash("Sign in to duel.", "#ff8a70"); return; }
     if (!userId || userId === uid()) { flash("Pick another player.", "#ff8a70"); return; }
+    if (!inArena()) { flash("You can only challenge someone at the Duel Arena.", "#ff8a70"); return; }
+    var themScene = presenceScene(userId);
+    if (themScene && themScene !== "arena" && themScene !== "duel") {
+      flash("They are not at the Duel Arena.", "#ff8a70");
+      return;
+    }
     state.phase = "offer";
     state.mode = "offer";
     state.challenge = { toId: userId, toName: name || "Adventurer", fromId: uid(), fromName: myName() };
@@ -416,6 +434,7 @@
 
   function respondTo(challengeOrId) {
     if (!canDuel()) { flash("Sign in to duel.", "#ff8a70"); return; }
+    if (!inArena()) { flash("Go to the Duel Arena to accept this challenge.", "#ff8a70"); return; }
     var ch = typeof challengeOrId === "object" ? challengeOrId : findChallenge(challengeOrId);
     if (!ch) { flash("Challenge not found.", "#ff8a70"); return; }
     state.phase = "offer";
@@ -1119,7 +1138,12 @@
 
   function clickPx() { /* taps go to prayer buttons / forfeit */ }
 
-  function enter() { enterDuelChrome(); hookTicks(); }
+  function enter() {
+    enterDuelChrome();
+    hookTicks();
+    var c = cloud();
+    if (c && c.setPresenceExtra) c.setPresenceExtra({ scene: "duel" });
+  }
   function leave() {
     unhookTicks();
     leaveDuelChannel();
