@@ -1,5 +1,5 @@
 /* Xscape service worker. Cache name is stamped per deploy (see scripts/stamp-build.sh). */
-var BUILD = "20261110155800-0934990";
+var BUILD = "20261110160054-c3db0d0";
 var CACHE = "xscape-" + BUILD;
 var LAB_RE = /(?:^|\/)(lab\.html|lab-gear\.js)(?:\?|$)/;
 var NO_CACHE_RE = /(?:^|\/)version\.json(?:\?|$)/;

@@ -1178,7 +1178,15 @@
   function trackPresence() {
     if (!hubChannel) return;
     if (!session && !isHubChatTest()) return;
+    if (awaySince || isDocumentHidden()) return;
     try { hubChannel.track(trackPayload()); } catch (e) {}
+  }
+
+  function untrackPresence() {
+    if (!hubChannel) return;
+    try {
+      if (typeof hubChannel.untrack === "function") hubChannel.untrack();
+    } catch (e) {}
   }
 
   function setPresenceExtra(extra) {
@@ -1191,6 +1199,16 @@
     }, 280);
   }
 
+  var AWAY_MS = 120000;
+
+  function presenceFresh(p) {
+    if (!p) return false;
+    if (p.at == null || p.at === "") return false;
+    var at = Number(p.at);
+    if (!isFinite(at)) return false;
+    return (Date.now() - at) < AWAY_MS;
+  }
+
   function mergedPresenceMap() {
     var out = {};
     var id;
@@ -1199,11 +1217,14 @@
         out[id] = heartbeatMap[id];
       }
     }
-    // Live Realtime presence wins when both sources have the same player.
+    // Realtime can vanish instantly on an iOS app switch when the socket dies,
+    // and can also linger. Prefer the server directory; only use live presence
+    // when the payload is fresher than the 2-minute away window.
     for (id in presenceMap) {
-      if (Object.prototype.hasOwnProperty.call(presenceMap, id) && presenceMap[id]) {
-        out[id] = presenceMap[id];
-      }
+      var p = presenceMap[id];
+      if (!p || !Object.prototype.hasOwnProperty.call(presenceMap, id)) continue;
+      if (!presenceFresh(p)) continue;
+      out[id] = p;
     }
     return out;
   }
@@ -1269,6 +1290,9 @@
   var lobbyRetryMs = 1500;
   var lobbyGen = 0;
   var lobbyHooked = false;
+  var awaySince = null;
+  var awayUntrackTimer = null;
+  var resumeAwayTimer = null;
 
   function applyHeartbeatPlayers(players) {
     var next = {};
@@ -1284,6 +1308,7 @@
 
   async function tickHeartbeat() {
     if (heartbeatInFlight) return;
+    if (awaySince || isDocumentHidden()) return;
     if (!sb || !session) return;
     if (isRestrictedGuest() || isAnonymousUser(session.user)) return;
     var name = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name);
@@ -1307,31 +1332,93 @@
     }
   }
 
+  function isDocumentHidden() {
+    try {
+      if (typeof document === "undefined") return false;
+      return document.visibilityState === "hidden" || document.hidden === true;
+    } catch (e) { return false; }
+  }
+
+  function clearAwayUntrackTimer() {
+    if (awayUntrackTimer) {
+      clearTimeout(awayUntrackTimer);
+      awayUntrackTimer = null;
+    }
+  }
+
+  function scheduleAwayUntrack() {
+    clearAwayUntrackTimer();
+    var already = awaySince ? (Date.now() - awaySince) : 0;
+    var wait = Math.max(0, AWAY_MS - already);
+    awayUntrackTimer = setTimeout(function () {
+      awayUntrackTimer = null;
+      if (!isDocumentHidden()) return;
+      untrackPresence();
+    }, wait);
+  }
+
+  // App switch / lock: stop heartbeats and remember when we went away.
+  // Stay listed for 2 minutes (server cutoff is the source of truth — iOS
+  // may freeze this timer). Do not sign the player out.
+  function pausePresenceForBackground() {
+    if (!awaySince) awaySince = Date.now();
+    pauseHeartbeat();
+    scheduleAwayUntrack();
+  }
+
+  function resumePresenceFromBackground() {
+    if (resumeAwayTimer) return;
+    resumeAwayTimer = setTimeout(function () {
+      resumeAwayTimer = null;
+      awaySince = null;
+      clearAwayUntrackTimer();
+      if (!session) return;
+      if (isRestrictedGuest() || isAnonymousUser(session.user)) return;
+      startHeartbeat();
+      try { startLobby(); } catch (e) {}
+      try { trackPresence(); } catch (e) {}
+    }, 0);
+  }
+
   function hookLobbyVisibility() {
     if (lobbyHooked) return;
     lobbyHooked = true;
     try {
       document.addEventListener("visibilitychange", function () {
-        if (document.visibilityState === "visible") {
-          try { startLobby(); } catch (e) {}
-          tickHeartbeat();
-        }
+        if (document.visibilityState === "hidden") pausePresenceForBackground();
+        else if (document.visibilityState === "visible") resumePresenceFromBackground();
       });
     } catch (e) {}
+    try {
+      window.addEventListener("pagehide", function () { pausePresenceForBackground(); });
+      window.addEventListener("pageshow", function () { resumePresenceFromBackground(); });
+    } catch (e) {}
+    if (isDocumentHidden()) pausePresenceForBackground();
   }
 
   function startHeartbeat() {
     hookLobbyVisibility();
+    if (awaySince || isDocumentHidden()) return;
     if (heartbeatTimer) return;
     tickHeartbeat();
     heartbeatTimer = setInterval(tickHeartbeat, 4000);
   }
 
-  function stopHeartbeat() {
+  function pauseHeartbeat() {
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
       heartbeatTimer = null;
     }
+  }
+
+  function stopHeartbeat() {
+    awaySince = null;
+    clearAwayUntrackTimer();
+    if (resumeAwayTimer) {
+      clearTimeout(resumeAwayTimer);
+      resumeAwayTimer = null;
+    }
+    pauseHeartbeat();
     if (lobbyRetryTimer) {
       clearTimeout(lobbyRetryTimer);
       lobbyRetryTimer = null;
@@ -1340,11 +1427,13 @@
   }
 
   function scheduleLobbyRetry() {
+    if (awaySince || isDocumentHidden()) return;
     if (lobbyRetryTimer) return;
     var wait = lobbyRetryMs;
     lobbyRetryMs = Math.min(15000, Math.floor(lobbyRetryMs * 1.7));
     lobbyRetryTimer = setTimeout(function () {
       lobbyRetryTimer = null;
+      if (awaySince || isDocumentHidden()) return;
       try { startLobby(); } catch (e) {}
     }, wait);
   }
@@ -1358,6 +1447,7 @@
       return;
     }
     hookLobbyVisibility();
+    if (awaySince || isDocumentHidden()) return;
     if (!testChat) startHeartbeat();
     // Do not block presence/heartbeat on the duel-challenge fetch.
     if (!testChat) { try { refreshChallenges(); } catch (e) {} }
@@ -1421,6 +1511,7 @@
       if (gen !== lobbyGen) return;
       if (status === "SUBSCRIBED") {
         lobbyRetryMs = 1500;
+        if (awaySince || isDocumentHidden()) return;
         trackPresence();
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         scheduleLobbyRetry();
@@ -1797,6 +1888,9 @@
     rpc: rpc,
     reloadLeaderboard: loadLeaderboard,
     startLobby: startLobby,
+    awaySince: function () { return awaySince; },
+    isHidden: isDocumentHidden,
+
     reloadProfile: reloadProfile,
     canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,

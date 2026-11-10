@@ -1,8 +1,9 @@
 -- Hub online directory: REST heartbeat so signed-in players can see
 -- each other even when Realtime presence does not sync (mobile
 -- WebSocket / large OAuth JWT / lobby subscribe never ran). Also
--- includes signed-in profiles whose last_seen_at is fresh, so an
--- updated client can still see friends on an older build.
+-- includes signed-in profiles whose last_seen_at is fresh (only when they
+-- have never heartbeated), so an updated client can still see friends on
+-- an older build. Online cutoff is 120 seconds after the last heartbeat.
 
 CREATE TABLE IF NOT EXISTS public.hub_presence (
   user_id uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
@@ -83,23 +84,23 @@ BEGIN
       'id', p.id,
       'username', COALESCE(h.username, p.username),
       'scene', CASE
-        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '90 seconds' THEN h.scene
+        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '120 seconds' THEN h.scene
         ELSE 'online'
       END,
       'col', CASE
-        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '90 seconds' THEN h.col
+        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '120 seconds' THEN h.col
         ELSE NULL
       END,
       'row', CASE
-        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '90 seconds' THEN h.row
+        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '120 seconds' THEN h.row
         ELSE NULL
       END,
       'facing', CASE
-        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '90 seconds' THEN h.facing
+        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '120 seconds' THEN h.facing
         ELSE NULL
       END,
       'equipment', CASE
-        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '90 seconds' THEN h.equipment
+        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '120 seconds' THEN h.equipment
         ELSE NULL
       END,
       'at', (1000 * extract(epoch from COALESCE(
@@ -107,7 +108,7 @@ BEGIN
         p.last_seen_at
       )))::bigint,
       'via', CASE
-        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '90 seconds' THEN 'heartbeat'
+        WHEN h.user_id IS NOT NULL AND h.updated_at > now() - interval '120 seconds' THEN 'heartbeat'
         ELSE 'last_seen'
       END
     ) AS player
@@ -119,8 +120,12 @@ BEGIN
       AND btrim(p.username) <> ''
       AND COALESCE(u.is_anonymous, false) = false
       AND (
-        p.last_seen_at > now() - interval '120 seconds'
-        OR h.updated_at > now() - interval '90 seconds'
+        -- Last heartbeat is the source of truth once a client has ever heartbeated.
+        -- 120s cutoff: backgrounded players stay listed for 2 minutes, then drop.
+        -- Older clients with no hub_presence row still use last_seen_at.
+        (h.updated_at IS NOT NULL AND h.updated_at > now() - interval '120 seconds')
+        OR
+        (h.updated_at IS NULL AND p.last_seen_at > now() - interval '120 seconds')
       )
   ) q;
 
