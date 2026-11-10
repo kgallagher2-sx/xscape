@@ -549,8 +549,9 @@
     var bankJob = job.type === "bank" || job.type === "examine-booth" ||
       ((job.type === "menu" || job.type === "talk" || job.type === "examine") && job.npc);
     if (bankJob && !inBankArea()) return;
-    if (job.type === "menu" && job.npc) showCtx(job.npc, job.px, job.py);
-    else if (job.type === "talk" && job.npc) startTalk(job.npc);
+    if (job.type === "menu" && job.npc) useNpc(job.npc);
+    else if (job.type === "use" && job.npc) useNpc(job.npc);
+    else if (job.type === "talk" && job.npc) useNpc(job.npc);
     else if (job.type === "examine" && job.npc) examineNpc(job.npc);
     else if (job.type === "bank") openBank();
     else if (job.type === "examine-booth") examineBooth();
@@ -663,13 +664,11 @@
     }
     if (npc && !opts.walkOnly) {
       markClick(opts.px, opts.py, "action");
-      if (inTalkRange(state.col, state.row, npc)) {
-        showCtx(npc, opts.px, opts.py);
+      if (opts.hold && inTalkRange(state.col, state.row, npc)) {
+        state.hold = { kind: "npc", npc: npc, px: opts.px, py: opts.py, t0: (typeof performance !== "undefined" ? performance.now() : Date.now()) };
         return true;
       }
-      state.pending = { type: "menu", npc: npc, px: opts.px, py: opts.py };
-      setMovePath(bfs(state.col, state.row, npc.col, npc.row), npc.col, npc.row);
-      return true;
+      return useNpc(npc);
     }
     var other = playerAt(col, row);
     if (other && !opts.walkOnly) {
@@ -693,7 +692,7 @@
     state.hold = null;
     var t = tileAtPx(x, y, cssW, cssH);
     if (!t) return;
-    clickTile(t.col, t.row, { px: x, py: y, hold: boothAt(t.col, t.row) });
+    clickTile(t.col, t.row, { px: x, py: y, hold: !!(boothAt(t.col, t.row) || npcAt(t.col, t.row)) });
   }
 
   function onPointerUp() {
@@ -701,15 +700,21 @@
     if (!hold) return;
     state.hold = null;
     if (hold.kind === "booth") useBooth(hold.col);
+    else if (hold.kind === "npc") useNpc(hold.npc);
   }
 
   function onPointerHoldTick() {
     var hold = state.hold;
-    if (!hold || hold.kind !== "booth") return;
+    if (!hold) return;
     var now = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if (now - hold.t0 < 450) return;
-    state.hold = null;
-    showBoothCtx(hold.col, hold.px, hold.py);
+    if (hold.kind === "booth") {
+      state.hold = null;
+      showBoothCtx(hold.col, hold.px, hold.py);
+    } else if (hold.kind === "npc") {
+      state.hold = null;
+      examineNpc(hold.npc);
+    }
   }
 
   function stepDir(dc, dr) {
@@ -717,12 +722,7 @@
     var c = state.col + dc, r = state.row + dr;
     if (state.destCol != null) { c = state.destCol + dc; r = state.destRow + dr; }
     if (npcAt(c, r)) {
-      var n = npcAt(c, r);
-      if (inTalkRange(state.col, state.row, n)) showCtx(n);
-      else {
-        state.pending = { type: "menu", npc: n };
-        setMovePath(bfs(state.col, state.row, n.col, n.row), n.col, n.row);
-      }
+      useNpc(npcAt(c, r));
       return;
     }
     if (walkable(c, r)) {
@@ -1374,12 +1374,43 @@
     layer.style.pointerEvents = "";
   }
 
-  function startTalk(npc) {
+  function openNpcWindow(npc) {
+    if (!npc) return false;
+    var after = npc.after;
+    if (after === "bank") { openBank(); return true; }
+    if (after === "shop") { if (typeof openShop === "function") openShop(); return true; }
+    if (after === "supplies") { if (typeof openSupplyShop === "function") openSupplyShop(); return true; }
+    if (after === "boss") { openBossMenu(); return true; }
+    return false;
+  }
+
+  function greetNpc(npc) {
+    if (!npc) return;
+    var line = (npc.talk && npc.talk[0] && npc.talk[0].text) || npc.examine || "";
+    if (!line) return;
+    if (typeof flashMsg === "function") flashMsg(line, "#ffe9a0");
+    else if (typeof showChat === "function") {
+      beginChatLayer();
+      state.talk = { lines: [{ name: npc.name || "", text: line, portrait: npc }], i: 0, after: null, npc: npc };
+      speakCurrent();
+    }
+  }
+
+  function useNpc(npc) {
+    if (!npc) return false;
     hideCtx();
-    var lines = (npc.talk || []).slice();
-    state.talk = { lines: lines, i: 0, after: npc.after || null, npc: npc };
-    beginChatLayer();
-    speakCurrent();
+    if (inTalkRange(state.col, state.row, npc)) {
+      if (!openNpcWindow(npc)) greetNpc(npc);
+      return true;
+    }
+    state.pending = { type: "use", npc: npc };
+    setMovePath(bfs(state.col, state.row, npc.col, npc.row), npc.col, npc.row);
+    return true;
+  }
+
+  function startTalk(npc) {
+    // Kept for any leftover callers; a tap now uses useNpc (window first, else one line).
+    useNpc(npc);
   }
 
   function speakCurrent() {
