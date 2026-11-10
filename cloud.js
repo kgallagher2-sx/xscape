@@ -1597,6 +1597,7 @@
     get profile() { return cloudProfile; },
     hasSession: function () { return !!session; },
     isPermanent: function () { return typeof isPermanentUser === "function" && isPermanentUser(); },
+    isRestrictedGuest: isRestrictedGuest,
     userId: function () { return session && session.user && session.user.id; },
     routeTitle: routeTitle,
     showNameEditor: showNameEditor,

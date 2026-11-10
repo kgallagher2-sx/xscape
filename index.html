@@ -23,8 +23,8 @@
       --vh: 1vh;
       --app-height: 100dvh;
       --app-height: calc(var(--vh) * 100);
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: var(--safe-top);
+      --safe-bottom: var(--safe-bottom);
       --safe-left: env(safe-area-inset-left, 0px);
       --safe-right: env(safe-area-inset-right, 0px);
     }
@@ -217,7 +217,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -500,6 +500,106 @@
     #btn-run.running { border-color: #c9a24a; color: #ffe44a; }
     #move-pad button:active { filter: brightness(1.25); }
 
+
+    /* West Bank hub world */
+    #app.hub-world #mid,
+    #app.hub-world #consumables,
+    #app.hub-world #prayers,
+    #app.hub-world #top-hud { display: none; }
+    #app.hub-world #btn-raid-help,
+    #app.hub-world #btn-kree-help { display: none; }
+    #app.hub-world #osrs-chat { bottom: calc(62px + var(--safe-bottom, 0px)); }
+    #overlay-hub.is-world {
+      background: transparent; pointer-events: none;
+      padding: 0; justify-content: flex-start; overflow: hidden;
+      align-items: stretch;
+    }
+    #overlay-hub.is-world .hub-world-hide { display: none !important; }
+    #overlay-hub.is-world .hub-chrome { pointer-events: auto; }
+    #hub-dock {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+      display: flex; gap: 6px; justify-content: center;
+      padding: 6px 8px calc(8px + var(--safe-bottom));
+      background: linear-gradient(transparent, rgba(12,8,4,0.88) 36%);
+      pointer-events: auto;
+    }
+    #hub-dock .btn {
+      flex: 1 1 0; min-width: 0; margin: 0; height: 40px;
+      font-size: 13px; letter-spacing: 0.3px;
+      font-family: "Trebuchet MS", sans-serif;
+    }
+    #hub-gp-chip {
+      pointer-events: none; position: absolute; top: calc(6px + var(--safe-top));
+      left: 48px; z-index: 6; font-size: 13px; font-weight: 700;
+      color: #ffe9a0; text-shadow: 0 1px 2px #000; background: rgba(20,12,6,0.72);
+      border: 2px solid #8a6a30; padding: 4px 8px; border-radius: 4px;
+    }
+    #hub-ctx {
+      position: absolute; z-index: 28; min-width: 160px; max-width: 230px;
+      pointer-events: auto;
+      background: linear-gradient(#3a2a18, #1e140c);
+      border: 3px solid #c9a24a; box-shadow: 0 4px 16px #000;
+      padding: 4px; display: flex; flex-direction: column; gap: 2px;
+    }
+    #hub-ctx.hidden { display: none; }
+    #hub-ctx button, .ctx-btn {
+      display: block; width: 100%; text-align: left; margin: 0; min-width: 0;
+      height: auto; padding: 8px 10px; font-size: 13px; letter-spacing: 0;
+      font-family: "Trebuchet MS", sans-serif; color: #ffe9a0;
+      background: #2a1c10; border: 1px solid #6a5428; border-radius: 2px;
+      cursor: pointer;
+    }
+    #hub-ctx button:active { filter: brightness(1.25); }
+    #hub-ctx .ctx-title {
+      color: #ffff00; font-weight: 700; font-size: 12px; padding: 4px 6px 6px;
+      text-shadow: 0 1px 0 #000;
+    }
+    .osrs-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+    }
+    .osrs-slot {
+      min-height: 52px; padding: 4px 5px; margin: 0; min-width: 0;
+      background: linear-gradient(#3a2a18, #22180e);
+      border: 2px solid #6a5428; color: #efe0b0; font-size: 10px;
+      font-family: "Trebuchet MS", sans-serif; text-align: center;
+      line-height: 1.2; cursor: pointer; border-radius: 3px;
+    }
+    .osrs-slot.empty { opacity: 0.4; cursor: default; }
+    .osrs-slot:active { filter: brightness(1.2); }
+    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv { overflow: hidden; }
+    #overlay-hub.is-world #hub-dock { display: flex; }
+    #overlay-hub.is-world #hub-gp-chip { display: block; }
+    #hub-dock, #hub-gp-chip { display: none; }
+    #overlay-hub.is-world #cloud-panel { display: none !important; }
+    #overlay-hub.is-world #cloud-banner { display: none !important; }
+    #overlay-hub.is-world #cloud-account {
+      position: absolute; top: calc(6px + var(--safe-top)); right: 8px;
+      left: auto; width: auto; max-width: 210px; margin: 0; z-index: 8;
+      pointer-events: auto;
+    }
+    #overlay-hub.is-world #btn-hub-help {
+      position: absolute; top: calc(6px + var(--safe-top)); left: 8px;
+      margin: 0; align-self: auto; z-index: 8; pointer-events: auto;
+    }
+    #hub-chrome-mount { pointer-events: none; }
+    .gear-char { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 0 10px; }
+    #gear-char { width: min(160px, 46vw); height: auto; aspect-ratio: 140 / 180; background: #140a06; border: 1px solid #4a2c18; border-radius: 8px; image-rendering: pixelated; }
+    #gear-facing { display: flex; gap: 6px; width: 100%; max-width: 240px; }
+    #gear-facing button {
+      flex: 1; min-height: 36px; border-radius: 8px; border: 1px solid #6a4a20;
+      background: #2a1810; color: #f0e0b0; font: 700 12px/1 "Trebuchet MS", sans-serif; cursor: pointer;
+    }
+    #gear-facing button.on { background: #5a3a10; border-color: #ffcf3a; color: #ffe44a; }
+    .boss-row { display: flex; gap: 8px; align-items: stretch; width: 100%; }
+    .boss-row .btn { flex: 1; margin: 0; }
+    #boss-raid-step { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+    #boss-raid-step.hidden { display: none; }
+    .bank-cols { display: flex; flex-direction: column; gap: 10px; }
+    .bank-cols h3 { margin: 0 0 6px; font-size: 14px; color: #ffcf3a; }
+
+    .boss-choice { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
+    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help { display: none; }
+
     @media (max-height: 750px) {
       .pray-btn { height: 82px; }
       .pray-btn canvas { width: 44px; height: 44px; }
@@ -595,7 +695,16 @@
     </div>
 
     <div class="overlay hidden" id="overlay-hub">
-      <button class="mode-info" id="btn-hub-help" type="button" aria-label="How to play">?</button>
+      <button class="mode-info hub-chrome" id="btn-hub-help" type="button" aria-label="How to play">?</button>
+      <div id="hub-chrome-mount" class="hub-chrome"></div>
+      <div id="hub-gp-chip" class="hub-chrome">GP: 0</div>
+      <div id="hub-dock" class="hub-chrome">
+        <button type="button" class="btn secondary" data-dock="inv">Inventory</button>
+        <button type="button" class="btn secondary" data-dock="gear">Equipment</button>
+        <button type="button" class="btn secondary" data-dock="online">Online</button>
+      </div>
+      <div id="hub-ctx" class="hidden" role="menu"></div>
+      <div class="hub-world-hide">
       <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
@@ -636,6 +745,7 @@
       </div>
       <button class="btn secondary" id="btn-change-name" type="button">Change name</button>
       <div class="best-line" id="title-best"></div>
+      </div>
     </div>
 
     <div class="overlay hidden" id="overlay-tut">
@@ -669,7 +779,7 @@
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the on-screen buttons. Listen for the tell.</p>
         <p><b>Magic (1)</b> · <b>Missiles (2)</b> · <b>Melee (3)</b></p>
         <p><b>Supplies:</b> sharks heal 20 (F). Prayer pots restore 31 prayer (P). Range pots boost your ranged for a while (R). Each bite or sip delays your next shot. On-screen buttons work too.</p>
-        <p>Open <b>Equipment</b> to wear gear from your bank, and the <b>Shop</b> to spend pretend GP. Nothing real is ever charged.</p>
+        <p>The title screen is now the <b>West Bank</b>. Tap tiles to walk, talk to a banker to use your bank, Veldan for the Shop, and <b>Kael the Warden</b> to start a fight. Wear gear from your inventory. Nothing real is ever charged.</p>
         <p>Your account is shown as a chip on the title screen — it reads your adventurer name, or <b>Guest</b>. Use <b>Sign out</b> there if you want to switch accounts. Guests can fight TzTok-Jad in starter gear; sign in to unlock the rest and keep your progress.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
@@ -684,12 +794,23 @@
         <button class="overlay-x" id="btn-gear-x" type="button" aria-label="Close">×</button>
         <h2>Equipment</h2>
         <div class="sheet-scroll gear-scroll" id="gear-scroll">
+        <div class="gear-char">
+          <canvas id="gear-char" width="140" height="180" aria-label="View character"></canvas>
+          <div id="gear-facing">
+            <button type="button" data-facing="front" class="on">Front</button>
+            <button type="button" data-facing="back">Back</button>
+            <button type="button" data-facing="left">Left</button>
+            <button type="button" data-facing="right">Right</button>
+          </div>
+        </div>
         <div id="gear-bonuses"></div>
         <div class="gear-sec">Worn</div>
         <div id="gear-worn"></div>
+        <div class="gear-sec">Inventory</div>
+        <div id="gear-inventory"></div>
         <div class="gear-sec">Bank</div>
         <div id="gear-bank"></div>
-        <div class="gear-foot">Tap a bank item to wear it. Tap a worn item to unequip it back to the bank. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
+        <div class="gear-foot">Tap an inventory item to wear it. Tap a worn item to unequip it into your inventory. Tap a bank item to withdraw it. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
         </div>
         <div class="sheet-actions gear-actions">
           <button class="btn" id="btn-gear-close" type="button">CLOSE</button>
@@ -708,6 +829,115 @@
         </div>
         <div class="sheet-actions">
           <button class="btn" id="btn-shop-close" type="button">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="overlay hidden" id="overlay-bank">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" data-close="bank" type="button" aria-label="Close">×</button>
+        <h2>Bank of Xscape</h2>
+        <div class="sheet-scroll" id="bank-scroll">
+          <div class="bank-cols">
+            <div>
+              <h3>Bank</h3>
+              <div id="hub-bank-grid" class="osrs-grid"></div>
+            </div>
+            <div>
+              <h3 id="hub-bank-cap">Inventory</h3>
+              <div id="hub-bank-inv" class="osrs-grid"></div>
+            </div>
+          </div>
+          <p class="lead" style="margin-top:10px">Tap a bank item to withdraw it. Tap an inventory item to deposit it.</p>
+        </div>
+        <div class="sheet-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn secondary" type="button" data-deposit-all>Deposit inventory</button>
+          <button class="btn" type="button" data-close="bank">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-inv">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" data-close="inv" type="button" aria-label="Close">×</button>
+        <h2>Inventory</h2>
+        <div class="sheet-scroll">
+          <div id="hub-inv-grid" class="osrs-grid"></div>
+          <p class="lead" style="margin-top:10px">Tap an item to wear it. Talk to a banker to deposit or withdraw.</p>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn" type="button" data-close="inv">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-boss">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" data-close="boss" type="button" aria-label="Close">×</button>
+        <h2>Kael the Warden</h2>
+        <div class="sheet-scroll">
+          <p class="lead">Choose a fight. Jad and Kree'arra are solo. Gloamhold can be solo or a group.</p>
+          <div class="boss-choice">
+            <div class="boss-row">
+              <button class="btn mode-btn" type="button" id="btn-boss-jad">TzTok-Jad<span class="sub">Arcade Fight Caves · Wave 63</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-jad" aria-label="TzTok-Jad guide">i</button>
+            </div>
+            <div class="boss-row">
+              <button class="btn mode-btn" type="button" id="btn-boss-kree">Kree'arra<span class="sub">Armadyl's Eyrie · God Wars</span><span class="hint">Recommended: Tier 2 gear</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-kree" aria-label="Kree'arra guide">i</button>
+            </div>
+            <div class="boss-row">
+              <button class="btn mode-btn" type="button" id="btn-boss-raid">Gloamhold<span class="sub">The Unsleeping · Raid</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-raid" aria-label="Gloamhold guide">i</button>
+            </div>
+            <div id="boss-raid-note" class="lead"></div>
+            <div id="boss-raid-step" class="hidden">
+              <p class="lead">How do you want to enter Gloamhold?</p>
+              <button class="btn" type="button" id="btn-boss-solo">Solo</button>
+              <button class="btn secondary" type="button" id="btn-boss-group">Group</button>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn secondary" type="button" data-close="boss">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-raid-choice">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" data-close="raid-choice" type="button" aria-label="Close">×</button>
+        <h2>Gloamhold</h2>
+        <div class="sheet-scroll">
+          <p class="lead">Solo, or form a group with friends in the bank.</p>
+          <button class="btn" type="button" id="btn-choice-solo">Solo</button>
+          <button class="btn secondary" type="button" id="btn-choice-group">Group</button>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn secondary" type="button" data-close="raid-choice">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-party">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" data-close="party" type="button" aria-label="Close">×</button>
+        <h2>Raid party</h2>
+        <div class="sheet-scroll" id="party-body"></div>
+        <div class="sheet-actions">
+          <button class="btn secondary" type="button" data-close="party">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-online">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" data-close="online" type="button" aria-label="Close">×</button>
+        <h2>Online</h2>
+        <div class="sheet-scroll" id="online-mount"></div>
+        <div class="sheet-actions">
+          <button class="btn secondary" type="button" data-close="online">CLOSE</button>
         </div>
       </div>
     </div>
@@ -823,6 +1053,7 @@
 <script src="partyhat-img.js"></script>
 <script src="whip-img.js"></script>
 <script src="sprites.js"></script>
+<script src="lab-gear.js"></script>
 <script src="kree-sprites.js"></script>
 <script src="stats.js"></script>
 <script>
@@ -1198,43 +1429,166 @@ function migrateOwned(rawBank, equipment, unlocked) {
   return out;
 }
 
-function ownItem(id) {
-  if (!id) return false;
-  if (!Profile.bank) Profile.bank = migrateOwned(null, Profile.equipment, Profile.unlockedItems);
-  if (Profile.bank.indexOf(id) === -1) Profile.bank.push(id);
-  if (!Profile.unlockedItems) Profile.unlockedItems = [];
-  const it = ITEMS[id];
-  if (it && it.tier && it.tier !== "starter" && Profile.unlockedItems.indexOf(id) === -1) {
-    Profile.unlockedItems.push(id);
-  }
-  return true;
-}
+const INVENTORY_CAP = 28;
 
-function isOwned(id) {
+function isWorn(id) {
   if (!id) return false;
-  const bank = Profile.bank || [];
-  if (bank.indexOf(id) !== -1) return true;
   const eq = Profile.equipment || {};
   for (let i = 0; i < EQUIP_SLOTS.length; i++) if (eq[EQUIP_SLOTS[i]] === id) return true;
   return false;
 }
 
+function inventoryList() {
+  return (Profile.inventory || []).filter((id) => ITEMS[id] && !itemIsHidden(ITEMS[id]));
+}
+
+function inventoryHas(id) {
+  return (Profile.inventory || []).indexOf(id) !== -1;
+}
+
+function inventorySpace() {
+  return Math.max(0, INVENTORY_CAP - (Profile.inventory || []).length);
+}
+
+function addToInventory(id) {
+  if (!id || !ITEMS[id]) return false;
+  if (!Profile.inventory) Profile.inventory = [];
+  if (Profile.inventory.indexOf(id) !== -1) return true;
+  if (Profile.inventory.length >= INVENTORY_CAP) return false;
+  Profile.inventory.push(id);
+  return true;
+}
+
+function removeFromInventory(id) {
+  const inv = Profile.inventory || [];
+  const i = inv.indexOf(id);
+  if (i === -1) return false;
+  inv.splice(i, 1);
+  return true;
+}
+
+function addToBankStore(id) {
+  if (!id || !ITEMS[id]) return false;
+  if (!Profile.bank) Profile.bank = [];
+  if (Profile.bank.indexOf(id) === -1) Profile.bank.push(id);
+  return true;
+}
+
+function removeFromBankStore(id) {
+  const b = Profile.bank || [];
+  const i = b.indexOf(id);
+  if (i === -1) return false;
+  b.splice(i, 1);
+  return true;
+}
+
+function unlockItem(id) {
+  if (!id) return;
+  if (!Profile.unlockedItems) Profile.unlockedItems = [];
+  const it = ITEMS[id];
+  if (it && it.tier && it.tier !== "starter" && Profile.unlockedItems.indexOf(id) === -1) {
+    Profile.unlockedItems.push(id);
+  }
+}
+
+function ownItem(id) {
+  if (!id) return false;
+  unlockItem(id);
+  if (isOwned(id)) return true;
+  if (!addToInventory(id)) addToBankStore(id);
+  return true;
+}
+
+function isOwned(id) {
+  if (!id) return false;
+  if ((Profile.bank || []).indexOf(id) !== -1) return true;
+  if ((Profile.inventory || []).indexOf(id) !== -1) return true;
+  return isWorn(id);
+}
+
 function bankList() {
+  const wornOrInv = {};
+  const eq = Profile.equipment || {};
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const id = eq[EQUIP_SLOTS[i]];
+    if (id) wornOrInv[id] = true;
+  }
+  (Profile.inventory || []).forEach((id) => { if (id) wornOrInv[id] = true; });
+  return (Profile.bank || []).filter((id) => ITEMS[id] && !wornOrInv[id] && !itemIsHidden(ITEMS[id]));
+}
+
+function normalizeContainers() {
   const eq = Profile.equipment || {};
   const worn = {};
   for (let i = 0; i < EQUIP_SLOTS.length; i++) {
     const id = eq[EQUIP_SLOTS[i]];
     if (id) worn[id] = true;
   }
-  return (Profile.bank || []).filter((id) => ITEMS[id] && !worn[id] && !itemIsHidden(ITEMS[id]));
+  const invSeen = {};
+  const inv = [];
+  (Profile.inventory || []).forEach((id) => {
+    if (!id || !ITEMS[id] || worn[id] || invSeen[id] || itemIsHidden(ITEMS[id])) return;
+    invSeen[id] = true;
+    inv.push(id);
+  });
+  Profile.inventory = inv;
+  const bankSeen = {};
+  const bank = [];
+  (Profile.bank || []).forEach((id) => {
+    if (!id || !ITEMS[id] || worn[id] || invSeen[id] || bankSeen[id]) return;
+    if (itemIsHidden(ITEMS[id])) return;
+    bankSeen[id] = true;
+    bank.push(id);
+  });
+  Profile.bank = bank;
+}
+
+function stowItem(id) {
+  if (!id) return false;
+  if (inventoryHas(id) || (Profile.bank || []).indexOf(id) !== -1) return true;
+  if (addToInventory(id)) return true;
+  return addToBankStore(id);
+}
+
+function depositItem(id, silent) {
+  if (!inventoryHas(id)) return false;
+  removeFromInventory(id);
+  addToBankStore(id);
+  if (!silent) {
+    saveProfile();
+    refreshGearViews();
+    if (window.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
+  }
+  return true;
+}
+
+function withdrawItem(id, silent) {
+  if ((Profile.bank || []).indexOf(id) === -1) return false;
+  if (inventorySpace() <= 0) return false;
+  removeFromBankStore(id);
+  addToInventory(id);
+  if (!silent) {
+    saveProfile();
+    refreshGearViews();
+    if (window.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
+  }
+  return true;
+}
+
+function depositAll() {
+  const ids = (Profile.inventory || []).slice();
+  ids.forEach((id) => depositItem(id, true));
+  saveProfile();
+  refreshGearViews();
+  if (window.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
 }
 
 function unequipSlot(slot, silent) {
   const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
   const id = eq[slot];
   if (!id) return false;
-  ownItem(id);
   eq[slot] = null;
+  stowItem(id);
   if (!silent) {
     saveProfile();
     refreshGearViews();
@@ -1246,9 +1600,16 @@ function unequipSlot(slot, silent) {
 function equipItem(id) {
   const it = ITEMS[id];
   if (!it || !it.slot) return false;
-  ownItem(id);
+  if (!isOwned(id)) ownItem(id);
   const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
-  if (eq[it.slot] && eq[it.slot] !== id) ownItem(eq[it.slot]);
+  if (eq[it.slot] === id) return true;
+  if (inventoryHas(id)) removeFromInventory(id);
+  else if ((Profile.bank || []).indexOf(id) !== -1) removeFromBankStore(id);
+  if (eq[it.slot] && eq[it.slot] !== id) {
+    const prev = eq[it.slot];
+    eq[it.slot] = null;
+    stowItem(prev);
+  }
   if (it.twohand && eq.shield) unequipSlot("shield", true);
   if (it.slot === "shield") {
     const w = itemInSlot("weapon");
@@ -1258,6 +1619,7 @@ function equipItem(id) {
   saveProfile();
   refreshGearViews();
   if (typeof updateRaidLock === "function") updateRaidLock();
+  if (window.XscapeHub && XscapeHub.onGearChanged) XscapeHub.onGearChanged();
   return true;
 }
 
@@ -1443,6 +1805,47 @@ function combatVsMonster(monsterId, style, opts) {
   };
 }
 
+
+function combatVsPlayer(style, atkBonuses, defBonuses, atkLevels, defLevels) {
+  style = style || "ranged";
+  const stance = 0;
+  atkBonuses = atkBonuses || emptyBonuses();
+  defBonuses = defBonuses || emptyBonuses();
+  atkLevels = atkLevels || {};
+  defLevels = defLevels || {};
+  const lv = (name) => {
+    const n = Number(atkLevels[name]);
+    return isFinite(n) ? n : 99;
+  };
+  const dlv = (name) => {
+    const n = Number(defLevels[name]);
+    return isFinite(n) ? n : 99;
+  };
+  let atkLevel, atkBonus, max;
+  if (style === "ranged" || style === "range") {
+    atkLevel = effectivePlayerLevel(lv("ranged"), 1, stance);
+    atkBonus = atkBonuses.arange || 0;
+    max = maxHitFrom(atkLevel, atkBonuses.rstr || 0);
+    style = "ranged";
+  } else if (style === "mage" || style === "magic") {
+    atkLevel = effectivePlayerLevel(lv("magic"), 1, stance);
+    atkBonus = atkBonuses.amagic || 0;
+    max = maxHitFrom(atkLevel, atkBonuses.mstr || atkBonuses.amagic || 0);
+    style = "mage";
+  } else {
+    atkLevel = effectivePlayerLevel(lv("attack"), 1, stance);
+    atkBonus = styleAttackBonus(atkBonuses, style);
+    max = maxHitFrom(effectivePlayerLevel(lv("strength"), 1, stance), atkBonuses.str || 0);
+  }
+  const atkRoll = maxRoll(atkLevel, atkBonus);
+  const defRoll = maxRoll(effectivePlayerLevel(dlv("defence"), 1, 0), styleDefenceBonus(defBonuses, style === "mage" ? "magic" : style));
+  const chance = hitChance(atkRoll, defRoll);
+  return {
+    style, maxHit: max, chance, atkRoll, defRoll,
+    expected: expectedDamage(max, chance)
+  };
+}
+
 function monsterVsPlayer(monsterId, style) {
   style = style || "ranged";
   if (style === "range") style = "ranged";
@@ -1610,6 +2013,8 @@ function syncPlayerWorldPos(snap) {
 }
 
 function queueMoveTo(col, row) {
+  if (G.scene === "hub" && window.XscapeHub && XscapeHub.clickTile) { window.XscapeHub.clickTile(col, row == null ? 0 : row); return true; }
+  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.clickTile) { window.XscapeDuel.clickTile(col, row == null ? 0 : row); return true; }
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.clickTile(col, row == null ? 0 : row); return true; }
   if (!G.player || G.mode !== "playing" || G.player.hp <= 0) return false;
   ensurePlayerTile();
@@ -1943,17 +2348,32 @@ function renderEquipmentOverlay() {
         '<span class="act">' + act + "</span></button>";
     }).join("");
   }
+  const invEl = $("gear-inventory");
+  if (invEl) {
+    const items = inventoryList();
+    if (!items.length) {
+      invEl.innerHTML = '<div id="gear-bank-empty">Inventory is empty. Withdraw from the bank, or unequip something.</div>';
+    } else {
+      invEl.innerHTML = items.map((id) => {
+        const it = ITEMS[id];
+        const klass = "bank-item " + gearTierClass(it.tier);
+        const tier = gearTierLabel(it);
+        return '<button type="button" class="' + klass + '" data-inv-item="' + id + '">' +
+          it.name + '<span class="tier">' + tier + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></button>";
+      }).join("");
+    }
+  }
   if (bankEl) {
     const items = bankList();
     if (!items.length) {
-      bankEl.innerHTML = '<div id="gear-bank-empty">Bank is empty. Unequip something, or win gear in Gloamhold.</div>';
+      bankEl.innerHTML = '<div id="gear-bank-empty">Bank is empty. Deposit from your inventory, or win gear in Gloamhold.</div>';
     } else {
       bankEl.innerHTML = items.map((id) => {
         const it = ITEMS[id];
         const klass = "bank-item " + gearTierClass(it.tier);
         const tier = gearTierLabel(it);
         return '<button type="button" class="' + klass + '" data-item="' + id + '">' +
-          it.name + '<span class="tier">' + tier + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></button>";
+          it.name + '<span class="tier">Withdraw · ' + tier + "</span></button>";
       }).join("");
     }
   }
@@ -2275,7 +2695,7 @@ function updateRaidLock() {
   }
 }
 
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), kreeKills: 0 };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0 };
 
 function loadProfile() {
   try {
@@ -2292,6 +2712,7 @@ function loadProfile() {
       Profile.raidBestTicks = raw.raidBestTicks || null;
       Profile.kreeKills = Number(raw.kreeKills) || 0;
       Profile.bank = migrateOwned(raw.bank, Profile.equipment, Profile.unlockedItems);
+      Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
     } else {
       Profile.name = loadName();
       Profile.gp = 0;
@@ -2301,6 +2722,7 @@ function loadProfile() {
       Profile.equipment = cloneLoadout("starter");
       Profile.unlockedItems = [];
       Profile.bank = migrateOwned(null, Profile.equipment, []);
+      Profile.inventory = [];
     }
   } catch (e) {
     Profile.name = loadName();
@@ -2311,10 +2733,13 @@ function loadProfile() {
     Profile.equipment = cloneLoadout("starter");
     Profile.unlockedItems = [];
     Profile.bank = migrateOwned(null, Profile.equipment, []);
+    Profile.inventory = [];
   }
   if (!Profile.kreeKills) Profile.kreeKills = Profile.kreeKills || 0;
   migrateLegacyStarter();
   maybeGrantLegacyFireCape();
+  if (!Array.isArray(Profile.inventory)) Profile.inventory = [];
+  normalizeContainers();
   syncPlayerCaps();
   G.name = Profile.name;
   G.gp = Profile.gp;
@@ -2332,6 +2757,7 @@ function saveProfile() {
       equipment: Profile.equipment || cloneLoadout("starter"),
       unlockedItems: Profile.unlockedItems || [],
       bank: Profile.bank || migrateOwned(null, Profile.equipment, Profile.unlockedItems),
+      inventory: Profile.inventory || [],
       raidCompletions: Profile.raidCompletions || 0,
       raidBestTicks: Profile.raidBestTicks || null,
       kreeKills: Profile.kreeKills || 0
@@ -4584,6 +5010,14 @@ function frame(ts) {
   if (!lastTs) lastTs = ts;
   const dt = Math.min(0.05, (ts - lastTs) / 1000);
   lastTs = ts;
+  if (G.scene === "hub" && window.XscapeHub && XscapeHub.hostFrame) {
+    window.XscapeHub.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
+  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.hostFrame) {
+    window.XscapeDuel.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
   if (G.scene === "raid" && window.XscapeRaid) {
     window.XscapeRaid.hostFrame(ts, ctx, cssW, cssH, dpr);
     return;
@@ -4696,6 +5130,12 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "3") setPrayer("melee");
   if (e.key === "f" || e.key === "F") eatShark();
   if (e.key === "p" || e.key === "P") sipPot();
+  if (G.scene === "hub" && window.XscapeHub && XscapeHub.stepDir) {
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); XscapeHub.stepDir(-1, 0); return; }
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); XscapeHub.stepDir(1, 0); return; }
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); XscapeHub.stepDir(0, -1); return; }
+    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { e.preventDefault(); XscapeHub.stepDir(0, 1); return; }
+  }
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); queueMoveBy(-1, 0); }
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); queueMoveBy(1, 0); }
   if (e.key === "r" || e.key === "R") {
@@ -4705,6 +5145,18 @@ window.addEventListener("keydown", (e) => {
 });
 
 canvas.addEventListener("pointerdown", (e) => {
+  if (G.scene === "hub" && window.XscapeHub && XscapeHub.clickPx) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeHub.clickPx(pt.x, pt.y, cssW, cssH);
+    return;
+  }
+  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.clickPx) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeDuel.clickPx(pt.x, pt.y, cssW, cssH);
+    return;
+  }
   if (G.scene === "raid" && window.XscapeRaid) {
     audio.unlock();
     const pt = eventToArena(e);
@@ -4827,7 +5279,8 @@ function refreshTitleBest() {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv"].forEach((id) => {
+    if (id === "overlay-hub" && G && (G.scene === "hub" || G.mode === "hub")) return;
     const el = $(id);
     if (el) el.classList.add("hidden");
   });
@@ -4869,8 +5322,14 @@ const Scenes = {
       hideAllOverlays();
       $("overlay-hub").classList.remove("hidden");
       refreshHub();
+      if (window.XscapeHub && XscapeHub.enter) XscapeHub.enter();
     },
-    exit() { $("overlay-hub").classList.add("hidden"); }
+    exit() {
+      if (window.XscapeHub && XscapeHub.leave) XscapeHub.leave();
+      $("overlay-hub").classList.add("hidden");
+      $("overlay-hub").classList.remove("is-world");
+      if ($("app")) $("app").classList.remove("hub-world");
+    }
   },
   jad: {
     id: "jad",
@@ -4997,7 +5456,7 @@ function showChat(name, text, opts) {
   if (head) {
     drawChatHead(head.getContext("2d"), head.width, head.height, now() / 1000);
   }
-  if (opts && opts.tap) G.cs.waitTap = true;
+  if (opts && opts.tap && G.cs) G.cs.waitTap = true;
 }
 
 function showItemPopup(text) {
@@ -5007,8 +5466,10 @@ function showItemPopup(text) {
   $("item-popup-text").textContent = text;
   const ic = $("item-icon");
   if (ic) drawCape(ic.getContext("2d"), ic.width, ic.height, true);
-  G.cs.waitTap = true;
-  G.cs.popup = true;
+  if (G.cs) {
+    G.cs.waitTap = true;
+    G.cs.popup = true;
+  }
 }
 
 function startIntro(opts) {
@@ -5386,6 +5847,10 @@ function applyTestQuery() {
   if (!test) return;
   try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
   if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+  if (test === "hub" || test === "bank") {
+    enterScene("hub");
+    return;
+  }
   hideAllOverlays();
   if (test.indexOf("raid") === 0 && window.XscapeRaid) {
     if (window.XscapeRaid.installIntoGame) window.XscapeRaid.installIntoGame();
@@ -5488,10 +5953,22 @@ if ($("gear-bank")) {
     const btn = e.target.closest && e.target.closest("[data-item]");
     if (!btn) return;
     audio.unlock();
-    equipItem(btn.getAttribute("data-item"));
+    if (!withdrawItem(btn.getAttribute("data-item"))) {
+      if (typeof flashMsg === "function") flashMsg("Inventory is full", "#ff8a70");
+    }
   };
   $("gear-bank").addEventListener("click", onBank);
   $("gear-bank").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onBank(e); });
+}
+if ($("gear-inventory")) {
+  const onInv = (e) => {
+    const btn = e.target.closest && e.target.closest("[data-inv-item]");
+    if (!btn) return;
+    audio.unlock();
+    equipItem(btn.getAttribute("data-inv-item"));
+  };
+  $("gear-inventory").addEventListener("click", onInv);
+  $("gear-inventory").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onInv(e); });
 }
 
 let raidBriefReturn = { start: false, opts: null };
@@ -5609,6 +6086,7 @@ function closeHowToPlay() {
   startPlaying();
 }
 function dismissTopOverlay() {
+  if (window.XscapeHub && XscapeHub.dismiss && XscapeHub.dismiss()) { audio.unlock(); return true; }
   if (overlayIsOpen("overlay-gear")) { audio.unlock(); closeEquipmentView(); return true; }
   if (overlayIsOpen("overlay-shop")) { audio.unlock(); closeShop(); return true; }
   if (overlayIsOpen("overlay-help")) { closeHubHelp(); return true; }
@@ -5718,7 +6196,7 @@ window.KellenScape = {
   launchTileAttack, testFireball, queueMoveTo, queueMoveBy, setRunning,
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
-  ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
+  ownItem, equipItem, unequipSlot, bankList, inventoryList, isOwned, depositItem, withdrawItem, depositAll, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
   sipRangePot, combatSkillLevel,
   get stats() { return window.PlayerStats; },
   ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape, gloamholdLockReason, tryEnterGloamhold,
@@ -5738,6 +6216,7 @@ window.KellenScape = {
       },
       equipment: Profile.equipment,
       bank: Profile.bank,
+      inventory: Profile.inventory,
       unlockedItems: Profile.unlockedItems,
       levels: Profile.levels,
       combat: vs && { chance: vs.chance, maxHit: vs.maxHit, atkRoll: vs.atkRoll, defRoll: vs.defRoll, expected: vs.expected },
@@ -5778,6 +6257,11 @@ window.migrateOwned = migrateOwned;
 window.ownItem = ownItem;
 window.equipItem = equipItem;
 window.unequipSlot = unequipSlot;
+window.inventoryList = inventoryList;
+window.depositItem = depositItem;
+window.withdrawItem = withdrawItem;
+window.depositAll = depositAll;
+window.normalizeContainers = normalizeContainers;
 window.refreshGearViews = refreshGearViews;
 window.ownsFireCape = ownsFireCape;
 window.awardFireCape = awardFireCape;
@@ -5789,6 +6273,8 @@ window.tryEnterGloamhold = tryEnterGloamhold;
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
 <script src="kree.js"></script>
+<script src="hub.js"></script>
+<script src="duel.js"></script>
 <script>
 if (window.XscapeRaid) {
   XscapeRaid.installIntoGame();
@@ -5798,6 +6284,14 @@ if (window.XscapeKree) {
   XscapeKree.install();
   if (window.Xscape) window.Xscape.kree = XscapeKree;
   if (window.KellenScape) window.KellenScape.kree = XscapeKree;
+}
+if (window.XscapeHub) {
+  XscapeHub.install();
+  if (window.Xscape) window.Xscape.hub = XscapeHub;
+}
+if (window.XscapeDuel) {
+  XscapeDuel.install();
+  if (window.Xscape) window.Xscape.duel = XscapeDuel;
 }
 
 drawGearIcons();
@@ -5817,7 +6311,7 @@ applyOpenQuery();
 <script src="cloud.js"></script>
 <script>
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register("sw.js?v=20-1").catch(function () {});
+  navigator.serviceWorker.register("sw.js?v=21-1").catch(function () {});
 }
 </script>
 </body>
