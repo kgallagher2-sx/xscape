@@ -6,8 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Xscape" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#1a0c08" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='20' rx='8' ry='12' fill='%23ff9a1a'/%3E%3Cpath d='M16 8c-2 6-2 10 0 16 2-6 2-10 0-16z' fill='%23fff6c0'/%3E%3C/svg%3E" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <title>Xscape</title>
   <style>
 
@@ -16,19 +20,28 @@
       --panel: #3b2c1a;
       --gold: #ffd84a;
       --beige: #ebd7a4;
+      --vh: 1vh;
+      --app-height: 100dvh;
+      --app-height: calc(var(--vh) * 100);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      height: 100dvh; height: 100svh;
+      height: 100dvh; height: var(--app-height);
       overflow: hidden; background: #070403; color: var(--beige);
       font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
       touch-action: manipulation; user-select: none; -webkit-user-select: none;
     }
     #app {
       width: 100%; max-width: 430px; height: 100%;
-      height: 100dvh; height: 100svh;
-      margin: 0 auto; position: relative; display: flex; flex-direction: column;
+      height: 100dvh; height: var(--app-height);
+      max-height: var(--app-height);
+      margin: 0 auto; position: fixed; left: 0; right: 0; top: 0;
+      display: flex; flex-direction: column;
       background: #1a0c08; overflow: hidden; touch-action: manipulation;
     }
     /* Pinch/scroll lock only on the fight surface — menus must pan-y. */
@@ -37,7 +50,7 @@
     }
     #top-hud {
       flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
-      gap: 8px; padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 4px;
+      gap: 8px; padding: calc(6px + var(--safe-top)) 10px 4px;
       background: linear-gradient(#2c1d12, #1e140c); border-bottom: 2px solid #0e0906;
       min-height: 36px; z-index: 2;
     }
@@ -119,7 +132,7 @@
     .atk-track { height: 14px; }
     #prayers {
       flex: 0 0 auto; display: flex; gap: 8px;
-      padding: 6px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+      padding: 6px 10px calc(10px + var(--safe-bottom));
       background: #160e0a; border-top: 2px solid #3a2a18;
     }
     .pray-btn {
@@ -196,7 +209,7 @@
     .overlay {
       position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
       align-items: center; justify-content: safe center;
-      padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+      padding: calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));
       background: rgba(8, 4, 2, 0.95); overflow-x: hidden; overflow-y: auto;
       touch-action: pan-y; -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -387,8 +400,7 @@
       display: flex; flex-direction: column;
       width: 100%; max-width: 340px; min-height: 0; overflow: hidden;
       max-height: 90%;
-      max-height: calc(100dvh - 32px);
-      max-height: calc(100svh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      max-height: calc(var(--app-height) - 24px - var(--safe-top) - var(--safe-bottom));
     }
     .sheet-card > h2, .tut-card > h2, .gear-card > h2 { padding-right: 40px; }
     .sheet-scroll, .tut-scroll, .gear-scroll {
@@ -488,11 +500,30 @@
     #btn-run.running { border-color: #c9a24a; color: #ffe44a; }
     #move-pad button:active { filter: brightness(1.25); }
 
+    @media (max-height: 750px) {
+      .pray-btn { height: 82px; }
+      .pray-btn canvas { width: 44px; height: 44px; }
+      canvas.logo-canvas { width: min(300px, 88%); margin-bottom: 4px; }
+    }
     @media (max-height: 700px) {
-      .pray-btn { height: 78px; }
-      .pray-btn canvas { width: 40px; height: 40px; }
-      .item-btn { height: 42px; }
+      .pray-btn { height: 72px; }
+      .pray-btn canvas { width: 38px; height: 38px; }
+      .pray-btn .plab { font-size: 9px; }
+      .item-btn { height: 40px; font-size: 12px; }
       .logo { font-size: 52px; }
+      canvas.logo-canvas { width: min(260px, 84%); margin-bottom: 2px; }
+      #top-hud { min-height: 0; }
+      .skills-row { margin-top: 2px; }
+    }
+    @media (max-height: 640px) {
+      .pray-btn { height: 62px; }
+      .pray-btn canvas { width: 32px; height: 32px; }
+      .item-btn { height: 36px; }
+      .bar-track { height: 14px; }
+      .skill-cell canvas { width: 16px; height: 16px; }
+      canvas.logo-canvas { width: min(220px, 80%); }
+      .tagline { font-size: 13px; margin: 0 0 10px; }
+      .btn { height: 44px; font-size: 18px; margin: 4px 0; }
     }
   </style>
 </head>
@@ -2376,9 +2407,15 @@ const audio = {
   _amb: [],
   _ambTimer: 0,
   ensure() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (this.ctx && (this.ctx.state === "closed" || this.ctx.state === "interrupted")) {
+      try { if (this.ctx.state !== "closed") this.ctx.close(); } catch (e) {}
+      this.ctx = null;
+      this.master = null;
+      this._noise = null;
+    }
     if (!this.ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.85;
@@ -2388,14 +2425,15 @@ const audio = {
       const d = this._noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       const onState = () => {
-        if (this.ctx && this.ctx.state === "running") this._onCtxRunning();
+        if (!this.ctx) return;
+        if (this.ctx.state === "running") this._onCtxRunning();
         else this.armUnlock();
       };
       try { this.ctx.addEventListener("statechange", onState); } catch (e) {
         this.ctx.onstatechange = onState;
       }
     }
-    if (this.ctx.state === "suspended" || this.ctx.state === "interrupted") {
+    if (this.ctx.state !== "running") {
       try { this.ctx.resume(); } catch (e) {}
     }
     return this.ctx;
@@ -2422,9 +2460,10 @@ const audio = {
      all iOS versions, especially if a later preventDefault cancels the click.
      Keep kicking until ctx.state === "running". */
   unlock() {
+    this._unlockHtmlAudio();
     const ctx = this.ensure();
     if (!ctx) return null;
-    if (ctx.state === "suspended" || ctx.state === "interrupted") {
+    if (ctx.state !== "running") {
       try {
         const p = ctx.resume();
         if (p && p.then) p.then(() => {
@@ -2437,7 +2476,34 @@ const audio = {
     if (ctx.state === "running") this._tapped = true;
     return ctx;
   },
-  _unlockEvents: ["touchstart", "touchend", "pointerdown", "click", "keydown"],
+  _unlockHtmlAudio() {
+    try {
+      if (!this._htmlAudios) this._htmlAudios = [];
+      if (!this._silentEl) {
+        // Tiny silent WAV so iOS standalone also unlocks HTMLAudio.
+        this._silentEl = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+        this._silentEl.setAttribute("playsinline", "true");
+        this._silentEl.preload = "auto";
+        this._htmlAudios.push(this._silentEl);
+      }
+      for (let i = 0; i < this._htmlAudios.length; i++) {
+        const el = this._htmlAudios[i];
+        if (!el) continue;
+        const wasMuted = el.muted;
+        el.muted = true;
+        const p = el.play();
+        if (p && p.then) {
+          p.then(() => {
+            try { el.pause(); el.currentTime = 0; } catch (e2) {}
+            el.muted = wasMuted;
+          }).catch(() => { el.muted = wasMuted; });
+        } else {
+          el.muted = wasMuted;
+        }
+      }
+    } catch (e) {}
+  },
+  _unlockEvents: ["pointerdown", "touchend", "touchstart", "click", "keydown"],
   armUnlock() {
     if (this._unlockArmed) return;
     this._unlockArmed = true;
@@ -2449,8 +2515,8 @@ const audio = {
       this._visArmed = true;
       const resumeIfLive = () => {
         this.armUnlock();
-        // Do not create a context outside a gesture — iOS will leave it
-        // suspended forever. Only resume an existing context.
+        // Resume an existing context when returning to the Home Screen app.
+        // Recreate if iOS closed or interrupted it while backgrounded.
         if (this.ctx) this.unlock();
       };
       document.addEventListener("visibilitychange", () => {
@@ -2461,14 +2527,9 @@ const audio = {
     }
   },
   _disarmUnlock() {
-    if (!this._unlockArmed || !this._unlockHandler) return;
-    // Stay armed if the context can still drop back to suspended/interrupted.
-    if (this.ctx && this.ctx.state === "running") {
-      this._unlockArmed = false;
-      this._unlockEvents.forEach((ev) => {
-        document.removeEventListener(ev, this._unlockHandler, { capture: true });
-      });
-    }
+    // Stay armed forever: iOS standalone suspends AudioContext whenever the
+    // app backgrounds, so the next pointerdown/touchend must resume it.
+    this._unlockArmed = true;
   },
   out() { return this.master || this.ctx.destination; },
   tone(freq, dur, type, vol, at, slide) {
@@ -2964,7 +3025,17 @@ function viewportSize() {
   };
 }
 
+function setAppHeightVar() {
+  const vv = window.visualViewport;
+  const h = (vv && vv.height) ? vv.height : (window.innerHeight || document.documentElement.clientHeight || 640);
+  const px = Math.max(360, Math.round(h));
+  const root = document.documentElement;
+  root.style.setProperty("--vh", (px / 100) + "px");
+  root.style.setProperty("--app-height", px + "px");
+}
+
 function fitViewport() {
+  setAppHeightVar();
   const app = $("app");
   if (!app) return;
   const v = viewportSize();
@@ -2973,10 +3044,12 @@ function fitViewport() {
   app.style.position = "fixed";
   app.style.left = Math.round(v.x + Math.max(0, (v.w - width) / 2)) + "px";
   app.style.top = Math.round(v.y) + "px";
+  app.style.right = "auto";
   app.style.margin = "0";
   app.style.width = width + "px";
   app.style.maxWidth = "430px";
   app.style.height = height + "px";
+  app.style.maxHeight = height + "px";
   resizeCanvas();
   layoutFighters();
 }
