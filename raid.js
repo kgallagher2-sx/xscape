@@ -371,6 +371,251 @@
     };
   }
 
+
+  function isGroup(st) { return !!(st && st.group); }
+  function allFighters(st) {
+    if (st && st.fighters && st.fighters.length) return st.fighters;
+    return (st && st.player) ? [st.player] : [];
+  }
+  function livingFighters(st) {
+    return allFighters(st).filter(function (f) { return f && !f.dead && (f.hp == null || f.hp > 0); });
+  }
+  function fighterById(st, id) {
+    if (!id) return null;
+    var list = allFighters(st);
+    for (var i = 0; i < list.length; i++) if (list[i] && String(list[i].id) === String(id)) return list[i];
+    return null;
+  }
+  function anyOn(st, col, row) {
+    var list = livingFighters(st);
+    for (var i = 0; i < list.length; i++) if (list[i].col === col && list[i].row === row) return true;
+    return false;
+  }
+  function nearestFighter(st, col, row) {
+    var list = livingFighters(st);
+    if (!list.length) return st.player;
+    var best = list[0], bestD = 99;
+    for (var i = 0; i < list.length; i++) {
+      var d = Math.abs(list[i].col - (col || 0)) + Math.abs(list[i].row - (row || 0));
+      if (d < bestD) { bestD = d; best = list[i]; }
+    }
+    return best;
+  }
+  function pushFighter(st, f) {
+    if (!f) return;
+    st.player = f;
+    st.prayer = f.prayer || null;
+    if (f.inv) st.inv = f.inv;
+    st.pendingEat = !!f.pendingEat;
+    st.pendingPot = !!f.pendingPot;
+    st.pendingBrew = !!f.pendingBrew;
+    st.pendingRange = !!f.pendingRange;
+    st.eatCd = f.eatCd || 0;
+    st.potCd = f.potCd || 0;
+    st.brewCd = f.brewCd || 0;
+    st.rangeCd = f.rangeCd || 0;
+    if (f.target !== undefined) st.target = f.target;
+  }
+  function pullFighter(st, f) {
+    if (!f) return;
+    f.prayer = st.prayer;
+    f.inv = st.inv;
+    f.pendingEat = st.pendingEat;
+    f.pendingPot = st.pendingPot;
+    f.pendingBrew = st.pendingBrew;
+    f.pendingRange = st.pendingRange;
+    f.eatCd = st.eatCd;
+    f.potCd = st.potCd;
+    f.brewCd = st.brewCd;
+    f.rangeCd = st.rangeCd;
+    f.target = st.target;
+  }
+  function restoreLocalFighter(st) {
+    if (!st || !st.group) return;
+    var me = fighterById(st, st.group.localId);
+    if (me) pushFighter(st, me);
+  }
+  function withFighter(st, f, fn) {
+    var prev = st.player;
+    pushFighter(st, f);
+    var out;
+    try { out = fn(st, f); } finally {
+      pullFighter(st, f);
+      var me = (st.group && fighterById(st, st.group.localId)) || prev || f;
+      if (me) pushFighter(st, me);
+    }
+    return out;
+  }
+  function bindFighterInv(f, inv) {
+    f.inv = inv || defaultInv();
+    f.pendingEat = f.pendingPot = f.pendingBrew = f.pendingRange = false;
+    f.eatCd = f.potCd = f.brewCd = f.rangeCd = 0;
+    f.dead = false;
+    return f;
+  }
+  function spawnOffset(i, n) {
+    var mid = 2;
+    var off = (i - Math.floor(((n || 1) - 1) / 2));
+    return clamp(mid + off, 0, COLS - 1);
+  }
+  function initGroupState(st, opts) {
+    opts = opts || {};
+    var g = opts.group || {};
+    var cloud = global.XscapeCloud;
+    var localId = (cloud && cloud.userId && cloud.userId()) || "local";
+    var members = (g.members || []).slice();
+    var seen = {};
+    st.fighters = [];
+    for (var i = 0; i < members.length; i++) {
+      var m = members[i] || {};
+      var id = m.userId || m.user_id || m.id;
+      if (!id || seen[id]) continue;
+      seen[id] = true;
+      var f = bindFighterInv(freshPlayer(st.player.loadout), defaultInv());
+      f.id = id;
+      f.username = m.username || m.name || "Adventurer";
+      f.col = f.prevCol = spawnOffset(st.fighters.length, Math.max(members.length, 2));
+      f.row = f.prevRow = 0;
+      f.isLeader = String(id) === String(g.leaderId);
+      st.fighters.push(f);
+    }
+    if (!fighterById(st, localId)) {
+      var self = bindFighterInv(st.player, st.inv || defaultInv());
+      self.id = localId;
+      self.username = (global.Profile && Profile.name) || "You";
+      self.col = self.prevCol = spawnOffset(st.fighters.length, st.fighters.length + 1);
+      self.isLeader = String(localId) === String(g.leaderId);
+      st.fighters.push(self);
+    }
+    st.group = {
+      runId: g.runId,
+      partyId: g.partyId,
+      leaderId: g.leaderId,
+      localId: localId,
+      isLeader: String(localId) === String(g.leaderId),
+      seed: opts.seed || g.seed,
+      inputs: {},
+      lastSent: null,
+      lastStateTick: -1,
+      unsubTick: null,
+      completing: false,
+      completed: false
+    };
+    var me = fighterById(st, localId) || st.fighters[0];
+    if (me) {
+      me.loadout = st.player.loadout;
+      me.inv = st.inv || me.inv;
+      pushFighter(st, me);
+    }
+  }
+
+  function applyGroupInputs(st) {
+    if (!st.group || !st.group.inputs) return;
+    var inputs = st.group.inputs;
+    st.group.inputs = {};
+    Object.keys(inputs).forEach(function (id) {
+      var inp = inputs[id];
+      var f = fighterById(st, id);
+      if (!f || f.dead) return;
+      if (inp.username) f.username = inp.username;
+      if (inp.loadout) f.loadout = inp.loadout;
+      if (inp.equipment) f.equipment = inp.equipment;
+      withFighter(st, f, function () {
+        if (inp.prayer !== undefined) {
+          st.prayer = inp.prayer || null;
+          f.prayer = st.prayer;
+        }
+        if (inp.eat) st.pendingEat = true;
+        if (inp.pot) st.pendingPot = true;
+        if (inp.brew) st.pendingBrew = true;
+        if (inp.range) st.pendingRange = true;
+        if (inp.target) st.target = inp.target;
+        if (inp.destCol != null && inp.destRow != null) {
+          f.path = pathTo(st, inp.destCol, inp.destRow);
+        }
+      });
+    });
+  }
+
+  function stepFighterMove(st, f) {
+    f.prevCol = f.col; f.prevRow = f.row; f.stepping = false;
+    var steps = raidRunning ? 2 : 1;
+    var moved = false;
+    for (var s = 0; s < steps && f.path && f.path.length; s++) {
+      var step = f.path.shift();
+      f.col = step.c; f.row = step.r;
+      f.stepping = true;
+      moved = true;
+    }
+    if (moved) f.stillTicks = 0;
+    else f.stillTicks = (f.stillTicks || 0) + 1;
+  }
+
+  function gameTickGroup(st) {
+    if (st.mode !== "playing") return;
+    applyGroupInputs(st);
+    st.ticks++;
+    st.lastTickMs = now();
+    var living = livingFighters(st);
+    for (var i = 0; i < living.length; i++) {
+      withFighter(st, living[i], function (s, f) {
+        if (s.eatCd > 0) s.eatCd--;
+        if (s.potCd > 0) s.potCd--;
+        if (s.brewCd > 0) s.brewCd--;
+        if (s.rangeCd > 0) s.rangeCd--;
+        if (f.rangingLeft > 0) f.rangingLeft--;
+        resolveConsumables(s);
+        stepFighterMove(s, f);
+      });
+    }
+    var landed = [];
+    for (var mi = 0; mi < st.marks.length; mi++) {
+      var m = st.marks[mi];
+      if (!m.alive) continue;
+      if (m.landIn > 0) m.landIn--;
+      if (m.landIn <= 0 && !m.resolved) { m.resolved = true; m.alive = false; landed.push(m); }
+    }
+    st.marks = st.marks.filter(function (mm) { return mm.alive; });
+    for (var li = 0; li < landed.length; li++) {
+      var hit = landed[li];
+      if (hit.damage <= 0) continue;
+      livingFighters(st).forEach(function (f) {
+        if (f.col === hit.col && f.row === hit.row) {
+          withFighter(st, f, function () {
+            hurtPlayer(st, hit.damage, hit.kind || "vault curse");
+            if (hit.drain) drainPrayer(st, hit.drain);
+          });
+        }
+      });
+    }
+    if (st.mode !== "playing") { restoreLocalFighter(st); return; }
+    livingFighters(st).forEach(function (f) {
+      withFighter(st, f, function (s) {
+        if (s.prayer && s.ticks % PRAYER_DRAIN_EVERY === 0) {
+          var extra = (s.boss && s.boss.kind === "morvane" && phaseOf(s) >= 4) ? 1 : 0;
+          drainPrayer(s, 1 + extra);
+        }
+        if (f.atkCd > 0) f.atkCd--;
+      });
+    });
+    var room = st.room;
+    if (room === "gate") tickGate(st);
+    else if (room === "court") tickCourt(st);
+    else if (room === "corridor") tickCorridor(st);
+    else if (room === "throne") tickThrone(st);
+    else if (room === "loot" || (room && room.indexOf("chest") === 0)) tickChest(st);
+    if (st.mode !== "playing") { restoreLocalFighter(st); return; }
+    livingFighters(st).forEach(function (f) {
+      withFighter(st, f, function (s) {
+        if (f.atkCd <= 0 && !f.stepping && canAttackHere(s)) playerAttack(s);
+      });
+    });
+    tickAdds(st);
+    if (st.boss && st.boss.hurt > 0) st.boss.hurt = Math.max(0, st.boss.hurt - 1);
+    restoreLocalFighter(st);
+    if (st.group && st.group.isLeader) broadcastRaidState(st);
+  }
+
   function tileKey(c, r) { return c + "," + r; }
   function inBounds(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
   function neighbors(c, r) {
@@ -451,6 +696,12 @@
     sfx(st, "hit");
     if (st.player.hp <= 0) {
       st.player.hp = 0;
+      st.player.dead = true;
+      if (isGroup(st)) {
+        flash(st, (st.player.username || "A teammate") + " fell.", "#ff8a70");
+        if (!livingFighters(st).length) die(st, reason || "The party was wiped.");
+        return;
+      }
       die(st, reason || "You died.");
     }
   }
@@ -476,11 +727,15 @@
   function winRaid(st) {
     if (st.mode === "win") return;
     st.mode = "win";
+    sfx(st, "win");
+    if (isGroup(st)) {
+      completeGroupRaid(st);
+      return;
+    }
     const P = profileObj();
     P.raidCompletions = (P.raidCompletions || 0) + 1;
     if (P.raidBestTicks == null || st.ticks < P.raidBestTicks) P.raidBestTicks = st.ticks;
     saveRaidProfile();
-    sfx(st, "win");
     if (host && host.onWin) host.onWin(resultOf(st, true));
   }
   function resultOf(st, survived) {
@@ -704,6 +959,19 @@
     st.player.prevCol = 2;
     st.player.prevRow = 0;
     st.player.stillTicks = 0;
+    if (isGroup(st)) {
+      var flist = allFighters(st);
+      for (var fi = 0; fi < flist.length; fi++) {
+        var ff = flist[fi];
+        if (!ff || ff.dead) continue;
+        ff.path = [];
+        ff.col = ff.prevCol = spawnOffset(fi, flist.length);
+        ff.row = ff.prevRow = 0;
+        ff.stillTicks = 0;
+        ff.stepping = false;
+      }
+      restoreLocalFighter(st);
+    }
     st.phaseAnnounced = 0;
     if (id === "gate") setupGate(st);
     else if (id === "court") setupCourt(st);
@@ -768,6 +1036,7 @@
 
   function gameTick(st) {
     if (st.mode !== "playing") return;
+    if (isGroup(st)) { gameTickGroup(st); return; }
     st.ticks++;
     st.lastTickMs = now();
     if (st.policy) st.policy(st);
@@ -883,7 +1152,7 @@
   }
   function maybeStepExit(st) {
     if (!st.roomState.exitReady) return;
-    if (st.player.col === EXIT_COL && st.player.row === 0) advanceRoom(st);
+    if (anyOn(st, EXIT_COL, 0) || (st.player.col === EXIT_COL && st.player.row === 0)) advanceRoom(st);
   }
   function advanceRoom(st) {
     const i = ROOM_ORDER.indexOf(st.room);
@@ -898,7 +1167,17 @@
     rs.lanceCd--;
     if (rs.lanceCd <= 0 && rs.stage !== "done") {
       rs.lanceCd = 4;
-      markTile(st, st.player.col, st.player.row, "lance", 2, 22);
+      if (isGroup(st)) {
+        var seenLance = {};
+        livingFighters(st).forEach(function (f) {
+          var k = f.col + "," + f.row;
+          if (seenLance[k]) return;
+          seenLance[k] = true;
+          markTile(st, f.col, f.row, "lance", 2, 22);
+        });
+      } else {
+        markTile(st, st.player.col, st.player.row, "lance", 2, 22);
+      }
       sfx(st, "mark");
     }
     if (rs.stage === "show") {
@@ -922,7 +1201,7 @@
       // Keep the current target lit. Crossing other tiles is fine on a single row.
       if (st.ticks % 2 === 0) markTile(st, expect, 0, "rune", 2, 0, { glyph: rs.glyphs[expect], lit: true });
       rs.stepLeft--;
-      if (st.player.col === expect && st.player.row === 0) {
+      if (anyOn(st, expect, 0) || (st.player.col === expect && st.player.row === 0)) {
         markTile(st, expect, 0, "rune", 1, 0, { glyph: rs.glyphs[expect], lit: true });
         rs.seqI++;
         if (rs.seqI >= rs.seq.length) {
@@ -934,7 +1213,13 @@
           flash(st, "Next rune", "#c0a0ff");
         }
       } else if (rs.stepLeft <= 0) {
-        hurtPlayer(st, 18, "The sequence fades.");
+        if (isGroup(st)) {
+          livingFighters(st).forEach(function (f) {
+            withFighter(st, f, function () { hurtPlayer(st, 18, "The sequence fades."); });
+          });
+        } else {
+          hurtPlayer(st, 18, "The sequence fades.");
+        }
         flash(st, "Too slow", "#ff8a70");
         if (st.mode !== "playing") return;
         rs.round--;
@@ -978,17 +1263,21 @@
       if (a.hp <= 0) continue;
       a.life = (a.life || 0) + 1;
       if (a.life % 2 === 0) {
-        const path = bfsPath(a.col, a.row, st.player.col, st.player.row);
+        const prey = nearestFighter(st, a.col, a.row) || st.player;
+        const path = bfsPath(a.col, a.row, prey.col, prey.row);
         if (path.length) { a.col = path[0].c; a.row = path[0].r; }
       }
-      const dist = Math.abs(a.col - st.player.col) + Math.abs(a.row - st.player.row);
+      const prey2 = nearestFighter(st, a.col, a.row) || st.player;
+      const dist = Math.abs(a.col - prey2.col) + Math.abs(a.row - prey2.row);
       if (a.atkCd > 0) a.atkCd--;
       if (dist <= 1 && a.atkCd <= 0) {
         a.atkCd = 4;
-        const prot = st.prayer === "melee";
-        const dmg = rollBossHit(st.rng, MONSTERS.shade.maxHit, MONSTERS.shade.accuracy, prot, st.god);
-        if (prot) { splat(st, st.player.col, st.player.row, 0, "#80c0ff"); sfx(st, "block"); }
-        else if (dmg > 0) hurtPlayer(st, dmg, "A shade burns you.");
+        withFighter(st, prey2, function () {
+          const prot = st.prayer === "melee";
+          const dmg = rollBossHit(st.rng, MONSTERS.shade.maxHit, MONSTERS.shade.accuracy, prot, st.god);
+          if (prot) { splat(st, st.player.col, st.player.row, 0, "#80c0ff"); sfx(st, "block"); }
+          else if (dmg > 0) hurtPlayer(st, dmg, "A shade burns you.");
+        });
       }
       if (a.life >= 22) {
         if (st.boss && st.boss.hp > 0 && a.kind === "shade") {
@@ -1161,9 +1450,15 @@
         const m = st.marks[i];
         // Resolve when the window expires (landIn hits 0 this tick after the move).
         if (m.kind === "sigil" && m.needStep && m.landIn === 1) {
-          if (!(st.player.col === m.col && st.player.row === m.row)) {
+          if (!(anyOn(st, m.col, m.row) || (st.player.col === m.col && st.player.row === m.row))) {
             m.needStep = false;
-            hurtPlayer(st, 28, "Judgment falls.");
+            if (isGroup(st)) {
+              livingFighters(st).forEach(function (f) {
+                withFighter(st, f, function () { hurtPlayer(st, 28, "Judgment falls."); });
+              });
+            } else {
+              hurtPlayer(st, 28, "Judgment falls.");
+            }
             flash(st, "Judgment!", "#ff8a70");
           } else {
             m.needStep = false;
@@ -1174,11 +1469,23 @@
     }
     const stillNeed = n >= 4 ? 3 : 5;
     const onSigil = hasLiveSigil(st, st.player.col, st.player.row);
-    if (n >= 2 && !onSigil && st.player.stillTicks >= stillNeed && st.ticks % 2 === 0) {
-      hurtPlayer(st, 16, "The vault punishes stillness.");
-      drainPrayer(st, 4);
-      st.player.stillTicks = 0;
-      flash(st, "Don't stand still!", "#ff8a70");
+    if (n >= 2 && st.ticks % 2 === 0) {
+      if (isGroup(st)) {
+        livingFighters(st).forEach(function (f) {
+          if (hasLiveSigil(st, f.col, f.row)) return;
+          if ((f.stillTicks || 0) < stillNeed) return;
+          withFighter(st, f, function () {
+            hurtPlayer(st, 16, "The vault punishes stillness.");
+            drainPrayer(st, 4);
+          });
+          f.stillTicks = 0;
+        });
+      } else if (!onSigil && st.player.stillTicks >= stillNeed) {
+        hurtPlayer(st, 16, "The vault punishes stillness.");
+        drainPrayer(st, 4);
+        st.player.stillTicks = 0;
+        flash(st, "Don't stand still!", "#ff8a70");
+      }
     }
     if (n >= 3) {
       if (!rs.moon) rs.moon = { col: 0, row: 0 };
@@ -1186,9 +1493,18 @@
       rs.pulseCd--;
       if (rs.pulseCd <= 0) {
         rs.pulseCd = 8;
-        const onMoon = st.player.col === rs.moon.col && st.player.row === rs.moon.row;
-        if (!onMoon) { drainPrayer(st, 5); flash(st, "Prayer flickers — seek the moon", "#7ad0ff"); }
-        else flash(st, "The moon steadies you", "#7ad0ff");
+        if (isGroup(st)) {
+          var anyMoon = false;
+          livingFighters(st).forEach(function (f) {
+            if (f.col === rs.moon.col && f.row === rs.moon.row) anyMoon = true;
+            else withFighter(st, f, function () { drainPrayer(st, 5); });
+          });
+          flash(st, anyMoon ? "The moon steadies you" : "Prayer flickers — seek the moon", "#7ad0ff");
+        } else {
+          const onMoon = st.player.col === rs.moon.col && st.player.row === rs.moon.row;
+          if (!onMoon) { drainPrayer(st, 5); flash(st, "Prayer flickers — seek the moon", "#7ad0ff"); }
+          else flash(st, "The moon steadies you", "#7ad0ff");
+        }
       }
     }
     if (n >= 3 && b.phase === "recover" && st.ticks % (n >= 4 ? 6 : 8) === 0) {
@@ -1228,7 +1544,8 @@
   function tickChest(st) {
     const rs = st.roomState;
     if (rs.exitReady) { maybeStepExit(st); return; }
-    const on = st.player.col === (rs.chestCol || 2) && st.player.row === (rs.chestRow || 0);
+    const on = anyOn(st, rs.chestCol || 2, rs.chestRow || 0) ||
+      (st.player.col === (rs.chestCol || 2) && st.player.row === (rs.chestRow || 0));
     if (on && !rs.open) openChest(st);
   }
   function openChest(st) {
@@ -1236,6 +1553,12 @@
     if (rs.open) return;
     rs.open = true;
     if (st.room === "loot") {
+      if (isGroup(st)) {
+        flash(st, "The vault yields its relics", "#ffe44a");
+        placeExit(st);
+        winRaid(st);
+        return;
+      }
       const loot = rollFinalLoot(st.rng);
       st.loot = loot;
       applyLoot(st, loot);
@@ -1245,7 +1568,15 @@
       return;
     }
     const tab = chestTable(st.room);
-    st.inv.sharks += tab.sharks; st.inv.pots += tab.pots; st.inv.brews += tab.brews; st.inv.ranging += tab.ranging;
+    if (isGroup(st)) {
+      allFighters(st).forEach(function (f) {
+        if (!f.inv) f.inv = defaultInv();
+        f.inv.sharks += tab.sharks; f.inv.pots += tab.pots; f.inv.brews += tab.brews; f.inv.ranging += tab.ranging;
+      });
+      restoreLocalFighter(st);
+    } else {
+      st.inv.sharks += tab.sharks; st.inv.pots += tab.pots; st.inv.brews += tab.brews; st.inv.ranging += tab.ranging;
+    }
     const bits = [];
     if (tab.sharks) bits.push(tab.sharks + " shark" + (tab.sharks > 1 ? "s" : ""));
     if (tab.pots) bits.push(tab.pots + " prayer pot" + (tab.pots > 1 ? "s" : ""));
@@ -1326,6 +1657,7 @@
     if (st.player.hp >= PLAYER_MAX_HP) return flash(st, "Full HP", "#c0c0c0");
     if (st.eatCd > 0) return;
     st.pendingEat = true;
+    sendRaidInput(st, { eat: true });
   }
   function queuePot(st) {
     if (st.mode !== "playing") return;
@@ -1334,6 +1666,7 @@
     if (st.player.prayerPts >= PLAYER_MAX_PRAYER) return flash(st, "Full prayer", "#c0c0c0");
     if (st.potCd > 0) return;
     st.pendingPot = true;
+    sendRaidInput(st, { pot: true });
   }
   function queueBrew(st) {
     if (st.mode !== "playing") return;
@@ -1342,6 +1675,7 @@
     if (st.player.hp >= PLAYER_MAX_HP) return flash(st, "Full HP", "#c0c0c0");
     if (st.brewCd > 0) return;
     st.pendingBrew = true;
+    sendRaidInput(st, { brew: true });
   }
   function queueRange(st) {
     if (st.mode !== "playing") return;
@@ -1349,6 +1683,7 @@
     if (st.inv.ranging <= 0) return flash(st, "No ranging pots", "#c0c0c0");
     if (st.rangeCd > 0) return flash(st, "Already sipping…", "#c0c0c0");
     st.pendingRange = true;
+    sendRaidInput(st, { range: true });
   }
   function resolveConsumables(st) {
     const p = st.player;
@@ -1377,6 +1712,7 @@
     if (st.player.prayerPts <= 0) { flash(st, "No prayer!", "#ff8a70"); return; }
     if (st.prayer === kind) { st.prayer = null; st.player.prayer = null; sfx(st, "prayerOff"); }
     else { st.prayer = kind; st.player.prayer = kind; sfx(st, "prayerOn", kind); }
+    sendRaidInput(st, { prayer: st.prayer });
     if (host && host.updatePrayer) host.updatePrayer(st.prayer);
   }
   function clickTile(st, col, row) {
@@ -1385,6 +1721,7 @@
     const add = st.adds.find(function (a) { return a.hp > 0 && a.col === col && a.row === row; });
     if (add) { st.target = { kind: "add", id: add.id }; flash(st, "Attacking a shade", "#ff9a4a"); return; }
     st.player.path = pathTo(st, col, row);
+    sendRaidInput(st, { destCol: col, destRow: row, target: st.target });
   }
   function gateAvoid(st, c, r) {
     // During rune input, don't cut across the other rune tiles.
@@ -1406,6 +1743,7 @@
     const c = clamp(st.player.col + dc, 0, COLS - 1);
     const r = clamp(st.player.row + dr, 0, ROWS - 1);
     st.player.path = pathTo(st, c, r);
+    sendRaidInput(st, { destCol: c, destRow: r });
   }
 
   function gridMetrics(W, H) {
@@ -1580,7 +1918,18 @@
     }
   }
   function drawPlayerOnTile(st, ctx, W, H, t, prog) {
-    const p = st.player;
+    if (isGroup(st) && st.fighters && st.fighters.length) {
+      var list = allFighters(st);
+      for (var i = 0; i < list.length; i++) {
+        if (!list[i] || list[i].dead) continue;
+        drawOneFighter(st, ctx, W, H, t, prog, list[i], String(list[i].id) === String(st.group.localId));
+      }
+      return;
+    }
+    drawOneFighter(st, ctx, W, H, t, prog, st.player, true);
+  }
+  function drawOneFighter(st, ctx, W, H, t, prog, p, isSelf) {
+    if (!p) return;
     const from = tilePos(p.prevCol, p.prevRow, W, H);
     const to = tilePos(p.col, p.row, W, H);
     const u = p.stepping ? prog : 1;
@@ -1603,11 +1952,24 @@
     } else {
       ctx.fillStyle = "#3a2a18"; ctx.fillRect(-8, -28, 16, 28);
     }
-    if (st.prayer && typeof drawOverhead === "function") {
-      ctx.save(); ctx.translate(0, -58); drawOverhead(ctx, st.prayer); ctx.restore();
-    } else if (st.prayer) {
-      ctx.fillStyle = st.prayer === "mage" ? "#5ac0ff" : st.prayer === "range" ? "#e8d44a" : "#ff7050";
+    var pray = p.prayer || (isSelf ? st.prayer : null);
+    if (pray && typeof drawOverhead === "function") {
+      ctx.save(); ctx.translate(0, -58); drawOverhead(ctx, pray); ctx.restore();
+    } else if (pray) {
+      ctx.fillStyle = pray === "mage" ? "#5ac0ff" : pray === "range" ? "#e8d44a" : "#ff7050";
       ctx.beginPath(); ctx.arc(0, -58, 6, 0, Math.PI * 2); ctx.fill();
+    }
+    if (p.username) {
+      ctx.save();
+      ctx.font = "bold 9px Trebuchet MS, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(0,0,0,0.75)";
+      ctx.fillStyle = isSelf ? "#ffe44a" : "#e8d0a0";
+      ctx.strokeText(p.username, 0, 6);
+      ctx.fillText(p.username, 0, 6);
+      ctx.restore();
     }
     ctx.restore();
   }
@@ -1631,6 +1993,7 @@
     registerItems();
     loadRaidProfile();
     R = newState(opts || {});
+    if (opts && opts.group) initGroupState(R, opts);
     if (global.PlayerStats && PlayerStats.reset) PlayerStats.reset();
     enterRoom(R, R.room);
     R.mode = "playing";
@@ -1787,7 +2150,14 @@
       inv: deep(R.inv),
       boss: R.boss && { kind: R.boss.kind, hp: R.boss.hp, hpMax: R.boss.hpMax, style: R.boss.style, phase: R.boss.phase, phaseN: R.boss.phaseN, telLeft: R.boss.telLeft },
       adds: R.adds.map(function (a) { return { id: a.id, hp: a.hp, col: a.col, row: a.row }; }),
-      loot: R.loot, god: R.god, loadout: deep(R.player.loadout)
+      loot: R.loot, god: R.god, loadout: deep(R.player.loadout),
+      group: R.group ? {
+        runId: R.group.runId, isLeader: R.group.isLeader, localId: R.group.localId,
+        leaderId: R.group.leaderId, completed: !!R.group.completed
+      } : null,
+      fighters: allFighters(R).map(function (f) {
+        return { id: f.id, username: f.username, col: f.col, row: f.row, hp: f.hp, prayer: f.prayer, dead: !!f.dead };
+      })
     };
   }
 
@@ -1899,6 +2269,7 @@
     },
     win: function () {
       if (!R) start({ room: "loot" });
+      if (R.group) { winRaid(R); return; }
       const loot = rollFinalLoot(R.rng);
       R.loot = loot; applyLoot(R, loot); winRaid(R);
     },
@@ -2112,8 +2483,219 @@
       if (st.prayer === kind) b.classList.add("active-" + kind);
     });
   }
+
+  function packFighter(f) {
+    if (!f) return null;
+    return {
+      id: f.id, username: f.username, hp: f.hp, prayerPts: f.prayerPts,
+      col: f.col, row: f.row, prevCol: f.prevCol, prevRow: f.prevRow,
+      stepping: !!f.stepping, prayer: f.prayer, atkCd: f.atkCd,
+      rangingLeft: f.rangingLeft, stillTicks: f.stillTicks, dead: !!f.dead,
+      inv: f.inv ? { sharks: f.inv.sharks, pots: f.inv.pots, brews: f.inv.brews, ranging: f.inv.ranging } : null,
+      loadout: f.loadout || null, equipment: f.equipment || null
+    };
+  }
+  function applyPackedFighter(st, packed) {
+    if (!packed || !packed.id) return;
+    var f = fighterById(st, packed.id);
+    if (!f) {
+      f = bindFighterInv(freshPlayer(st.player && st.player.loadout), defaultInv());
+      f.id = packed.id;
+      st.fighters = st.fighters || [];
+      st.fighters.push(f);
+    }
+    f.username = packed.username || f.username;
+    f.hp = packed.hp; f.prayerPts = packed.prayerPts;
+    f.prevCol = packed.prevCol != null ? packed.prevCol : packed.col;
+    f.prevRow = packed.prevRow != null ? packed.prevRow : packed.row;
+    f.col = packed.col; f.row = packed.row;
+    f.stepping = !!packed.stepping;
+    f.prayer = packed.prayer || null;
+    f.atkCd = packed.atkCd; f.rangingLeft = packed.rangingLeft;
+    f.stillTicks = packed.stillTicks; f.dead = !!packed.dead;
+    if (packed.inv) f.inv = packed.inv;
+    if (packed.loadout) f.loadout = packed.loadout;
+    if (packed.equipment) f.equipment = packed.equipment;
+  }
+  function sendRaidInput(st, partial) {
+    if (!st || !st.group) return;
+    var cloud = global.XscapeCloud;
+    var uid = st.group.localId;
+    var me = fighterById(st, uid) || st.player;
+    var payload = {
+      runId: st.group.runId,
+      uid: uid,
+      username: (global.Profile && Profile.name) || (me && me.username) || "Adventurer",
+      prayer: st.prayer,
+      destCol: me && me.path && me.path.length ? me.path[me.path.length - 1].c : (me ? me.col : null),
+      destRow: me && me.path && me.path.length ? me.path[me.path.length - 1].r : (me ? me.row : null),
+      target: st.target || null
+    };
+    if (partial) {
+      for (var k in partial) if (Object.prototype.hasOwnProperty.call(partial, k)) payload[k] = partial[k];
+    }
+    if (st.group.isLeader) {
+      st.group.inputs[uid] = Object.assign({}, st.group.inputs[uid] || {}, payload);
+      return;
+    }
+    if (cloud && typeof cloud.broadcast === "function") {
+      try { cloud.broadcast("raid-input", payload); } catch (e) {}
+    }
+  }
+  function broadcastRaidState(st) {
+    if (!st || !st.group || !st.group.isLeader) return;
+    var cloud = global.XscapeCloud;
+    if (!cloud || typeof cloud.broadcast !== "function") return;
+    var payload = {
+      runId: st.group.runId,
+      tick: st.ticks,
+      room: st.room,
+      mode: st.mode,
+      marks: st.marks,
+      boss: st.boss,
+      adds: st.adds,
+      roomState: st.roomState,
+      target: st.target,
+      float: st.float,
+      loot: st.loot,
+      deathReason: st.deathReason || null,
+      fighters: allFighters(st).map(packFighter)
+    };
+    try { cloud.broadcast("raid-state", payload); } catch (e) {}
+    st.group.lastStateTick = st.ticks;
+  }
+  function onRaidInput(payload) {
+    if (!payload || !R || !R.group) return;
+    if (payload.runId && String(payload.runId) !== String(R.group.runId)) return;
+    if (!R.group.isLeader) return;
+    var id = payload.uid || payload.id;
+    if (!id || String(id) === String(R.group.localId)) return;
+    R.group.inputs[id] = Object.assign({}, R.group.inputs[id] || {}, payload);
+  }
+  function onRaidState(payload) {
+    if (!payload || !R || !R.group) return;
+    if (payload.runId && String(payload.runId) !== String(R.group.runId)) return;
+    if (R.group.isLeader) return;
+    if (payload.tick != null && payload.tick < (R.group.lastStateTick || 0)) return;
+    R.group.lastStateTick = payload.tick != null ? payload.tick : R.group.lastStateTick;
+    R.ticks = payload.tick != null ? payload.tick : R.ticks;
+    R.lastTickMs = now();
+    if (payload.room && payload.room !== R.room) {
+      R.room = payload.room;
+    } else if (payload.room) R.room = payload.room;
+    if (payload.marks) R.marks = payload.marks;
+    if (payload.boss !== undefined) R.boss = payload.boss;
+    if (payload.adds) R.adds = payload.adds;
+    if (payload.roomState) R.roomState = payload.roomState;
+    if (payload.target !== undefined) R.target = payload.target;
+    if (payload.float) R.float = payload.float;
+    if (payload.loot) R.loot = payload.loot;
+    if (payload.fighters && payload.fighters.length) {
+      for (var i = 0; i < payload.fighters.length; i++) applyPackedFighter(R, payload.fighters[i]);
+      restoreLocalFighter(R);
+    }
+    if (payload.mode && payload.mode !== R.mode) {
+      if (payload.mode === "win") {
+        if (R.mode !== "win") {
+          R.mode = "win";
+          completeGroupRaid(R);
+        }
+      } else if (payload.mode === "lose") {
+        R.mode = "lose";
+        R.deathReason = payload.deathReason || "The party was wiped.";
+        if (host && host.onLose) host.onLose(resultOf(R, false));
+      } else {
+        R.mode = payload.mode;
+      }
+    }
+  }
+  function itemLabel(id) {
+    var it = (global.ITEMS && global.ITEMS[id]) || getItem(id);
+    return it && it.name ? it.name : id;
+  }
+  function applyGroupReward(st, res) {
+    if (!res || !res.ok) return;
+    var loot = { gp: res.gpAwarded || 0, items: res.items || [] };
+    if (typeof loot.items === "string") {
+      try { loot.items = JSON.parse(loot.items); } catch (e) { loot.items = []; }
+    }
+    st.loot = loot;
+    if (loot.items && loot.items.length && typeof global.ownItem === "function") {
+      for (var i = 0; i < loot.items.length; i++) {
+        try { global.ownItem(loot.items[i]); } catch (e) {}
+      }
+    }
+    var cloud = global.XscapeCloud;
+    if (res.profile && cloud && cloud.applyProfile) {
+      try { cloud.applyProfile(res.profile, { fromAward: true }); } catch (e) {}
+    }
+    var bits = [];
+    if (loot.gp) bits.push((typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : loot.gp) + " GP");
+    (loot.items || []).forEach(function (id) { bits.push(itemLabel(id)); });
+    if (bits.length) flash(st, bits.join(" · "), "#ffe44a");
+  }
+  function completeGroupRaid(st) {
+    if (!st || !st.group || st.group.completing) {
+      if (st && host && host.onWin && st.group && st.group.completed) host.onWin(resultOf(st, true));
+      return;
+    }
+    st.group.completing = true;
+    var cloud = global.XscapeCloud;
+    var finish = function (res) {
+      st.group.completed = true;
+      if (res && res.ok) applyGroupReward(st, res);
+      else if (res && res.error && typeof global.flashMsg === "function") {
+        flash(st, res.error, "#ff8a70");
+      }
+      if (st.group && st.group.isLeader) broadcastRaidState(st);
+      if (host && host.onWin) host.onWin(resultOf(st, true));
+    };
+    if (!cloud || typeof cloud.completeRaidRun !== "function" || !st.group.runId) {
+      finish({ ok: false, error: "Could not reach the vault" });
+      return;
+    }
+    Promise.resolve(cloud.completeRaidRun(st.group.runId, st.ticks || 0)).then(finish).catch(function (err) {
+      finish({ ok: false, error: (err && err.message) || "Could not claim loot" });
+    });
+  }
+  function attachGroupClock(st) {
+    if (!st || !st.group) return;
+    var cloud = global.XscapeCloud;
+    if (st.group.unsubTick) { try { st.group.unsubTick(); } catch (e) {} st.group.unsubTick = null; }
+    if (cloud && typeof cloud.setPresenceExtra === "function") {
+      try { cloud.setPresenceExtra({ scene: "raid" }); } catch (e) {}
+    }
+    if (cloud && typeof cloud.flushHeartbeat === "function") {
+      try { cloud.flushHeartbeat(); } catch (e) {}
+    }
+    if (cloud && typeof cloud.onSharedTick === "function" && st.group.isLeader) {
+      st.group.unsubTick = cloud.onSharedTick(function () {
+        if (!R || R !== st) return;
+        if (R.mode !== "playing" || briefPause) return;
+        hostTick();
+      });
+    }
+    // Members send a hello so the host has their name/loadout.
+    sendRaidInput(st, {
+      username: (global.Profile && Profile.name) || "Adventurer",
+      loadout: st.player && st.player.loadout,
+      equipment: (global.Profile && Profile.equipment) || null,
+      destCol: st.player && st.player.col,
+      destRow: st.player && st.player.row
+    });
+  }
+  function detachGroupClock(st) {
+    if (!st || !st.group) return;
+    if (st.group.unsubTick) { try { st.group.unsubTick(); } catch (e) {} st.group.unsubTick = null; }
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.setPresenceExtra === "function") {
+      try { cloud.setPresenceExtra({ scene: "bank" }); } catch (e) {}
+    }
+  }
+
   function hostTick() {
     if (!R || R.mode !== "playing" || briefPause) return;
+    if (R.group && !R.group.isLeader) return;
     tickLive();
     hostUpdateHud(R);
     if (typeof global.G !== "undefined" && global.G && global.G.player && R.player) {
@@ -2131,8 +2713,16 @@
     const dt = Math.min(0.05, (ts - hostLast) / 1000);
     hostLast = ts;
     if (R.mode === "playing" && !briefPause) {
-      hostAcc += dt * 1000;
-      while (hostAcc >= TICK_MS) { hostTick(); hostAcc -= TICK_MS; }
+      var cloud = global.XscapeCloud;
+      var locked = !!(R.group && cloud && cloud.clockReady && cloud.clockReady() && R.group.isLeader);
+      var guest = !!(R.group && !R.group.isLeader);
+      if (!locked && !guest) {
+        hostAcc += dt * 1000;
+        while (hostAcc >= TICK_MS) { hostTick(); hostAcc -= TICK_MS; }
+      } else if (R.group && R.group.isLeader && !(cloud && cloud.clockReady && cloud.clockReady())) {
+        hostAcc += dt * 1000;
+        while (hostAcc >= TICK_MS) { hostTick(); hostAcc -= TICK_MS; }
+      }
     }
     try { raidAudio.schedule(); } catch (e) {}
     if (ctx) {
@@ -2182,6 +2772,14 @@
     registerItems();
     remigrateHostBank();
     opts = opts || { room: "gate" };
+    if (!opts.group && api.pendingGroup) {
+      opts.group = api.pendingGroup;
+      api.pendingGroup = null;
+    }
+    if (opts.group) {
+      opts.seed = opts.seed || opts.group.seed;
+      opts.skipBrief = true;
+    }
     const test = api.testFlag();
     const bypassLock = !!(opts.fromQuery || opts.skipLock || (test && test.indexOf("raid") === 0));
     if (!bypassLock) {
@@ -2226,6 +2824,7 @@
     hostAcc = 0; hostLast = 0;
     if (opts && opts.fromQuery) api.bootFromQuery({ room: "gate" });
     else start(opts || { room: "gate" });
+    if (R && R.group) attachGroupClock(R);
     try { if (typeof global.audio !== "undefined" && global.audio.unlock) global.audio.unlock(); } catch (e) {}
     try { raidAudio.startMusic(); } catch (e) {}
   }
@@ -2263,8 +2862,13 @@
     if (typeof global.Scenes !== "undefined") {
       global.Scenes.raid = {
         id: "raid",
-        enter: function () { startRaidInGame({ room: "gate" }); },
+        enter: function () {
+          var g = api.pendingGroup;
+          api.pendingGroup = null;
+          startRaidInGame(g ? { room: "gate", group: g, seed: g.seed, skipBrief: true } : { room: "gate" });
+        },
         exit: function () {
+          try { if (R && R.group) detachGroupClock(R); } catch (e) {}
           try { api.stop(); } catch (e) {}
           briefPause = false;
           const pad = document.getElementById("move-pad");
@@ -2306,6 +2910,9 @@
   api.hostFrame = hostFrame;
   api.startRaidInGame = startRaidInGame;
   api.installIntoGame = installIntoGame;
+  api.onRaidState = onRaidState;
+  api.onRaidInput = onRaidInput;
+  api.pendingGroup = null;
   api.setBriefPause = function (on) { briefPause = !!on; if (!on) hostAcc = 0; };
   api.setRunning = function (on) {
     raidRunning = !!on;

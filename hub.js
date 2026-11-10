@@ -1251,8 +1251,10 @@
     var el = $("hub-ctx");
     if (!el || !p) return;
     var canChallenge = (state.area === "arena") && ((p.scene || "arena") === "arena");
+    var canInvite = (state.area || "bank") === "bank" && partyState && partyState.id && partyState.code && partyState.status !== "started";
     el.innerHTML = '<div class="ctx-title">' + escapeHtml(p.username || "Adventurer") + "</div>" +
       (canChallenge ? '<button type="button" data-act="challenge">Challenge</button>' : "") +
+      (canInvite ? '<button type="button" data-act="invite">Invite to party</button>' : "") +
       '<button type="button" data-act="examine">Examine</button>';
     el.classList.remove("hidden");
     var lay = state.layout || layout(cssWSafe(), cssHSafe());
@@ -1269,6 +1271,8 @@
         if (btn.getAttribute("data-act") === "challenge") {
           if (global.XscapeDuel && XscapeDuel.offerTo) XscapeDuel.offerTo(p.id, p.username);
           else if (global.XscapeCloud && XscapeCloud.challengeUser) XscapeCloud.challengeUser(p.id);
+        } else if (btn.getAttribute("data-act") === "invite") {
+          inviteToParty(p.id, p.username);
         } else if (typeof flashMsg === "function") {
           flashMsg("It's " + (p.username || "an adventurer") + ".", "#ffe9a0");
         }
@@ -1751,14 +1755,20 @@
       return;
     }
     var code = partyState.code || partyState.joinCode || partyState.join_code || "";
-    if (status) status.textContent = "Join code: " + (code || "—") + "  ·  " + (partyState.raid || "Gloamhold");
+    if (status) {
+      var raidName = partyState.raidId === "gloamhold" || !partyState.raidId ? "Gloamhold" : (partyState.raid || partyState.raidId);
+      status.textContent = "Join code: " + (code || "—") + "  ·  " + raidName +
+        (partyState.status ? "  ·  " + partyState.status : "");
+    }
     var list = partyState.members || partyState.party_members || [];
+    var leaderId = partyState.leaderId || partyState.leader_id;
     if (members) {
       if (!list.length) members.innerHTML = "<p class='lead'>Waiting for friends…</p>";
       else members.innerHTML = list.map(function (m) {
+        var mid = m.userId || m.user_id || m.id;
         var nm = m.username || m.name || "Adventurer";
         var rd = m.ready ? " · ready" : "";
-        var lead = (m.role === "leader" || m.isLeader) ? " (leader)" : "";
+        var lead = (mid && leaderId && String(mid) === String(leaderId)) || m.role === "leader" || m.isLeader ? " (leader)" : "";
         return '<div class="cloud-row"><span>' + escapeHtml(nm) + lead + rd + "</span></div>";
       }).join("");
     }
@@ -1782,9 +1792,10 @@
       if (typeof flashMsg === "function") flashMsg(res.error || "Could not start", "#ff8a70");
       return;
     }
-    if (cloud.broadcast) cloud.broadcast("party-start", { partyId: partyState.id });
+    partyState = (res && res.party) || partyState;
+    if (cloud.broadcast) cloud.broadcast("party-start", { partyId: partyState.id, party: partyState });
     closeSheet("overlay-party");
-    if (typeof tryEnterGloamhold === "function") tryEnterGloamhold();
+    enterGroupRaid(partyState);
   }
 
   async function leaveParty() {
@@ -1793,6 +1804,100 @@
     await cloud.leaveParty(partyState.id);
     partyState = null;
     refreshParty();
+  }
+
+  function enterGroupRaid(party) {
+    party = party || partyState;
+    if (!party || !party.id) return false;
+    var runId = party.runId || party.run_id;
+    if (!runId) {
+      // Fetch in case the start payload was thin.
+      var cloud = global.XscapeCloud;
+      if (cloud && cloud.myParty) {
+        return cloud.myParty().then(function (res) {
+          partyState = (res && res.party) || partyState;
+          return enterGroupRaid(partyState);
+        });
+      }
+      return false;
+    }
+    if (global.G && G.scene === "raid" && global.XscapeRaid && XscapeRaid.getState) {
+      var st = XscapeRaid.getState();
+      if (st && st.group && runId && String(st.group.runId) === String(runId)) return true;
+    }
+    partyState = party;
+    if (global.XscapeRaid) {
+      global.XscapeRaid.pendingGroup = {
+        runId: runId,
+        seed: party.seed,
+        partyId: party.id,
+        members: party.members || [],
+        leaderId: party.leaderId || party.leader_id
+      };
+    }
+    closeSheet("overlay-party");
+    closeSheet("overlay-boss");
+    closeSheet("overlay-raid-choice");
+    if (typeof tryEnterGloamhold === "function") return tryEnterGloamhold();
+    if (typeof enterScene === "function") { enterScene("raid"); return true; }
+    return false;
+  }
+
+  function onPartyStart(payload) {
+    var party = (payload && payload.party) || payload;
+    if (!party) return;
+    var id = party.id || party.partyId || (payload && payload.partyId);
+    if (partyState && partyState.id && id && String(partyState.id) !== String(id)) {
+      // Not our party — confirm via myParty.
+    }
+    var cloud = global.XscapeCloud;
+    if (cloud && cloud.myParty) {
+      cloud.myParty().then(function (res) {
+        var mine = res && res.party;
+        if (!mine || !mine.id) return;
+        partyState = mine;
+        if (mine.status === "started" && mine.runId) enterGroupRaid(mine);
+      });
+      return;
+    }
+    if (party.runId) enterGroupRaid(party);
+  }
+
+  function onPartyInvite(payload) {
+    if (!payload) return;
+    var from = payload.fromName || payload.from || "An adventurer";
+    var code = payload.code || "";
+    if (typeof flashMsg === "function") {
+      flashMsg(from + " invited you to Gloamhold" + (code ? " · code " + code : ""), "#ffe44a");
+    }
+    if (code && !partyState) {
+      openParty();
+      var inp = $("party-code-in");
+      if (inp) inp.value = code;
+    }
+  }
+
+  function onPartyChange() {
+    if ($("overlay-party") && !$("overlay-party").classList.contains("hidden")) refreshParty();
+    else if (partyState && partyState.id) refreshParty();
+  }
+
+  function inviteToParty(userId, username) {
+    var cloud = global.XscapeCloud;
+    if (!cloud) return;
+    if (!partyState || !partyState.id || !partyState.code) {
+      if (typeof flashMsg === "function") flashMsg("Create a party first, then invite them.", "#ffd84a");
+      return;
+    }
+    if (cloud.broadcast) {
+      cloud.broadcast("party-invite", {
+        toId: userId,
+        code: partyState.code,
+        partyId: partyState.id,
+        fromName: (global.Profile && Profile.name) || "Adventurer"
+      });
+    }
+    if (typeof flashMsg === "function") flashMsg("Invited " + (username || "them") + ". Code " + partyState.code, "#ffe44a");
   }
 
   function openParty() {
@@ -2246,6 +2351,12 @@
     openInventory: openInventory,
     openOnline: openOnline,
     openParty: openParty,
+    onPartyStart: onPartyStart,
+    onPartyInvite: onPartyInvite,
+    onPartyChange: onPartyChange,
+    enterGroupRaid: enterGroupRaid,
+    inviteToParty: inviteToParty,
+    getParty: function () { return partyState; },
     advanceTalk: advanceTalk,
     startTalk: startTalk,
     onHubChat: onHubChat,

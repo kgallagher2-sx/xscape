@@ -940,7 +940,7 @@
       '<div id="cloud-challenge-list" class="cloud-empty">No pending duels</div>' +
       '<div class="cloud-sec">Leaderboard</div>' +
       '<div id="cloud-board" class="cloud-empty">Loading…</div>' +
-      '<div class="cloud-or" id="cloud-party-note">Group raids and full duel combat are next. Stakes are pretend GP only.</div>';
+      '<div class="cloud-or" id="cloud-party-note">Form a party in the bank to run Gloamhold together.</div>';
     var best = $("title-best");
     if (best && best.parentNode) best.parentNode.insertBefore(panel, best);
     else hub.appendChild(panel);
@@ -1725,6 +1725,20 @@
       var payload = (msg && msg.payload) || {};
       if (global.XscapeHub && XscapeHub.onPartyStart) global.XscapeHub.onPartyStart(payload);
     });
+    hubChannel.on("broadcast", { event: "raid-state" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeRaid && XscapeRaid.onRaidState) XscapeRaid.onRaidState(payload);
+    });
+    hubChannel.on("broadcast", { event: "raid-input" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeRaid && XscapeRaid.onRaidInput) XscapeRaid.onRaidInput(payload);
+    });
+    hubChannel.on("postgres_changes", { event: "*", schema: "public", table: "parties" }, function () {
+      if (global.XscapeHub && XscapeHub.onPartyChange) global.XscapeHub.onPartyChange();
+    });
+    hubChannel.on("postgres_changes", { event: "*", schema: "public", table: "party_members" }, function () {
+      if (global.XscapeHub && XscapeHub.onPartyChange) global.XscapeHub.onPartyChange();
+    });
     hubChannel.on("broadcast", { event: "hub-chat" }, function (msg) {
       var payload = (msg && msg.payload) || {};
       if (global.XscapeHub && XscapeHub.onHubChat) global.XscapeHub.onHubChat(payload);
@@ -2263,6 +2277,9 @@
     startParty: function (id) { return rpc("start_party", { p_party: id }); },
     setPartyReady: function (id, ready) { return rpc("set_party_ready", { p_party: id, p_ready: !!ready }); },
     myParty: function () { return rpc("my_party", {}); },
+    completeRaidRun: function (runId, ticks) {
+      return rpc("complete_raid_run", { p_run: runId, p_ticks: ticks || 0 });
+    },
     escrowDuel: function (id) { return rpc("escrow_duel", { p_id: id }); },
     settleDuel: function (id, winner, ticks, forfeit) {
       return rpc("settle_duel", { p_id: id, p_winner: winner, p_ticks: ticks || null, p_forfeit: !!forfeit });
