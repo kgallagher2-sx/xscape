@@ -204,9 +204,9 @@
     #overlay-hub { justify-content: flex-start; }
     #overlay-hub > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help { overflow: hidden; }
     .overlay.hidden { display: none; }
-    .btn, .slot-btn, .bank-item, .mode-btn, .overlay-x { touch-action: manipulation; }
+    .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
       position: absolute; top: 6px; right: 6px; z-index: 3;
       width: 44px; height: 44px; min-width: 0; margin: 0; padding: 0;
@@ -260,6 +260,25 @@
       font-family: "Trebuchet MS", sans-serif;
     }
     .mode-list { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; margin: 6px 0 8px; }
+    .mode-row { display: flex; align-items: stretch; gap: 8px; width: 100%; }
+    .mode-row .mode-btn { flex: 1 1 auto; width: auto; margin: 0; min-width: 0; }
+    .mode-info {
+      flex: 0 0 48px; width: 48px; min-width: 48px; max-width: 48px;
+      min-height: 48px; height: auto; margin: 0; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(#5a4328, #2e2014); border: 3px solid #c9a24a;
+      color: var(--gold); font-family: Georgia, "Times New Roman", Times, serif;
+      font-style: italic; font-size: 26px; font-weight: 700; letter-spacing: 0;
+      line-height: 1; text-shadow: 0 2px 0 #000; border-radius: 4px; cursor: pointer;
+    }
+    .mode-info:active { filter: brightness(1.2); transform: translateY(1px); }
+    .mode-info-spacer { flex: 0 0 48px; width: 48px; min-width: 48px; pointer-events: none; visibility: hidden; }
+    #btn-hub-help {
+      position: sticky; top: 0; align-self: flex-end; z-index: 5;
+      flex: 0 0 40px; width: 40px; min-width: 40px; max-width: 40px; min-height: 40px;
+      margin: 0 0 -40px; font-size: 22px; font-style: normal;
+      font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif; font-weight: 700;
+    }
     .mode-btn { width: 100%; min-width: 0; height: auto; padding: 10px 14px; flex-direction: column; gap: 2px; }
     .mode-btn .sub { font-family: "Trebuchet MS", sans-serif; font-size: 11px; letter-spacing: 0.4px; color: #d8c8a0; font-weight: 400; text-shadow: none; }
     .mode-btn.locked, .mode-btn:disabled {
@@ -545,6 +564,7 @@
     </div>
 
     <div class="overlay hidden" id="overlay-hub">
+      <button class="mode-info" id="btn-hub-help" type="button" aria-label="How to play">?</button>
       <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
@@ -553,23 +573,36 @@
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
-        <button class="btn mode-btn" id="btn-mode-jad" type="button">
-          TzTok-Jad
-          <span class="sub">Arcade Fight Caves · Wave 63</span>
-        </button>
-        <button class="btn mode-btn" id="btn-mode-kree" type="button">
-          Kree'arra
-          <span class="sub">Armadyl's Eyrie · God Wars</span>
-          <span class="hint">Recommended: Tier 2 gear</span>
-        </button>
-        <button class="btn mode-btn locked" id="btn-mode-duel" type="button" disabled aria-disabled="true">
-          Duel Arena
-          <span class="coming">Coming soon</span>
-        </button>
+        <div class="mode-row">
+          <button class="btn mode-btn" id="btn-mode-jad" type="button">
+            TzTok-Jad
+            <span class="sub">Arcade Fight Caves · Wave 63</span>
+          </button>
+          <button class="mode-info" id="btn-info-jad" type="button" aria-label="TzTok-Jad guide">i</button>
+        </div>
+        <div class="mode-row">
+          <button class="btn mode-btn" id="btn-mode-kree" type="button">
+            Kree'arra
+            <span class="sub">Armadyl's Eyrie · God Wars</span>
+            <span class="hint">Recommended: Tier 2 gear</span>
+          </button>
+          <button class="mode-info" id="btn-info-kree" type="button" aria-label="Kree'arra guide">i</button>
+        </div>
+        <div class="mode-row">
+          <button class="btn mode-btn locked" id="btn-mode-raid" type="button" disabled aria-disabled="true">
+            Gloamhold
+            <span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>
+          </button>
+          <button class="mode-info" id="btn-info-raid" type="button" aria-label="Gloamhold guide">i</button>
+        </div>
+        <div class="mode-row">
+          <button class="btn mode-btn locked" id="btn-mode-duel" type="button" disabled aria-disabled="true">
+            Duel Arena
+            <span class="coming">Coming soon</span>
+          </button>
+          <span class="mode-info-spacer" aria-hidden="true"></span>
+        </div>
       </div>
-      <button class="btn secondary" id="btn-how" type="button">How to play</button>
-      <button class="btn secondary" id="btn-how-raid" type="button">Gloamhold guide</button>
-      <button class="btn secondary" id="btn-how-kree" type="button">Kree'arra guide</button>
       <button class="btn secondary" id="btn-change-name" type="button">Change name</button>
       <div class="best-line" id="title-best"></div>
     </div>
@@ -594,6 +627,25 @@
       </div>
     </div>
 
+
+    <div class="overlay hidden" id="overlay-help">
+      <div class="tut-card sheet-card">
+        <button class="overlay-x" id="btn-help-x" type="button" aria-label="Close">×</button>
+        <h2>How to play</h2>
+        <div class="sheet-scroll" id="help-scroll">
+        <p>Xscape is a portrait, tick-based fight game in the style of Old School RuneScape. Each fight has its own <b>i</b> button with a full guide — this page covers the shared controls.</p>
+        <p><b>Move:</b> tap a floor tile to walk (one tile per tick, two if Run is on). A yellow X marks your destination. Keyboard A/D or arrow keys also work.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the on-screen buttons. Listen for the tell.</p>
+        <p><b>Magic (1)</b> · <b>Missiles (2)</b> · <b>Melee (3)</b></p>
+        <p><b>Supplies:</b> sharks heal 20 (F). Prayer pots restore 31 prayer (P). Range pots boost your ranged for a while (R). Each bite or sip delays your next shot. On-screen buttons work too.</p>
+        <p>Open <b>Equipment</b> to wear gear from your bank, and the <b>Shop</b> to spend pretend GP. Nothing real is ever charged.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn" id="btn-help-ok" type="button">CLOSE</button>
+        </div>
+      </div>
+    </div>
 
     <div class="overlay hidden" id="overlay-gear">
       <div class="gear-card sheet-card">
@@ -4701,7 +4753,7 @@ function refreshTitleBest() {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-win","overlay-lose"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose"].forEach((id) => {
     const el = $(id);
     if (el) el.classList.add("hidden");
   });
@@ -5291,12 +5343,30 @@ $("btn-login").addEventListener("click", () => { audio.unlock(); commitLogin(); 
 $("btn-mode-jad").addEventListener("click", () => { audio.unlock(); enterScene("jad"); });
 $("btn-mode-duel").addEventListener("click", (e) => { e.preventDefault(); });
 $("btn-change-name").addEventListener("click", () => { audio.unlock(); enterScene("login"); });
-bindTap($("btn-how"), () => {
+function openJadGuide() {
   audio.unlock();
   tutReturnToTitle = true;
   hideAllOverlays();
   $("overlay-tut").classList.remove("hidden");
-});
+}
+function openHubHelp() {
+  audio.unlock();
+  hideAllOverlays();
+  $("overlay-help").classList.remove("hidden");
+}
+function closeHubHelp() {
+  const el = $("overlay-help");
+  if (!el || el.classList.contains("hidden")) return;
+  audio.unlock();
+  el.classList.add("hidden");
+  swallowNextTaps();
+  showTitle();
+}
+if ($("btn-info-jad")) bindTap($("btn-info-jad"), (e) => { if (e && e.stopPropagation) e.stopPropagation(); openJadGuide(); });
+if ($("btn-hub-help")) bindTap($("btn-hub-help"), () => { openHubHelp(); });
+if ($("btn-help-ok")) bindTap($("btn-help-ok"), closeHubHelp);
+if ($("btn-help-x")) bindTap($("btn-help-x"), closeHubHelp);
+if ($("overlay-help")) bindBackdropClose($("overlay-help"), closeHubHelp);
 if ($("btn-equipment")) bindTap($("btn-equipment"), () => { audio.unlock(); openEquipmentView(); });
 if ($("btn-shop")) bindTap($("btn-shop"), () => { audio.unlock(); openShop(); });
 bindTap($("btn-shop-close"), () => { audio.unlock(); closeShop(); });
@@ -5373,7 +5443,7 @@ function closeRaidBriefing() {
   swallowNextTaps();
   showTitle();
 }
-if ($("btn-how-raid")) bindTap($("btn-how-raid"), () => { showRaidBriefing({ fromHub: true }); });
+if ($("btn-info-raid")) bindTap($("btn-info-raid"), (e) => { if (e && e.stopPropagation) e.stopPropagation(); showRaidBriefing({ fromHub: true }); });
 bindTap($("btn-raid-tut-ok"), () => { audio.unlock(); closeRaidBriefing(); });
 bindTap($("btn-raid-tut-x"), () => { audio.unlock(); closeRaidBriefing(); });
 bindBackdropClose($("overlay-raid-tut"), () => { audio.unlock(); closeRaidBriefing(); });
@@ -5422,7 +5492,7 @@ function closeKreeLoot() {
   swallowNextTaps();
   showTitle();
 }
-if ($("btn-how-kree")) bindTap($("btn-how-kree"), () => { showKreeBriefing({ fromHub: true }); });
+if ($("btn-info-kree")) bindTap($("btn-info-kree"), (e) => { if (e && e.stopPropagation) e.stopPropagation(); showKreeBriefing({ fromHub: true }); });
 if ($("btn-kree-tut-ok")) bindTap($("btn-kree-tut-ok"), () => { audio.unlock(); closeKreeBriefing(); });
 if ($("btn-kree-tut-x")) bindTap($("btn-kree-tut-x"), () => { audio.unlock(); closeKreeBriefing({ cancel: true }); });
 if ($("overlay-kree-tut")) bindBackdropClose($("overlay-kree-tut"), () => { audio.unlock(); closeKreeBriefing({ cancel: true }); });
@@ -5451,6 +5521,7 @@ function closeHowToPlay() {
 function dismissTopOverlay() {
   if (overlayIsOpen("overlay-gear")) { audio.unlock(); closeEquipmentView(); return true; }
   if (overlayIsOpen("overlay-shop")) { audio.unlock(); closeShop(); return true; }
+  if (overlayIsOpen("overlay-help")) { closeHubHelp(); return true; }
   if (overlayIsOpen("overlay-tut")) { closeHowToPlay(); return true; }
   if (overlayIsOpen("overlay-raid-tut")) { audio.unlock(); closeRaidBriefing(); return true; }
   if (overlayIsOpen("overlay-kree-tut")) { audio.unlock(); closeKreeBriefing({ cancel: true }); return true; }
@@ -5652,5 +5723,7 @@ requestAnimationFrame(frame);
 applyTestQuery();
 applyOpenQuery();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cloud.js"></script>
 </body>
 </html>

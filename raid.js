@@ -1973,7 +1973,11 @@
     installHubButton: function () {
       try {
         const list = document.querySelector(".mode-list");
-        if (!list || document.getElementById("btn-mode-raid")) return;
+        if (!list) return;
+        if (document.getElementById("btn-mode-raid")) {
+          api.updateRaidLock();
+          return;
+        }
         const b = document.createElement("button");
         b.className = "btn mode-btn";
         b.id = "btn-mode-raid";
@@ -2011,9 +2015,27 @@
           const base = dir.endsWith("/") ? dir : dir + "/";
           location.href = base + "raid.html";
         });
+        const info = document.createElement("button");
+        info.className = "mode-info";
+        info.id = "btn-info-raid";
+        info.type = "button";
+        info.setAttribute("aria-label", "Gloamhold guide");
+        info.textContent = "i";
+        info.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof global.showRaidBriefing === "function") {
+            global.showRaidBriefing({ fromHub: true });
+          }
+        });
+        const row = document.createElement("div");
+        row.className = "mode-row";
+        row.appendChild(b);
+        row.appendChild(info);
         const duel = document.getElementById("btn-mode-duel");
-        if (duel) list.insertBefore(b, duel);
-        else list.appendChild(b);
+        const before = (duel && duel.closest && duel.closest(".mode-row")) || duel;
+        if (before) list.insertBefore(row, before);
+        else list.appendChild(row);
         api.updateRaidLock();
       } catch (e) {}
     },

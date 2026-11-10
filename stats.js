@@ -210,23 +210,58 @@
     } else if (name === "magic") {
       ctx.save();
       ctx.translate(18, 18);
-      function star(r, col) {
+      // OSRS-style magic bolt: cyan orb with a swirling comet tail.
+      // Drawn boldly so the 18px HUD size still reads as a bolt, not a spark.
+      function ribbon(w, col, p) {
+        ctx.strokeStyle = col;
+        ctx.lineWidth = w;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(-12.5, 11);
+        ctx.bezierCurveTo(-7 + p, 3, -1, 7 - p, 3.5, -1);
+        ctx.bezierCurveTo(6.5, -5, 8, -6.5, 6.5, -8);
+        ctx.stroke();
+      }
+      ribbon(6.2, "#163278", 2.2);
+      ribbon(4.2, "#1e58c8", -1.2);
+      ribbon(2.4, "#4ec4ff", 1.4);
+      ctx.strokeStyle = "#d8f6ff";
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-7, 8);
+      ctx.quadraticCurveTo(-1, 1.5, 2.5, 3.5);
+      ctx.quadraticCurveTo(5.5, 4.5, 5, -2);
+      ctx.stroke();
+      const glow = ctx.createRadialGradient(6.5, -7, 0, 6.5, -7, 12);
+      glow.addColorStop(0, "rgba(255,255,255,0.95)");
+      glow.addColorStop(0.28, "rgba(170,235,255,0.85)");
+      glow.addColorStop(0.62, "rgba(60,150,255,0.4)");
+      glow.addColorStop(1, "rgba(30,80,200,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(6.5, -7, 12, 0, Math.PI * 2); ctx.fill();
+      function spark(r, col) {
         ctx.fillStyle = col;
         ctx.beginPath();
         for (let i = 0; i < 8; i++) {
           const a = -Math.PI / 2 + i * Math.PI / 4;
-          const rr = i % 2 === 0 ? r : r * 0.42;
-          const x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+          const rr = i % 2 === 0 ? r : r * 0.28;
+          const x = 6.5 + Math.cos(a) * rr, y = -7 + Math.sin(a) * rr;
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.closePath(); ctx.fill();
       }
-      star(14, "#3a6ad0");
-      star(9, "#8ec8ff");
-      ctx.fillStyle = "#fff6c0";
-      ctx.beginPath(); ctx.arc(0, 0, 2.4, 0, Math.PI * 2); ctx.fill();
+      spark(10.2, "#2a70ff");
+      spark(7.2, "#fff28a");
+      const orb = ctx.createRadialGradient(5.2, -8.3, 0.5, 6.5, -7, 5.2);
+      orb.addColorStop(0, "#ffffff");
+      orb.addColorStop(0.3, "#e8fbff");
+      orb.addColorStop(0.62, "#5ac4ff");
+      orb.addColorStop(1, "#1648c0");
+      ctx.fillStyle = orb;
+      ctx.beginPath(); ctx.arc(6.5, -7, 5.1, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
-    }
+        }
     ctx.restore();
   }
 
