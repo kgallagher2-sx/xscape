@@ -2000,11 +2000,24 @@
     if (remain >= 0 && remain < 4) shotT = 4 - remain - prog;
     const shot = (typeof shotAnimAt === "function") ? shotAnimAt(shotT, 4) : { raise:0, recoil:0 };
     const P = profileObj();
-    if (typeof drawPlayerSprite === "function") {
+    const recoilBase = (p.atkCd >= 3) ? -0.12 : 0;
+    const eq = (p && (p.equipment || p.loadout))
+      || (isSelf && P && P.equipment)
+      || (P && P.equipment)
+      || {};
+    if (typeof drawPlayerFacing === "function") {
+      drawPlayerFacing(ctx, t, {
+        facing: "back",
+        equipment: eq,
+        showCape: true,
+        shot: shot,
+        recoilBase: recoilBase
+      });
+    } else if (typeof drawPlayerSprite === "function") {
       const capeOn = (typeof global.wearingFireCape === "function")
         ? global.wearingFireCape()
         : !!(P && ((P.equipment && P.equipment.cape === "fire_cape") || P.hasFireCape));
-      drawPlayerSprite(ctx, t, { cape: capeOn, shot: shot, recoilBase: (p.atkCd >= 3) ? -0.12 : 0 });
+      drawPlayerSprite(ctx, t, { cape: capeOn, shot: shot, recoilBase: recoilBase });
     } else {
       ctx.fillStyle = "#3a2a18"; ctx.fillRect(-8, -28, 16, 28);
     }

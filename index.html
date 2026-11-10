@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110182426-0661424";</script>
+  <script>window.XSCAPE_BUILD = "20261110191746-d10e901";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -4695,11 +4695,25 @@ function drawPlayer(t) {
   if (p.hp <= 0) ctx.globalAlpha = 0.45;
 
   const shot = playerShotAnim();
-  drawPlayerSprite(ctx, t, {
-    shot: shot,
-    cape: wearingFireCape(),
-    recoilBase: (G.player.atkCd >= PLAYER_ATTACK_TICKS - 1) ? -0.12 : 0
-  });
+  const recoilBase = (G.player.atkCd >= PLAYER_ATTACK_TICKS - 1) ? -0.12 : 0;
+  // Worn gear must match the hub / gear lab (drawPlayerFacing), not the
+  // leftover starter-only back-view in drawPlayerSprite.
+  const eq = (typeof Profile !== "undefined" && Profile && Profile.equipment) ? Profile.equipment : {};
+  if (typeof drawPlayerFacing === "function") {
+    drawPlayerFacing(ctx, t, {
+      facing: "back",
+      equipment: eq,
+      showCape: true,
+      shot: shot,
+      recoilBase: recoilBase
+    });
+  } else {
+    drawPlayerSprite(ctx, t, {
+      shot: shot,
+      cape: wearingFireCape(),
+      recoilBase: recoilBase
+    });
+  }
   ctx.save();
   ctx.translate(0, shot.recoil * 6);
   if (G.prayer && p.hp > 0) {
