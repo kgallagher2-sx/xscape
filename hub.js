@@ -24,7 +24,11 @@
     pending: null,
     bankTab: "bank",
     charFacing: "front",
-    layout: null
+    layout: null,
+    chatBubbles: {},
+    chatLog: [],
+    lastChatAt: 0,
+    chatOpen: false
   };
 
   var NPCS = [
@@ -156,12 +160,35 @@
     return { col: c, row: r };
   }
 
+  function boothAt(col, row) {
+    return row === 2 && col >= 1 && col <= 7;
+  }
+
+  function boothStandTile(col) {
+    var spots = [[col, 3], [col - 1, 3], [col + 1, 3], [2, 3], [6, 3]];
+    for (var i = 0; i < spots.length; i++) {
+      if (walkable(spots[i][0], spots[i][1])) return { c: spots[i][0], r: spots[i][1] };
+    }
+    return null;
+  }
+
+  function inBoothRange(col, row, boothCol) {
+    if (row !== 3) return false;
+    if (col === boothCol) return walkable(col, row);
+    var stand = boothStandTile(boothCol);
+    return !!(stand && stand.c === col && stand.r === row);
+  }
+
   function bfs(sc, sr, tc, tr) {
-    if (!walkable(tc, tr) && !npcAt(tc, tr)) return [];
     var npc = npcAt(tc, tr);
+    var booth = boothAt(tc, tr);
+    if (!walkable(tc, tr) && !npc && !booth) return [];
     var goalWalk = walkable(tc, tr) ? { c: tc, r: tr } : null;
     var goals = {};
-    if (npc) {
+    if (booth) {
+      var stand = boothStandTile(tc);
+      if (stand) goals[stand.c + "," + stand.r] = true;
+    } else if (npc) {
       var tiles = talkTiles(npc);
       for (var i = 0; i < tiles.length; i++) goals[tiles[i].c + "," + tiles[i].r] = true;
     } else if (goalWalk) {
@@ -236,6 +263,59 @@
     if (job.type === "menu" && job.npc) showCtx(job.npc, job.px, job.py);
     else if (job.type === "talk" && job.npc) startTalk(job.npc);
     else if (job.type === "examine" && job.npc) examineNpc(job.npc);
+    else if (job.type === "bank") openBank();
+    else if (job.type === "examine-booth") examineBooth();
+  }
+
+  function markClick(px, py, kind) {
+    if (px == null || py == null) return;
+    if (typeof addClickMark === "function") addClickMark(px, py, kind === "action" ? "npc" : "ground");
+  }
+
+  function useBooth(col) {
+    if (inBoothRange(state.col, state.row, col)) {
+      openBank();
+      return true;
+    }
+    state.pending = { type: "bank" };
+    state.path = bfs(state.col, state.row, col, 2);
+    var stand = boothStandTile(col);
+    if (stand) { state.destCol = stand.c; state.destRow = stand.r; }
+    return true;
+  }
+
+  function examineBooth() {
+    var text = "The West Bank's counter. Your items are safe here.";
+    if (typeof flashMsg === "function") flashMsg(text, "#ffe9a0");
+    else if (typeof showChat === "function") {
+      beginChatLayer();
+      state.talk = { lines: [{ name: "", text: text }], i: 0, after: null };
+      speakCurrent();
+    }
+  }
+
+  function showBoothCtx(col, px, py) {
+    var el = $("hub-ctx");
+    if (!el) return;
+    el.innerHTML = '<div class="ctx-title">Bank booth</div>' +
+      '<button type="button" data-act="bank">Bank</button>' +
+      '<button type="button" data-act="examine">Examine</button>';
+    el.classList.remove("hidden");
+    var lay = state.layout || layout(cssWSafe(), cssHSafe());
+    var p = tilePx(col, 2, lay);
+    var x = Math.max(8, Math.min((lay.cssW || 390) - 180, (px != null ? px : p.x) + 8));
+    var y = Math.max(8, Math.min((lay.cssH || 700) - 140, (py != null ? py : p.y) - 10));
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    el.querySelectorAll("[data-act]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideCtx();
+        if (btn.getAttribute("data-act") === "bank") useBooth(col);
+        else examineBooth();
+      });
+    });
   }
 
   function clickTile(col, row, opts) {
@@ -244,7 +324,16 @@
     col = clamp(col, 0, COLS - 1);
     row = clamp(row, 0, ROWS - 1);
     var npc = npcAt(col, row);
+    if (boothAt(col, row) && !opts.walkOnly) {
+      markClick(opts.px, opts.py, "action");
+      if (opts.hold) {
+        state.hold = { kind: "booth", col: col, px: opts.px, py: opts.py, t0: (typeof performance !== "undefined" ? performance.now() : Date.now()) };
+        return true;
+      }
+      return useBooth(col);
+    }
     if (npc && !opts.walkOnly) {
+      markClick(opts.px, opts.py, "action");
       if (inTalkRange(state.col, state.row, npc)) {
         showCtx(npc, opts.px, opts.py);
         return true;
@@ -256,24 +345,38 @@
     if (!walkable(col, row)) return false;
     state.pending = null;
     if (col === state.col && row === state.row) return false;
+    markClick(opts.px, opts.py, "ground");
     state.path = bfs(state.col, state.row, col, row);
     state.destCol = col;
     state.destRow = row;
-    if (typeof addClickMark === "function" && opts.px != null) {
-      addClickMark(opts.px, opts.py, "ground");
-    }
     return true;
   }
 
   function clickPx(x, y, cssW, cssH) {
     if (state.talk) { advanceTalk(); return; }
-    if (!$( "hub-ctx" ).classList.contains("hidden")) {
-      // tap elsewhere closes the menu
+    if ($("hub-ctx") && !$("hub-ctx").classList.contains("hidden")) {
       hideCtx();
     }
+    state.hold = null;
     var t = tileAtPx(x, y, cssW, cssH);
     if (!t) return;
-    clickTile(t.col, t.row, { px: x, py: y });
+    clickTile(t.col, t.row, { px: x, py: y, hold: boothAt(t.col, t.row) });
+  }
+
+  function onPointerUp() {
+    var hold = state.hold;
+    if (!hold) return;
+    state.hold = null;
+    if (hold.kind === "booth") useBooth(hold.col);
+  }
+
+  function onPointerHoldTick() {
+    var hold = state.hold;
+    if (!hold || hold.kind !== "booth") return;
+    var now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    if (now - hold.t0 < 450) return;
+    state.hold = null;
+    showBoothCtx(hold.col, hold.px, hold.py);
   }
 
   function stepDir(dc, dr) {
@@ -327,6 +430,14 @@
       if (p.scene && p.scene !== "bank") continue;
       if (p.col == null || p.row == null) continue;
       list.push(p);
+    }
+    if (state.debugPeers && state.debugPeers.length) {
+      var seen = {};
+      for (var j = 0; j < list.length; j++) seen[list[j].id] = true;
+      for (var d = 0; d < state.debugPeers.length; d++) {
+        var peer = state.debugPeers[d];
+        if (peer && peer.id && !seen[peer.id]) list.push(peer);
+      }
     }
     return list;
   }
@@ -447,7 +558,58 @@
     return { x: prev.x + (cur.x - prev.x) * u, y: prev.y + (cur.y - prev.y) * u, s: cur.s };
   }
 
-  function drawHero(ctx, t, x, y, facing, eq, walk, lay, name) {
+  function drawOverhead(ctx, x, y, text) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = "bold 11px Trebuchet MS, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = "#ffff00";
+    var maxW = 168;
+    var words = String(text).split(/\s+/);
+    var lines = [];
+    var cur = "";
+    for (var i = 0; i < words.length; i++) {
+      var trial = cur ? (cur + " " + words[i]) : words[i];
+      if (cur && ctx.measureText(trial).width > maxW) {
+        lines.push(cur);
+        cur = words[i];
+      } else cur = trial;
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > 3) {
+      lines = lines.slice(0, 3);
+      var last = lines[2];
+      while (last.length && ctx.measureText(last + "…").width > maxW) last = last.slice(0, -1);
+      lines[2] = last + "…";
+    }
+    var lineH = 13;
+    var startY = y - (lines.length - 1) * lineH;
+    var maxX = (state.layout && state.layout.cssW) ? state.layout.cssW - 6 : 384;
+    for (var j = 0; j < lines.length; j++) {
+      var tw = ctx.measureText(lines[j]).width;
+      var lx = Math.max(tw / 2 + 6, Math.min(maxX - tw / 2, x));
+      ctx.strokeText(lines[j], lx, startY + j * lineH);
+      ctx.fillText(lines[j], lx, startY + j * lineH);
+    }
+    ctx.restore();
+  }
+
+  function bubbleFor(id) {
+    if (!id || !state.chatBubbles) return null;
+    var b = state.chatBubbles[id];
+    if (!b) return null;
+    var now = (typeof performance !== "undefined" ? performance.now() : Date.now()) / 1000;
+    if (now >= b.until) {
+      delete state.chatBubbles[id];
+      return null;
+    }
+    return b.text;
+  }
+
+  function drawHero(ctx, t, x, y, facing, eq, walk, lay, name, speakerId) {
     if (typeof drawPlayerFacing !== "function") return;
     ctx.save();
     ctx.translate(x, y);
@@ -460,7 +622,9 @@
     });
     ctx.restore();
     var tagY = y - spriteScale(lay) * 40;
-    drawNameTag(ctx, x, tagY, name);
+    var bubble = bubbleFor(speakerId);
+    if (bubble) drawOverhead(ctx, x, tagY, bubble);
+    else drawNameTag(ctx, x, tagY, name);
   }
 
   function robeNpc(ctx, x, y, lay, opt) {
@@ -469,9 +633,11 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(s, s);
-    // shadow
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.beginPath(); ctx.ellipse(0, 10, 14, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    // shadow (skip on chathead busts)
+    if (!opt.bust) {
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath(); ctx.ellipse(0, 10, 14, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    }
     var robe = opt.robe || "#2a1840";
     var robeLt = opt.robeLt || "#3a2460";
     var trim = opt.trim || "#c9a24a";
@@ -515,7 +681,7 @@
       ctx.fillStyle = "#c8a878";
       ctx.fillRect(-8, -8, 16, 2);
     }
-    if (opt.staff) {
+    if (opt.staff && !opt.bust) {
       ctx.strokeStyle = "#6a4a24";
       ctx.lineWidth = 2.2;
       ctx.beginPath(); ctx.moveTo(12, 10); ctx.lineTo(14, -36); ctx.stroke();
@@ -525,24 +691,43 @@
     ctx.restore();
   }
 
+  function npcLook(npc) {
+    if (!npc) return { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#2a1c10", bald: true };
+    if (npc.kind === "warden") return { robe: "#1a1420", robeLt: "#2a2438", trim: "#8a7038", hair: "#1a1410", staff: true };
+    if (npc.kind === "shop") return { robe: "#3a2414", robeLt: "#5a3a20", trim: "#c9a24a", hair: "#4a2a10", apron: true };
+    if (npc.id === "mira") return { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#3a2418", hairLong: true };
+    return { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#2a1c10", bald: true };
+  }
+
   function drawNpc(ctx, t, npc, lay) {
     var p = tilePx(npc.col, npc.row, lay);
-    if (npc.kind === "warden") {
-      robeNpc(ctx, p.x, p.y, lay, { robe: "#1a1420", robeLt: "#2a2438", trim: "#8a7038", hair: "#1a1410", staff: true });
-    } else if (npc.kind === "shop") {
-      robeNpc(ctx, p.x, p.y, lay, { robe: "#3a2414", robeLt: "#5a3a20", trim: "#c9a24a", hair: "#4a2a10", apron: true, hairLong: false });
-    } else if (npc.id === "mira") {
-      robeNpc(ctx, p.x, p.y, lay, { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#3a2418", hairLong: true });
-    } else {
-      robeNpc(ctx, p.x, p.y, lay, { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#2a1c10", bald: true });
-    }
+    robeNpc(ctx, p.x, p.y, lay, npcLook(npc));
     drawNameTag(ctx, p.x, p.y - spriteScale(lay) * 42, npc.title || npc.name);
+  }
+
+  /* Front-view NPC chathead (head + shoulders) for the OSRS dialogue box. */
+  function drawNpcChatHead(c, w, h, npc) {
+    if (!c) return;
+    c.clearRect(0, 0, w, h);
+    c.fillStyle = "#140c08";
+    c.fillRect(0, 0, w, h);
+    var look = npcLook(npc);
+    look.bust = true;
+    var scale = 2.25;
+    c.save();
+    c.beginPath();
+    c.rect(0, 0, w, h);
+    c.clip();
+    // robeNpc applies spriteScale(lay)*0.95. tw=48 makes that ~1, so `scale` is exact.
+    c.translate(w * 0.5, h * 0.44 + 26 * scale);
+    c.scale(scale, scale);
+    robeNpc(c, 0, 0, { tw: 48 }, look);
+    c.restore();
   }
 
   function drawWorld(ctx, t, cssW, cssH) {
     var lay = layout(cssW, cssH);
     drawFloor(ctx, lay);
-    drawDestX(ctx, lay);
     // depth: north (small row) first
     var sprites = [];
     for (var i = 0; i < NPCS.length; i++) {
@@ -562,14 +747,15 @@
     sprites.sort(function (a, b) { return a.row - b.row; });
     var eq = (global.Profile && Profile.equipment) || {};
     var myName = (global.Profile && Profile.name) || "You";
+    var myId = selfChatId();
     for (var k = 0; k < sprites.length; k++) {
       var s = sprites[k];
       if (s.kind === "npc") drawNpc(ctx, t, s.npc, lay);
       else if (s.kind === "other") {
         var op = tilePx(s.p.col, s.p.row, lay);
-        drawHero(ctx, t, op.x, op.y, s.p.facing || "front", s.p.equipment || {}, false, lay, s.p.username || "Player");
+        drawHero(ctx, t, op.x, op.y, s.p.facing || "front", s.p.equipment || {}, false, lay, s.p.username || "Player", s.p.id);
       } else {
-        drawHero(ctx, t, s.pos.x, s.pos.y, state.facing, eq, state.moving, lay, myName);
+        drawHero(ctx, t, s.pos.x, s.pos.y, state.facing, eq, state.moving, lay, myName, myId);
       }
     }
   }
@@ -664,7 +850,18 @@
       return;
     }
     var line = talk.lines[talk.i];
-    if (typeof showChat === "function") showChat(line.name, line.text, { tap: true });
+    if (typeof showChat === "function") {
+      var portrait = line.portrait;
+      if (portrait == null) {
+        var myName = (typeof Profile !== "undefined" && Profile && Profile.name) ? Profile.name : "";
+        if (line.name && myName && line.name === myName) portrait = "player";
+        else if (line.name && talk.npc && line.name === talk.npc.name) portrait = talk.npc;
+        else if (!line.name) portrait = "none";
+        else if (talk.npc) portrait = talk.npc;
+        else portrait = "player";
+      }
+      showChat(line.name, line.text, { tap: true, portrait: portrait });
+    }
   }
 
   function advanceTalk() {
@@ -672,6 +869,166 @@
     state.talk.i += 1;
     speakCurrent();
     return true;
+  }
+
+  /* ---------- Public hub chat ---------- */
+  var CHAT_LIFE = 5;
+  var CHAT_MAX = 80;
+  var CHAT_RATE_MS = 2000;
+  var CHAT_LOG_MAX = 40;
+
+  function selfChatId() {
+    var cloud = global.XscapeCloud;
+    if (cloud && cloud.userId) {
+      var id = cloud.userId();
+      if (id) return id;
+    }
+    try {
+      var q = new URLSearchParams(location.search);
+      if ((q.get("test") || "").toLowerCase() === "hubchat") return "test-" + (q.get("who") || "local");
+    } catch (e) {}
+    return "local";
+  }
+
+  function canHubChat() {
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.canHubChat === "function") return !!cloud.canHubChat();
+    return false;
+  }
+
+  function sanitizeChat(s) {
+    s = String(s || "").replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim();
+    if (s.length > CHAT_MAX) s = s.slice(0, CHAT_MAX);
+    return s;
+  }
+
+  function appendChatLog(name, text) {
+    if (!state.chatLog) state.chatLog = [];
+    state.chatLog.push({ name: name || "Player", text: text, t: Date.now() });
+    if (state.chatLog.length > CHAT_LOG_MAX) state.chatLog = state.chatLog.slice(-CHAT_LOG_MAX);
+    renderChatLog();
+  }
+
+  function renderChatLog() {
+    var el = $("hub-chat-log");
+    if (!el) return;
+    var lines = state.chatLog || [];
+    if (!lines.length) {
+      el.innerHTML = '<div class="chat-line" style="color:#8a7a50">Public chat</div>';
+    } else {
+      el.innerHTML = lines.map(function (row) {
+        return '<div class="chat-line"><span class="nm">' + escapeHtml(row.name) + ":</span> " +
+          escapeHtml(row.text) + "</div>";
+      }).join("");
+    }
+    el.classList.remove("hidden");
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function showOverhead(id, text) {
+    if (!id || !text) return;
+    if (!state.chatBubbles) state.chatBubbles = {};
+    var now = (typeof performance !== "undefined" ? performance.now() : Date.now()) / 1000;
+    state.chatBubbles[id] = { text: text, until: now + CHAT_LIFE };
+  }
+
+  function onHubChat(p) {
+    if (!p) return;
+    var text = sanitizeChat(p.text);
+    if (!text) return;
+    var id = p.id || p.userId;
+    var name = p.username || p.name || "Player";
+    if (id) showOverhead(id, text);
+    appendChatLog(name, text);
+  }
+
+  function sendHubChat(raw) {
+    var text = sanitizeChat(raw);
+    if (!text) return false;
+    if (!canHubChat()) {
+      if (typeof flashMsg === "function") flashMsg("Sign in to chat", "#ffe9a0");
+      return false;
+    }
+    var now = Date.now();
+    if (state.lastChatAt && now - state.lastChatAt < CHAT_RATE_MS) {
+      if (typeof flashMsg === "function") flashMsg("Wait a moment.", "#ffe9a0");
+      return false;
+    }
+    state.lastChatAt = now;
+    var payload = {
+      id: selfChatId(),
+      username: (global.Profile && Profile.name) || "Player",
+      text: text,
+      t: now
+    };
+    onHubChat(payload);
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.broadcast === "function") {
+      try { cloud.broadcast("hub-chat", payload); } catch (e) {}
+    }
+    return true;
+  }
+
+  function setChatOpen(open) {
+    var hub = $("overlay-hub");
+    var bar = $("hub-chat-bar");
+    var input = $("hub-chat-input");
+    state.chatOpen = !!open;
+    if (hub) hub.classList.toggle("chat-open", !!open);
+    if (bar) bar.classList.toggle("hidden", !open);
+    if (open) {
+      renderChatLog();
+      if (!canHubChat()) {
+        if (bar) {
+          bar.innerHTML = '<div class="chat-blocked">Sign in to chat</div>' +
+            '<button type="button" class="btn secondary" id="hub-chat-close">X</button>';
+          var c = $("hub-chat-close");
+          if (c) c.addEventListener("click", function () { setChatOpen(false); });
+        }
+        return;
+      }
+      // Restore composer if it was replaced by the guest message.
+      if (bar && !bar.querySelector("#hub-chat-input")) {
+        bar.innerHTML = '<input id="hub-chat-input" type="text" maxlength="80" autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true" enterkeyhint="send" placeholder="Enter message..." />' +
+          '<button type="button" class="btn" id="hub-chat-send">Send</button>' +
+          '<button type="button" class="btn secondary" id="hub-chat-close" aria-label="Close chat">X</button>';
+        bindChatBar();
+      }
+      if (input || $("hub-chat-input")) {
+        var el = $("hub-chat-input");
+        try { el.focus(); } catch (e) {}
+      }
+    } else if (input) {
+      try { input.blur(); } catch (e) {}
+    }
+    if (typeof fitViewport === "function") fitViewport();
+  }
+
+  function bindChatBar() {
+    var bar = $("hub-chat-bar");
+    if (!bar) return;
+    bar._bound = true;
+    var input = $("hub-chat-input");
+    var send = $("hub-chat-send");
+    var close = $("hub-chat-close");
+    function go() {
+      var el = $("hub-chat-input");
+      if (!el) return;
+      if (sendHubChat(el.value)) el.value = "";
+    }
+    if (send) send.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go(); };
+    if (close) close.onclick = function (e) { e.preventDefault(); e.stopPropagation(); setChatOpen(false); };
+    if (input && !input._bound) {
+      input._bound = true;
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); go(); }
+        if (e.key === "Escape") { e.preventDefault(); setChatOpen(false); }
+      });
+    }
+  }
+
+  function openChat() {
+    setChatOpen(true);
   }
 
   /* ---------- Overlays: bank, inventory, boss, party, online ---------- */
@@ -994,13 +1351,17 @@
       if (steps === 2 && state.path.length) stepOnce();
       state.acc -= need;
     }
+    if (state.hold) onPointerHoldTick();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
     drawWorld(ctx, ts / 1000, cssW, cssH);
+    if (typeof drawClickMarks === "function") drawClickMarks(dt);
     paintGearCharacter(ts);
     refreshGpChip();
     if (typeof floatT !== "undefined" && floatT > 0) {
-      // host loop skipped the main float fade; leave it
+      floatT -= dt;
+      var fm = $("float-msg");
+      if (fm) fm.style.opacity = String(Math.max(0, Math.min(1, floatT * 1.4)));
     }
   }
 
@@ -1040,6 +1401,23 @@
     else if (typeof resizeCanvas === "function") resizeCanvas();
     refreshHubChrome();
     publishPresence();
+    renderChatLog();
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.startLobby === "function") {
+      try { cloud.startLobby(); } catch (e) {}
+    }
+    if (cloud && typeof cloud.reloadProfile === "function") {
+      Promise.resolve(cloud.reloadProfile()).then(function () {
+        try { renderBank(); } catch (e) {}
+        try { renderInv(); } catch (e) {}
+        if (typeof refreshGearViews === "function") {
+          try { refreshGearViews(); } catch (e2) {}
+        }
+        paintGearCharacter(typeof performance !== "undefined" ? performance.now() : Date.now());
+        publishPresence();
+        refreshGpChip();
+      }).catch(function () {});
+    }
   }
 
   function leave() {
@@ -1061,6 +1439,7 @@
     closeOnline();
     var cloud = global.XscapeCloud;
     if (cloud && cloud.setPresenceExtra) cloud.setPresenceExtra({ scene: "away" });
+    setChatOpen(false);
   }
 
   function onGearChanged() {
@@ -1071,6 +1450,12 @@
   }
 
   function bindUi() {
+    if (!bindUi._ptr) {
+      bindUi._ptr = true;
+      var up = function () { onPointerUp(); };
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", function () { state.hold = null; });
+    }
     var dock = $("hub-dock");
     if (dock && !dock._bound) {
       dock._bound = true;
@@ -1081,9 +1466,11 @@
         if (typeof audio !== "undefined" && audio.unlock) audio.unlock();
         if (act === "inv") openInventory();
         else if (act === "gear") { if (typeof openEquipmentView === "function") openEquipmentView(); }
+        else if (act === "chat") openChat();
         else if (act === "online") openOnline();
       });
     }
+    bindChatBar();
     function bindClose(id, fn) {
       var el = $(id);
       if (!el || el._hubBound) return;
@@ -1215,8 +1602,24 @@
     openOnline: openOnline,
     openParty: openParty,
     advanceTalk: advanceTalk,
+    startTalk: startTalk,
+    onHubChat: onHubChat,
+    sendHubChat: sendHubChat,
+    openChat: openChat,
+    publishPresence: publishPresence,
+    injectPeer: function (p) {
+      if (!state.debugPeers) state.debugPeers = [];
+      if (p) state.debugPeers.push(p);
+    },
+    findNpc: function (id) {
+      for (var i = 0; i < NPCS.length; i++) if (NPCS[i].id === id) return NPCS[i];
+      return null;
+    },
+    tilePx: tilePx,
     dismiss: dismiss,
     paintGearCharacter: paintGearCharacter,
+    drawNpcChatHead: drawNpcChatHead,
+    npcLook: npcLook,
     get state() { return state; }
   };
   global.XscapeHub = api;

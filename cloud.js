@@ -1157,6 +1157,10 @@
   function trackPayload() {
     var uid = session && session.user && session.user.id;
     var name = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "Adventurer";
+    if (!uid && isHubChatTest()) {
+      try { uid = "test-" + (new URLSearchParams(location.search).get("who") || "local"); } catch (e) { uid = "test-local"; }
+      try { name = new URLSearchParams(location.search).get("who") || name; } catch (e) {}
+    }
     var payload = {
       id: uid,
       username: name,
@@ -1171,7 +1175,8 @@
   }
 
   function trackPresence() {
-    if (!hubChannel || !session) return;
+    if (!hubChannel) return;
+    if (!session && !isHubChatTest()) return;
     try { hubChannel.track(trackPayload()); } catch (e) {}
   }
 
@@ -1201,20 +1206,69 @@
     return hubChannel.send({ type: "broadcast", event: event, payload: payload || {} });
   }
 
+  function isHubChatTest() {
+    try {
+      var t = (new URLSearchParams(location.search).get("test") || "").toLowerCase();
+      return t === "hubchat";
+    } catch (e) { return false; }
+  }
+
+  function canHubChat() {
+    if (isHubChatTest()) return true;
+    if (!session || !session.user) return false;
+    if (typeof isRestrictedGuest === "function" && isRestrictedGuest()) return false;
+    if (isAnonymousUser(session.user)) return false;
+    return true;
+  }
+
+  async function reloadProfile() {
+    if (!sb || !session) return null;
+    try {
+      var mine = await rpc("my_profile", {});
+      if (mine && mine.ok && mine.profile) {
+        cloudProfile = mine.profile;
+        applyCloudProfile(cloudProfile);
+        if (typeof global.refreshGearViews === "function") {
+          try { global.refreshGearViews(); } catch (e) {}
+        }
+        if (global.XscapeHub && XscapeHub.renderBank) {
+          try { XscapeHub.renderBank(); } catch (e) {}
+        }
+        if (global.XscapeHub && XscapeHub.onGearChanged) {
+          try { XscapeHub.onGearChanged(); } catch (e) {}
+        }
+        return cloudProfile;
+      }
+    } catch (e) {}
+    return null;
+  }
+
   async function startLobby() {
-    if (!sb || !session || page !== "hub") return;
-    if (isRestrictedGuest() || isAnonymousUser(session.user)) {
+    if (!sb || page !== "hub") return;
+    var testChat = isHubChatTest();
+    if (!testChat && (!session || isRestrictedGuest() || isAnonymousUser(session.user))) {
       renderPresence();
       return;
     }
-    await refreshChallenges();
+    if (!testChat) await refreshChallenges();
     if (hubChannel) {
       try { await sb.removeChannel(hubChannel); } catch (e) {}
       hubChannel = null;
     }
     presenceMap = {};
-    var uid = session.user.id;
-    var name = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "Adventurer";
+    var uid, name;
+    if (session && session.user && !testChat) {
+      uid = session.user.id;
+      name = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "Adventurer";
+    } else {
+      try {
+        uid = "test-" + (new URLSearchParams(location.search).get("who") || "local");
+        name = new URLSearchParams(location.search).get("who") || (global.Profile && Profile.name) || "Tester";
+      } catch (e) {
+        uid = "test-local";
+        name = (global.Profile && Profile.name) || "Tester";
+      }
+    }
     hubChannel = sb.channel(CHANNEL, { config: { presence: { key: uid }, broadcast: { self: false } } });
     hubChannel.on("presence", { event: "sync" }, function () {
       var state = hubChannel.presenceState() || {};
@@ -1222,6 +1276,9 @@
       Object.keys(state).forEach(function (key) {
         var metas = state[key] || [];
         var meta = metas[0] || { id: key };
+        for (var i = 1; i < metas.length; i++) {
+          if ((metas[i].at || 0) >= (meta.at || 0)) meta = metas[i];
+        }
         presenceMap[meta.id || key] = meta;
       });
       renderPresence();
@@ -1243,6 +1300,10 @@
     hubChannel.on("broadcast", { event: "party-start" }, function (msg) {
       var payload = (msg && msg.payload) || {};
       if (global.XscapeHub && XscapeHub.onPartyStart) global.XscapeHub.onPartyStart(payload);
+    });
+    hubChannel.on("broadcast", { event: "hub-chat" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeHub && XscapeHub.onHubChat) global.XscapeHub.onHubChat(payload);
     });
     hubChannel.subscribe(function (status) {
       if (status === "SUBSCRIBED") {
@@ -1589,6 +1650,9 @@
     }
     ready = true;
     global.XscapeCloud = api;
+    if (page === "hub" || (global.G && global.G.scene === "hub") || isHubChatTest()) {
+      try { startLobby(); } catch (e) {}
+    }
   }
 
   var api = {
@@ -1598,7 +1662,14 @@
     hasSession: function () { return !!session; },
     isPermanent: function () { return typeof isPermanentUser === "function" && isPermanentUser(); },
     isRestrictedGuest: isRestrictedGuest,
-    userId: function () { return session && session.user && session.user.id; },
+    userId: function () {
+      if (session && session.user) return session.user.id;
+      if (isHubChatTest()) {
+        try { return "test-" + (new URLSearchParams(location.search).get("who") || "local"); }
+        catch (e) { return "test-local"; }
+      }
+      return null;
+    },
     routeTitle: routeTitle,
     showNameEditor: showNameEditor,
     showSignInScreen: showSignInScreen,
@@ -1607,6 +1678,8 @@
     rpc: rpc,
     reloadLeaderboard: loadLeaderboard,
     startLobby: startLobby,
+    reloadProfile: reloadProfile,
+    canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,
     trackPresence: trackPresence,
     getPresenceMap: getPresenceMap,

@@ -1821,8 +1821,14 @@
     clickPx: function (x, y, W, H) {
       if (!R) return null;
       const tile = tileAtPx(x, y, W, H);
-      if (tile) { clickTile(R, tile.col, tile.row); return tile; }
-      return null;
+      var action = false;
+      if (tile) {
+        const add = R.adds && R.adds.find(function (a) { return a.hp > 0 && a.col === tile.col && a.row === tile.row; });
+        action = !!add;
+        clickTile(R, tile.col, tile.row);
+      }
+      if (typeof global.addClickMark === "function") addClickMark(x, y, action ? "npc" : "ground");
+      return tile;
     },
     stepDir: function (dc, dr) { if (R) stepDir(R, dc, dr); },
     tileAtPx: tileAtPx,
@@ -2133,6 +2139,7 @@
       if (dpr) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       draw(R, ctx, W, H, ts / 1000);
+      if (typeof global.drawClickMarks === "function") drawClickMarks(dt);
     }
     hostUpdateHud(R);
     if (R.float && R.float.t > 0 && typeof global.flashMsg === "function") {

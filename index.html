@@ -179,6 +179,7 @@
       width: 56px; height: 56px; flex: 0 0 56px; background: #140c08;
       border: 2px solid #8a6a30;
     }
+    #chat-head.hidden { display: none; }
     .chat-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
     #chat-name {
       color: #ffff00; font-weight: 700; font-size: 13px;
@@ -525,9 +526,54 @@
     }
     #hub-dock .btn {
       flex: 1 1 0; min-width: 0; margin: 0; height: 40px;
-      font-size: 13px; letter-spacing: 0.3px;
+      font-size: 12px; letter-spacing: 0.2px;
       font-family: "Trebuchet MS", sans-serif;
     }
+    #hub-chat-log {
+      position: absolute; left: 8px; right: 8px; z-index: 7;
+      bottom: calc(52px + var(--safe-bottom, 0px));
+      max-height: 74px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      pointer-events: auto;
+      background: rgba(18, 12, 6, 0.86);
+      border: 2px solid #8a6a30; box-shadow: inset 0 0 0 1px #3a2a14;
+      padding: 3px 6px; border-radius: 2px;
+      font-family: "Trebuchet MS", sans-serif; font-size: 12px; line-height: 1.3;
+    }
+    #hub-chat-log.hidden { display: none; }
+    #hub-chat-log .chat-line { color: #f5f0d8; text-shadow: 0 1px 0 #000; word-wrap: break-word; }
+    #hub-chat-log .chat-line .nm { color: #ffff00; font-weight: 700; }
+    #hub-chat-bar {
+      position: absolute; left: 0; right: 0; z-index: 8;
+      bottom: 0;
+      display: flex; gap: 6px; align-items: center;
+      padding: 6px 8px calc(8px + var(--safe-bottom, 0px));
+      background: linear-gradient(#3a2a18, #1e140c);
+      border-top: 2px solid #8a6a30;
+      pointer-events: auto;
+    }
+    #hub-chat-bar.hidden { display: none; }
+    #hub-chat-bar input {
+      flex: 1 1 auto; min-width: 0; height: 40px;
+      font-size: 16px; /* iOS: avoid input-zoom */
+      font-family: "Trebuchet MS", sans-serif;
+      color: #f5f0d8; background: #140c08;
+      border: 2px solid #8a6a30; border-radius: 3px;
+      padding: 0 8px;
+    }
+    #hub-chat-bar input:focus { outline: none; border-color: #c9a24a; }
+    #hub-chat-bar .btn { flex: 0 0 auto; height: 40px; min-width: 64px; margin: 0; font-size: 14px; }
+    #hub-chat-bar .chat-blocked {
+      flex: 1; color: #ffe9a0; font-size: 13px; font-weight: 700;
+      text-shadow: 0 1px 0 #000;
+    }
+    #overlay-hub.chat-open #hub-dock { display: none; }
+    #overlay-hub.chat-open #hub-chat-bar { display: flex; }
+    #overlay-hub.chat-open #hub-chat-log {
+      bottom: calc(54px + var(--safe-bottom, 0px));
+      max-height: 96px;
+    }
+    #overlay-hub.is-world #hub-chat-log { display: block; }
+    #overlay-hub.is-world.chat-open #hub-chat-bar { display: flex; }
     #hub-gp-chip {
       pointer-events: none; position: absolute; top: calc(6px + var(--safe-top));
       left: 48px; z-index: 6; font-size: 13px; font-weight: 700;
@@ -699,9 +745,16 @@
       <div id="hub-chrome-mount" class="hub-chrome"></div>
       <div id="hub-gp-chip" class="hub-chrome">GP: 0</div>
       <div id="hub-dock" class="hub-chrome">
-        <button type="button" class="btn secondary" data-dock="inv">Inventory</button>
-        <button type="button" class="btn secondary" data-dock="gear">Equipment</button>
+        <button type="button" class="btn secondary" data-dock="inv">Inv</button>
+        <button type="button" class="btn secondary" data-dock="gear">Gear</button>
+        <button type="button" class="btn secondary" data-dock="chat">Chat</button>
         <button type="button" class="btn secondary" data-dock="online">Online</button>
+      </div>
+      <div id="hub-chat-log" class="hub-chrome hidden" aria-live="polite"></div>
+      <div id="hub-chat-bar" class="hub-chrome hidden">
+        <input id="hub-chat-input" type="text" maxlength="80" autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true" enterkeyhint="send" placeholder="Enter message..." />
+        <button type="button" class="btn" id="hub-chat-send">Send</button>
+        <button type="button" class="btn secondary" id="hub-chat-close" aria-label="Close chat">X</button>
       </div>
       <div id="hub-ctx" class="hidden" role="menu"></div>
       <div class="hub-world-hide">
@@ -1096,7 +1149,7 @@ const PROJECTILE_TRAVEL_MAGE = 0.11;
 const PROJECTILE_TRAVEL_RANGE = 0.11;
 const PROJECTILE_TRAVEL_MELEE = 0.07;
 const BOLT_TRAVEL = 0.16;
-const CLICK_MARK_MS = 300;        // OSRS-style yellow/red X click marker lifetime
+const CLICK_MARK_MS = 520;        // OSRS-style 4-frame yellow/red X (~0.5s shrink/fade)
 const ARENA_LAYOUT_V5 = 1;        // hosted-build marker: viewport-scaled Jad/player + mapped clicks
 const CUTSCENE_V6 = 1;            // hosted-build marker: intro + first-kill cutscenes
 const ART_V7 = 1;                 // hosted-build marker: partyhat FK77 + player cape/xbow order
@@ -1269,6 +1322,9 @@ const ITEMS = {
   armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
   armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
 
+  /* The only blue partyhat in the game. Granted server-side; never sold or dropped. Not stakeable. */
+  blue_partyhat:      { id: "blue_partyhat", name: "Blue partyhat", slot: "head", tier: "partyhat", unique: true, unstakeable: true, kind: "partyhat", bonuses: b({}) },
+
   /* Legacy starter — migrated off; hidden if a stale id remains. */
   leather_cowl:       { id: "leather_cowl", name: "Leather cowl", slot: "head", tier: "legacy", hidden: true, bonuses: b({ arange: 1, dstab: 2, dslash: 3, dcrush: 4, dmagic: 2, drange: 3 }) },
   leather_body:       { id: "leather_body", name: "Leather body", slot: "body", tier: "legacy", hidden: true, bonuses: b({ arange: 2, dstab: 8, dslash: 9, dcrush: 10, dmagic: 4, drange: 9 }) },
@@ -1336,6 +1392,15 @@ function itemIsHidden(it) {
   if (it.tier === "armadyl") return false;
   return !!it.hidden;
 }
+
+function canStakeItem(id) {
+  const it = (typeof ITEMS !== "undefined" && ITEMS[id]) || null;
+  if (!it) return false;
+  if (it.unstakeable || it.unique || it.tier === "partyhat" || it.kind === "partyhat") return false;
+  if (it.id === "blue_partyhat") return false;
+  return true;
+}
+window.canStakeItem = canStakeItem;
 
 function defaultLevels() {
   return { attack: 99, strength: 99, defence: 99, ranged: 99, magic: 99, hitpoints: 99, prayer: 99 };
@@ -2309,6 +2374,7 @@ function gearTierClass(tier) {
   if (tier === "tier2" || tier === "upgrade") return "tier2";
   if (tier === "mid") return "mid";
   if (tier === "starter" || tier === "tier1") return "tier1";
+  if (tier === "partyhat") return "unique";
   return "";
 }
 function gearTierLabel(it) {
@@ -2319,6 +2385,7 @@ function gearTierLabel(it) {
   if (t === "tier2" || t === "upgrade") return "Tier 2";
   if (t === "mid") return "Gloamhold mid";
   if (t === "armadyl") return "Tier 3 · Armadyl";
+  if (t === "partyhat") return "Unique · the only one";
   return "Tier 1 · Starter";
 }
 
@@ -5253,19 +5320,26 @@ function drawClickMarks(dt) {
   if (!G.clickMarks || !G.clickMarks.length) return;
   const life = CLICK_MARK_MS / 1000;
   const keep = [];
+  const scales = [1.08, 0.94, 0.80, 0.64];
+  const alphas = [1, 0.88, 0.62, 0.32];
   for (const m of G.clickMarks) {
     m.t += dt;
     const u = clamp(m.t / life, 0, 1);
     if (u >= 1) continue;
     keep.push(m);
-    const scale = 1.08 - 0.48 * u;
-    const rot = u * 0.42;
-    const alpha = 1 - u * u * 0.85;
-    const color = m.kind === "npc" ? "#ff1a1a" : "#ffe81a";
+    const frame = Math.min(3, Math.floor(u * 4));
+    const scale = scales[frame];
+    const rot = frame * 0.08;
+    const alpha = alphas[frame];
+    const color = (m.kind === "npc" || m.kind === "action") ? "#ff1a1a" : "#ffe81a";
     drawOsrsCross(ctx, m.x, m.y, color, scale, rot, alpha);
   }
   G.clickMarks = keep;
 }
+
+window.addClickMark = addClickMark;
+window.drawClickMarks = drawClickMarks;
+window.drawOsrsCross = drawOsrsCross;
 
 function refreshTitleBest() {
   const best = loadBest();
@@ -5443,20 +5517,82 @@ function hideItemPopup() {
   if (el) el.classList.add("hidden");
 }
 
+function resolveChatPortrait(name, opts) {
+  opts = opts || {};
+  if (opts.portrait != null) return opts.portrait;
+  if (name === "Fast Kill77") return "fk77";
+  if (G && G.cs && (G.cs.kind === "firstkill" || G.mode === "firstkill")) return "fk77";
+  if (G && G.mode === "firstkill") return "fk77";
+  var myName = (typeof Profile !== "undefined" && Profile && Profile.name) ? Profile.name : "";
+  if (name && myName && name === myName) return "player";
+  return "none";
+}
+
+function drawPlayerChatHead(c, w, h) {
+  if (!c) return;
+  c.clearRect(0, 0, w, h);
+  c.fillStyle = "#140c08";
+  c.fillRect(0, 0, w, h);
+  if (typeof drawPlayerFacing !== "function") return;
+  var s = 2.15;
+  var eq = (typeof Profile !== "undefined" && Profile && Profile.equipment) ? Profile.equipment : {};
+  c.save();
+  c.beginPath();
+  c.rect(0, 0, w, h);
+  c.clip();
+  // Character origin is at the feet; lift so the front-view head fills the box.
+  c.translate(w * 0.5, h * 0.46 + 26 * s);
+  c.scale(s, s);
+  drawPlayerFacing(c, (typeof now === "function" ? now() : Date.now()) / 1000, {
+    facing: "front",
+    equipment: eq,
+    walk: false,
+    showCape: true
+  });
+  c.restore();
+}
+
+function paintChatPortrait(head, name, opts) {
+  if (!head) return;
+  var portrait = resolveChatPortrait(name, opts);
+  var ctx = head.getContext("2d");
+  if (!portrait || portrait === "none") {
+    head.classList.add("hidden");
+    if (ctx) ctx.clearRect(0, 0, head.width, head.height);
+    return;
+  }
+  head.classList.remove("hidden");
+  if (portrait === "fk77") {
+    drawChatHead(ctx, head.width, head.height, now() / 1000);
+    return;
+  }
+  if (portrait === "player") {
+    drawPlayerChatHead(ctx, head.width, head.height);
+    return;
+  }
+  if (typeof portrait === "function") {
+    portrait(ctx, head.width, head.height);
+    return;
+  }
+  if (window.XscapeHub && typeof XscapeHub.drawNpcChatHead === "function") {
+    XscapeHub.drawNpcChatHead(ctx, head.width, head.height, portrait);
+    return;
+  }
+  ctx.clearRect(0, 0, head.width, head.height);
+}
+
 function showChat(name, text, opts) {
   const box = $("osrs-chat");
   if (!box) return;
+  opts = opts || {};
   box.classList.remove("hidden");
   $("chat-name").textContent = name || "";
   $("chat-name").style.display = name ? "block" : "none";
   $("chat-line").textContent = text || "";
   const hint = $("chat-hint");
-  if (hint) hint.classList.toggle("hidden", !(opts && opts.tap));
-  const head = $("chat-head");
-  if (head) {
-    drawChatHead(head.getContext("2d"), head.width, head.height, now() / 1000);
-  }
-  if (opts && opts.tap && G.cs) G.cs.waitTap = true;
+  if (hint) hint.classList.toggle("hidden", !opts.tap);
+  paintChatPortrait($("chat-head"), name, opts);
+  if (opts.tap && G.cs) G.cs.waitTap = true;
 }
 
 function showItemPopup(text) {
@@ -5585,7 +5721,7 @@ function presentFkLine() {
     showItemPopup(line.text);
     audio.capeJingle();
   } else {
-    showChat(line.name, line.text, { tap: true });
+    showChat(line.name, line.text, { tap: true, portrait: "fk77" });
   }
 }
 
@@ -5847,7 +5983,13 @@ function applyTestQuery() {
   if (!test) return;
   try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
   if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
-  if (test === "hub" || test === "bank") {
+  if (test === "hub" || test === "bank" || test === "hubchat") {
+    if (test === "hubchat") {
+      try {
+        const who = new URLSearchParams(location.search).get("who");
+        if (who) { Profile.name = who; saveProfile(); }
+      } catch (e) {}
+    }
     enterScene("hub");
     return;
   }
@@ -6311,7 +6453,7 @@ applyOpenQuery();
 <script src="cloud.js"></script>
 <script>
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register("sw.js?v=21-1").catch(function () {});
+  navigator.serviceWorker.register("sw.js?v=21-3").catch(function () {});
 }
 </script>
 </body>
