@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xscape — Sprite Lab</title>
+<style>
+  html, body { margin: 0; background: #1a0f0a; color: #f0e0b0; font: 13px/1.35 "Trebuchet MS", sans-serif; }
+  header { padding: 10px 14px 4px; }
+  h1 { margin: 0; font-size: 18px; color: #ffcf3a; text-shadow: 0 2px 0 #000; }
+  .sub { color: #b89a70; font-size: 12px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 14px 24px; }
+  .card { background: radial-gradient(ellipse at 50% 70%, #3a1e10 0%, #22120a 60%, #140a06 100%);
+          border: 1px solid #4a2c18; border-radius: 8px; padding: 8px 10px; }
+  .card h2 { margin: 0 0 6px; font-size: 13px; color: #ffe44a; }
+  .row { display: flex; gap: 12px; align-items: flex-end; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .cell span { font-size: 11px; color: #c8a878; }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .ctl { padding: 0 14px; color: #c8a878; font-size: 12px; }
+  .ctl label { margin-right: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Xscape sprite lab</h1>
+  <div class="sub">Loads <code>sprites.js</code> (same file the game uses). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
+</header>
+<div class="ctl">
+  <label>Game scale sP <select id="scale">
+    <option value="0.896" selected>390×844 (0.896)</option>
+    <option value="0.680">393×660 (0.680)</option>
+    <option value="1.2">tablet-ish (1.2)</option>
+  </select></label>
+  <label><input type="checkbox" id="pause"> pause</label>
+  <span id="ver"></span>
+</div>
+<div class="grid" id="grid"></div>
+<script src="sprites.js"></script>
+<script>
+"use strict";
+// Lab only: no game logic. Each sprite renders into a 1x canvas at CSS-pixel game scale
+// (DPR 1, like the game's backing pixels on a 1x screen), then is zoomed 4x nearest-neighbour.
+const TICK = 0.6;
+const ZOOM = 4;
+let sP = 0.896;
+const scenes = [
+  { id: "player-idle", title: "Player — idle (back view, fire cape, crossbow)", w: 70, h: 80, ax: 0.5, ay: 0.8,
+    draw(c, t) { drawPlayerSprite(c, t, { cape: true, shot: shotAnimAt(99) }); }, s: () => sP },
+  { id: "player-shot", title: "Player — looping shot (4 ticks)", w: 70, h: 80, ax: 0.5, ay: 0.8,
+    draw(c, t) {
+      const shotT = (t / TICK) % 4;
+      const z = shotAnimAt(shotT, 4);
+      drawPlayerSprite(c, t, { cape: true, shot: z, recoilBase: shotT < 1 ? -0.12 : 0 });
+    }, s: () => sP },
+  { id: "fk-idle", title: "Fast Kill77 — idle (whip sway)", w: 80, h: 80, ax: 0.55, ay: 0.78,
+    draw(c, t) { drawBandosCharacter(c, t, { face: -1 }); }, s: () => sP * FK77_HEIGHT_MATCH },
+  { id: "fk-walk", title: "Fast Kill77 — walk-off (whip crack)", w: 80, h: 80, ax: 0.45, ay: 0.78,
+    draw(c, t) { drawBandosCharacter(c, t, { face: 1, walk: true }); }, s: () => sP * FK77_HEIGHT_MATCH }
+];
+const grid = document.getElementById("grid");
+document.getElementById("ver").textContent = "sprites v" + (typeof SPRITES_VERSION !== "undefined" ? SPRITES_VERSION : "?");
+
+function makeCard(title, w, h) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = "<h2></h2><div class='row'></div>";
+  card.querySelector("h2").textContent = title;
+  const row = card.querySelector(".row");
+  const one = document.createElement("canvas");
+  one.width = w; one.height = h;
+  one.style.width = w + "px"; one.style.height = h + "px";
+  const four = document.createElement("canvas");
+  four.width = w * ZOOM; four.height = h * ZOOM;
+  four.style.width = (w * ZOOM) + "px"; four.style.height = (h * ZOOM) + "px";
+  for (const [cv, lab] of [[one, "1x"], [four, "4x"]]) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.appendChild(cv);
+    const sp = document.createElement("span"); sp.textContent = lab;
+    cell.appendChild(sp);
+    row.appendChild(cell);
+  }
+  grid.appendChild(card);
+  return { one, four };
+}
+
+for (const sc of scenes) Object.assign(sc, makeCard(sc.title, sc.w, sc.h));
+const chat = makeCard("Chat head (64×64 chatbox canvas)", 64, 64);
+
+function bg(c, w, h) {
+  const g = c.createRadialGradient(w / 2, h * 0.75, 2, w / 2, h * 0.7, Math.max(w, h));
+  g.addColorStop(0, "#4a2410"); g.addColorStop(0.5, "#2a140a"); g.addColorStop(1, "#140a06");
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+  c.fillStyle = "rgba(255,120,30,0.10)";
+  c.fillRect(0, h * 0.82, w, h * 0.18);
+}
+
+function zoom(src, dst) {
+  const d = dst.getContext("2d");
+  d.imageSmoothingEnabled = false;
+  d.clearRect(0, 0, dst.width, dst.height);
+  d.drawImage(src, 0, 0, dst.width, dst.height);
+}
+
+let t0 = performance.now(), tPause = 0;
+function frame() {
+  const paused = document.getElementById("pause").checked;
+  const t = paused ? tPause : (performance.now() - t0) / 1000;
+  tPause = t;
+  for (const sc of scenes) {
+    const c = sc.one.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    bg(c, sc.w, sc.h);
+    c.save();
+    c.translate(sc.w * sc.ax, sc.h * sc.ay);
+    const k = sc.s();
+    c.scale(k, k);
+    sc.draw(c, t);
+    c.restore();
+    zoom(sc.one, sc.four);
+  }
+  drawChatHead(chat.one.getContext("2d"), 64, 64, t);
+  zoom(chat.one, chat.four);
+  requestAnimationFrame(frame);
+}
+document.getElementById("scale").addEventListener("change", (e) => { sP = parseFloat(e.target.value) || 0.896; });
+window.XscapeLab = { scenes, setScale(v) { sP = v; }, ready: true };
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
