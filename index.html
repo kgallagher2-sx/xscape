@@ -1090,6 +1090,7 @@ function syncPlayerWorldPos(snap) {
 }
 
 function queueMoveTo(col, row) {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.clickTile(col, row == null ? 0 : row); return true; }
   if (!G.player || G.mode !== "playing" || G.player.hp <= 0) return false;
   ensurePlayerTile();
   const c = clamp(col, 0, TILE.cols - 1);
@@ -1101,6 +1102,7 @@ function queueMoveTo(col, row) {
 }
 
 function queueMoveBy(dcol, drow) {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.stepDir(dcol || 0, drow || 0); return true; }
   if (!G.player) return false;
   ensurePlayerTile();
   const fromC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
@@ -1400,6 +1402,9 @@ function loadProfile() {
       Profile.seenFirstKill = !!raw.seenFirstKill;
       Profile.levels = normalizeLevels(raw.levels);
       Profile.equipment = normalizeEquipment(raw.equipment);
+      Profile.unlockedItems = Array.isArray(raw.unlockedItems) ? raw.unlockedItems.slice() : [];
+      Profile.raidCompletions = Number(raw.raidCompletions) || 0;
+      Profile.raidBestTicks = raw.raidBestTicks || null;
     } else {
       Profile.name = loadName();
       Profile.gp = 0;
@@ -1429,7 +1434,10 @@ function saveProfile() {
       name: Profile.name, gp: Profile.gp,
       hasFireCape: !!Profile.hasFireCape, seenFirstKill: !!Profile.seenFirstKill,
       levels: Profile.levels || defaultLevels(),
-      equipment: Profile.equipment || cloneLoadout("starter")
+      equipment: Profile.equipment || cloneLoadout("starter"),
+      unlockedItems: Profile.unlockedItems || [],
+      raidCompletions: Profile.raidCompletions || 0,
+      raidBestTicks: Profile.raidBestTicks || null
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
   } catch (e) {}
@@ -2363,6 +2371,7 @@ function tickHealers() {
 }
 
 function gameTick() {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.hostTick(); return; }
   if (G.mode !== "playing") return;
   G.ticks++;
 
@@ -2411,6 +2420,7 @@ function tickProgress() {
 }
 
 function eatShark() {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.eat(); return; }
   if (G.mode !== "playing" || !G.player || G.sharks <= 0 || G.player.hp <= 0) return;
   if (G.pendingEat || G.eatCd > 0) { flashMsg("Chewing…", "#c0c0c0"); return; }
   if (G.player.hp >= PLAYER_MAX_HP) { flashMsg("Full HP", "#c0c0c0"); return; }
@@ -2420,6 +2430,7 @@ function eatShark() {
   updateConsumeVisuals();
 }
 function sipPot() {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.sip(); return; }
   if (G.mode !== "playing" || !G.player || G.pots <= 0 || G.player.hp <= 0) return;
   if (G.pendingPot || G.potCd > 0) { flashMsg("Already sipping…", "#c0c0c0"); return; }
   if (G.player.prayerPts >= PLAYER_MAX_PRAYER) { flashMsg("Full prayer", "#c0c0c0"); return; }
@@ -2478,6 +2489,7 @@ function updateConsumeVisuals() {
 }
 
 function setPrayer(kind) {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.setPrayer(kind); return; }
   if (G.mode !== "playing") return;
   if (G.player.prayerPts <= 0) { flashMsg("No prayer!", "#ff8a70"); return; }
   if (G.prayer === kind) {
@@ -3459,6 +3471,10 @@ function frame(ts) {
   if (!lastTs) lastTs = ts;
   const dt = Math.min(0.05, (ts - lastTs) / 1000);
   lastTs = ts;
+  if (G.scene === "raid" && window.XscapeRaid) {
+    window.XscapeRaid.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
 
   if (G.mode === "playing") {
     G.elapsedMs = ts - G.startMs;
@@ -3547,6 +3563,12 @@ if ($("item-popup")) $("item-popup").addEventListener("pointerdown", (e) => {
 window.addEventListener("keydown", (e) => {
   if (e.repeat) return;
   if (e.target && e.target.tagName === "INPUT") return;
+  if (G.scene === "raid" && window.XscapeRaid) {
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); window.XscapeRaid.stepDir(-1, 0); return; }
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); window.XscapeRaid.stepDir(1, 0); return; }
+    if (e.key === "b" || e.key === "B") { window.XscapeRaid.brew(); return; }
+    if (e.key === "r" || e.key === "R") { window.XscapeRaid.ranging(); return; }
+  }
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
   if (e.key === "3") setPrayer("melee");
@@ -3558,6 +3580,13 @@ window.addEventListener("keydown", (e) => {
 });
 
 canvas.addEventListener("pointerdown", (e) => {
+  if (G.scene === "raid" && window.XscapeRaid) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeRaid.clickPx(pt.x, pt.y, cssW, cssH);
+    if (typeof addClickMark === "function") addClickMark(pt.x, pt.y, "ground");
+    return;
+  }
   if (G.mode === "intro") {
     audio.unlock();
     if (G.cs) G.cs.holding = true;
@@ -4200,6 +4229,11 @@ function applyTestQuery() {
   try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
   if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
   hideAllOverlays();
+  if (test.indexOf("raid") === 0 && window.XscapeRaid) {
+    if (window.XscapeRaid.installIntoGame) window.XscapeRaid.installIntoGame();
+    window.XscapeRaid.startRaidInGame({ fromQuery: true });
+    return;
+  }
   if (test === "intro") {
     resetFight();
     startIntro({ force: true });
@@ -4378,7 +4412,14 @@ window.KellenScape = {
   }
 };
 window.Xscape = window.KellenScape;
-
+</script>
+<script src="raid-sprites.js"></script>
+<script src="raid.js"></script>
+<script>
+if (window.XscapeRaid) {
+  XscapeRaid.installIntoGame();
+  if (window.Xscape) window.Xscape.raid = XscapeRaid;
+}
 
 drawGearIcons();
 refreshPrayIcons();
