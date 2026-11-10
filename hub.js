@@ -144,7 +144,13 @@
 
   function walkable(col, row) { return !blockedAt(col, row); }
 
+  function inBankArea() {
+    return (state.area || "bank") !== "arena";
+  }
+
   function npcAt(col, row) {
+    // Bank NPCs exist only in the West Bank. Their tiles are ordinary floor in the arena.
+    if (!inBankArea()) return null;
     for (var i = 0; i < NPCS.length; i++) {
       if (NPCS[i].col === col && NPCS[i].row === row) return NPCS[i];
     }
@@ -175,6 +181,7 @@
   }
 
   function npcNear(col, row) {
+    if (!inBankArea()) return null;
     for (var i = 0; i < NPCS.length; i++) {
       if (inTalkRange(col, row, NPCS[i])) return NPCS[i];
     }
@@ -221,6 +228,7 @@
   }
 
   function boothAt(col, row) {
+    if (!inBankArea()) return false;
     return row === 2 && col >= 1 && col <= 7;
   }
 
@@ -530,6 +538,9 @@
 
   function runPending(job) {
     if (!job) return;
+    var bankJob = job.type === "bank" || job.type === "examine-booth" ||
+      ((job.type === "menu" || job.type === "talk" || job.type === "examine") && job.npc);
+    if (bankJob && !inBankArea()) return;
     if (job.type === "menu" && job.npc) showCtx(job.npc, job.px, job.py);
     else if (job.type === "talk" && job.npc) startTalk(job.npc);
     else if (job.type === "examine" && job.npc) examineNpc(job.npc);
@@ -544,6 +555,7 @@
   }
 
   function useBooth(col) {
+    if (!inBankArea()) return false;
     if (inBoothRange(state.col, state.row, col)) {
       openBank();
       return true;
@@ -566,6 +578,7 @@
   }
 
   function showBoothCtx(col, px, py) {
+    if (!inBankArea()) return;
     var el = $("hub-ctx");
     if (!el) return;
     el.innerHTML = '<div class="ctx-title">Bank booth</div>' +
