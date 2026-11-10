@@ -20,14 +20,20 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0; padding: 0; width: 100%; height: 100%;
+      height: 100dvh; height: 100svh;
       overflow: hidden; background: #070403; color: var(--beige);
       font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
-      touch-action: none; user-select: none; -webkit-user-select: none;
+      touch-action: manipulation; user-select: none; -webkit-user-select: none;
     }
     #app {
       width: 100%; max-width: 430px; height: 100%;
+      height: 100dvh; height: 100svh;
       margin: 0 auto; position: relative; display: flex; flex-direction: column;
-      background: #1a0c08; overflow: hidden;
+      background: #1a0c08; overflow: hidden; touch-action: manipulation;
+    }
+    /* Pinch/scroll lock only on the fight surface — menus must pan-y. */
+    #arena-wrap, #arena, #prayers, #consumables, #mid, #move-pad {
+      touch-action: none;
     }
     #top-hud {
       flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
@@ -180,11 +186,27 @@
 
     .overlay {
       position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
-      background: rgba(8, 4, 2, 0.95); overflow: auto; touch-action: pan-y;
+      align-items: center; justify-content: safe center;
+      padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+      background: rgba(8, 4, 2, 0.95); overflow-x: hidden; overflow-y: auto;
+      touch-action: pan-y; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
+    #overlay-hub { justify-content: flex-start; }
+    #overlay-hub > * { flex-shrink: 0; }
+    /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
+    #overlay-gear, #overlay-tut, #overlay-raid-tut { overflow: hidden; }
     .overlay.hidden { display: none; }
+    .btn, .slot-btn, .bank-item, .mode-btn, .overlay-x { touch-action: manipulation; }
+    .overlay-x {
+      position: absolute; top: 6px; right: 6px; z-index: 3;
+      width: 44px; height: 44px; min-width: 0; margin: 0; padding: 0;
+      border: 2px solid #c9a24a; border-radius: 4px;
+      background: linear-gradient(#5a4328, #2e2014);
+      color: var(--gold); font-family: Arial, sans-serif; font-size: 26px; font-weight: 700;
+      line-height: 1; cursor: pointer; text-shadow: 0 1px 0 #000;
+    }
+    .overlay-x:active { filter: brightness(1.2); }
     .logo {
       position: relative;
       font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
@@ -321,15 +343,30 @@
       font-family: inherit; padding: 0;
     }
     #btn-raid-help.visible { display: inline-flex; align-items: center; justify-content: center; }
-    .tut-card { max-height: 86%; overflow-y: auto; }
-    .tut-card.brief-card {
-      display: flex; flex-direction: column; overflow: hidden; max-height: 86%;
-    }
-    .tut-card.brief-card .tut-scroll { overflow-y: auto; flex: 1 1 auto; -webkit-overflow-scrolling: touch; }
-    .tut-card.brief-card .tut-actions { flex: 0 0 auto; text-align: center; margin-top: 10px; padding-top: 6px; border-top: 1px solid #6a5430; }
-    .tut-card.brief-card .tut-actions .btn { margin: 0; }
+    .sheet-card,
+    .tut-card.brief-card,
+    #overlay-tut .tut-card,
     #overlay-gear .gear-card {
-      width: 100%; max-width: 340px; max-height: 90%; overflow-y: auto;
+      position: relative;
+      display: flex; flex-direction: column;
+      width: 100%; max-width: 340px; min-height: 0; overflow: hidden;
+      max-height: 90%;
+      max-height: calc(100dvh - 32px);
+      max-height: calc(100svh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    }
+    .sheet-card > h2, .tut-card > h2, .gear-card > h2 { padding-right: 40px; }
+    .sheet-scroll, .tut-scroll, .gear-scroll {
+      overflow-y: auto; flex: 1 1 auto; min-height: 0;
+      -webkit-overflow-scrolling: touch; touch-action: pan-y;
+      overscroll-behavior: contain;
+    }
+    .sheet-actions, .tut-actions, .gear-actions {
+      flex: 0 0 auto; text-align: center; position: sticky; bottom: 0;
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid #6a5430;
+    }
+    .sheet-actions .btn, .tut-actions .btn, .gear-actions .btn { margin: 0; }
+    #overlay-gear .gear-card {
+      width: 100%; max-width: 340px;
       background: linear-gradient(#3a2c1c, #24180e);
       border: 3px solid #c9a24a; box-shadow: 0 8px 24px #000, inset 0 0 0 1px #1a1008;
       border-radius: 8px; padding: 14px 14px 12px; color: var(--beige);
@@ -493,8 +530,10 @@
     </div>
 
     <div class="overlay hidden" id="overlay-tut">
-      <div class="tut-card">
+      <div class="tut-card sheet-card">
+        <button class="overlay-x" id="btn-tut-x" type="button" aria-label="Close">×</button>
         <h2>Watch Jad</h2>
+        <div class="sheet-scroll" id="tut-scroll">
         <p>Watch Jad's <b>body</b> — and listen. Switch your protection prayer <b>before</b> he hits.</p>
         <p><b>Magic:</b> he rears up on his hind legs and lifts his arms. You'll hear a whooshy, fiery wind-up. Protect from Magic.</p>
         <p><b>Missiles:</b> he slams down and stomps the ground. You'll hear a heavy low thud. Protect from Missiles.</p>
@@ -503,7 +542,8 @@
         <p>You can <b>tap a floor tile</b> to step left or right (or use A/D on a keyboard). A yellow X marks your destination. Later bosses will throw fireballs onto your square — walk off before they land. Jad does not use those attacks.</p>
         <p>Eat sharks (heal 20) and sip prayer potions if you slip — each one lands on the next tick and delays your next shot, so eat back up above 70 after a hit. Prayer switching is free.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">Keys 1 / 2 / 3 · F food · P potion</p>
-        <div style="text-align:center;margin-top:10px">
+        </div>
+        <div class="sheet-actions">
           <button class="btn" id="btn-tut-ok" type="button">GOT IT</button>
         </div>
       </div>
@@ -511,24 +551,28 @@
 
 
     <div class="overlay hidden" id="overlay-gear">
-      <div class="gear-card">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-gear-x" type="button" aria-label="Close">×</button>
         <h2>Equipment</h2>
+        <div class="sheet-scroll gear-scroll" id="gear-scroll">
         <div id="gear-bonuses"></div>
         <div class="gear-sec">Worn</div>
         <div id="gear-worn"></div>
         <div class="gear-sec">Bank</div>
         <div id="gear-bank"></div>
         <div class="gear-foot">Tap a bank item to wear it. Tap a worn item to unequip it back to the bank. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
-        <div style="text-align:center;margin-top:10px">
+        </div>
+        <div class="sheet-actions gear-actions">
           <button class="btn" id="btn-gear-close" type="button">CLOSE</button>
         </div>
       </div>
     </div>
 
     <div class="overlay hidden" id="overlay-raid-tut">
-      <div class="tut-card brief-card">
+      <div class="tut-card brief-card sheet-card">
+        <button class="overlay-x" id="btn-raid-tut-x" type="button" aria-label="Close">×</button>
         <h2>Gloamhold</h2>
-        <div class="tut-scroll">
+        <div class="tut-scroll sheet-scroll">
         <p>A sealed crypt-fortress under a drowned moon. Clear its rooms and defeat <b>Morvane the Unsleeping</b> to open the Vault Chest. Starter gear makes the throne nearly impossible — vault-forged kit and clean execution can just clear it.</p>
         <p><b>Rooms, in order:</b> The Veil Gate → Supply Alcove → The Wailing Court → Supply Alcove → The Eclipse Corridor → The Last Alcove → The Hollow Throne → The Vault Chest. A small map at the top shows where you are. Dying lets you retry the room from when you entered it, or return to the hub. Loot still needs a Morvane kill.</p>
         <p><b>Move:</b> tap a floor tile to walk (one tile per tick, two if Run is on). A yellow X marks your destination. Keyboard A/D or arrow keys also work. Watch telegraphs and walk off marked tiles before they land.</p>
@@ -1603,8 +1647,105 @@ function openEquipmentView() {
 }
 
 function closeEquipmentView() {
-  $("overlay-gear").classList.add("hidden");
+  const el = $("overlay-gear");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  swallowNextTaps();
   if (G.scene === "hub" || G.mode === "hub") $("overlay-hub").classList.remove("hidden");
+}
+
+function overlayIsOpen(id) {
+  const el = $(id);
+  return !!(el && !el.classList.contains("hidden"));
+}
+
+function bindTap(el, fn) {
+  if (!el || el._xscapeTap) return;
+  el._xscapeTap = true;
+  let locked = false;
+  let armed = false;
+  let startX = 0, startY = 0, moved = false;
+  const markStart = (x, y) => { startX = x; startY = y; moved = false; armed = true; };
+  const markMove = (x, y) => {
+    if (Math.abs(x - startX) > 14 || Math.abs(y - startY) > 14) moved = true;
+  };
+  el.addEventListener("pointerdown", (e) => markStart(e.clientX, e.clientY));
+  el.addEventListener("pointermove", (e) => markMove(e.clientX, e.clientY));
+  el.addEventListener("touchstart", (e) => {
+    const t = e.changedTouches && e.changedTouches[0];
+    if (t) markStart(t.clientX, t.clientY);
+  }, { passive: true });
+  el.addEventListener("touchmove", (e) => {
+    const t = e.changedTouches && e.changedTouches[0];
+    if (t) markMove(t.clientX, t.clientY);
+  }, { passive: true });
+  const run = (e) => {
+    // Ignore touchend/pointerup that started on another element (e.g. a swipe ending on X).
+    if (e.type !== "click" && !armed) return;
+    if (moved) { moved = false; armed = false; return; }
+    if (locked) return;
+    locked = true;
+    armed = false;
+    setTimeout(() => { locked = false; }, 400);
+    if (e && e.cancelable && e.type !== "click") e.preventDefault();
+    fn(e);
+  };
+  el.addEventListener("click", run);
+  el.addEventListener("pointerup", (e) => {
+    if (e.button && e.button !== 0) return;
+    if (e.pointerType === "mouse") return;
+    run(e);
+  });
+  el.addEventListener("touchend", run, { passive: false });
+}
+
+function bindBackdropClose(overlay, fn) {
+  if (!overlay || overlay._xscapeBackdrop) return;
+  overlay._xscapeBackdrop = true;
+  let downOnBackdrop = false;
+  overlay.addEventListener("pointerdown", (e) => {
+    downOnBackdrop = (e.target === overlay);
+  });
+  const maybe = (e) => {
+    if (downOnBackdrop && e.target === overlay) {
+      downOnBackdrop = false;
+      fn(e);
+    } else {
+      downOnBackdrop = false;
+    }
+  };
+  overlay.addEventListener("pointerup", maybe);
+  overlay.addEventListener("touchend", maybe, { passive: true });
+  overlay.addEventListener("click", (e) => {
+    // Require the gesture to have started on the backdrop so an opening tap is not retargeted here.
+    if (downOnBackdrop && e.target === overlay) fn(e);
+    downOnBackdrop = false;
+  });
+}
+
+let consumeClicksUntil = 0;
+function swallowNextTaps(ms) {
+  consumeClicksUntil = Date.now() + (ms || 450);
+}
+document.addEventListener("click", (e) => {
+  if (Date.now() < consumeClicksUntil) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}, true);
+document.addEventListener("pointerup", (e) => {
+  if (Date.now() < consumeClicksUntil) {
+    e.stopPropagation();
+  }
+}, true);
+
+function allowsMenuScroll(target) {
+  if (!target || !target.closest) return false;
+  if (target.closest("input, textarea, select")) return true;
+  const overlay = target.closest(".overlay");
+  if (overlay && !overlay.classList.contains("hidden")) return true;
+  if (target.closest(".sheet-scroll, .tut-scroll, .gear-scroll")) return true;
+  return false;
 }
 
 function gearSlotColor(tier) {
@@ -2405,7 +2546,8 @@ if (window.visualViewport) {
 }
 
 document.addEventListener("touchmove", (e) => {
-  if (e.target.closest("input, textarea")) return;
+  // Only lock page bounce during a fight. Overlays (hub, equipment, guides) must scroll.
+  if (allowsMenuScroll(e.target)) return;
   e.preventDefault();
 }, { passive: false });
 document.addEventListener("gesturestart", (e) => e.preventDefault());
@@ -3869,6 +4011,9 @@ if ($("item-popup")) $("item-popup").addEventListener("pointerdown", (e) => {
 window.addEventListener("keydown", (e) => {
   if (e.repeat) return;
   if (e.target && e.target.tagName === "INPUT") return;
+  if (e.key === "Escape") {
+    if (dismissTopOverlay()) { e.preventDefault(); return; }
+  }
   if (G.scene === "raid" && window.XscapeRaid) {
     if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); window.XscapeRaid.stepDir(-1, 0); return; }
     if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); window.XscapeRaid.stepDir(1, 0); return; }
@@ -4573,26 +4718,36 @@ $("btn-login").addEventListener("click", () => { audio.unlock(); commitLogin(); 
 $("btn-mode-jad").addEventListener("click", () => { audio.unlock(); enterScene("jad"); });
 $("btn-mode-duel").addEventListener("click", (e) => { e.preventDefault(); });
 $("btn-change-name").addEventListener("click", () => { audio.unlock(); enterScene("login"); });
-$("btn-how").addEventListener("click", () => {
+bindTap($("btn-how"), () => {
   audio.unlock();
   tutReturnToTitle = true;
   hideAllOverlays();
   $("overlay-tut").classList.remove("hidden");
 });
-if ($("btn-equipment")) $("btn-equipment").addEventListener("click", () => { audio.unlock(); openEquipmentView(); });
-if ($("btn-gear-close")) $("btn-gear-close").addEventListener("click", () => { audio.unlock(); closeEquipmentView(); });
-if ($("gear-worn")) $("gear-worn").addEventListener("click", (e) => {
-  const btn = e.target.closest && e.target.closest("[data-slot]");
-  if (!btn) return;
-  audio.unlock();
-  unequipSlot(btn.getAttribute("data-slot"));
-});
-if ($("gear-bank")) $("gear-bank").addEventListener("click", (e) => {
-  const btn = e.target.closest && e.target.closest("[data-item]");
-  if (!btn) return;
-  audio.unlock();
-  equipItem(btn.getAttribute("data-item"));
-});
+if ($("btn-equipment")) bindTap($("btn-equipment"), () => { audio.unlock(); openEquipmentView(); });
+bindTap($("btn-gear-close"), () => { audio.unlock(); closeEquipmentView(); });
+bindTap($("btn-gear-x"), () => { audio.unlock(); closeEquipmentView(); });
+bindBackdropClose($("overlay-gear"), () => { audio.unlock(); closeEquipmentView(); });
+if ($("gear-worn")) {
+  const onWorn = (e) => {
+    const btn = e.target.closest && e.target.closest("[data-slot]");
+    if (!btn) return;
+    audio.unlock();
+    unequipSlot(btn.getAttribute("data-slot"));
+  };
+  $("gear-worn").addEventListener("click", onWorn);
+  $("gear-worn").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onWorn(e); });
+}
+if ($("gear-bank")) {
+  const onBank = (e) => {
+    const btn = e.target.closest && e.target.closest("[data-item]");
+    if (!btn) return;
+    audio.unlock();
+    equipItem(btn.getAttribute("data-item"));
+  };
+  $("gear-bank").addEventListener("click", onBank);
+  $("gear-bank").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onBank(e); });
+}
 
 let raidBriefReturn = { start: false, opts: null };
 
@@ -4618,8 +4773,10 @@ function showRaidBriefing(opts) {
   $("overlay-raid-tut").classList.remove("hidden");
 }
 function closeRaidBriefing() {
+  const el = $("overlay-raid-tut");
+  if (!el || el.classList.contains("hidden")) return;
   markRaidBriefSeen();
-  $("overlay-raid-tut").classList.add("hidden");
+  el.classList.add("hidden");
   setRaidBriefPause(false);
   if (raidBriefReturn.start) {
     const opts = Object.assign({}, raidBriefReturn.opts || { room: "gate" }, { skipBrief: true });
@@ -4628,26 +4785,42 @@ function closeRaidBriefing() {
     return;
   }
   if (G.scene === "raid") return;
+  swallowNextTaps();
   showTitle();
 }
-if ($("btn-how-raid")) $("btn-how-raid").addEventListener("click", () => { showRaidBriefing({ fromHub: true }); });
-if ($("btn-raid-tut-ok")) $("btn-raid-tut-ok").addEventListener("click", () => { audio.unlock(); closeRaidBriefing(); });
-if ($("btn-raid-help")) $("btn-raid-help").addEventListener("click", () => { showRaidBriefing({ fromHub: false }); });
+if ($("btn-how-raid")) bindTap($("btn-how-raid"), () => { showRaidBriefing({ fromHub: true }); });
+bindTap($("btn-raid-tut-ok"), () => { audio.unlock(); closeRaidBriefing(); });
+bindTap($("btn-raid-tut-x"), () => { audio.unlock(); closeRaidBriefing(); });
+bindBackdropClose($("overlay-raid-tut"), () => { audio.unlock(); closeRaidBriefing(); });
+if ($("btn-raid-help")) bindTap($("btn-raid-help"), () => { showRaidBriefing({ fromHub: false }); });
 window.showRaidBriefing = showRaidBriefing;
 window.raidBriefSeen = raidBriefSeen;
 window.markRaidBriefSeen = markRaidBriefSeen;
 window.setRaidHelpVisible = setRaidHelpVisible;
 
-$("btn-tut-ok").addEventListener("click", () => {
+function closeHowToPlay() {
+  const el = $("overlay-tut");
+  if (!el || el.classList.contains("hidden")) return;
   audio.unlock();
   try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
+  el.classList.add("hidden");
   if (tutReturnToTitle) {
     tutReturnToTitle = false;
+    swallowNextTaps();
     showTitle();
     return;
   }
   startPlaying();
-});
+}
+function dismissTopOverlay() {
+  if (overlayIsOpen("overlay-gear")) { audio.unlock(); closeEquipmentView(); return true; }
+  if (overlayIsOpen("overlay-tut")) { closeHowToPlay(); return true; }
+  if (overlayIsOpen("overlay-raid-tut")) { audio.unlock(); closeRaidBriefing(); return true; }
+  return false;
+}
+bindTap($("btn-tut-ok"), closeHowToPlay);
+bindTap($("btn-tut-x"), closeHowToPlay);
+bindBackdropClose($("overlay-tut"), closeHowToPlay);
 $("btn-again-win").addEventListener("click", () => { audio.unlock(); startPlaying(); });
 $("btn-again-lose").addEventListener("click", () => { audio.unlock(); startPlaying(); });
 $("btn-title-win").addEventListener("click", () => { showTitle(); });
