@@ -10,9 +10,9 @@ const PLAYER_BODY_H = 48.4;
 const FK77_FOOT = 17.5;
 const FK77_BODY_H = 76.3; // hat tip ~-58.8 to boot 17.5
 const FK77_HEIGHT_MATCH = PLAYER_BODY_H / FK77_BODY_H;
-const PLAYER_BOW_X = 8.5;         // right side, overlapping the torso/shoulder
-const PLAYER_BOW_Y = -18.0;
-const PLAYER_BOW_TIP = -16;       // local tip Y in drawHeldCrossbow
+const PLAYER_BOW_X = 10.2;        // right side, overlapping the torso/shoulder
+const PLAYER_BOW_Y = -19.0;
+const PLAYER_BOW_TIP = -13;       // local tip Y in drawHeldCrossbow
 
 function shotAnimAt(shotT, attackTicks) {
   // Crossbow shot pose curve; shotT is in game ticks since the shot (0 = release).
@@ -44,55 +44,57 @@ function shotAnimAt(shotT, attackTicks) {
 
 function drawHeldCrossbow(c, anim) {
   anim = anim || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
-  const flex = (anim.flex || 0) * 4.2;
+  const flex = (anim.flex || 0) * 3.2;
   const str = anim.string == null ? 1 : anim.string;
-  const strY = 10 * str + (-5) * (1 - str);
+  const strY = 8 * str + (-4) * (1 - str);
   const tipY = PLAYER_BOW_TIP;
+  const limb = 15;
 
-  // Wooden stock, thicker and longer, pointing up toward Jad
+  // Wooden stock — in front, aimed up. Sized to overlap the right shoulder/torso
+  // without burying the cape or hood.
   c.fillStyle = "#2a160c";
-  c.fillRect(-5.0, -7, 10.0, 34);
+  c.fillRect(-4.0, -5, 8.0, 26);
   c.fillStyle = "#6b3d16";
-  c.fillRect(-4.1, -6, 8.2, 32);
+  c.fillRect(-3.3, -4.2, 6.6, 24.4);
   c.fillStyle = "#8a5524";
-  c.fillRect(-4.1, -6, 2.4, 32);
+  c.fillRect(-3.3, -4.2, 2.0, 24.4);
   c.fillStyle = "#4a2a10";
-  c.fillRect(2.2, -6, 1.6, 32);
+  c.fillRect(1.6, -4.2, 1.4, 24.4);
   // Grip / butt
   c.fillStyle = "#1e1208";
-  c.fillRect(-5.6, 20, 11.2, 9);
+  c.fillRect(-4.6, 16, 9.2, 7.2);
   c.fillStyle = "#5a3414";
-  c.fillRect(-4.6, 21, 9.2, 7);
+  c.fillRect(-3.8, 16.7, 7.6, 5.6);
   c.fillStyle = "#7a4a20";
-  c.fillRect(-4.6, 21, 2.4, 7);
+  c.fillRect(-3.8, 16.7, 2.0, 5.6);
 
   // Dark prod / limbs (flex outward on the snap)
   c.fillStyle = "#16100a";
   c.beginPath();
-  c.moveTo(-21 - flex, 1);
-  c.lineTo(-22 - flex, -10 - flex * 0.3);
-  c.quadraticCurveTo(0, tipY - 1 - flex * 0.5, 22 + flex, -10 - flex * 0.3);
-  c.lineTo(21 + flex, 1);
-  c.quadraticCurveTo(0, -10, -21 - flex, 1);
+  c.moveTo(-limb - flex, 1);
+  c.lineTo(-limb - 1 - flex, -8 - flex * 0.3);
+  c.quadraticCurveTo(0, tipY - 1 - flex * 0.5, limb + 1 + flex, -8 - flex * 0.3);
+  c.lineTo(limb + flex, 1);
+  c.quadraticCurveTo(0, -8, -limb - flex, 1);
   c.closePath();
   c.fill();
   c.fillStyle = "#2c2016";
   c.beginPath();
-  c.moveTo(-19 - flex, 0);
-  c.lineTo(-20 - flex, -8.5 - flex * 0.25);
-  c.quadraticCurveTo(0, tipY + 2 - flex * 0.4, 20 + flex, -8.5 - flex * 0.25);
-  c.lineTo(19 + flex, 0);
-  c.quadraticCurveTo(0, -8, -19 - flex, 0);
+  c.moveTo(-limb + 1.5 - flex, 0.2);
+  c.lineTo(-limb - flex, -6.8 - flex * 0.25);
+  c.quadraticCurveTo(0, tipY + 2 - flex * 0.4, limb + flex, -6.8 - flex * 0.25);
+  c.lineTo(limb - 1.5 + flex, 0.2);
+  c.quadraticCurveTo(0, -6.5, -limb + 1.5 - flex, 0.2);
   c.closePath();
   c.fill();
   c.strokeStyle = "#080604";
-  c.lineWidth = 1.4;
+  c.lineWidth = 1.35;
   c.lineJoin = "round";
   c.beginPath();
-  c.moveTo(-21 - flex, 1);
-  c.lineTo(-22 - flex, -10 - flex * 0.3);
-  c.quadraticCurveTo(0, tipY - 1 - flex * 0.5, 22 + flex, -10 - flex * 0.3);
-  c.lineTo(21 + flex, 1);
+  c.moveTo(-limb - flex, 1);
+  c.lineTo(-limb - 1 - flex, -8 - flex * 0.3);
+  c.quadraticCurveTo(0, tipY - 1 - flex * 0.5, limb + 1 + flex, -8 - flex * 0.3);
+  c.lineTo(limb + flex, 1);
   c.stroke();
 
   // Visible string (cocked low, snapped forward toward the prod)
@@ -100,9 +102,9 @@ function drawHeldCrossbow(c, anim) {
   c.lineWidth = 1.7;
   c.lineCap = "round";
   c.beginPath();
-  c.moveTo(-20 - flex * 0.8, -7 - flex * 0.2);
+  c.moveTo(-limb + 1 - flex * 0.8, -5.5 - flex * 0.2);
   c.lineTo(0, strY);
-  c.lineTo(20 + flex * 0.8, -7 - flex * 0.2);
+  c.lineTo(limb - 1 + flex * 0.8, -5.5 - flex * 0.2);
   c.stroke();
 
   // Rail / bolt groove
@@ -1043,10 +1045,10 @@ function drawPlayerSprite(ctx, t, opt) {
   // Small right hand on the lower grip only — does not hide the stock or limbs
   ctx.fillStyle = "#3a5a28";
   ctx.beginPath();
-  ctx.ellipse(PLAYER_BOW_X + 1.6, PLAYER_BOW_Y + 20, 3.2, 2.6, 0.12, 0, Math.PI * 2); ctx.fill();
+  ctx.ellipse(PLAYER_BOW_X + 1.4, PLAYER_BOW_Y + 16.5, 3.0, 2.5, 0.12, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = "#e8c8a0";
   ctx.beginPath();
-  ctx.ellipse(PLAYER_BOW_X + 1.8, PLAYER_BOW_Y + 19.8, 1.6, 1.4, 0.12, 0, Math.PI * 2); ctx.fill();
+  ctx.ellipse(PLAYER_BOW_X + 1.6, PLAYER_BOW_Y + 16.3, 1.5, 1.3, 0.12, 0, Math.PI * 2); ctx.fill();
 
   ctx.restore();
 }
