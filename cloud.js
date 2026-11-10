@@ -2115,10 +2115,9 @@
       });
     }
     if (session && !isAnonymousUser(session.user) && raid > lastRaidClears) {
+      // Solo and group clears are claimed by record_raid_clear / complete_raid_run
+      // with a per-run nonce. Do not re-award from a local completion bump.
       lastRaidClears = raid;
-      rpc("record_raid_clear", { p_ticks: P.raidBestTicks || null, p_item_ids: P.unlockedItems || [] }).then(function (res) {
-        if (res.ok && res.profile) applyCloudProfile(res.profile);
-      });
     }
   }
 
@@ -2277,6 +2276,13 @@
     startParty: function (id) { return rpc("start_party", { p_party: id }); },
     setPartyReady: function (id, ready) { return rpc("set_party_ready", { p_party: id, p_ready: !!ready }); },
     myParty: function () { return rpc("my_party", {}); },
+    recordRaidClear: function (ticks, score, nonce) {
+      return rpc("record_raid_clear", {
+        p_ticks: ticks || 0,
+        p_score: score || 0,
+        p_nonce: nonce || null
+      });
+    },
     completeRaidRun: function (runId, ticks, deadIds, scores) {
       return rpc("complete_raid_run", {
         p_run: runId,

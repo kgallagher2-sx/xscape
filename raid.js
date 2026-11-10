@@ -371,8 +371,16 @@
       eatCd: 0, potCd: 0, brewCd: 0, rangeCd: 0, roomState: {}, snapshot: null,
       damageTaken: 0, perfectPrayers: 0, prayersTotal: 0, loot: null,
       rng: rng, seed: opts.seed || 0, auto: !!opts.auto, policy: opts.policy || null,
-      messages: [], chestGiven: false, phaseAnnounced: 0
+      messages: [], chestGiven: false, phaseAnnounced: 0,
+      soloNonce: opts.nonce || makeRaidNonce(),
+      completing: false, completed: false
     };
+  }
+  function makeRaidNonce() {
+    try {
+      if (global.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+    } catch (e) {}
+    return "s" + Date.now().toString(16) + "-" + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
   }
 
 
@@ -767,11 +775,7 @@
       completeGroupRaid(st);
       return;
     }
-    const P = profileObj();
-    P.raidCompletions = (P.raidCompletions || 0) + 1;
-    if (P.raidBestTicks == null || st.ticks < P.raidBestTicks) P.raidBestTicks = st.ticks;
-    saveRaidProfile();
-    if (host && host.onWin) host.onWin(resultOf(st, true));
+    completeSoloRaid(st);
   }
   function resultOf(st, survived) {
     return {
@@ -1614,18 +1618,9 @@
     if (rs.open) return;
     rs.open = true;
     if (st.room === "loot") {
-      if (isGroup(st)) {
-        flash(st, "The vault yields its relics", "#ffe44a");
-        placeExit(st);
-        winRaid(st);
-        return;
-      }
-      const loot = rollFinalLoot(st.rng);
-      st.loot = loot;
-      applyLoot(st, loot);
       flash(st, "The vault yields its relics", "#ffe44a");
-      if (host && host.onLoot) host.onLoot(loot);
       placeExit(st);
+      if (isGroup(st)) winRaid(st);
       return;
     }
     const tab = chestTable(st.room);
@@ -2348,9 +2343,7 @@
     },
     win: function () {
       if (!R) start({ room: "loot" });
-      if (R.group) { winRaid(R); return; }
-      const loot = rollFinalLoot(R.rng);
-      R.loot = loot; applyLoot(R, loot); winRaid(R);
+      winRaid(R);
     },
     retryRoom: function () { if (R) restoreSnapshot(R); },
     simulate: simulate,
@@ -2746,6 +2739,32 @@
       if (id && id !== "hollow_bolts") bits.push(itemLabel(id));
     });
     if (bits.length) flash(st, bits.join(" · "), "#ffe44a");
+  }
+  function completeSoloRaid(st) {
+    if (!st || st.group) return;
+    if (st.completing) {
+      if (st.completed && host && host.onWin) host.onWin(resultOf(st, true));
+      return;
+    }
+    st.completing = true;
+    if (!st.soloNonce) st.soloNonce = makeRaidNonce();
+    var score = computeRaidScore(st.player);
+    var cloud = global.XscapeCloud;
+    var finish = function (res) {
+      st.completed = true;
+      if (res && res.ok) applyGroupReward(st, res);
+      else if (res && res.error) flash(st, res.error, "#ff8a70");
+      if (host && host.onWin) host.onWin(resultOf(st, true));
+    };
+    if (!cloud || typeof cloud.recordRaidClear !== "function") {
+      finish({ ok: false, error: "Sign in to claim raid loot" });
+      return;
+    }
+    Promise.resolve(cloud.recordRaidClear(st.ticks || 0, score, st.soloNonce)).then(function (res) {
+      finish(res);
+    }).catch(function (err) {
+      finish({ ok: false, error: (err && err.message) || "Could not claim loot" });
+    });
   }
   function completeGroupRaid(st) {
     if (!st || !st.group || st.group.completing) {
