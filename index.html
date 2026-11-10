@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110161348-f729d10";</script>
+  <script>window.XSCAPE_BUILD = "20261110161957-abcc215";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2940,9 +2940,18 @@ function saveProfile() {
 }
 
 function awardGp(amount) {
-  Profile.gp = Math.max(0, (Profile.gp || 0) + (amount || 0));
+  amount = Math.floor(Number(amount) || 0);
+  Profile.gp = Math.max(0, (Profile.gp || 0) + amount);
+  G.gp = Profile.gp;
   saveProfile();
   if (G.player) G.player.gp = Profile.gp;
+  if (typeof refreshHub === "function") {
+    try { refreshHub(); } catch (e) {}
+  }
+  if (amount && typeof flashMsg === "function") {
+    const gs = typeof gpStyle === "function" ? gpStyle(amount) : { text: String(amount), color: "#ffe44a" };
+    flashMsg("+" + gs.text + " GP!", gs.color || "#ffe44a");
+  }
   return Profile.gp;
 }
 
@@ -6587,8 +6596,10 @@ function isMidFight() {
   if (!G) return false;
   var scene = G.scene, mode = G.mode;
   if (scene === "duel" || scene === "raid" || scene === "kree") return true;
-  if (scene === "jad" && (mode === "playing" || mode === "intro" || mode === "firstkill")) return true;
-  if (mode === "playing" || mode === "intro" || mode === "firstkill") return true;
+  if (scene === "jad" && (mode === "playing" || mode === "intro" || mode === "firstkill" || mode === "win")) return true;
+  if (mode === "playing" || mode === "intro" || mode === "firstkill" || mode === "win") return true;
+  var win = document.getElementById("overlay-win");
+  if (win && !win.classList.contains("hidden")) return true;
   return false;
 }
 
@@ -6627,11 +6638,15 @@ function applyNewVersion(build) {
     sessionStorage.setItem("xscape-reload-at", String(Date.now()));
     sessionStorage.setItem("xscape-reload-aim", build);
   } catch (e) {}
-  try {
-    if (typeof saveProfile === "function") saveProfile();
-    if (window.XscapeCloud && typeof XscapeCloud.flushSave === "function") XscapeCloud.flushSave();
-  } catch (e) {}
-  location.reload();
+  (async function () {
+    try {
+      if (typeof saveProfile === "function") saveProfile();
+      if (window.XscapeCloud && typeof XscapeCloud.flushSave === "function") {
+        await XscapeCloud.flushSave();
+      }
+    } catch (e) {}
+    location.reload();
+  })();
 }
 
 function onNewVersionAvailable(build, opts) {

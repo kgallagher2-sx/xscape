@@ -242,13 +242,22 @@
     };
   }
 
-  function applyCloudProfile(p) {
+  function applyCloudProfile(p, opts) {
+    opts = opts || {};
     if (!p) return;
     cloudProfile = p;
     var P = global.Profile;
     if (!P) return;
     if (p.username) P.name = p.username;
-    if (typeof p.gp === "number") P.gp = p.gp;
+    if (p.gp != null && p.gp !== "") {
+      var cloudGp = Number(p.gp);
+      if (!isNaN(cloudGp)) {
+        // A just-awarded Jad payout may not have reached the server yet.
+        // Never let a stale my_profile / reload clobber that local credit.
+        if (pendingJad.dirty && !opts.fromAward) P.gp = Math.max(P.gp || 0, cloudGp);
+        else P.gp = Math.max(0, cloudGp);
+      }
+    }
     if (p.hasFireCape) P.hasFireCape = true;
     if (p.seenFirstKill) P.seenFirstKill = true;
     if (p.levels && typeof p.levels === "object" && Object.keys(p.levels).length) P.levels = p.levels;
@@ -277,6 +286,9 @@
     if (typeof global.syncPlayerCaps === "function") global.syncPlayerCaps();
     if (typeof global.refreshGearViews === "function" && $("gear")) global.refreshGearViews();
     if (typeof global.updateRaidLock === "function") global.updateRaidLock();
+    if (typeof global.refreshHub === "function") {
+      try { global.refreshHub(); } catch (e) {}
+    }
     refreshCloudChrome();
   }
 
@@ -1882,20 +1894,59 @@
     }
   }
 
-  var pendingJad = { ticks: null, score: null, timer: null };
+  var pendingJad = { ticks: null, score: null, timer: null, dirty: false, retries: 0 };
   function queueJadRecord(local) {
+    if (local && local.gpAwarded) pendingJad.dirty = true;
+    if (local && local.firstCape) pendingJad.dirty = true;
     if (pendingJad.timer) clearTimeout(pendingJad.timer);
-    pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 400);
+    // Batch award + submitScore on the same turn, then flush immediately.
+    pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 0);
   }
   async function flushJadRecord() {
-    if (!session || recordingKill) return;
+    if (pendingJad.timer) { clearTimeout(pendingJad.timer); pendingJad.timer = null; }
+    if (!session) return { ok: false, error: "offline" };
+    if (recordingKill) return { ok: false, error: "busy" };
     recordingKill = true;
     try {
-      var res = await rpc("record_jad_kill", { p_ticks: pendingJad.ticks, p_score: pendingJad.score });
-      if (res.ok && res.profile) applyCloudProfile(res.profile);
+      var ticks = pendingJad.ticks;
+      if (ticks != null && ticks < 20) ticks = null;
+      var res = await rpc("record_jad_kill", { p_ticks: ticks, p_score: pendingJad.score });
+      if (res && res.ok && res.profile) {
+        pendingJad.dirty = false;
+        pendingJad.retries = 0;
+        applyCloudProfile(res.profile, { fromAward: true });
+        if (res.gpAwarded && typeof global.flashMsg === "function" && !res.firstCape) {
+          /* Client already toasted the local award; chip is refreshed in applyCloudProfile. */
+        }
+        return res;
+      }
+      pendingJad.dirty = true;
+      pendingJad.retries = (pendingJad.retries || 0) + 1;
+      if (pendingJad.retries < 5) {
+        pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 600 * pendingJad.retries);
+      }
+      return res || { ok: false, error: "record_jad_kill failed" };
+    } catch (e) {
+      pendingJad.dirty = true;
+      pendingJad.retries = (pendingJad.retries || 0) + 1;
+      if (pendingJad.retries < 5) {
+        pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 600 * pendingJad.retries);
+      }
+      return { ok: false, error: String(e && e.message || e) };
     } finally {
       recordingKill = false;
     }
+  }
+
+  async function flushSave() {
+    try { if (typeof global.saveProfile === "function") global.saveProfile(); } catch (e) {}
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    var jadRes = null;
+    if (pendingJad.dirty || pendingJad.ticks != null || pendingJad.score != null) {
+      jadRes = await flushJadRecord();
+    }
+    try { await pushState(); } catch (e) {}
+    return jadRes || { ok: true };
   }
 
   async function cloudBuy(id) {
@@ -1973,8 +2024,24 @@
     }
   }
 
+  function armProgressFlush() {
+    if (armProgressFlush._on) return;
+    armProgressFlush._on = true;
+    var flush = function () {
+      try {
+        if (typeof flushSave === "function") flushSave();
+      } catch (e) {}
+    };
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") flush();
+    });
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+  }
+
   async function init() {
     stampLegacyDevice();
+    armProgressFlush();
     injectStyles();
     hookFunctions();
     hookOwnItem();
@@ -2086,6 +2153,7 @@
     clockInfo: clockInfo,
 
     reloadProfile: reloadProfile,
+    flushSave: flushSave,
     canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,
     trackPresence: trackPresence,
