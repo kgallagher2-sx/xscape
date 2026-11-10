@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110204151-55267e1";</script>
+  <script>window.XSCAPE_BUILD = "20261110204300-033c8a5";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -133,7 +133,7 @@
     .supply-row { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 6px; align-items: center; }
     .supply-row canvas.supply-icon { width: 36px; height: 36px; }
     .supply-qty-row { display: flex; gap: 6px; margin: 8px 0; width: 100%; }
-    .supply-qty-row .btn { flex: 1; min-width: 0; margin: 0; height: 36px; font-size: 14px; }
+    .supply-qty-row .btn, .supply-qty-row .btn.secondary { flex: 1; min-width: 0; margin: 0; height: 36px; font-size: 14px; padding: 0 4px; }
     .supply-qty-row .btn.on { border-color: #ffe44a; color: #ffe44a; }
     #overlay-supply-shop .shop-card, #overlay-quick-edit .sheet-card {
       width: 100%; max-width: 340px;
@@ -571,6 +571,18 @@
     }
     .shop-row .shop-price { color: var(--gold); font-weight: 700; font-size: 13px; white-space: nowrap; }
     .shop-row .btn { min-width: 72px; height: 34px; font-size: 14px; margin: 0; }
+    #overlay-supply-shop .supply-qty-row { display: flex; gap: 6px; width: 100%; }
+    #overlay-supply-shop .supply-qty-row .btn,
+    #overlay-supply-shop .supply-qty-row .btn.secondary {
+      flex: 1 1 0; min-width: 0; width: auto; margin: 0; height: 36px; font-size: 14px; padding: 0 4px;
+    }
+    #overlay-supply-shop .shop-row.supply-row {
+      display: grid; grid-template-columns: 36px minmax(0, 1fr) auto auto; gap: 6px; align-items: center;
+    }
+    #overlay-supply-shop .shop-row.supply-row .btn,
+    #overlay-supply-shop .shop-row.supply-row .btn.secondary {
+      min-width: 56px; width: 56px; height: 32px; font-size: 13px; padding: 0;
+    }
     .shop-row.owned { opacity: 0.72; }
     .shop-row.owned .shop-owned { color: #8a7a58; font-size: 12px; letter-spacing: 0.3px; }
     .shop-foot { font-size: 10px; color: #8a7a58; text-align: center; margin-top: 8px; line-height: 1.35; }
