@@ -20,3 +20,25 @@ AS $$
     ELSE NULL
   END;
 $$;
+
+CREATE OR REPLACE FUNCTION game.supply_shop_id(p_item_id text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT CASE game.redose_supply_id(game.undose_supply_id(p_item_id))
+    WHEN 'swordfish' THEN 'swordfish'
+    WHEN 'shark' THEN 'shark'
+    WHEN 'dark_crab' THEN 'dark_crab'
+    WHEN 'super_attack_4' THEN 'super_attack_4'
+    WHEN 'super_strength_4' THEN 'super_strength_4'
+    WHEN 'super_defence_4' THEN 'super_defence_4'
+    WHEN 'ranging_potion_4' THEN 'ranging_potion_4'
+    WHEN 'magic_potion_4' THEN 'magic_potion_4'
+    WHEN 'prayer_potion_4' THEN 'prayer_potion_4'
+    WHEN 'super_restore_4' THEN 'super_restore_4'
+    WHEN 'saradomin_brew_4' THEN 'saradomin_brew_4'
+    ELSE NULL
+  END;
+$$;

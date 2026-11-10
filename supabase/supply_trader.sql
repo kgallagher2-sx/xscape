@@ -202,6 +202,7 @@ AS $$
     WHEN 'super_defence_4' THEN 'super_defence_4'
     WHEN 'ranging_potion_4' THEN 'ranging_potion_4'
     WHEN 'magic_potion_4' THEN 'magic_potion_4'
+    WHEN 'prayer_potion_4' THEN 'prayer_potion_4'
     WHEN 'super_restore_4' THEN 'super_restore_4'
     WHEN 'saradomin_brew_4' THEN 'saradomin_brew_4'
     ELSE NULL
