@@ -177,6 +177,7 @@ AS $$
     WHEN 'super_defence' THEN 40000
     WHEN 'ranging_potion' THEN 60000
     WHEN 'magic_potion' THEN 15000
+    WHEN 'prayer_potion' THEN 82000
     WHEN 'super_restore' THEN 100000
     WHEN 'saradomin_brew' THEN 90000
     ELSE NULL

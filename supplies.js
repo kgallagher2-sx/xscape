@@ -15,6 +15,7 @@
     super_defence: 40000,
     ranging_potion: 60000,
     magic_potion: 15000,
+    prayer_potion: 82000,
     super_restore: 100000,
     saradomin_brew: 90000
   };
@@ -28,6 +29,7 @@
     { id: "super_defence", name: "Super defence", kind: "potion", desc: "Defence +5 + 15%." },
     { id: "ranging_potion", name: "Ranging potion", kind: "potion", desc: "Ranged +4 + 10%." },
     { id: "magic_potion", name: "Magic potion", kind: "potion", desc: "Magic +4." },
+    { id: "prayer_potion", name: "Prayer potion", kind: "potion", desc: "Restores 7 + 25% of base Prayer." },
     { id: "super_restore", name: "Super restore", kind: "potion", desc: "Restores stats and prayer (8 + 25%)." },
     { id: "saradomin_brew", name: "Saradomin brew", kind: "potion", desc: "Heals 16, boosts Defence, drains other combat stats." }
   ];
@@ -475,10 +477,13 @@
     if (fam === "prayer_potion") {
       const maxP = global.PLAYER_MAX_PRAYER || 99;
       if (p.prayerPts >= maxP) return false;
-      p.prayerPts = Math.min(maxP, p.prayerPts + (global.POT_RESTORE || 31));
+      const base = (PS && PS.baseLevel) ? PS.baseLevel("prayer") : 99;
+      const amt = 7 + Math.floor(base * 0.25);
+      p.prayerPts = Math.min(maxP, p.prayerPts + amt);
       p.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
+      if (typeof global.flashMsg === "function") flashMsg("Prayer potion", "#9ad0ff");
       return true;
     }
     if (fam === "super_restore") {
