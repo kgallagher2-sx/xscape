@@ -494,6 +494,14 @@ const ARENA_LAYOUT_V5 = 1;        // hosted-build marker: viewport-scaled Jad/pl
 const CUTSCENE_V6 = 1;            // hosted-build marker: intro + first-kill cutscenes
 const ART_V7 = 1;                 // hosted-build marker: partyhat FK77 + player cape/xbow order
 const ART_V8 = 1;                 // hosted-build marker: short partyhat, vest armour, player back view
+const ART_V9 = 1;                 // hosted-build marker: FK77 matches player world height
+// Player: hood top -35.2 to boot sole 13.2 (48.4 units).
+// Fast Kill77: hat tip ~-57.4 to boot sole 17.5 (74.9 units).
+const PLAYER_FOOT = 13.2;
+const PLAYER_BODY_H = 48.4;
+const FK77_FOOT = 17.5;
+const FK77_BODY_H = 74.9;
+const FK77_HEIGHT_MATCH = PLAYER_BODY_H / FK77_BODY_H;
 const JAD_ARENA_FRAC = 0.42;      // Jad idle height as a fraction of the arena
 const MUSIC_BPM = 96;
 const MUSIC_BPM_URGENT = 108;     // slightly faster once healers spawn
@@ -4033,16 +4041,19 @@ function drawFastKill77(t) {
   const y = cs.fkY * cssH;
   ctx.save();
   ctx.translate(x, y);
-  ctx.scale(L.sP * 1.62, L.sP * 1.62);
+  const fkS = L.sP * FK77_HEIGHT_MATCH;
+  const footAlign = PLAYER_FOOT * L.sP - FK77_FOOT * fkS;
+  ctx.translate(0, footAlign);
+  ctx.scale(fkS, fkS);
   drawBandosCharacter(ctx, t, {
     face: cs.fkFace || -1,
     walk: !!cs.fkWalk,
     wave: !!cs.fkWave
   });
   ctx.restore();
-  // Name in OSRS yellow, not affected by facing flip
+  // Name in OSRS yellow, just above the short partyhat
   ctx.save();
-  ctx.translate(x, y - 82 * L.sP * 1.62);
+  ctx.translate(x, y + footAlign - 66 * fkS);
   ctx.font = "bold " + Math.max(11, Math.round(12 * L.sP)) + "px Trebuchet MS, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -4228,7 +4239,7 @@ window.KellenScape = {
     HEALER_MAX_HIT, JAD_KILL_GP_MIN, JAD_KILL_GP_MAX,
     SHARK_ATTACK_DELAY_TICKS, POT_ATTACK_DELAY_TICKS, CONSUME_COOLDOWN_TICKS,
     JAD_ATTACK_SPEED_TICKS, PLAYER_ATTACK_TICKS, SHARK_HEAL, ARENA_LAYOUT_V5, JAD_ARENA_FRAC,
-    CUTSCENE_V6, ART_V7, ART_V8
+    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, FK77_HEIGHT_MATCH
   }
 };
 window.Xscape = window.KellenScape;
