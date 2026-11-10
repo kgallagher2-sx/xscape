@@ -758,7 +758,7 @@
   function onRemoteSettle(p) {
     if (!p || !state.fight) return;
     if (p.challengeId && p.challengeId !== state.fight.id) return;
-    if (p.challenge) finishFromServer(p.challenge);
+    if (p.challenge) finishFromServer(p.challenge, { forfeit: !!p.forfeit });
   }
 
   function setPrayer(kind) {
@@ -907,12 +907,11 @@
     }
   }
 
-  function finishFromServer(ch) {
-    if (state.phase !== "fight" && state.phase !== "result") {
-      // already left
-    }
+  function finishFromServer(ch, extra) {
+    extra = extra || {};
     if (state.fight) state.fight.over = true;
-    if (ch && ch.winnerId) showResult(ch, ch.winnerId, false);
+    var forfeit = !!(extra.forfeit || (ch && ch.forfeit) || (state.result && state.result.forfeit));
+    if (ch && ch.winnerId) showResult(ch, ch.winnerId, forfeit);
   }
 
   function showResult(ch, winnerId, forfeit) {
@@ -922,20 +921,23 @@
     hideOverlay("overlay-stake-confirm");
     var f = $("btn-duel-forfeit");
     if (f) f.classList.add("hidden");
+    forfeit = !!(forfeit || (ch && ch.forfeit) || (state.result && state.result.forfeit));
     state.phase = "result";
-    state.result = { challenge: ch, winnerId: winnerId, forfeit: !!forfeit };
+    state.result = { challenge: ch, winnerId: winnerId, forfeit: forfeit };
     var won = winnerId && winnerId === uid();
     var title = $("duel-result-title");
     var body = $("duel-result-body");
     if (title) title.textContent = won ? "Victory!" : "Defeat";
-    var potGp = (ch && (ch.escrowGp || ((ch.fromStakeGp || 0) + (ch.toStakeGp || 0)))) || 0;
     // After settle, escrow is zeroed — reconstruct from stakes
-    potGp = ((ch && ch.fromStakeGp) || 0) + ((ch && ch.toStakeGp) || 0);
+    var potGp = ((ch && ch.fromStakeGp) || 0) + ((ch && ch.toStakeGp) || 0);
     var potItems = [].concat((ch && ch.fromItems) || [], (ch && ch.toItems) || []);
-    var line = won
-      ? ("You won " + fmtGp(potGp) + (potItems.length ? (" and " + potItems.length + " item" + (potItems.length === 1 ? "" : "s")) : "") + ".")
-      : ("You lost your stake of " + fmtGp(uid() === (ch && ch.fromId) ? (ch.fromStakeGp || 0) : (ch.toStakeGp || 0)) + ".");
-    if (forfeit) line += won ? " Your opponent forfeited." : " You forfeited.";
+    var myStake = uid() === (ch && ch.fromId) ? ((ch && ch.fromStakeGp) || 0) : ((ch && ch.toStakeGp) || 0);
+    var loot = fmtGp(potGp) + (potItems.length ? (" and " + potItems.length + " item" + (potItems.length === 1 ? "" : "s")) : "");
+    var line;
+    if (forfeit && won) line = "Your opponent forfeited. You won " + loot + ".";
+    else if (forfeit) line = "You forfeited and lost your stake of " + fmtGp(myStake) + ".";
+    else if (won) line = "You won " + loot + ".";
+    else line = "You lost your stake of " + fmtGp(myStake) + ".";
     if (body) {
       body.innerHTML = '<p class="duel-note">' + escapeHtml(line) + "</p>" +
         (won ? itemsRow(potItems) : "");
