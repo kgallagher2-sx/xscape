@@ -1283,6 +1283,155 @@
     return null;
   }
 
+  /* ---- Shared OSRS 600ms tick clock ----
+     Clients sample game.server_now() a few times, correct by RTT/2, and
+     take the median offset. Every client then computes
+       tick = floor((Date.now()+offset)/600)
+     so bank walking (and later Duel Arena combat) can schedule work
+     on the same tick number. */
+  var clockOffsetMs = 0;
+  var clockReady = false;
+  var clockSamples = [];
+  var clockSyncing = false;
+  var clockResyncTimer = null;
+  var lastSharedTick = null;
+  var tickPollTimer = null;
+  var tickListeners = [];
+
+  function serverNow() {
+    return Date.now() + clockOffsetMs;
+  }
+
+  function currentTick() {
+    return Math.floor(serverNow() / TICK_MS);
+  }
+
+  function tickProgress(bufferMs) {
+    var now = serverNow() - (bufferMs || 0);
+    var t = now / TICK_MS;
+    var u = t - Math.floor(t);
+    if (u < 0) u += 1;
+    return Math.max(0, Math.min(0.999, u));
+  }
+
+  function onSharedTick(fn) {
+    if (typeof fn !== "function") return function () {};
+    tickListeners.push(fn);
+    return function () {
+      tickListeners = tickListeners.filter(function (f) { return f !== fn; });
+    };
+  }
+
+  function pollSharedTick() {
+    if (!clockReady) return;
+    var tick = currentTick();
+    if (lastSharedTick == null) {
+      lastSharedTick = tick;
+      return;
+    }
+    if (tick <= lastSharedTick) return;
+    var skipped = tick - lastSharedTick;
+    if (skipped > 20) skipped = 20;
+    for (var i = 1; i <= skipped; i++) {
+      var t = lastSharedTick + i;
+      for (var j = 0; j < tickListeners.length; j++) {
+        try { tickListeners[j](t); } catch (e) {}
+      }
+    }
+    lastSharedTick = tick;
+  }
+
+  function startTickClock() {
+    if (tickPollTimer) return;
+    lastSharedTick = clockReady ? currentTick() : null;
+    tickPollTimer = setInterval(pollSharedTick, 16);
+    if (!clockResyncTimer) {
+      clockResyncTimer = setInterval(function () {
+        if (awaySince || isDocumentHidden()) return;
+        if (!session) return;
+        syncClock({ samples: 3, quiet: true });
+      }, 30000);
+    }
+  }
+
+  function stopTickClock() {
+    if (tickPollTimer) {
+      clearInterval(tickPollTimer);
+      tickPollTimer = null;
+    }
+    if (clockResyncTimer) {
+      clearInterval(clockResyncTimer);
+      clockResyncTimer = null;
+    }
+    lastSharedTick = null;
+  }
+
+  async function sampleServerTime() {
+    if (!sb || !session) return null;
+    var t0 = Date.now();
+    var res = await rpc("server_now", {});
+    var t1 = Date.now();
+    if (!res || !res.ok || res.now == null) return null;
+    var rtt = Math.max(0, t1 - t0);
+    var offset = (Number(res.now) + rtt / 2) - t1;
+    return { offset: offset, rtt: rtt, now: Number(res.now) };
+  }
+
+  async function syncClock(opts) {
+    opts = opts || {};
+    if (!sb || !session) return false;
+    if (clockSyncing && !opts.quiet) return false;
+    clockSyncing = true;
+    var want = opts.samples || 5;
+    var samples = [];
+    try {
+      for (var i = 0; i < want; i++) {
+        var s = await sampleServerTime();
+        if (s) samples.push(s);
+        if (i === 0 && s && !clockReady) {
+          clockOffsetMs = s.offset;
+          clockReady = true;
+          startTickClock();
+        }
+        if (i < want - 1) {
+          await new Promise(function (r) { setTimeout(r, 60); });
+        }
+      }
+      if (samples.length) {
+        samples.sort(function (a, b) { return a.offset - b.offset; });
+        var mid = samples[Math.floor(samples.length / 2)];
+        clockOffsetMs = mid.offset;
+        clockReady = true;
+        clockSamples = samples;
+        startTickClock();
+        return true;
+      }
+    } catch (e) {
+      console.warn("syncClock", e);
+    } finally {
+      clockSyncing = false;
+    }
+    return false;
+  }
+
+  function clockInfo() {
+    var rtts = clockSamples.map(function (s) { return s.rtt; });
+    var rtt = 0;
+    if (rtts.length) {
+      rtts.sort(function (a, b) { return a - b; });
+      rtt = rtts[Math.floor(rtts.length / 2)];
+    }
+    return {
+      ready: clockReady,
+      offsetMs: clockOffsetMs,
+      tick: clockReady ? currentTick() : null,
+      now: clockReady ? serverNow() : Date.now(),
+      rttMs: rtt,
+      samples: clockSamples.length,
+      tickMs: TICK_MS
+    };
+  }
+
   var heartbeatMap = {};
   var heartbeatTimer = null;
   var heartbeatInFlight = false;
@@ -1449,6 +1598,7 @@
     hookLobbyVisibility();
     if (awaySince || isDocumentHidden()) return;
     if (!testChat) startHeartbeat();
+    if (!testChat) { try { syncClock(); } catch (e) {} }
     // Do not block presence/heartbeat on the duel-challenge fetch.
     if (!testChat) { try { refreshChallenges(); } catch (e) {} }
     var gen = ++lobbyGen;
@@ -1507,6 +1657,14 @@
       var payload = (msg && msg.payload) || {};
       if (global.XscapeHub && XscapeHub.onHubChat) global.XscapeHub.onHubChat(payload);
     });
+    hubChannel.on("broadcast", { event: "hub-move" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeHub && XscapeHub.onMoveIntent) global.XscapeHub.onMoveIntent(payload);
+    });
+    hubChannel.on("broadcast", { event: "hub-pos" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeHub && XscapeHub.onMoveSnapshot) global.XscapeHub.onMoveSnapshot(payload);
+    });
     hubChannel.subscribe(function (status) {
       if (gen !== lobbyGen) return;
       if (status === "SUBSCRIBED") {
@@ -1522,6 +1680,7 @@
 
   async function signOut() {
     lobbyGen += 1;
+    stopTickClock();
     stopHeartbeat();
     try { if (hubChannel && sb) await sb.removeChannel(hubChannel); } catch (e) {}
     hubChannel = null;
@@ -1890,6 +2049,14 @@
     startLobby: startLobby,
     awaySince: function () { return awaySince; },
     isHidden: isDocumentHidden,
+    tickMs: function () { return TICK_MS; },
+    serverNow: serverNow,
+    currentTick: currentTick,
+    tickProgress: tickProgress,
+    onSharedTick: onSharedTick,
+    syncClock: syncClock,
+    clockReady: function () { return clockReady; },
+    clockInfo: clockInfo,
 
     reloadProfile: reloadProfile,
     canHubChat: canHubChat,

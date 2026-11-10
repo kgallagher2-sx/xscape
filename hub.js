@@ -235,8 +235,87 @@
     return state.facing;
   }
 
+  function unpackPath(path) {
+    var out = [];
+    if (!path || !path.length) return out;
+    for (var i = 0; i < path.length; i++) {
+      var n = path[i];
+      if (!n) continue;
+      if (Array.isArray(n)) out.push({ col: n[0], row: n[1] });
+      else out.push({ col: n.col, row: n.row });
+    }
+    return out;
+  }
+
+  function packPath(path) {
+    var out = [];
+    if (!path) return out;
+    for (var i = 0; i < path.length; i++) {
+      var n = path[i];
+      if (n) out.push([n.col, n.row]);
+    }
+    return out;
+  }
+
+  function myUid() {
+    var cloud = global.XscapeCloud;
+    return (cloud && cloud.userId && cloud.userId()) || null;
+  }
+
+  function sharedTick() {
+    var cloud = global.XscapeCloud;
+    if (cloud && cloud.clockReady && cloud.clockReady() && cloud.currentTick) return cloud.currentTick();
+    return null;
+  }
+
+  function setMovePath(path, destCol, destRow) {
+    state.path = path || [];
+    state.destCol = destCol;
+    state.destRow = destRow;
+    var t = sharedTick();
+    state.moveStartTick = t != null ? t + 1 : null;
+    if (state.path.length) broadcastMoveIntent();
+  }
+
+  function broadcastMoveIntent() {
+    var cloud = global.XscapeCloud;
+    if (!cloud || !cloud.broadcast || !myUid()) return;
+    var t = sharedTick();
+    cloud.broadcast("hub-move", {
+      uid: myUid(),
+      startTick: t != null ? (state.moveStartTick != null ? state.moveStartTick : t + 1) : t,
+      col: state.col,
+      row: state.row,
+      destCol: state.destCol,
+      destRow: state.destRow,
+      path: packPath(state.path),
+      facing: state.facing,
+      username: (global.Profile && Profile.name) || null
+    });
+  }
+
+  function broadcastPosSnapshot(tick) {
+    var cloud = global.XscapeCloud;
+    if (!cloud || !cloud.broadcast || !myUid()) return;
+    cloud.broadcast("hub-pos", {
+      uid: myUid(),
+      tick: tick != null ? tick : sharedTick(),
+      col: state.col,
+      row: state.row,
+      prevCol: state.prevCol,
+      prevRow: state.prevRow,
+      destCol: state.destCol,
+      destRow: state.destRow,
+      path: packPath(state.path),
+      facing: state.facing,
+      moving: !!state.moving,
+      username: (global.Profile && Profile.name) || null
+    });
+  }
+
   function stepOnce() {
     if (!state.path.length) {
+      var wasMoving = state.moving;
       state.destCol = null;
       state.destRow = null;
       state.moving = false;
@@ -245,7 +324,10 @@
         state.pending = null;
         runPending(job);
       }
-      publishPresence();
+      if (wasMoving) {
+        publishPresence();
+        broadcastPosSnapshot();
+      }
       return;
     }
     var next = state.path.shift();
@@ -255,7 +337,112 @@
     state.col = next.col;
     state.row = next.row;
     state.moving = true;
-    publishPresence();
+    broadcastPosSnapshot(state.lastWorldTick);
+  }
+
+  function getPeer(id) {
+    if (!state.peerMoves) state.peerMoves = {};
+    if (!state.peerMoves[id]) {
+      state.peerMoves[id] = { id: id, path: [], moving: false };
+    }
+    return state.peerMoves[id];
+  }
+
+  function stepPeer(peer, tick) {
+    if (!peer.path || !peer.path.length) {
+      peer.moving = false;
+      peer.lastSteppedTick = tick;
+      return;
+    }
+    var next = peer.path.shift();
+    peer.prevCol = peer.col;
+    peer.prevRow = peer.row;
+    peer.facing = faceToward(next.col - peer.col, next.row - peer.row);
+    peer.col = next.col;
+    peer.row = next.row;
+    peer.moving = true;
+    peer.lastSteppedTick = tick;
+  }
+
+  function stepAllPeers(tick) {
+    if (!state.peerMoves) return;
+    Object.keys(state.peerMoves).forEach(function (id) {
+      var peer = state.peerMoves[id];
+      if (!peer) return;
+      var from;
+      if (peer.lastSteppedTick != null) from = peer.lastSteppedTick + 1;
+      else if (peer.startTick != null) from = peer.startTick;
+      else from = tick;
+      if (from > tick) return;
+      for (var t = from; t <= tick; t++) {
+        if (!peer.path || !peer.path.length) {
+          peer.moving = false;
+          peer.lastSteppedTick = tick;
+          break;
+        }
+        stepPeer(peer, t);
+      }
+    });
+  }
+
+  function onMoveIntent(p) {
+    if (!p || !p.uid) return;
+    if (myUid() && p.uid === myUid()) return;
+    var peer = getPeer(p.uid);
+    peer.col = p.col;
+    peer.row = p.row;
+    peer.prevCol = p.col;
+    peer.prevRow = p.row;
+    peer.path = unpackPath(p.path);
+    peer.destCol = p.destCol;
+    peer.destRow = p.destRow;
+    if (p.facing) peer.facing = p.facing;
+    if (p.username) peer.username = p.username;
+    peer.startTick = p.startTick;
+    peer.lastSteppedTick = p.startTick != null ? p.startTick - 1 : null;
+    peer.moving = !!(peer.path && peer.path.length);
+    var nowT = sharedTick();
+    if (nowT != null) stepAllPeers(nowT);
+  }
+
+  function onMoveSnapshot(p) {
+    if (!p || !p.uid) return;
+    if (myUid() && p.uid === myUid()) return;
+    var peer = getPeer(p.uid);
+    if (p.username) peer.username = p.username;
+    if (p.facing) peer.facing = p.facing;
+    peer.destCol = p.destCol;
+    peer.destRow = p.destRow;
+    var path = unpackPath(p.path);
+    var dx = (peer.col != null && p.col != null) ? Math.abs(peer.col - p.col) : 99;
+    var dy = (peer.row != null && p.row != null) ? Math.abs(peer.row - p.row) : 99;
+    if (peer.col == null || dx + dy >= 2) {
+      peer.prevCol = p.prevCol != null ? p.prevCol : p.col;
+      peer.prevRow = p.prevRow != null ? p.prevRow : p.row;
+      peer.col = p.col;
+      peer.row = p.row;
+      peer.path = path;
+    } else {
+      peer.path = path;
+    }
+    peer.moving = p.moving != null ? !!p.moving : !!(peer.path && peer.path.length);
+    if (p.tick != null) peer.lastSteppedTick = p.tick;
+  }
+
+  function stepWorld(tick) {
+    if (!state.active) return;
+    if (state.lastWorldTick == null) {
+      state.lastWorldTick = tick;
+      return;
+    }
+    var n = tick - state.lastWorldTick;
+    if (n <= 0) return;
+    if (n > 20) n = 20;
+    for (var i = 0; i < n; i++) {
+      state.lastWorldTick += 1;
+      stepOnce();
+      stepAllPeers(state.lastWorldTick);
+    }
   }
 
   function runPending(job) {
@@ -278,9 +465,9 @@
       return true;
     }
     state.pending = { type: "bank" };
-    state.path = bfs(state.col, state.row, col, 2);
     var stand = boothStandTile(col);
-    if (stand) { state.destCol = stand.c; state.destRow = stand.r; }
+    var path = bfs(state.col, state.row, col, 2);
+    setMovePath(path, stand ? stand.c : col, stand ? stand.r : 3);
     return true;
   }
 
@@ -339,16 +526,14 @@
         return true;
       }
       state.pending = { type: "menu", npc: npc, px: opts.px, py: opts.py };
-      state.path = bfs(state.col, state.row, npc.col, npc.row);
+      setMovePath(bfs(state.col, state.row, npc.col, npc.row), npc.col, npc.row);
       return true;
     }
     if (!walkable(col, row)) return false;
     state.pending = null;
     if (col === state.col && row === state.row) return false;
     markClick(opts.px, opts.py, "ground");
-    state.path = bfs(state.col, state.row, col, row);
-    state.destCol = col;
-    state.destRow = row;
+    setMovePath(bfs(state.col, state.row, col, row), col, row);
     return true;
   }
 
@@ -388,14 +573,12 @@
       if (inTalkRange(state.col, state.row, n)) showCtx(n);
       else {
         state.pending = { type: "menu", npc: n };
-        state.path = bfs(state.col, state.row, n.col, n.row);
+        setMovePath(bfs(state.col, state.row, n.col, n.row), n.col, n.row);
       }
       return;
     }
     if (walkable(c, r)) {
-      state.path = bfs(state.col, state.row, c, r);
-      state.destCol = c;
-      state.destRow = r;
+      setMovePath(bfs(state.col, state.row, c, r), c, r);
     }
   }
 
@@ -421,19 +604,63 @@
   function othersInBank() {
     var cloud = global.XscapeCloud;
     var list = [];
-    if (!cloud || !cloud.getPresenceList) return list;
-    var me = cloud.userId && cloud.userId();
-    var rows = cloud.getPresenceList() || [];
+    var seen = {};
+    var me = (cloud && cloud.userId && cloud.userId()) || myUid();
+    var rows = (cloud && cloud.getPresenceList && cloud.getPresenceList()) || [];
     for (var i = 0; i < rows.length; i++) {
       var p = rows[i];
       if (!p || (me && p.id === me)) continue;
-      if (p.scene && p.scene !== "bank") continue;
-      if (p.col == null || p.row == null) continue;
-      list.push(p);
+      var mv = state.peerMoves && state.peerMoves[p.id];
+      if (p.scene && p.scene !== "bank") {
+        if (!(mv && mv.col != null && (mv.moving || (mv.path && mv.path.length)))) continue;
+      }
+      var merged = {
+        id: p.id,
+        username: p.username,
+        scene: p.scene || "bank",
+        col: p.col,
+        row: p.row,
+        facing: p.facing,
+        equipment: p.equipment,
+        moving: false,
+        prevCol: p.col,
+        prevRow: p.row
+      };
+      if (mv && mv.col != null) {
+        merged.col = mv.col;
+        merged.row = mv.row;
+        merged.prevCol = mv.prevCol != null ? mv.prevCol : mv.col;
+        merged.prevRow = mv.prevRow != null ? mv.prevRow : mv.row;
+        merged.facing = mv.facing || merged.facing;
+        merged.moving = !!mv.moving;
+        if (mv.username) merged.username = mv.username;
+        if (mv.equipment) merged.equipment = mv.equipment;
+      }
+      if (merged.col == null || merged.row == null) continue;
+      seen[merged.id] = true;
+      list.push(merged);
+    }
+    if (state.peerMoves) {
+      Object.keys(state.peerMoves).forEach(function (id) {
+        if (seen[id] || (me && id === me)) return;
+        var mv = state.peerMoves[id];
+        if (!mv || mv.col == null || mv.row == null) return;
+        list.push({
+          id: id,
+          username: mv.username || "Player",
+          col: mv.col,
+          row: mv.row,
+          prevCol: mv.prevCol != null ? mv.prevCol : mv.col,
+          prevRow: mv.prevRow != null ? mv.prevRow : mv.row,
+          facing: mv.facing,
+          equipment: mv.equipment,
+          moving: !!mv.moving,
+          scene: "bank"
+        });
+        seen[id] = true;
+      });
     }
     if (state.debugPeers && state.debugPeers.length) {
-      var seen = {};
-      for (var j = 0; j < list.length; j++) seen[list[j].id] = true;
       for (var d = 0; d < state.debugPeers.length; d++) {
         var peer = state.debugPeers[d];
         if (peer && peer.id && !seen[peer.id]) list.push(peer);
@@ -737,10 +964,16 @@
     for (var j = 0; j < others.length; j++) {
       sprites.push({ row: others[j].row, kind: "other", p: others[j] });
     }
+    var cloud = global.XscapeCloud;
     var u = 1;
-    if (state.moving && TICK) {
+    var uOther = 1;
+    if (cloud && cloud.clockReady && cloud.clockReady() && cloud.tickProgress) {
+      u = cloud.tickProgress();
+      uOther = cloud.tickProgress(50);
+    } else if (state.moving && TICK) {
       var elapsed = (t * 1000) - (state._stepAt || 0);
       u = Math.max(0, Math.min(1, elapsed / TICK));
+      uOther = u;
     }
     var selfPos = interpPos(state.col, state.row, state.prevCol, state.prevRow, state.moving, u, lay);
     sprites.push({ row: state.row, kind: "self", pos: selfPos });
@@ -752,8 +985,9 @@
       var s = sprites[k];
       if (s.kind === "npc") drawNpc(ctx, t, s.npc, lay);
       else if (s.kind === "other") {
-        var op = tilePx(s.p.col, s.p.row, lay);
-        drawHero(ctx, t, op.x, op.y, s.p.facing || "front", s.p.equipment || {}, false, lay, s.p.username || "Player", s.p.id);
+        var moving = !!s.p.moving;
+        var op = interpPos(s.p.col, s.p.row, s.p.prevCol, s.p.prevRow, moving, moving ? uOther : 1, lay);
+        drawHero(ctx, t, op.x, op.y, s.p.facing || "front", s.p.equipment || {}, moving, lay, s.p.username || "Player", s.p.id);
       } else {
         drawHero(ctx, t, s.pos.x, s.pos.y, state.facing, eq, state.moving, lay, myName, myId);
       }
@@ -1348,14 +1582,19 @@
     if (!state.lastTs) state.lastTs = ts;
     var dt = Math.min(0.05, (ts - state.lastTs) / 1000);
     state.lastTs = ts;
-    state.acc += dt * 1000;
-    var steps = (global.G && G.running) ? 2 : 1;
-    var need = TICK;
-    while (state.acc >= need) {
-      state._stepAt = ts;
-      stepOnce();
-      if (steps === 2 && state.path.length) stepOnce();
-      state.acc -= need;
+    var cloud = global.XscapeCloud;
+    var useShared = !!(cloud && cloud.clockReady && cloud.clockReady());
+    if (useShared) {
+      // Stepping is driven by XscapeCloud.onSharedTick (lockstep 600ms).
+      state.acc = 0;
+    } else {
+      state.acc += dt * 1000;
+      var need = TICK;
+      while (state.acc >= need) {
+        state._stepAt = ts;
+        stepOnce();
+        state.acc -= need;
+      }
     }
     if (state.hold) onPointerHoldTick();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1456,6 +1695,8 @@
     state.destCol = null;
     state.destRow = null;
     state.facing = "back";
+    state.lastWorldTick = null;
+    state.moveStartTick = null;
   }
 
   function resolveSpawnCollision() {
@@ -1501,8 +1742,12 @@
     publishPresence();
     renderChatLog();
     var cloud = global.XscapeCloud;
+    hookSharedTicks();
     if (cloud && typeof cloud.startLobby === "function") {
       try { cloud.startLobby(); } catch (e) {}
+    }
+    if (cloud && typeof cloud.syncClock === "function") {
+      try { cloud.syncClock(); } catch (e) {}
     }
     if (cloud && typeof cloud.reloadProfile === "function") {
       Promise.resolve(cloud.reloadProfile()).then(function () {
@@ -1519,9 +1764,25 @@
     }
   }
 
+  function hookSharedTicks() {
+    if (state._tickUnsub) return;
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.onSharedTick === "function") {
+      state._tickUnsub = cloud.onSharedTick(function (tick) { stepWorld(tick); });
+    }
+  }
+
+  function unhookSharedTicks() {
+    if (state._tickUnsub) {
+      try { state._tickUnsub(); } catch (e) {}
+      state._tickUnsub = null;
+    }
+  }
+
   function leave() {
     state.active = false;
     state.justSpawned = false;
+    unhookSharedTicks();
     state.talk = null;
     hideCtx();
     endChatLayer();
@@ -1707,6 +1968,28 @@
     sendHubChat: sendHubChat,
     openChat: openChat,
     publishPresence: publishPresence,
+    onMoveIntent: onMoveIntent,
+    onMoveSnapshot: onMoveSnapshot,
+    getSelfTile: function () {
+      return {
+        col: state.col, row: state.row,
+        prevCol: state.prevCol, prevRow: state.prevRow,
+        destCol: state.destCol, destRow: state.destRow,
+        moving: !!state.moving, facing: state.facing,
+        lastWorldTick: state.lastWorldTick
+      };
+    },
+    getPeerTiles: function () {
+      var rows = othersInBank() || [];
+      return rows.map(function (p) {
+        return {
+          id: p.id, username: p.username,
+          col: p.col, row: p.row,
+          prevCol: p.prevCol, prevRow: p.prevRow,
+          moving: !!p.moving, facing: p.facing
+        };
+      });
+    },
     injectPeer: function (p) {
       if (!state.debugPeers) state.debugPeers = [];
       if (p) state.debugPeers.push(p);
