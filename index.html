@@ -71,24 +71,33 @@
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; pointer-events: none;
     }
-    .gear-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
-    .gear-label { font-size: 9px; color: #a09070; width: 28px; letter-spacing: 0.3px; }
-    #gear { flex: 1; display: flex; gap: 4px; justify-content: space-between; }
-    .gslot {
-      width: 28px; height: 28px; background: #1a120a; border: 1px solid #6a5434;
-      box-shadow: inset 0 0 0 1px #0a0604; border-radius: 2px;
+    .gear-row { display: none; } /* gear lives in the Equipment screen */
+    .skills-row {
+      display: flex; align-items: stretch; justify-content: space-between;
+      gap: 3px; margin-top: 5px;
     }
-    .gslot canvas { width: 100%; height: 100%; display: block; }
+    .skill-cell {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+      min-width: 0;
+    }
+    .skill-cell canvas { width: 18px; height: 18px; display: block; }
+    .skill-val {
+      font-size: 9px; font-weight: 700; color: #f2f2f2; letter-spacing: -0.2px;
+      white-space: nowrap; text-shadow: 0 1px 1px #000;
+    }
+    .skill-val.boost { color: #5dff5d; }
+    .skill-val.drain { color: #ff6a6a; }
     #consumables {
-      flex: 0 0 auto; display: flex; gap: 8px; padding: 6px 10px; background: #22160e;
+      flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 10px; background: #22160e;
     }
     .item-btn {
-      flex: 1; height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;
+      flex: 1 1 30%; min-width: 30%; height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px;
       background: linear-gradient(#4a3824, #2c2014); border: 2px solid #7a6238;
       border-bottom-color: #1a1208; border-right-color: #1a1208; color: var(--beige);
-      font-weight: 700; font-size: 14px; border-radius: 4px; cursor: pointer; font-family: inherit;
+      font-weight: 700; font-size: 13px; border-radius: 4px; cursor: pointer; font-family: inherit;
       position: relative; overflow: hidden;
     }
+    .item-btn.hidden { display: none !important; }
     .item-btn:active, .item-btn.flash { filter: brightness(1.35); }
     .item-btn:disabled { opacity: 0.4; filter: grayscale(0.4); }
     .item-btn .qty {
@@ -497,8 +506,8 @@
           <div class="bar-track"><div class="bar-fill" id="prayer-fill"></div><div class="bar-txt" id="prayer-txt">99/99</div></div>
         </div>
       </div>
-      <div class="gear-row">
-        <div class="gear-label">GEAR</div>
+      <div class="skills-row" id="skills-row" aria-label="Skill levels"></div>
+      <div class="gear-row" id="gear-row" hidden>
         <div id="gear"></div>
       </div>
     </div>
@@ -731,6 +740,7 @@
 <script src="whip-img.js"></script>
 <script src="sprites.js"></script>
 <script src="kree-sprites.js"></script>
+<script src="stats.js"></script>
 <script>
 
 /* ============================================================
@@ -754,6 +764,7 @@ const SHARK_HEAL = 20;
 const SHARK_COUNT = 3;
 const POT_RESTORE = 31;
 const POT_COUNT = 2;
+const RANGE_POT_COUNT = 1;
 const SHARK_ATTACK_DELAY_TICKS = 3; // eating delays the next crossbow shot
 const POT_ATTACK_DELAY_TICKS = 3;   // Kellen's choice: sipping also delays the next shot
 const CONSUME_COOLDOWN_TICKS = 3;   // one eat / one sip per 3 ticks (separate timers)
@@ -1308,28 +1319,34 @@ function styleDefenceBonus(bonuses, style) {
   return bonuses.dcrush || 0;
 }
 
-function combatVsMonster(monsterId, style) {
+function combatSkillLevel(skill, useBase) {
+  if (typeof PlayerStats !== "undefined" && PlayerStats) {
+    return useBase ? PlayerStats.base(skill) : PlayerStats.level(skill);
+  }
+  const lv = (Profile.levels || defaultLevels());
+  return lv[skill] || 99;
+}
+function combatVsMonster(monsterId, style, opts) {
   style = style || "ranged";
+  const useBase = !!(opts && opts.useBase);
   const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
-  const lv = Profile.levels || defaultLevels();
   const pb = playerBonuses();
   const stance = 0; // Rapid
   let atkLevel, atkBonus, strBonus, max;
   if (style === "ranged" || style === "range") {
-    let rangedLv = lv.ranged;
-    if (typeof G !== "undefined" && G.scene === "kree" && G.rangingLeft > 0) rangedLv += 10;
+    const rangedLv = combatSkillLevel("ranged", useBase);
     atkLevel = effectivePlayerLevel(rangedLv, 1, stance);
     atkBonus = pb.arange;
     strBonus = pb.rstr;
     max = maxHitFrom(atkLevel, strBonus);
   } else if (style === "mage" || style === "magic") {
-    atkLevel = effectivePlayerLevel(lv.magic, 1, stance);
+    atkLevel = effectivePlayerLevel(combatSkillLevel("magic", useBase), 1, stance);
     atkBonus = pb.amagic;
     max = 0; // no player mage kit yet
   } else {
-    atkLevel = effectivePlayerLevel(lv.attack, 1, stance);
+    atkLevel = effectivePlayerLevel(combatSkillLevel("attack", useBase), 1, stance);
     atkBonus = styleAttackBonus(pb, style);
-    max = maxHitFrom(effectivePlayerLevel(lv.strength, 1, stance), pb.str);
+    max = maxHitFrom(effectivePlayerLevel(combatSkillLevel("strength", useBase), 1, stance), pb.str);
   }
   const atkRoll = maxRoll(atkLevel, atkBonus);
   const defRoll = maxRoll(effectiveNpcLevel(mon.defence), styleDefenceBonus(mon.defBonuses || emptyBonuses(), style));
@@ -1347,14 +1364,13 @@ function monsterVsPlayer(monsterId, style) {
   if (style === "range") style = "ranged";
   if (style === "magic") style = "mage";
   const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
-  const lv = Profile.levels || defaultLevels();
   const pb = playerBonuses();
   let atkSkill;
   if (style === "ranged") atkSkill = mon.ranged;
   else if (style === "mage") atkSkill = mon.magic;
   else atkSkill = mon.attack;
   const atkRoll = maxRoll(effectiveNpcLevel(atkSkill), styleAttackBonus(mon.bonuses || emptyBonuses(), style === "mage" ? "magic" : style));
-  const defRoll = maxRoll(effectivePlayerLevel(lv.defence, 1, 0), styleDefenceBonus(pb, style === "mage" ? "magic" : style));
+  const defRoll = maxRoll(effectivePlayerLevel(combatSkillLevel("defence", false), 1, 0), styleDefenceBonus(pb, style === "mage" ? "magic" : style));
   const max = (mon.maxHit && (mon.maxHit[style] || mon.maxHit.melee || mon.maxHit.ranged)) || 1;
   const chance = hitChance(atkRoll, defRoll);
   return { style, maxHit: max, chance, atkRoll, defRoll, expected: expectedDamage(max, chance) };
@@ -1364,7 +1380,7 @@ function estimateKill(monsterId, loadout) {
   const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
   const saved = Profile.equipment;
   if (loadout && LOADOUTS[loadout]) Profile.equipment = cloneLoadout(loadout);
-  const vs = combatVsMonster(mon.id, "ranged");
+  const vs = combatVsMonster(mon.id, "ranged", { useBase: true });
   Profile.equipment = saved;
   const ev = Math.max(0.01, vs.expected);
   const shots = Math.ceil(mon.hitpoints / ev);
@@ -1749,7 +1765,18 @@ function drawTileHazards(t) {
 function setPlayingChrome(on) {
   const pad = $("move-pad");
   if (pad) pad.classList.toggle("visible", !!on);
+  updateConsumableChrome();
+  if (typeof PlayerStats !== "undefined" && PlayerStats.render) PlayerStats.render();
   updateDebugCombat();
+}
+
+function updateConsumableChrome() {
+  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "raid");
+  const rangeBtn = $("btn-range-pot");
+  const brewBtn = $("btn-brew");
+  if (rangeBtn) rangeBtn.classList.toggle("hidden", !playing);
+  if (brewBtn) brewBtn.classList.toggle("hidden", !(playing && G.scene === "raid"));
+  if (typeof updateRangePotHud === "function") updateRangePotHud();
 }
 
 function debugEnabled() {
@@ -3021,6 +3048,9 @@ const G = {
   target: "jad",
   sharks: SHARK_COUNT,
   pots: POT_COUNT,
+  rangePots: RANGE_POT_COUNT,
+  rangeCd: 0,
+  pendingRange: false,
   damageTaken: 0,
   perfectPrayers: 0,
   healersSpawned: false,
@@ -3074,10 +3104,14 @@ function resetFight() {
   G.target = "jad";
   G.sharks = SHARK_COUNT;
   G.pots = POT_COUNT;
+  G.rangePots = RANGE_POT_COUNT;
   G.eatCd = 0;
   G.potCd = 0;
+  G.rangeCd = 0;
   G.pendingEat = false;
   G.pendingPot = false;
+  G.pendingRange = false;
+  if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
   G.damageTaken = 0;
   G.perfectPrayers = 0;
   G.healersSpawned = false;
@@ -3280,7 +3314,9 @@ function gameTick() {
 
   if (G.eatCd > 0) G.eatCd--;
   if (G.potCd > 0) G.potCd--;
+  if (G.rangeCd > 0) G.rangeCd--;
   resolveConsumables();
+  if (typeof PlayerStats !== "undefined" && PlayerStats.tick) PlayerStats.tick();
 
   if (G.prayer && G.ticks % PRAYER_DRAIN_EVERY === 0) {
     G.player.prayerPts = clamp(G.player.prayerPts - 1, 0, PLAYER_MAX_PRAYER);
@@ -3342,6 +3378,19 @@ function sipPot() {
   setTimeout(() => $("btn-pot").classList.remove("flash"), 120);
   updateConsumeVisuals();
 }
+function sipRangePot() {
+  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.ranging(); return; }
+  if (G.mode !== "playing" || !G.player || (G.rangePots || 0) <= 0 || G.player.hp <= 0) return;
+  if (G.pendingRange || G.rangeCd > 0) { flashMsg("Already sipping…", "#c0c0c0"); return; }
+  G.pendingRange = true;
+  const btn = $("btn-range-pot");
+  if (btn) {
+    btn.classList.add("flash", "pending");
+    setTimeout(() => btn.classList.remove("flash"), 120);
+  }
+  updateConsumeVisuals();
+  updateRangePotHud();
+}
 
 function resolveConsumables() {
   if (G.pendingEat) {
@@ -3366,6 +3415,17 @@ function resolveConsumables() {
       audio.sip();
     }
   }
+  if (G.pendingRange) {
+    G.pendingRange = false;
+    if (G.player && G.player.hp > 0 && (G.rangePots || 0) > 0) {
+      G.rangePots--;
+      if (typeof PlayerStats !== "undefined" && PlayerStats.applyRangingPotion) PlayerStats.applyRangingPotion();
+      G.player.atkCd += POT_ATTACK_DELAY_TICKS;
+      G.rangeCd = CONSUME_COOLDOWN_TICKS;
+      audio.sip();
+      flashMsg("Ranging potion", "#7af07a");
+    }
+  }
 }
 
 function setConsumeSweep(id, pending, cd, maxCd) {
@@ -3378,10 +3438,21 @@ function setConsumeSweep(id, pending, cd, maxCd) {
   if (sweep) sweep.style.setProperty("--cd", ((remain / maxCd) * 100).toFixed(2) + "%");
 }
 
+function updateRangePotHud() {
+  const btn = $("btn-range-pot");
+  if (!btn) return;
+  const qty = $("qty-range");
+  const n = (G && G.rangePots) || 0;
+  if (qty) qty.textContent = String(n);
+  btn.disabled = !G || n <= 0 || G.mode !== "playing";
+}
+
 function updateConsumeVisuals() {
   if (!$("btn-shark")) return;
   setConsumeSweep("btn-shark", G.pendingEat, G.eatCd || 0, CONSUME_COOLDOWN_TICKS);
   setConsumeSweep("btn-pot", G.pendingPot, G.potCd || 0, CONSUME_COOLDOWN_TICKS);
+  if ($("btn-range-pot")) setConsumeSweep("btn-range-pot", G.pendingRange, G.rangeCd || 0, CONSUME_COOLDOWN_TICKS);
+  updateRangePotHud();
   if (!G.player || !$("atk-fill")) return;
   const remain = Math.max(0, G.player.atkCd - tickProgress());
   const domain = PLAYER_ATTACK_TICKS + Math.max(SHARK_ATTACK_DELAY_TICKS, POT_ATTACK_DELAY_TICKS);
@@ -3464,6 +3535,8 @@ function updateHud() {
   $("qty-pot").textContent = G.pots;
   $("btn-shark").disabled = G.sharks <= 0;
   $("btn-pot").disabled = G.pots <= 0;
+  updateRangePotHud();
+  if (typeof PlayerStats !== "undefined" && PlayerStats.render) PlayerStats.render();
   $("hud-time").textContent = fmtTime(G.elapsedMs / 1000);
   $("hud-score").textContent = String(liveScore());
   updateConsumeVisuals();
@@ -4460,12 +4533,9 @@ bindPrayer("btn-mage", "mage");
 bindPrayer("btn-range", "range");
 bindPrayer("btn-melee", "melee");
 
-$("btn-shark").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); eatShark(); });
-$("btn-pot").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); sipPot(); });
-if ($("btn-range-pot")) $("btn-range-pot").addEventListener("pointerdown", (e) => {
-  e.preventDefault(); audio.unlock();
-  if (window.XscapeKree && XscapeKree.sipRange) XscapeKree.sipRange();
-});
+bindTap($("btn-shark"), () => { audio.unlock(); eatShark(); });
+bindTap($("btn-pot"), () => { audio.unlock(); sipPot(); });
+if ($("btn-range-pot")) bindTap($("btn-range-pot"), () => { audio.unlock(); sipRangePot(); });
 if ($("btn-run")) $("btn-run").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); setRunning(!G.running); });
 
 window.addEventListener("pointerup", () => { if (G.cs) G.cs.holding = false; });
@@ -4493,7 +4563,7 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "r" || e.key === "R") { window.XscapeRaid.ranging(); return; }
   }
   if (G.scene === "kree" && window.XscapeKree) {
-    if (e.key === "r" || e.key === "R") { window.XscapeKree.sipRange(); return; }
+    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
   }
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
@@ -4502,7 +4572,10 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") sipPot();
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); queueMoveBy(-1, 0); }
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); queueMoveBy(1, 0); }
-  if (e.key === "r" || e.key === "R") setRunning(!G.running);
+  if (e.key === "r" || e.key === "R") {
+    if (G.mode === "playing") sipRangePot();
+    else setRunning(!G.running);
+  }
 });
 
 canvas.addEventListener("pointerdown", (e) => {
@@ -4702,6 +4775,7 @@ function enterScene(id) {
 function showTitle() {
   loadProfile();
   G._retryKree = false;
+  if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
   if (Profile.name) enterScene("hub");
   else enterScene("login");
 }
@@ -5484,6 +5558,8 @@ window.KellenScape = {
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
   ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
+  sipRangePot, combatSkillLevel,
+  get stats() { return window.PlayerStats; },
   ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape, gloamholdLockReason, tryEnterGloamhold,
   setDebug(on) { G.debugCombat = !!on; updateDebugCombat(); },
   getState() {
@@ -5505,8 +5581,10 @@ window.KellenScape = {
       levels: Profile.levels,
       combat: vs && { chance: vs.chance, maxHit: vs.maxHit, atkRoll: vs.atkRoll, defRoll: vs.defRoll, expected: vs.expected },
       tileHazards: (G.tileHazards || []).map((h) => ({ kind: h.kind, col: h.col, row: h.row, delay: h.delay })),
-      eatCd: G.eatCd, potCd: G.potCd, pendingEat: G.pendingEat, pendingPot: G.pendingPot,
-      sharks: G.sharks, pots: G.pots,
+      eatCd: G.eatCd, potCd: G.potCd, rangeCd: G.rangeCd,
+      pendingEat: G.pendingEat, pendingPot: G.pendingPot, pendingRange: G.pendingRange,
+      sharks: G.sharks, pots: G.pots, rangePots: G.rangePots,
+      stats: (typeof PlayerStats !== "undefined" && PlayerStats.snapshot) ? PlayerStats.snapshot() : null,
       healers: G.healers.length,
       hasFireCape: !!Profile.hasFireCape,
       cutscene: G.cs && { kind: G.cs.kind, t: G.cs.t, phase: G.cs.phase, dialog: G.cs.dialog }
@@ -5522,6 +5600,11 @@ window.KellenScape = {
   }
 };
 window.Xscape = window.KellenScape;
+if (window.PlayerStats) {
+  window.Xscape.stats = window.PlayerStats;
+  window.KellenScape.stats = window.PlayerStats;
+}
+if (typeof PlayerStats !== "undefined" && PlayerStats.ensureHud) PlayerStats.ensureHud();
 window.G = G;
 window.Profile = Profile;
 window.Scenes = Scenes;

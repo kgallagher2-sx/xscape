@@ -67,17 +67,26 @@
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; pointer-events: none;
     }
-    .gear-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
-    .gear-label { font-size: 9px; color: #a09070; width: 28px; letter-spacing: 0.3px; }
-    #gear { flex: 1; display: flex; gap: 4px; justify-content: space-between; }
-    .gslot {
-      width: 28px; height: 28px; background: #1a120a; border: 1px solid #6a5434;
-      box-shadow: inset 0 0 0 1px #0a0604; border-radius: 2px;
+    .gear-row { display: none; }
+    .skills-row {
+      display: flex; align-items: stretch; justify-content: space-between;
+      gap: 3px; margin-top: 5px;
     }
-    .gslot canvas { width: 100%; height: 100%; display: block; }
+    .skill-cell {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+      min-width: 0;
+    }
+    .skill-cell canvas { width: 18px; height: 18px; display: block; }
+    .skill-val {
+      font-size: 9px; font-weight: 700; color: #f2f2f2; letter-spacing: -0.2px;
+      white-space: nowrap; text-shadow: 0 1px 1px #000;
+    }
+    .skill-val.boost { color: #5dff5d; }
+    .skill-val.drain { color: #ff6a6a; }
     #consumables {
-      flex: 0 0 auto; display: flex; gap: 8px; padding: 6px 10px; background: #22160e;
+      flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 10px; background: #22160e;
     }
+    .item-btn.hidden { display: none !important; }
     .item-btn {
       flex: 1; height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;
       background: linear-gradient(#4a3824, #2c2014); border: 2px solid #7a6238;
@@ -431,6 +440,7 @@
           <div class="bar-track"><div class="bar-fill" id="prayer-fill"></div><div class="bar-txt" id="prayer-txt">99/99</div></div>
         </div>
       </div>
+      <div class="skills-row" id="skills-row" aria-label="Skill levels"></div>
     </div>
     <div id="consumables">
       <button class="item-btn" id="btn-shark" type="button"><span class="cd-sweep"></span>Shark <span class="qty" id="qty-shark">5</span></button>
@@ -510,6 +520,7 @@
 <script src="whip-img.js"></script>
 <script src="sprites.js"></script>
 <script src="raid-sprites.js"></script>
+<script src="stats.js"></script>
 <script src="raid.js"></script>
 <script>
 (function () {
@@ -703,10 +714,10 @@
   document.getElementById("btn-again-lose").addEventListener("click", function () { if (Raid.retryRoom) Raid.retryRoom(); });
   document.getElementById("btn-title-win").addEventListener("click", function () { location.href = "index.html"; });
   document.getElementById("btn-title-lose").addEventListener("click", function () { location.href = "index.html"; });
-  document.getElementById("btn-shark").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.eat(); });
-  document.getElementById("btn-pot").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.sip(); });
-  document.getElementById("btn-brew").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.brew(); });
-  document.getElementById("btn-range-pot").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.ranging(); });
+  bindTap(document.getElementById("btn-shark"), function () { Raid.eat(); });
+  bindTap(document.getElementById("btn-pot"), function () { Raid.sip(); });
+  bindTap(document.getElementById("btn-brew"), function () { Raid.brew(); });
+  bindTap(document.getElementById("btn-range-pot"), function () { Raid.ranging(); });
   document.getElementById("btn-mage").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("mage"); });
   document.getElementById("btn-range").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("range"); });
   document.getElementById("btn-melee").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("melee"); });

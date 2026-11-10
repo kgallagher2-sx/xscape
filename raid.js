@@ -345,7 +345,7 @@
       loadout: deep(loadout || STARTER_LOADOUT), rangingLeft: 0, stillTicks: 0
     };
   }
-  function defaultInv() { return { sharks: 10, pots: 6, brews: 0, ranging: 0 }; }
+  function defaultInv() { return { sharks: 10, pots: 6, brews: 0, ranging: 1 }; }
 
   let R = null, host = null, acc = 0, lastTs = 0, raf = 0, running = false, briefPause = false, raidRunning = false;
 
@@ -778,6 +778,7 @@
     if (st.rangeCd > 0) st.rangeCd--;
     if (st.player.rangingLeft > 0) st.player.rangingLeft--;
     resolveConsumables(st);
+    if (global.PlayerStats && PlayerStats.tick) PlayerStats.tick();
 
     // Move first, then let telegraphed hazards land. This gives a fair
     // 1-tile-per-tick dodge window (Vorkath-style): a mark with landIn=2
@@ -1078,6 +1079,17 @@
     rs.timer = tel;
   }
 
+  function applyWitheringGaze(st, force) {
+    if (!st) return 0;
+    if (!force && st._gazeCd && st.ticks < st._gazeCd) return 0;
+    st._gazeCd = (st.ticks || 0) + 12;
+    let def = 99;
+    if (global.PlayerStats && PlayerStats.drain) {
+      def = PlayerStats.drain("defence", 5);
+    }
+    flash(st, "Morvane withers your Defence! (" + def + ")", "#c0a0ff");
+    return def;
+  }
   function phaseOf(st) {
     const b = st.boss;
     if (!b || b.kind !== "morvane") return 0;
@@ -1115,9 +1127,10 @@
 
     tickPrayerBoss(st, b, {
       styles: cfg.styles, speed: cfg.speed, tel: cfg.tel, maxHit: cfg.maxHit, accuracy: cfg.accuracy,
-      afterHit: function (st2) {
+      afterHit: function (st2, b2) {
         if (phaseOf(st2) >= 3) markDanger(st2, st2.player.col, st2.player.row, "burst", 2, 12);
         sfx(st2, "mark");
+        if (b2 && b2.style === "mage") applyWitheringGaze(st2);
       }
     });
 
@@ -1334,8 +1347,7 @@
     if (st.mode !== "playing") return;
     if (st.pendingRange) return;
     if (st.inv.ranging <= 0) return flash(st, "No ranging pots", "#c0c0c0");
-    if (st.player.rangingLeft > 8) return flash(st, "Already ranging", "#c0c0c0");
-    if (st.rangeCd > 0) return;
+    if (st.rangeCd > 0) return flash(st, "Already sipping…", "#c0c0c0");
     st.pendingRange = true;
   }
   function resolveConsumables(st) {
@@ -1350,7 +1362,14 @@
       st.pendingBrew = false; st.inv.brews--; p.hp = clamp(p.hp + BREW_HEAL, 0, PLAYER_MAX_HP); drainPrayer(st, BREW_PRAYER_COST); p.atkCd += POT_DELAY; st.brewCd = CONSUME_CD; sfx(st, "sip");
     } else st.pendingBrew = false;
     if (st.pendingRange && st.inv.ranging > 0 && p.hp > 0) {
-      st.pendingRange = false; st.inv.ranging--; p.rangingLeft = RANGING_POT_TICKS; p.atkCd += POT_DELAY; st.rangeCd = CONSUME_CD; sfx(st, "sip"); flash(st, "Ranging potion", "#7af07a");
+      st.pendingRange = false;
+      st.inv.ranging--;
+      p.rangingLeft = RANGING_POT_TICKS;
+      if (global.PlayerStats && PlayerStats.applyRangingPotion) PlayerStats.applyRangingPotion();
+      p.atkCd += POT_DELAY;
+      st.rangeCd = CONSUME_CD;
+      sfx(st, "sip");
+      flash(st, "Ranging potion", "#7af07a");
     } else st.pendingRange = false;
   }
   function setPrayer(st, kind) {
@@ -1612,6 +1631,7 @@
     registerItems();
     loadRaidProfile();
     R = newState(opts || {});
+    if (global.PlayerStats && PlayerStats.reset) PlayerStats.reset();
     enterRoom(R, R.room);
     R.mode = "playing";
     acc = 0; lastTs = 0; running = true;
@@ -1796,6 +1816,7 @@
     sip: function () { if (R) queuePot(R); },
     brew: function () { if (R) queueBrew(R); },
     ranging: function () { if (R) queueRange(R); },
+    witheringGaze: function () { if (R) return applyWitheringGaze(R, true); },
     clickTile: function (c, r) { if (R) clickTile(R, c, r); },
     clickPx: function (x, y, W, H) {
       if (!R) return null;
@@ -2030,6 +2051,20 @@
     if (qp) qp.textContent = st.inv.pots;
     if (qb) qb.textContent = st.inv.brews;
     if (qr) qr.textContent = st.inv.ranging;
+    const br = el("btn-range-pot"), bb = el("btn-brew"), bs = el("btn-shark"), bp = el("btn-pot");
+    if (br) br.disabled = !st.inv.ranging;
+    if (bb) bb.disabled = !st.inv.brews;
+    if (bs) bs.disabled = !st.inv.sharks;
+    if (bp) bp.disabled = !st.inv.pots;
+    if (typeof global.G !== "undefined" && global.G) {
+      global.G.rangePots = st.inv.ranging;
+      global.G.pendingRange = !!st.pendingRange;
+      global.G.rangeCd = st.rangeCd || 0;
+    }
+    if (global.PlayerStats && PlayerStats.render) PlayerStats.render();
+    if (typeof global.updateConsumableChrome === "function") {
+      try { global.updateConsumableChrome(); } catch (e) {}
+    }
     const time = el("hud-time"), score = el("hud-score");
     if (time) time.textContent = fmtTimeLocal(st.ticks * 0.6);
     if (score) score.textContent = ROOM_TITLE[st.room] || "";
@@ -2165,20 +2200,23 @@
     try { if (typeof global.audio !== "undefined" && global.audio.unlock) global.audio.unlock(); } catch (e) {}
     try { raidAudio.startMusic(); } catch (e) {}
   }
+  function bindBtn(el, fn) {
+    if (!el) return;
+    if (typeof global.bindTap === "function") global.bindTap(el, fn);
+    else el.addEventListener("pointerdown", function (e) { e.preventDefault(); fn(e); });
+  }
   function ensureRaidConsumables() {
     const row = document.getElementById("consumables");
-    if (!row || document.getElementById("btn-brew")) return;
-    function mk(id, label, qtyId) {
+    if (!row) return;
+    if (!document.getElementById("btn-brew")) {
       const b = document.createElement("button");
-      b.className = "item-btn"; b.id = id; b.type = "button";
-      b.innerHTML = '<span class="cd-sweep"></span>' + label + ' <span class="qty" id="' + qtyId + '">0</span>';
-      return b;
+      b.className = "item-btn"; b.id = "btn-brew"; b.type = "button";
+      b.innerHTML = '<span class="cd-sweep"></span>Brew <span class="qty" id="qty-brew">0</span>';
+      row.appendChild(b);
     }
-    const brew = mk("btn-brew", "Brew", "qty-brew");
-    const rng = mk("btn-range-pot", "Range pot", "qty-range");
-    row.appendChild(brew); row.appendChild(rng);
-    brew.addEventListener("pointerdown", function (e) { e.preventDefault(); api.brew(); });
-    rng.addEventListener("pointerdown", function (e) { e.preventDefault(); api.ranging(); });
+    bindBtn(document.getElementById("btn-brew"), function () { api.brew(); });
+    bindBtn(document.getElementById("btn-range-pot"), function () { api.ranging(); });
+    if (typeof global.updateConsumableChrome === "function") global.updateConsumableChrome();
   }
   function remigrateHostBank() {
     if (typeof global.migrateOwned === "function" && typeof global.Profile !== "undefined") {

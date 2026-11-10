@@ -67,7 +67,7 @@
       return {
         id: m.id, kind: m.kind, name: m.name, style: m.style, maxHit: m.maxHit,
         hp: MINION_HP, maxHp: MINION_HP, alive: true, hurt: 0,
-        atkCd: 3 + i * 2, x: 0.22 + i * 0.28, y: 0.52
+        atkCd: 3 + i * 2, x: 0.22 + i * 0.28, y: 0.64
       };
     });
     layoutMinions();
@@ -93,8 +93,10 @@
     G.rangeCd = 0;
     G.pendingEat = false;
     G.pendingPot = false;
+    G.pendingRange = false;
     rangingPending = false;
     rangingCd = 0;
+    if (typeof global.PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
     G.damageTaken = 0;
     G.perfectPrayers = 0;
     G.kreeGod = !!G.kreeGod;
@@ -108,10 +110,11 @@
   function layoutMinions() {
     const G = g();
     if (!G.minions) return;
-    const xs = [0.22, 0.5, 0.78];
+    const xs = [0.18, 0.50, 0.82];
+    const ys = [0.62, 0.70, 0.62]; // Geerin sits lower so his label clears Kree's talons
     for (let i = 0; i < G.minions.length; i++) {
       G.minions[i].x = xs[i] || (0.25 + i * 0.25);
-      G.minions[i].y = 0.54;
+      G.minions[i].y = ys[i] || 0.64;
     }
   }
 
@@ -344,52 +347,13 @@
     return false;
   }
 
-  function tickRanging() {
-    const G = g();
-    if (rangingCd > 0) rangingCd--;
-    if (G.rangingLeft > 0) G.rangingLeft--;
-    if (rangingPending) {
-      rangingPending = false;
-      if (G.player && G.player.hp > 0 && G.rangePots > 0) {
-        G.rangePots--;
-        G.rangingLeft = RANGE_POT_TICKS;
-        G.player.atkCd += (global.POT_ATTACK_DELAY_TICKS || 3);
-        rangingCd = global.CONSUME_COOLDOWN_TICKS || 3;
-        if (audio && audio.sip) audio.sip();
-        if (typeof global.flashMsg === "function") flashMsg("Ranging potion", "#7af07a");
-      }
-    }
-    G.rangeCd = rangingCd;
-    updateRangeBtn();
-  }
-
   function sipRange() {
-    const G = g();
-    if (!G || G.scene !== "kree" || G.mode !== "playing") return;
-    if (!G.player || G.rangePots <= 0 || G.player.hp <= 0) return;
-    if (rangingPending || rangingCd > 0) {
-      if (typeof global.flashMsg === "function") flashMsg("Already sipping…", "#c0c0c0");
-      return;
-    }
-    rangingPending = true;
-    const btn = $("btn-range-pot");
-    if (btn) { btn.classList.add("flash", "pending"); setTimeout(function () { btn.classList.remove("flash"); }, 120); }
-    updateRangeBtn();
+    if (typeof global.sipRangePot === "function") { global.sipRangePot(); return; }
   }
 
   function updateRangeBtn() {
-    const btn = $("btn-range-pot");
-    if (!btn) return;
-    const qty = $("qty-range");
-    const G = g();
-    if (qty) qty.textContent = String((G && G.rangePots) || 0);
-    btn.disabled = !G || G.rangePots <= 0;
-    btn.classList.toggle("hidden", !G || G.scene !== "kree");
-    const sweep = btn.querySelector(".cd-sweep");
-    const remain = rangingPending ? (global.CONSUME_COOLDOWN_TICKS || 3) : Math.max(0, rangingCd);
-    btn.classList.toggle("pending", !!rangingPending);
-    btn.classList.toggle("cooling", remain > 0 && !rangingPending);
-    if (sweep) sweep.style.setProperty("--cd", ((remain / (global.CONSUME_COOLDOWN_TICKS || 3)) * 100).toFixed(2) + "%");
+    if (typeof global.updateRangePotHud === "function") updateRangePotHud();
+    else if (typeof global.updateConsumableChrome === "function") updateConsumableChrome();
   }
 
   function tick() {
@@ -398,8 +362,10 @@
     G.ticks++;
     if (G.eatCd > 0) G.eatCd--;
     if (G.potCd > 0) G.potCd--;
+    if (G.rangeCd > 0) G.rangeCd--;
     if (typeof global.resolveConsumables === "function") resolveConsumables();
-    tickRanging();
+    if (typeof global.PlayerStats !== "undefined" && PlayerStats.tick) PlayerStats.tick();
+    updateRangeBtn();
 
     if (G.prayer && G.ticks % (global.PRAYER_DRAIN_EVERY || 2) === 0) {
       G.player.prayerPts = clamp(G.player.prayerPts - 1, 0, global.PLAYER_MAX_PRAYER || 99);
@@ -506,7 +472,9 @@
         }
         ctx.restore();
         if (m.alive && typeof global.drawKreeHpBar === "function") {
-          drawKreeHpBar(ctx, m.x * cssW, m.y * cssH - 40 * sc, m.hp / m.maxHp, m.name.split(" ").pop(), 56);
+          const mid = (m.kind === "geerin" || i === 1);
+          const barY = m.y * cssH - (mid ? 22 : 34) * sc;
+          drawKreeHpBar(ctx, m.x * cssW, barY, m.hp / m.maxHp, m.name.split(" ").pop(), mid ? 72 : 60);
         }
         if (G.target === i && m.alive && typeof global.drawOsrsCross === "function") {
           drawOsrsCross(ctx, m.x * cssW, m.y * cssH, "#ff1a1a", 1.05, 0, 0.85);
@@ -739,8 +707,7 @@
   function setKreeChrome(on) {
     const help = $("btn-kree-help");
     if (help) help.classList.toggle("visible", !!on);
-    const pot = $("btn-range-pot");
-    if (pot) pot.classList.toggle("hidden", !on);
+    if (typeof global.updateConsumableChrome === "function") updateConsumableChrome();
     if (typeof global.setRaidHelpVisible === "function" && on) setRaidHelpVisible(false);
   }
 
