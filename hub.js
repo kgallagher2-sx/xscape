@@ -64,6 +64,14 @@
         { name: "Veldan", text: "Fine wares, fair prices. Browse if you've the GP for it." }
       ],
       after: "shop"
+    },
+    { id: "oswin", name: "Oswin the Provisioner", title: "Oswin", kind: "supplier", col: 8, row: 5, facing: "left",
+      examine: "He sells food and potions for adventurers who must bring their own supplies.",
+      talk: [
+        { name: "Oswin the Provisioner", text: "Jad feeds you for free. Everyone else pays. I've fish, crabs, and potions — four doses, fair prices." },
+        { name: "Oswin the Provisioner", text: "Watch your pack, though. Twenty-eight slots, and a full bag means no sale." }
+      ],
+      after: "supplies"
     }
   ];
 
@@ -138,7 +146,7 @@
     // Side walls with the two standing NPCs
     if (col === 0 && row <= 4) return true;
     if (col === 8 && row <= 4) return true;
-    if ((col === 0 && row === 6) || (col === 8 && row === 6)) return true;
+    if ((col === 0 && row === 6) || (col === 8 && row === 6) || (col === 8 && row === 5)) return true;
     return false;
   }
 
@@ -1159,13 +1167,36 @@
     if (!npc) return { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#2a1c10", bald: true };
     if (npc.kind === "warden") return { robe: "#1a1420", robeLt: "#2a2438", trim: "#8a7038", hair: "#1a1410", staff: true };
     if (npc.kind === "shop") return { robe: "#3a2414", robeLt: "#5a3a20", trim: "#c9a24a", hair: "#4a2a10", apron: true };
+    if (npc.kind === "supplier") return { robe: "#1a3a32", robeLt: "#2a5a48", trim: "#c9a24a", hair: "#3a2410", apron: true, crate: true };
     if (npc.id === "mira") return { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#3a2418", hairLong: true };
     return { robe: "#24143a", robeLt: "#3a2060", trim: "#c9a24a", hair: "#2a1c10", bald: true };
   }
 
+  function drawCrate(ctx, x, y, s) {
+    ctx.save();
+    ctx.translate(x + s * 16, y + 2);
+    ctx.scale(s, s);
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.beginPath(); ctx.ellipse(0, 8, 11, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#6a4a24";
+    ctx.fillRect(-10, -8, 20, 16);
+    ctx.fillStyle = "#8a6230";
+    ctx.fillRect(-10, -8, 20, 5);
+    ctx.strokeStyle = "#3a2410";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-10, -8, 20, 16);
+    ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.stroke();
+    ctx.fillStyle = "#c05028";
+    ctx.fillRect(-6, -14, 5, 7);
+    ctx.fillStyle = "#3a6a8a";
+    ctx.fillRect(2, -13, 5, 6);
+    ctx.restore();
+  }
   function drawNpc(ctx, t, npc, lay) {
     var p = tilePx(npc.col, npc.row, lay);
-    robeNpc(ctx, p.x, p.y, lay, npcLook(npc));
+    var look = npcLook(npc);
+    if (look.crate) drawCrate(ctx, p.x, p.y, spriteScale(lay));
+    robeNpc(ctx, p.x, p.y, lay, look);
     drawNameTag(ctx, p.x, p.y - spriteScale(lay) * 42, npc.title || npc.name);
   }
 
@@ -1360,6 +1391,7 @@
       endChatLayer();
       if (after === "bank") openBank();
       else if (after === "shop") { if (typeof openShop === "function") openShop(); }
+      else if (after === "supplies") { if (typeof openSupplyShop === "function") openSupplyShop(); }
       else if (after === "boss") openBossMenu();
       return;
     }

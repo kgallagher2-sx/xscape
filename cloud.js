@@ -219,6 +219,10 @@
       settings.raidBrief = localStorage.getItem("kellenscape-raid-brief-seen") === "1";
       settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
     } catch (e) {}
+    if (global.XscapeSupplies && typeof XscapeSupplies.settingsSlice === "function") {
+      var qs = XscapeSupplies.settingsSlice();
+      if (qs && qs.quickSlots) settings.quickSlots = qs.quickSlots;
+    }
     var raw = {};
     try { raw = JSON.parse(localStorage.getItem("kellenscape-profile") || "null") || {}; } catch (e) { raw = {}; }
     return {
@@ -278,6 +282,9 @@
     if (Array.isArray(p.unlockedItems)) P.unlockedItems = p.unlockedItems.slice();
     if (Array.isArray(p.bank)) P.bank = p.bank.slice();
     if (Array.isArray(p.inventory)) P.inventory = p.inventory.slice();
+    if (p.settings && Array.isArray(p.settings.quickSlots) && global.XscapeSupplies && XscapeSupplies.loadLayout) {
+      try { XscapeSupplies.loadLayout(p.settings.quickSlots); } catch (e) {}
+    }
     if (typeof global.normalizeContainers === "function") {
       try { global.normalizeContainers(); } catch (e) {}
     }
@@ -2078,6 +2085,10 @@
       settings.raidBrief = localStorage.getItem("kellenscape-raid-brief-seen") === "1";
       settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
     } catch (e) {}
+    if (global.XscapeSupplies && typeof XscapeSupplies.settingsSlice === "function") {
+      var qs = XscapeSupplies.settingsSlice();
+      if (qs && qs.quickSlots) settings.quickSlots = qs.quickSlots;
+    }
     var res = await rpc("save_player_state", {
       p_payload: {
         levels: P.levels || {},
@@ -2263,6 +2274,11 @@
 
     reloadProfile: reloadProfile,
     flushSave: flushSave,
+    applyProfile: applyCloudProfile,
+    noteRevision: function (rev) {
+      var n = Number(rev);
+      if (!isNaN(n)) saveRevision = n;
+    },
     canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,
     getPresenceExtra: function () { return Object.assign({}, presenceExtra); },

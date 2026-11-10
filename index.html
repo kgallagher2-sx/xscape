@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110191746-d10e901";</script>
+  <script>window.XSCAPE_BUILD = "20261110203640-4e8d759";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -106,9 +106,38 @@
     }
     .skill-val.boost { color: #5dff5d; }
     .skill-val.drain { color: #ff6a6a; }
-    #consumables {
-      flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 10px; background: #22160e;
+    #consumables, #prayers { display: none !important; }
+    #quick-bar {
+      flex: 0 0 auto; display: flex; align-items: stretch; gap: 6px;
+      padding: 4px var(--hud-right) var(--hud-bottom) var(--hud-left);
+      background: #160e0a; border-top: 2px solid #3a2a18;
     }
+    #quick-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; min-width: 0; }
+    .quick-slot { position: relative; overflow: hidden; height: 56px; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 2px 2px 1px; background: linear-gradient(#3a2c1c, #22180e); border: 2px solid #5a4630; border-radius: 6px; color: #d8c8a0; cursor: pointer; font-family: inherit; }
+    .quick-slot canvas { width: 28px; height: 28px; display: block; }
+    .quick-slot .q-lab { font-size: 8px; font-weight: 700; letter-spacing: 0.2px; line-height: 1.05; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-slot .q-qty { position: absolute; right: 3px; top: 2px; z-index: 2; background: #1a1008; border: 1px solid #000; color: var(--gold); min-width: 12px; padding: 0 3px; font-size: 9px; font-weight: 700; border-radius: 2px; }
+    .quick-slot .q-qty.hidden { display: none; }
+    .quick-slot .cd-sweep { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; background: conic-gradient(rgba(0,0,0,0.72) var(--cd, 0%), rgba(0,0,0,0.12) var(--cd, 0%)); }
+    .quick-slot.cooling .cd-sweep { opacity: 1; }
+    .quick-slot.pending .cd-sweep { opacity: 1; background: conic-gradient(rgba(40,20,0,0.7) 100%, rgba(40,20,0,0.7) 0%); }
+    .quick-slot.empty { opacity: 0.55; }
+    .quick-slot.edit-mode { outline: 1px dashed #c9a24a; }
+    .quick-slot.assigning { box-shadow: 0 0 8px #ffe44a; border-color: #ffe44a; }
+    .quick-slot:disabled { opacity: 0.4; }
+    .quick-slot.active-mage { border-color: #5ac0ff; box-shadow: 0 0 8px #1a80ff, inset 0 0 8px #0a3060; background: linear-gradient(#2a3a50, #152030); }
+    .quick-slot.active-range { border-color: #e8d44a; box-shadow: 0 0 8px #a09020, inset 0 0 8px #403800; background: linear-gradient(#4a4020, #2a2410); }
+    .quick-slot.active-melee { border-color: #ff7050; box-shadow: 0 0 8px #c03010, inset 0 0 8px #401000; background: linear-gradient(#502820, #301410); }
+    #btn-quick-edit { flex: 0 0 36px; width: 36px; min-width: 36px; background: linear-gradient(#3a2c1c, #22180e); border: 2px solid #7a6238; border-radius: 6px; color: #e8d080; font-size: 18px; cursor: pointer; font-family: inherit; }
+    #btn-quick-edit.on { border-color: #ffe44a; box-shadow: 0 0 8px #c9a24a; color: #ffe44a; }
+    .supply-row { display: flex; align-items: center; gap: 8px; }
+    .supply-row canvas.supply-icon { width: 36px; height: 36px; flex: 0 0 36px; }
+    .supply-qty-row { display: flex; gap: 6px; margin: 8px 0; }
+    .supply-qty-row .btn.on { border-color: #ffe44a; color: #ffe44a; }
+    .quick-pick-h { margin: 10px 0 4px; font-size: 12px; color: #c9a24a; font-weight: 700; }
+    .quick-pick { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 4px; padding: 6px 8px; text-align: left; background: linear-gradient(#3a2c1c, #22180e); border: 1px solid #5a4630; color: #f0e0b0; border-radius: 4px; cursor: pointer; font-family: inherit; }
+    .quick-pick canvas { width: 28px; height: 28px; }
+    .quick-pick-empty { font-size: 12px; color: #a09070; padding: 6px 0; }
     .item-btn {
       flex: 1 1 30%; min-width: 30%; height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px;
       background: linear-gradient(#4a3824, #2c2014); border: 2px solid #7a6238;
@@ -284,7 +313,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -572,6 +601,7 @@
     #app.hub-world #mid,
     #app.hub-world #consumables,
     #app.hub-world #prayers,
+    #app.hub-world #quick-bar,
     #app.hub-world #top-hud { display: none; }
     #app.hub-world #btn-raid-help,
     #app.hub-world #btn-kree-help { display: none; }
@@ -715,6 +745,7 @@
     /* Fight scenes must never keep the bank/arena dock or hide fight chrome. */
     #app.fight-world #overlay-hub { display: none !important; }
     #app.fight-world.hub-world #mid,
+    #app.fight-world.hub-world #quick-bar { display: flex !important; }
     #app.fight-world.hub-world #consumables,
     #app.fight-world.hub-world #prayers,
     #app.fight-world.hub-world #top-hud { display: revert !important; }
@@ -835,12 +866,16 @@
         <div id="gear"></div>
       </div>
     </div>
-    <div id="consumables">
+    <div id="quick-bar">
+      <div id="quick-grid" role="toolbar" aria-label="Quick prayers and supplies"></div>
+      <button type="button" id="btn-quick-edit" aria-label="Edit quick slots" title="Edit quick slots">✎</button>
+    </div>
+    <div id="consumables" hidden>
       <button class="item-btn" id="btn-shark" type="button"><span class="cd-sweep" id="cd-shark"></span>Shark <span class="qty" id="qty-shark">3</span></button>
       <button class="item-btn" id="btn-pot" type="button"><span class="cd-sweep" id="cd-pot"></span>Prayer pot <span class="qty" id="qty-pot">2</span></button>
       <button class="item-btn hidden" id="btn-range-pot" type="button"><span class="cd-sweep" id="cd-range"></span>Range pot <span class="qty" id="qty-range">1</span></button>
     </div>
-    <div id="prayers">
+    <div id="prayers" hidden>
       <button class="pray-btn" id="btn-mage" type="button" aria-label="Protect from Magic">
         <canvas width="48" height="48"></canvas>
         <span class="plab">Magic</span>
@@ -1014,6 +1049,36 @@
     </div>
 
 
+    <div class="overlay hidden" id="overlay-supply-shop">
+      <div class="gear-card shop-card sheet-card">
+        <button class="overlay-x" id="btn-supply-shop-x" type="button" aria-label="Close">×</button>
+        <h2>Provisioner</h2>
+        <div id="supply-shop-gp" class="gp-line">GP: <span id="supply-shop-gp-amt" class="gp-amt gp-yellow">0</span></div>
+        <div id="supply-shop-space" class="gp-line">Inventory 0/28</div>
+        <div class="supply-qty-row">
+          <button type="button" class="btn secondary" id="supply-qty-1">1</button>
+          <button type="button" class="btn secondary" id="supply-qty-5">5</button>
+          <button type="button" class="btn secondary" id="supply-qty-10">10</button>
+          <button type="button" class="btn secondary" id="supply-qty-x">X</button>
+        </div>
+        <div class="sheet-scroll" id="supply-shop-scroll">
+          <div id="supply-shop-list"></div>
+          <div class="shop-foot">Food and potions for Kree'arra, Gloamhold, and any fight that is not TzTok-Jad. Jad still issues free supplies. Nothing real is ever charged.</div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn" id="btn-supply-shop-close" type="button">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-quick-edit">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-quick-edit-close" type="button" aria-label="Close">×</button>
+        <h2>Assign slot</h2>
+        <div class="sheet-scroll" id="quick-edit-list"></div>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="overlay-bank">
       <div class="gear-card sheet-card">
         <button class="overlay-x" data-close="bank" type="button" aria-label="Close">×</button>
@@ -1165,7 +1230,7 @@
         <p><b>Melee (3):</b> if you stand close (the middle tiles) he may dive, hit you, and <b>knock you back one tile</b>. Protect from Melee.</p>
         <p><b>Tornadoes:</b> he marks your tile with a swirling gale. Walk off before it lands — prayer will not save you from this one.</p>
         <p><b>Bodyguards:</b> Wingman Skree (Magic), Flockleader Geerin (Missiles), and Flight Kilisa (Melee). They have little HP. Killing them first makes the fight cleaner; you can ignore them and go straight for Kree'arra if you prefer.</p>
-        <p><b>Supplies:</b> sharks heal 20, prayer pots restore 31, and a ranging potion boosts your ranged for a while. Each bite or sip delays your next shot. F / P / R, or the on-screen buttons.</p>
+        <p><b>Supplies:</b> bring food and potions from the bank provisioner — there are no free supplies here. Use the quick slots (pencil to edit). Each bite or sip delays your next shot. F / P / R, or the on-screen buttons.</p>
         <p><b>Loot:</b> every kill pays 1.5–3M pretend GP. Armadyl helmet, chestplate, and chainskirt are about 1/12 each; the Armadyl crossbow is about 1/25. This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
@@ -1642,10 +1707,14 @@ function inventorySpace() {
   return Math.max(0, INVENTORY_CAP - (Profile.inventory || []).length);
 }
 
+function itemIsConsumable(id) {
+  const it = ITEMS[id];
+  return !!(it && (it.consumable || it.kind === "food" || it.kind === "potion"));
+}
 function addToInventory(id) {
   if (!id || !ITEMS[id]) return false;
   if (!Profile.inventory) Profile.inventory = [];
-  if (Profile.inventory.indexOf(id) !== -1) return true;
+  if (!itemIsConsumable(id) && Profile.inventory.indexOf(id) !== -1) return true;
   if (Profile.inventory.length >= INVENTORY_CAP) return false;
   Profile.inventory.push(id);
   return true;
@@ -1662,7 +1731,8 @@ function removeFromInventory(id) {
 function addToBankStore(id) {
   if (!id || !ITEMS[id]) return false;
   if (!Profile.bank) Profile.bank = [];
-  if (Profile.bank.indexOf(id) === -1) Profile.bank.push(id);
+  if (!itemIsConsumable(id) && Profile.bank.indexOf(id) !== -1) return true;
+  Profile.bank.push(id);
   return true;
 }
 
@@ -1705,7 +1775,7 @@ function bankList() {
     const id = eq[EQUIP_SLOTS[i]];
     if (id) wornOrInv[id] = true;
   }
-  (Profile.inventory || []).forEach((id) => { if (id) wornOrInv[id] = true; });
+  (Profile.inventory || []).forEach((id) => { if (id && !itemIsConsumable(id)) wornOrInv[id] = true; });
   return (Profile.bank || []).filter((id) => ITEMS[id] && !wornOrInv[id] && !itemIsHidden(ITEMS[id]));
 }
 
@@ -1719,17 +1789,25 @@ function normalizeContainers() {
   const invSeen = {};
   const inv = [];
   (Profile.inventory || []).forEach((id) => {
-    if (!id || !ITEMS[id] || worn[id] || invSeen[id] || itemIsHidden(ITEMS[id])) return;
-    invSeen[id] = true;
+    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id])) return;
+    if (worn[id] && !itemIsConsumable(id)) return;
+    if (!itemIsConsumable(id)) {
+      if (invSeen[id]) return;
+      invSeen[id] = true;
+    }
+    if (inv.length >= INVENTORY_CAP) return;
     inv.push(id);
   });
   Profile.inventory = inv;
   const bankSeen = {};
   const bank = [];
   (Profile.bank || []).forEach((id) => {
-    if (!id || !ITEMS[id] || worn[id] || invSeen[id] || bankSeen[id]) return;
-    if (itemIsHidden(ITEMS[id])) return;
-    bankSeen[id] = true;
+    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id])) return;
+    if (worn[id] && !itemIsConsumable(id)) return;
+    if (!itemIsConsumable(id)) {
+      if (invSeen[id] || bankSeen[id]) return;
+      bankSeen[id] = true;
+    }
     bank.push(id);
   });
   Profile.bank = bank;
@@ -3846,6 +3924,7 @@ function resetFight() {
   G.sharks = SHARK_COUNT;
   G.pots = POT_COUNT;
   G.rangePots = RANGE_POT_COUNT;
+  if (window.XscapeSupplies && XscapeSupplies.startJadKit) XscapeSupplies.startJadKit();
   G.eatCd = 0;
   G.potCd = 0;
   G.rangeCd = 0;
@@ -4100,6 +4179,7 @@ function tickProgress() {
 }
 
 function eatShark() {
+  if (window.XscapeSupplies && XscapeSupplies.queueUse) { XscapeSupplies.queueUse("shark"); return; }
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.eat(); return; }
   if (G.mode !== "playing" || !G.player || G.sharks <= 0 || G.player.hp <= 0) return;
   if (G.pendingEat || G.eatCd > 0) { flashMsg("Chewing…", "#c0c0c0"); return; }
@@ -4110,6 +4190,11 @@ function eatShark() {
   updateConsumeVisuals();
 }
 function sipPot() {
+  if (window.XscapeSupplies && XscapeSupplies.queueUse) {
+    const fam = (XscapeSupplies.countFamily && XscapeSupplies.countFamily("super_restore") > 0) ? "super_restore" : "prayer_potion";
+    XscapeSupplies.queueUse(fam);
+    return;
+  }
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.sip(); return; }
   if (G.mode !== "playing" || !G.player || G.pots <= 0 || G.player.hp <= 0) return;
   if (G.pendingPot || G.potCd > 0) { flashMsg("Already sipping…", "#c0c0c0"); return; }
@@ -4120,6 +4205,7 @@ function sipPot() {
   updateConsumeVisuals();
 }
 function sipRangePot() {
+  if (window.XscapeSupplies && XscapeSupplies.queueUse) { XscapeSupplies.queueUse("ranging_potion"); return; }
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.ranging(); return; }
   if (G.mode !== "playing" || !G.player || (G.rangePots || 0) <= 0 || G.player.hp <= 0) return;
   if (G.pendingRange || G.rangeCd > 0) { flashMsg("Already sipping…", "#c0c0c0"); return; }
@@ -4134,6 +4220,10 @@ function sipRangePot() {
 }
 
 function resolveConsumables() {
+  if (window.XscapeSupplies && typeof XscapeSupplies.resolvePending === "function" && G.pendingUse) {
+    XscapeSupplies.resolvePending();
+    return;
+  }
   if (G.pendingEat) {
     G.pendingEat = false;
     if (G.player && G.player.hp > 0 && G.sharks > 0 && G.player.hp < PLAYER_MAX_HP) {
@@ -4221,10 +4311,12 @@ function setPrayer(kind) {
 function updatePrayerButtons() {
   for (const [id, kind] of [["btn-mage","mage"],["btn-range","range"],["btn-melee","melee"]]) {
     const el = $(id);
+    if (!el) continue;
     el.classList.remove("active-mage","active-range","active-melee");
     if (G.prayer === kind) el.classList.add("active-" + kind);
   }
   refreshPrayIcons();
+  if (window.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh();
 }
 
 function spawnSplat(nx, ny, value, color) {
@@ -4269,15 +4361,16 @@ function updateHud() {
   const hp = G.player.hp, php = G.player.prayerPts;
   $("hp-txt").textContent = hp + "/" + PLAYER_MAX_HP;
   $("prayer-txt").textContent = php + "/" + PLAYER_MAX_PRAYER;
-  $("hp-fill").style.transform = "scaleX(" + (hp / PLAYER_MAX_HP) + ")";
-  $("prayer-fill").style.transform = "scaleX(" + (php / PLAYER_MAX_PRAYER) + ")";
+  $("hp-fill").style.transform = "scaleX(" + Math.min(1, hp / PLAYER_MAX_HP) + ")";
+  $("prayer-fill").style.transform = "scaleX(" + Math.min(1, php / PLAYER_MAX_PRAYER) + ")";
   $("hp-fill").classList.toggle("low", hp <= 40 && hp > 20);
   $("hp-fill").classList.toggle("crit", hp <= 20);
-  $("qty-shark").textContent = G.sharks;
-  $("qty-pot").textContent = G.pots;
-  $("btn-shark").disabled = G.sharks <= 0;
-  $("btn-pot").disabled = G.pots <= 0;
+  if ($("qty-shark")) $("qty-shark").textContent = G.sharks;
+  if ($("qty-pot")) $("qty-pot").textContent = G.pots;
+  if ($("btn-shark")) $("btn-shark").disabled = G.sharks <= 0;
+  if ($("btn-pot")) $("btn-pot").disabled = G.pots <= 0;
   updateRangePotHud();
+  if (window.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh();
   if (typeof PlayerStats !== "undefined" && PlayerStats.render) PlayerStats.render();
   $("hud-time").textContent = fmtTime(G.elapsedMs / 1000);
   $("hud-score").textContent = String(liveScore());
@@ -5515,7 +5608,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-quick-edit","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -5558,6 +5651,8 @@ const Scenes = {
     id: "hub",
     enter() {
       G.mode = "hub";
+      if (window.XscapeSupplies && XscapeSupplies.clearJadKit) XscapeSupplies.clearJadKit();
+      if (window.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave();
       if ($("app")) $("app").classList.remove("fight-world");
       hideAllOverlays();
       $("overlay-hub").classList.remove("hidden");
@@ -5578,6 +5673,7 @@ const Scenes = {
       $("overlay-tut").classList.add("hidden");
       $("overlay-win").classList.add("hidden");
       $("overlay-lose").classList.add("hidden");
+      if (window.XscapeSupplies && XscapeSupplies.clearJadKit) XscapeSupplies.clearJadKit();
     }
   },
   duel: {
@@ -6149,8 +6245,7 @@ function applyLetterbox() {
   const a = G.cs ? (G.cs.letter || 0) : 0;
   const th = (($("top-hud") && $("top-hud").offsetHeight) || 40) + 10;
   const bh = (($("mid") && $("mid").offsetHeight) || 40)
-    + (($("consumables") && $("consumables").offsetHeight) || 48)
-    + (($("prayers") && $("prayers").offsetHeight) || 110)
+    + (($("quick-bar") && $("quick-bar").offsetHeight) || 124)
     + 8;
   top.style.height = Math.round(a * th) + "px";
   bot.style.height = Math.round(a * bh) + "px";
@@ -6256,6 +6351,8 @@ if ($("btn-shop")) bindTap($("btn-shop"), () => { audio.unlock(); openShop(); })
 bindTap($("btn-shop-close"), () => { audio.unlock(); closeShop(); });
 bindTap($("btn-shop-x"), () => { audio.unlock(); closeShop(); });
 bindBackdropClose($("overlay-shop"), () => { audio.unlock(); closeShop(); });
+if ($("overlay-supply-shop")) bindBackdropClose($("overlay-supply-shop"), () => { audio.unlock(); if (window.closeSupplyShop) closeSupplyShop(); });
+if ($("overlay-quick-edit")) bindBackdropClose($("overlay-quick-edit"), () => { if (window.XscapeSupplies) XscapeSupplies.endEdit(); });
 if ($("shop-list")) $("shop-list").addEventListener("click", (e) => {
   const btn = e.target.closest && e.target.closest("[data-shop]");
   if (!btn) return;
@@ -6601,6 +6698,7 @@ window.wearingFireCape = wearingFireCape;
 window.gloamholdLockReason = gloamholdLockReason;
 window.tryEnterGloamhold = tryEnterGloamhold;
 </script>
+<script src="supplies.js"></script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
 <script src="kree.js"></script>

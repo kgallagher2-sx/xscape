@@ -84,9 +84,10 @@
     G.elapsedMs = 0;
     G.prayer = null;
     G.target = "kree";
-    G.sharks = SHARKS;
-    G.pots = POTS;
-    G.rangePots = RANGE_POTS;
+    G.sharks = 0;
+    G.pots = 0;
+    G.rangePots = 0;
+    if (global.XscapeSupplies && XscapeSupplies.startBroughtSupplies) XscapeSupplies.startBroughtSupplies();
     G.rangingLeft = 0;
     G.eatCd = 0;
     G.potCd = 0;
@@ -620,6 +621,7 @@
     if (P) {
       P.kreeKills = (P.kreeKills || 0) + 1;
       if (typeof global.saveProfile === "function") saveProfile();
+      if (global.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave();
     }
     if (typeof global.refreshGearViews === "function") refreshGearViews();
     return awarded;
@@ -762,6 +764,8 @@
           const br = $("overlay-kree-tut");
           if (br) br.classList.add("hidden");
           if (audio && audio.stopAmbient) audio.stopAmbient();
+          if (global.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave();
+          if (global.XscapeSupplies && XscapeSupplies.clearJadKit) XscapeSupplies.clearJadKit();
         }
       };
     }
@@ -802,6 +806,7 @@
     giveGear: function () {
       DROP.forEach(function (d) { if (typeof global.ownItem === "function") ownItem(d.id); });
       if (typeof global.saveProfile === "function") saveProfile();
+      if (global.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave();
       if (typeof global.refreshGearViews === "function") refreshGearViews();
       return DROP.map(function (d) { return d.id; });
     },

@@ -85,6 +85,57 @@
     return setCurrent("ranged", b + rangingPotionBoost(b));
   }
 
+  function superPotionBoost(baseLv) {
+    const b = baseLv != null ? baseLv : 99;
+    return 5 + Math.floor(b * 0.15);
+  }
+  function applySuperPotion(skillName) {
+    if (COMBAT_SKILLS.indexOf(skillName) < 0) return skill(skillName).current;
+    const b = skill(skillName).base;
+    return setCurrent(skillName, b + superPotionBoost(b));
+  }
+  function applyMagicPotion() {
+    const b = skill("magic").base;
+    return setCurrent("magic", b + 4);
+  }
+  function restoreAmount(skillName) {
+    const b = skill(skillName || "prayer").base;
+    return 8 + Math.floor(b * 0.25);
+  }
+  function needsRestore() {
+    for (let i = 0; i < COMBAT_SKILLS.length; i++) {
+      const k = COMBAT_SKILLS[i];
+      if (skill(k).current < skill(k).base) return true;
+    }
+    return false;
+  }
+  function applySuperRestore() {
+    const amt = restoreAmount("attack");
+    for (let i = 0; i < COMBAT_SKILLS.length; i++) {
+      const k = COMBAT_SKILLS[i];
+      const s = skill(k);
+      if (s.current < s.base) setCurrent(k, Math.min(s.base, s.current + restoreAmount(k)));
+    }
+    return snapshot();
+  }
+  // OSRS Saradomin brew: + (15% HP + 2) and can overheal; Defence +20%+2 of current;
+  // Attack/Strength/Ranged/Magic −10%−2 of current.
+  function applyBrew() {
+    const hpBase = skill("hitpoints").base || 99;
+    const heal = 2 + Math.floor(hpBase * 0.15);
+    const G = global.G;
+    let hp = (G && G.player) ? G.player.hp : hpBase;
+    hp = hp + heal;
+    if (G && G.player) G.player.hp = hp;
+    const d = skill("defence");
+    setCurrent("defence", d.current + 2 + Math.floor(d.current * 0.20));
+    ["attack", "strength", "ranged", "magic"].forEach(function (k) {
+      const s = skill(k);
+      setCurrent(k, Math.max(1, s.current - 2 - Math.floor(s.current * 0.10)));
+    });
+    return { hp: hp, heal: heal };
+  }
+
   function tick() {
     state.decayTick++;
     if (state.decayTick < DECAY_TICKS) return false;
@@ -323,6 +374,13 @@
     render: render,
     applyRangingPotion: applyRangingPotion,
     rangingPotionBoost: rangingPotionBoost,
+    applySuperPotion: applySuperPotion,
+    superPotionBoost: superPotionBoost,
+    applyMagicPotion: applyMagicPotion,
+    applySuperRestore: applySuperRestore,
+    applyBrew: applyBrew,
+    restoreAmount: restoreAmount,
+    needsRestore: needsRestore,
     drawSkillIcon: drawSkillIcon,
     ensureHud: ensureHud
   };

@@ -349,7 +349,14 @@
       damageDealt: 0, damageTaken: 0, perfectPrayers: 0, score: 0
     };
   }
-  function defaultInv() { return { sharks: 10, pots: 6, brews: 0, ranging: 1 }; }
+  function emptyInv() { return { sharks: 0, pots: 0, brews: 0, ranging: 0, swordfish: 0, dark_crab: 0 }; }
+  function carriedInv() {
+    if (global.XscapeSupplies && typeof XscapeSupplies.raidInvFromCarried === "function") {
+      return XscapeSupplies.raidInvFromCarried();
+    }
+    return emptyInv();
+  }
+  function defaultInv() { return emptyInv(); }
 
   let R = null, host = null, acc = 0, lastTs = 0, raf = 0, running = false, briefPause = false, raidRunning = false;
 
@@ -364,10 +371,11 @@
     return {
       room: opts.room || "gate", mode: "playing", ticks: 0,
       startMs: now(), elapsedMs: 0, lastTickMs: now(),
-      player: freshPlayer(loadout), inv: opts.inv ? deep(opts.inv) : defaultInv(),
+      player: freshPlayer(loadout), inv: opts.inv ? deep(opts.inv) : carriedInv(),
+      found: {},
       prayer: null, god: !!opts.god, target: null,
       marks: [], adds: [], boss: null, projectiles: [], bolts: [], splats: [], particles: [],
-      float: null, pendingEat: false, pendingPot: false, pendingBrew: false, pendingRange: false,
+      float: null, pendingEat: false, pendingPot: false, pendingBrew: false, pendingRange: false, pendingUse: null,
       eatCd: 0, potCd: 0, brewCd: 0, rangeCd: 0, roomState: {}, snapshot: null,
       damageTaken: 0, perfectPrayers: 0, prayersTotal: 0, loot: null,
       rng: rng, seed: opts.seed || 0, auto: !!opts.auto, policy: opts.policy || null,
@@ -511,7 +519,7 @@
       var id = m.userId || m.user_id || m.id;
       if (!id || seen[id]) continue;
       seen[id] = true;
-      var f = bindFighterInv(freshPlayer(st.player.loadout), defaultInv());
+      var f = bindFighterInv(freshPlayer(st.player.loadout), emptyInv());
       f.id = id;
       f.username = m.username || m.name || "Adventurer";
       f.col = f.prevCol = spawnOffset(st.fighters.length, Math.max(members.length, 2));
@@ -520,7 +528,7 @@
       st.fighters.push(f);
     }
     if (!fighterById(st, localId)) {
-      var self = bindFighterInv(st.player, st.inv || defaultInv());
+      var self = bindFighterInv(st.player, st.inv || carriedInv());
       self.id = localId;
       self.username = (global.Profile && Profile.name) || "You";
       self.col = self.prevCol = spawnOffset(st.fighters.length, st.fighters.length + 1);
@@ -566,10 +574,12 @@
           st.prayer = inp.prayer || null;
           f.prayer = st.prayer;
         }
+        if (inp.inv && !f.invReceived) { f.inv = inp.inv; f.invReceived = true; }
         if (inp.eat) st.pendingEat = true;
         if (inp.pot) st.pendingPot = true;
         if (inp.brew) st.pendingBrew = true;
         if (inp.range) st.pendingRange = true;
+        if (inp.use) st.pendingUse = inp.use;
         if (inp.target) st.target = inp.target;
         if (inp.destCol != null && inp.destRow != null) {
           f.path = pathTo(st, inp.destCol, inp.destRow);
@@ -1624,13 +1634,26 @@
       return;
     }
     const tab = chestTable(st.room);
+    function addFound(bag, tab) {
+      bag.sharks = (bag.sharks || 0) + (tab.sharks || 0);
+      bag.pots = (bag.pots || 0) + (tab.pots || 0);
+      bag.brews = (bag.brews || 0) + (tab.brews || 0);
+      bag.ranging = (tab.ranging ? (bag.ranging_potion || bag.ranging || 0) + tab.ranging : (bag.ranging_potion || bag.ranging || 0));
+      bag.shark = (bag.shark || 0) + (tab.sharks || 0);
+      bag.prayer_potion = (bag.prayer_potion || 0) + (tab.pots || 0);
+      bag.saradomin_brew = (bag.saradomin_brew || 0) + (tab.brews || 0);
+      bag.ranging_potion = (bag.ranging_potion || 0) + (tab.ranging || 0);
+    }
+    if (!st.found) st.found = {};
+    addFound(st.found, tab);
     if (isGroup(st)) {
       allFighters(st).forEach(function (f) {
-        if (!f.inv) f.inv = defaultInv();
+        if (!f.inv) f.inv = emptyInv();
         f.inv.sharks += tab.sharks; f.inv.pots += tab.pots; f.inv.brews += tab.brews; f.inv.ranging += tab.ranging;
       });
       restoreLocalFighter(st);
     } else {
+      if (!st.inv) st.inv = emptyInv();
       st.inv.sharks += tab.sharks; st.inv.pots += tab.pots; st.inv.brews += tab.brews; st.inv.ranging += tab.ranging;
     }
     const bits = [];
@@ -1706,62 +1729,159 @@
     st.loot = loot;
   }
 
+  function isLocalResolve(st) {
+    if (!st.group) return true;
+    var me = fighterById(st, st.group.localId);
+    return !me || st.player === me || (st.player && String(st.player.id) === String(st.group.localId));
+  }
+  function familyAvailable(st, fam) {
+    if (global.XscapeSupplies && isLocalResolve(st) && XscapeSupplies.available) {
+      return XscapeSupplies.available(fam);
+    }
+    if (!st.inv) return 0;
+    if (fam === "shark") return st.inv.sharks || 0;
+    if (fam === "swordfish") return st.inv.swordfish || 0;
+    if (fam === "dark_crab") return st.inv.dark_crab || 0;
+    if (fam === "prayer_potion" || fam === "super_restore") return st.inv.pots || 0;
+    if (fam === "saradomin_brew") return st.inv.brews || 0;
+    if (fam === "ranging_potion") return st.inv.ranging || 0;
+    return 0;
+  }
+  function queueSupply(fam) {
+    const st = arguments.length > 1 ? arguments[1] : R;
+    if (!st || st.mode !== "playing") return false;
+    if (st.pendingUse || st.pendingEat || st.pendingPot || st.pendingBrew || st.pendingRange) {
+      flash(st, (fam === "shark" || fam === "swordfish" || fam === "dark_crab") ? "Chewing…" : "Already sipping…", "#c0c0c0");
+      return false;
+    }
+    if ((fam === "shark" || fam === "swordfish" || fam === "dark_crab") && (st.eatCd || 0) > 0) return false;
+    if (fam === "ranging_potion" && (st.rangeCd || 0) > 0) { flash(st, "Already sipping…", "#c0c0c0"); return false; }
+    if ((fam !== "shark" && fam !== "swordfish" && fam !== "dark_crab") && (st.potCd || 0) > 0) return false;
+    if (familyAvailable(st, fam) <= 0) {
+      flash(st, "None left", "#c0c0c0");
+      return false;
+    }
+    if ((fam === "shark" || fam === "swordfish" || fam === "dark_crab") && st.player.hp >= PLAYER_MAX_HP) {
+      return flash(st, "Full HP", "#c0c0c0");
+    }
+    if (fam === "prayer_potion" && st.player.prayerPts >= PLAYER_MAX_PRAYER) {
+      return flash(st, "Full prayer", "#c0c0c0");
+    }
+    st.pendingUse = fam;
+    if (fam === "shark" || fam === "swordfish" || fam === "dark_crab") st.pendingEat = true;
+    else if (fam === "ranging_potion") st.pendingRange = true;
+    else if (fam === "saradomin_brew") st.pendingBrew = true;
+    else st.pendingPot = true;
+    sendRaidInput(st, { use: fam });
+    return true;
+  }
   function queueEat(st) {
-    if (st.mode !== "playing") return;
-    if (st.pendingEat) return;
-    if (st.inv.sharks <= 0) return flash(st, "No sharks", "#c0c0c0");
-    if (st.player.hp >= PLAYER_MAX_HP) return flash(st, "Full HP", "#c0c0c0");
-    if (st.eatCd > 0) return;
-    st.pendingEat = true;
-    sendRaidInput(st, { eat: true });
+    if (st.inv && (st.inv.dark_crab || 0) > 0) return queueSupply("dark_crab", st);
+    if (st.inv && (st.inv.shark || st.inv.sharks || 0) > 0) return queueSupply("shark", st);
+    return queueSupply("swordfish", st);
   }
   function queuePot(st) {
-    if (st.mode !== "playing") return;
-    if (st.pendingPot) return;
-    if (st.inv.pots <= 0) return flash(st, "No prayer pots", "#c0c0c0");
-    if (st.player.prayerPts >= PLAYER_MAX_PRAYER) return flash(st, "Full prayer", "#c0c0c0");
-    if (st.potCd > 0) return;
-    st.pendingPot = true;
-    sendRaidInput(st, { pot: true });
+    if (global.XscapeSupplies && XscapeSupplies.countFamily && XscapeSupplies.countFamily("super_restore") > 0) {
+      return queueSupply("super_restore", st);
+    }
+    return queueSupply("prayer_potion", st);
   }
-  function queueBrew(st) {
-    if (st.mode !== "playing") return;
-    if (st.pendingBrew) return;
-    if (st.inv.brews <= 0) return flash(st, "No brews", "#c0c0c0");
-    if (st.player.hp >= PLAYER_MAX_HP) return flash(st, "Full HP", "#c0c0c0");
-    if (st.brewCd > 0) return;
-    st.pendingBrew = true;
-    sendRaidInput(st, { brew: true });
+  function queueBrew(st) { return queueSupply("saradomin_brew", st); }
+  function queueRange(st) { return queueSupply("ranging_potion", st); }
+  function applyRaidEffect(st, fam) {
+    const p = st.player;
+    if (!p || p.hp <= 0) return false;
+    const local = isLocalResolve(st);
+    const PS = global.PlayerStats;
+    const foodHeal = fam === "swordfish" ? 14 : fam === "dark_crab" ? 22 : 20;
+    if (fam === "shark" || fam === "swordfish" || fam === "dark_crab") {
+      const before = p.hp;
+      p.hp = clamp(p.hp + foodHeal, 0, PLAYER_MAX_HP);
+      p.atkCd += SHARK_DELAY;
+      st.eatCd = CONSUME_CD;
+      sfx(st, "eat");
+      return p.hp !== before || true;
+    }
+    if (fam === "prayer_potion") {
+      p.prayerPts = clamp(p.prayerPts + POT_RESTORE, 0, PLAYER_MAX_PRAYER);
+      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      return true;
+    }
+    if (fam === "super_restore") {
+      const amt = (PS && PS.restoreAmount) ? PS.restoreAmount("prayer") : 32;
+      p.prayerPts = clamp(p.prayerPts + amt, 0, PLAYER_MAX_PRAYER);
+      if (local && PS && PS.applySuperRestore) PS.applySuperRestore();
+      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      flash(st, "Super restore", "#d8a0ff");
+      return true;
+    }
+    if (fam === "saradomin_brew") {
+      const heal = 2 + Math.floor(99 * 0.15);
+      p.hp = p.hp + heal; // overheal
+      if (local && PS && PS.applyBrew) {
+        const saved = global.G && G.player;
+        if (saved) saved.hp = p.hp - heal;
+        const r = PS.applyBrew();
+        if (r && r.hp != null) p.hp = r.hp;
+      }
+      p.atkCd += POT_DELAY; st.brewCd = CONSUME_CD; sfx(st, "sip");
+      flash(st, "Saradomin brew", "#e8e0b0");
+      return true;
+    }
+    if (fam === "ranging_potion") {
+      p.rangingLeft = RANGING_POT_TICKS;
+      if (local && PS && PS.applyRangingPotion) PS.applyRangingPotion();
+      p.atkCd += POT_DELAY; st.rangeCd = CONSUME_CD; sfx(st, "sip");
+      flash(st, "Ranging potion", "#7af07a");
+      return true;
+    }
+    if (fam === "magic_potion") {
+      if (local && PS && PS.applyMagicPotion) PS.applyMagicPotion();
+      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      flash(st, "Magic potion", "#7ad8ff");
+      return true;
+    }
+    if (fam === "super_attack" || fam === "super_strength" || fam === "super_defence") {
+      const skill = fam === "super_attack" ? "attack" : fam === "super_strength" ? "strength" : "defence";
+      if (local && PS && PS.applySuperPotion) PS.applySuperPotion(skill);
+      p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
+      flash(st, fam.replace("super_", "Super "), "#7af07a");
+      return true;
+    }
+    return false;
   }
-  function queueRange(st) {
-    if (st.mode !== "playing") return;
-    if (st.pendingRange) return;
-    if (st.inv.ranging <= 0) return flash(st, "No ranging pots", "#c0c0c0");
-    if (st.rangeCd > 0) return flash(st, "Already sipping…", "#c0c0c0");
-    st.pendingRange = true;
-    sendRaidInput(st, { range: true });
+  function bumpInv(inv, fam, delta) {
+    if (!inv) return;
+    if (fam === "shark") inv.sharks = Math.max(0, (inv.sharks || 0) + delta);
+    else if (fam === "swordfish") inv.swordfish = Math.max(0, (inv.swordfish || 0) + delta);
+    else if (fam === "dark_crab") inv.dark_crab = Math.max(0, (inv.dark_crab || 0) + delta);
+    else if (fam === "prayer_potion" || fam === "super_restore") inv.pots = Math.max(0, (inv.pots || 0) + delta);
+    else if (fam === "saradomin_brew") inv.brews = Math.max(0, (inv.brews || 0) + delta);
+    else if (fam === "ranging_potion") inv.ranging = Math.max(0, (inv.ranging || 0) + delta);
   }
   function resolveConsumables(st) {
     const p = st.player;
-    if (st.pendingEat && st.inv.sharks > 0 && p.hp > 0) {
-      st.pendingEat = false; st.inv.sharks--; p.hp = clamp(p.hp + SHARK_HEAL, 0, PLAYER_MAX_HP); p.atkCd += SHARK_DELAY; st.eatCd = CONSUME_CD; sfx(st, "eat");
-    } else st.pendingEat = false;
-    if (st.pendingPot && st.inv.pots > 0 && p.hp > 0) {
-      st.pendingPot = false; st.inv.pots--; p.prayerPts = clamp(p.prayerPts + POT_RESTORE, 0, PLAYER_MAX_PRAYER); p.atkCd += POT_DELAY; st.potCd = CONSUME_CD; sfx(st, "sip");
-    } else st.pendingPot = false;
-    if (st.pendingBrew && st.inv.brews > 0 && p.hp > 0) {
-      st.pendingBrew = false; st.inv.brews--; p.hp = clamp(p.hp + BREW_HEAL, 0, PLAYER_MAX_HP); drainPrayer(st, BREW_PRAYER_COST); p.atkCd += POT_DELAY; st.brewCd = CONSUME_CD; sfx(st, "sip");
-    } else st.pendingBrew = false;
-    if (st.pendingRange && st.inv.ranging > 0 && p.hp > 0) {
-      st.pendingRange = false;
-      st.inv.ranging--;
-      p.rangingLeft = RANGING_POT_TICKS;
-      if (global.PlayerStats && PlayerStats.applyRangingPotion) PlayerStats.applyRangingPotion();
-      p.atkCd += POT_DELAY;
-      st.rangeCd = CONSUME_CD;
-      sfx(st, "sip");
-      flash(st, "Ranging potion", "#7af07a");
-    } else st.pendingRange = false;
+    let fam = st.pendingUse;
+    if (!fam) {
+      if (st.pendingEat) fam = "shark";
+      else if (st.pendingPot) fam = (st.inv && st.inv.pots > 0) ? "prayer_potion" : "super_restore";
+      else if (st.pendingBrew) fam = "saradomin_brew";
+      else if (st.pendingRange) fam = "ranging_potion";
+    }
+    st.pendingUse = null;
+    st.pendingEat = st.pendingPot = st.pendingBrew = st.pendingRange = false;
+    if (!fam || !p || p.hp <= 0) return;
+    const local = isLocalResolve(st);
+    if (local && global.XscapeSupplies && XscapeSupplies.consumeOne) {
+      const fromFound = !!(st.found && (st.found[fam] || 0) > 0);
+      if (!XscapeSupplies.consumeOne(fam)) return;
+      // consumeOne already decrements display inv when taking from found.
+      if (!fromFound) bumpInv(st.inv, fam, -1);
+    } else {
+      if (familyAvailable(st, fam) <= 0) return;
+      bumpInv(st.inv, fam, -1);
+    }
+    applyRaidEffect(st, fam);
   }
   function setPrayer(st, kind) {
     if (st.mode !== "playing") return;
@@ -2072,7 +2192,12 @@
     if (host && host.onStart) host.onStart(R);
     return R;
   }
-  function stop() { running = false; try { raidAudio.stopMusic(); } catch (e) {} }
+  function stop() {
+    running = false;
+    try { raidAudio.stopMusic(); } catch (e) {}
+    if (global.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave();
+    if (global.XscapeSupplies && XscapeSupplies.clearJadKit) XscapeSupplies.clearJadKit();
+  }
   function tickLive() {
     if (!R || R.mode !== "playing" || briefPause) return;
     gameTick(R);
@@ -2261,6 +2386,7 @@
     sip: function () { if (R) queuePot(R); },
     brew: function () { if (R) queueBrew(R); },
     ranging: function () { if (R) queueRange(R); },
+    queueSupply: function (fam) { return queueSupply(fam, R); },
     witheringGaze: function () { if (R) return applyWitheringGaze(R, true); },
     clickTile: function (c, r) { if (R) clickTile(R, c, r); },
     clickPx: function (x, y, W, H) {
@@ -2835,6 +2961,7 @@
       username: (global.Profile && Profile.name) || "Adventurer",
       loadout: st.player && st.player.loadout,
       equipment: (global.Profile && Profile.equipment) || null,
+      inv: st.inv || carriedInv(),
       destCol: st.player && st.player.col,
       destRow: st.player && st.player.row
     });
@@ -2988,8 +3115,8 @@
       flashMsg: function (t, c) { if (typeof global.flashMsg === "function") global.flashMsg(t, c); },
       updateHud: hostUpdateHud,
       updatePrayer: function (k) { if (typeof global.G !== "undefined") global.G.prayer = k; },
-      onWin: function (res) { try { raidAudio.stopMusic(); } catch (e) {} showRaidResult("win", res); },
-      onLose: function (res) { try { raidAudio.stopMusic(); } catch (e) {} showRaidResult("lose", res); },
+      onWin: function (res) { try { raidAudio.stopMusic(); } catch (e) {} if (global.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave(); showRaidResult("win", res); },
+      onLose: function (res) { try { raidAudio.stopMusic(); } catch (e) {} if (global.XscapeSupplies && XscapeSupplies.flushSave) XscapeSupplies.flushSave(); showRaidResult("lose", res); },
       onLoot: function (loot) { /* result card shows it */ },
       audio: typeof global.audio !== "undefined" ? global.audio : null
     });
@@ -3006,17 +3133,9 @@
     else el.addEventListener("pointerdown", function (e) { e.preventDefault(); fn(e); });
   }
   function ensureRaidConsumables() {
-    const row = document.getElementById("consumables");
-    if (!row) return;
-    if (!document.getElementById("btn-brew")) {
-      const b = document.createElement("button");
-      b.className = "item-btn"; b.id = "btn-brew"; b.type = "button";
-      b.innerHTML = '<span class="cd-sweep"></span>Brew <span class="qty" id="qty-brew">0</span>';
-      row.appendChild(b);
-    }
-    bindBtn(document.getElementById("btn-brew"), function () { api.brew(); });
-    bindBtn(document.getElementById("btn-range-pot"), function () { api.ranging(); });
-    if (typeof global.updateConsumableChrome === "function") global.updateConsumableChrome();
+    // Legacy brew button is no longer injected; supplies live on the 8-slot quick bar.
+    if (global.XscapeSupplies && XscapeSupplies.startBroughtSupplies) XscapeSupplies.startBroughtSupplies();
+    if (global.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh();
   }
   function remigrateHostBank() {
     if (typeof global.migrateOwned === "function" && typeof global.Profile !== "undefined") {
