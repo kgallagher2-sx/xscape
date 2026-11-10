@@ -777,7 +777,9 @@
     return {
       raidId: RAID_ID, bossId: BOSS_ID, survived: !!survived, room: st.room,
       ticks: st.ticks, seconds: Math.round(st.ticks * TICK_MS / 1000),
-      damageTaken: st.damageTaken, dmgBy: st.dmgBy || {}, perfectPrayers: st.perfectPrayers,
+      damageTaken: (st.player && st.player.damageTaken != null) ? st.player.damageTaken : st.damageTaken,
+      dmgBy: st.dmgBy || {},
+      perfectPrayers: (st.player && st.player.perfectPrayers != null) ? st.player.perfectPrayers : st.perfectPrayers,
       score: (st.loot && st.loot.score != null) ? st.loot.score : computeRaidScore(st.player),
       loot: st.loot, hp: st.player.hp, prayer: st.player.prayerPts
     };
