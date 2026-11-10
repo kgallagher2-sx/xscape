@@ -676,27 +676,15 @@ function drawBandosCharacter(c, t, opt) {
   c.beginPath(); c.ellipse(0, hy + 2.0, 9.6, 10.2, 0, 0, Math.PI * 2); c.fill();
   c.fillStyle = "#e8c49a";
   c.beginPath(); c.ellipse(0, hy + 2.2, 8.8, 9.4, 0, 0, Math.PI * 2); c.fill();
-  // Short brown hair — cap + sides + a little front, visible under the hat
-  c.fillStyle = "#3a2416";
-  c.beginPath();
-  c.ellipse(0, hy - 2.2, 9.4, 7.2, 0, 0, Math.PI * 2);
-  c.fill();
-  c.fillStyle = "#5a3820";
-  c.beginPath();
-  c.ellipse(-1, hy - 2.8, 6.4, 5.0, 0, 0, Math.PI * 2);
-  c.fill();
-  // sideburns / hair at the sides
+  // Sideburns + a thin fringe at the hairline only — no crown cap under the hat.
   c.fillStyle = "#3a2416";
   c.beginPath(); c.ellipse(-8.2, hy + 2.4, 2.4, 4.2, 0.15, 0, Math.PI * 2); c.fill();
   c.beginPath(); c.ellipse(8.2, hy + 2.4, 2.4, 4.2, -0.15, 0, Math.PI * 2); c.fill();
-  // front hairline peeking under the hat
-  c.fillStyle = "#3a2416";
   c.beginPath();
-  c.moveTo(-6.5, hy - 4.2);
-  c.quadraticCurveTo(-3, hy - 1.6, -1.2, hy - 3.6);
-  c.quadraticCurveTo(0, hy - 1.2, 1.2, hy - 3.6);
-  c.quadraticCurveTo(3, hy - 1.6, 6.5, hy - 4.2);
-  c.quadraticCurveTo(0, hy - 6.4, -6.5, hy - 4.2);
+  c.moveTo(-6.2, hy + 0.6);
+  c.quadraticCurveTo(-3, hy + 2.2, 0, hy + 0.8);
+  c.quadraticCurveTo(3, hy + 2.2, 6.2, hy + 0.6);
+  c.quadraticCurveTo(0, hy + 1.4, -6.2, hy + 0.6);
   c.closePath();
   c.fill();
 
@@ -755,7 +743,7 @@ function drawBandosCharacter(c, t, opt) {
 
   // Paper party crown sits on the head: band at the hairline, slightly tilted.
   c.save();
-  c.translate(0, hy - 1.4);
+  c.translate(0, hy + 1.2);
   c.rotate(-0.07);
   drawPartyhat(c, 0);
   c.restore();

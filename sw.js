@@ -1,7 +1,8 @@
-/* Xscape service worker v21-3.
-   Network-first for everything. Lab files are never served stale. */
-var CACHE = "xscape-v21-3";
+/* Xscape service worker. Cache name is stamped per deploy (see scripts/stamp-build.sh). */
+var BUILD = "20261110151756-f6293b2";
+var CACHE = "xscape-" + BUILD;
 var LAB_RE = /(?:^|\/)(lab\.html|lab-gear\.js)(?:\?|$)/;
+var NO_CACHE_RE = /(?:^|\/)version\.json(?:\?|$)/;
 
 self.addEventListener("install", function (event) {
   self.skipWaiting();
@@ -24,9 +25,10 @@ self.addEventListener("fetch", function (event) {
 
   event.respondWith((async function () {
     var isLab = LAB_RE.test(url.pathname);
+    var noStore = NO_CACHE_RE.test(url.pathname);
     try {
       var fresh = await fetch(req, { cache: "no-store" });
-      if (fresh && fresh.ok && !isLab) {
+      if (fresh && fresh.ok && !isLab && !noStore) {
         var copy = fresh.clone();
         caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
       }

@@ -1091,6 +1091,8 @@
       else slots.push('<div class="osrs-slot empty"></div>');
     }
     el.innerHTML = slots.join("");
+    var title = $("hub-inv-title");
+    if (title) title.textContent = "Inventory " + inv.length + "/28";
   }
 
   function openInventory() {

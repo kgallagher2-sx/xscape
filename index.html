@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>window.XSCAPE_BUILD = "20261110151756-f6293b2";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -180,6 +181,17 @@
       border: 2px solid #8a6a30;
     }
     #chat-head.hidden { display: none; }
+    #update-banner {
+      position: absolute; left: 8px; right: 8px;
+      top: calc(8px + var(--safe-top, 0px)); z-index: 90;
+      pointer-events: auto; cursor: pointer;
+      background: linear-gradient(#3a2a18, #1e140c);
+      border: 3px solid #c9a24a; box-shadow: 0 2px 10px #000, inset 0 0 0 1px #5a4018;
+      color: #ffff00; font-weight: 700; font-size: 13px; letter-spacing: 0.2px;
+      text-align: center; padding: 8px 10px; text-shadow: 0 1px 0 #000;
+      font-family: "Trebuchet MS", sans-serif;
+    }
+    #update-banner.hidden { display: none; }
     .chat-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
     #chat-name {
       color: #ffff00; font-weight: 700; font-size: 13px;
@@ -676,6 +688,7 @@
 
 <body>
   <div id="app">
+    <div id="update-banner" class="hidden" role="button" tabindex="0">New version — tap to update</div>
     <div id="top-hud">
       <div class="brand"><span class="logo-x">X</span>scape</div>
       <div class="stat">Time <b id="hud-time">0:00</b></div>
@@ -860,10 +873,8 @@
         <div class="gear-sec">Worn</div>
         <div id="gear-worn"></div>
         <div class="gear-sec">Inventory</div>
-        <div id="gear-inventory"></div>
-        <div class="gear-sec">Bank</div>
-        <div id="gear-bank"></div>
-        <div class="gear-foot">Tap an inventory item to wear it. Tap a worn item to unequip it into your inventory. Tap a bank item to withdraw it. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
+        <div id="gear-inventory" class="osrs-grid"></div>
+        <div class="gear-foot">Tap an inventory item to wear it. Tap a worn item to unequip it into your inventory. Your bank is only at a bank booth or banker — it is not listed here. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
         </div>
         <div class="sheet-actions gear-actions">
           <button class="btn" id="btn-gear-close" type="button">CLOSE</button>
@@ -914,10 +925,10 @@
     <div class="overlay hidden" id="overlay-inv">
       <div class="gear-card sheet-card">
         <button class="overlay-x" data-close="inv" type="button" aria-label="Close">×</button>
-        <h2>Inventory</h2>
+        <h2 id="hub-inv-title">Inventory</h2>
         <div class="sheet-scroll">
           <div id="hub-inv-grid" class="osrs-grid"></div>
-          <p class="lead" style="margin-top:10px">Tap an item to wear it. Talk to a banker to deposit or withdraw.</p>
+          <p class="lead" style="margin-top:10px">Your 28 carried slots. Tap an item to wear it. Use a bank booth or banker to deposit or withdraw — bank items are not shown here.</p>
         </div>
         <div class="sheet-actions">
           <button class="btn" type="button" data-close="inv">CLOSE</button>
@@ -2391,7 +2402,6 @@ function gearTierLabel(it) {
 
 function renderEquipmentOverlay() {
   const worn = $("gear-worn");
-  const bankEl = $("gear-bank");
   const bonusEl = $("gear-bonuses");
   if (bonusEl) {
     const pb = playerBonuses();
@@ -2418,32 +2428,19 @@ function renderEquipmentOverlay() {
   const invEl = $("gear-inventory");
   if (invEl) {
     const items = inventoryList();
-    if (!items.length) {
-      invEl.innerHTML = '<div id="gear-bank-empty">Inventory is empty. Withdraw from the bank, or unequip something.</div>';
-    } else {
-      invEl.innerHTML = items.map((id) => {
-        const it = ITEMS[id];
-        const klass = "bank-item " + gearTierClass(it.tier);
-        const tier = gearTierLabel(it);
-        return '<button type="button" class="' + klass + '" data-inv-item="' + id + '">' +
-          it.name + '<span class="tier">' + tier + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></button>";
-      }).join("");
+    const slots = [];
+    for (let i = 0; i < 28; i++) {
+      const id = items[i];
+      const it = id && ITEMS[id];
+      if (it) {
+        slots.push('<button type="button" class="osrs-slot" data-inv-item="' + id + '">' + it.name + "</button>");
+      } else {
+        slots.push('<div class="osrs-slot empty"></div>');
+      }
     }
+    invEl.innerHTML = slots.join("");
   }
-  if (bankEl) {
-    const items = bankList();
-    if (!items.length) {
-      bankEl.innerHTML = '<div id="gear-bank-empty">Bank is empty. Deposit from your inventory, or win gear in Gloamhold.</div>';
-    } else {
-      bankEl.innerHTML = items.map((id) => {
-        const it = ITEMS[id];
-        const klass = "bank-item " + gearTierClass(it.tier);
-        const tier = gearTierLabel(it);
-        return '<button type="button" class="' + klass + '" data-item="' + id + '">' +
-          it.name + '<span class="tier">Withdraw · ' + tier + "</span></button>";
-      }).join("");
-    }
-  }
+  // Bank contents belong only in overlay-bank (booth / banker).
 }
 
 function openEquipmentView() {
@@ -5429,6 +5426,7 @@ function enterScene(id) {
   if (prev && prev.exit && prev.id !== next.id) prev.exit();
   G.scene = id;
   next.enter();
+  if (typeof checkXscapeVersion === "function") checkXscapeVersion();
 }
 
 function showTitle() {
@@ -6453,8 +6451,137 @@ applyOpenQuery();
 <script src="cloud.js"></script>
 <script>
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register("sw.js?v=21-3").catch(function () {});
+  var swUrl = "sw.js?v=" + encodeURIComponent(window.XSCAPE_BUILD || "dev");
+  navigator.serviceWorker.register(swUrl).catch(function () {});
+  navigator.serviceWorker.addEventListener("controllerchange", function () {
+    // Don't reload blindly — confirm via version.json so a same-build SW swap
+    // cannot loop. Mid-fight deferral lives in onNewVersionAvailable.
+    if (typeof checkXscapeVersion === "function") checkXscapeVersion();
+  });
 }
+
+/* ----- Force-update: compare embedded BUILD to version.json ----- */
+var _update = { pending: null, checking: false, lastCheck: 0, reloading: false };
+
+function isMidFight() {
+  var G = window.G;
+  if (!G) return false;
+  var scene = G.scene, mode = G.mode;
+  if (scene === "duel" || scene === "raid" || scene === "kree") return true;
+  if (scene === "jad" && (mode === "playing" || mode === "intro" || mode === "firstkill")) return true;
+  if (mode === "playing" || mode === "intro" || mode === "firstkill") return true;
+  return false;
+}
+
+function showUpdateBanner(build) {
+  var el = document.getElementById("update-banner");
+  if (!el) return;
+  el.classList.remove("hidden");
+  el.onclick = function () { applyNewVersion(build || _update.pending); };
+  el.onkeydown = function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); applyNewVersion(build || _update.pending); }
+  };
+}
+
+function hideUpdateBanner() {
+  var el = document.getElementById("update-banner");
+  if (el) el.classList.add("hidden");
+}
+
+function applyNewVersion(build) {
+  if (_update.reloading) return;
+  build = build || _update.pending;
+  if (!build || build === (window.XSCAPE_BUILD || "dev")) return;
+  var n = 0, at = 0;
+  try {
+    n = Number(sessionStorage.getItem("xscape-reload-n") || 0);
+    at = Number(sessionStorage.getItem("xscape-reload-at") || 0);
+  } catch (e) {}
+  if (n >= 2) {
+    showUpdateBanner(build);
+    return;
+  }
+  if (at && (Date.now() - at) < 15000) return;
+  _update.reloading = true;
+  try {
+    sessionStorage.setItem("xscape-reload-n", String(n + 1));
+    sessionStorage.setItem("xscape-reload-at", String(Date.now()));
+    sessionStorage.setItem("xscape-reload-aim", build);
+  } catch (e) {}
+  try {
+    if (typeof saveProfile === "function") saveProfile();
+    if (window.XscapeCloud && typeof XscapeCloud.flushSave === "function") XscapeCloud.flushSave();
+  } catch (e) {}
+  location.reload();
+}
+
+function onNewVersionAvailable(build, opts) {
+  opts = opts || {};
+  if (!build) return;
+  // controllerchange can fire for the SW we already have; only act on a real version mismatch
+  if (opts.fromSW && (!_update.pending || _update.pending === (window.XSCAPE_BUILD || "dev"))) return;
+  if (build === (window.XSCAPE_BUILD || "dev")) return;
+  _update.pending = build;
+  if (isMidFight()) {
+    showUpdateBanner(build);
+    return;
+  }
+  applyNewVersion(build);
+}
+
+async function checkXscapeVersion() {
+  if (_update.checking || _update.reloading) return;
+  // If a fight ended while a banner was up, reload now.
+  if (_update.pending && _update.pending !== (window.XSCAPE_BUILD || "dev") && !isMidFight()) {
+    applyNewVersion(_update.pending);
+    return;
+  }
+  _update.checking = true;
+  try {
+    var url = "version.json?cb=" + Date.now();
+    var res = await fetch(url, { cache: "no-store" });
+    if (!res || !res.ok) return;
+    var data = await res.json();
+    var build = data && data.build;
+    _update.lastCheck = Date.now();
+    if (build && build !== (window.XSCAPE_BUILD || "dev")) onNewVersionAvailable(build);
+    else if (build && build === (window.XSCAPE_BUILD || "dev")) {
+      _update.pending = null;
+      hideUpdateBanner();
+      try {
+        sessionStorage.removeItem("xscape-reload-n");
+        sessionStorage.removeItem("xscape-reload-aim");
+      } catch (e) {}
+    }
+  } catch (e) {
+    // offline or missing file: stay put
+  } finally {
+    _update.checking = false;
+  }
+}
+window.checkXscapeVersion = checkXscapeVersion;
+
+(function bootVersionWatch() {
+  try {
+    var aim = sessionStorage.getItem("xscape-reload-aim");
+    if (aim && aim === (window.XSCAPE_BUILD || "dev")) {
+      sessionStorage.removeItem("xscape-reload-n");
+      sessionStorage.removeItem("xscape-reload-aim");
+    }
+  } catch (e) {}
+  setTimeout(checkXscapeVersion, 1500);
+  setInterval(checkXscapeVersion, 3 * 60 * 1000);
+  setInterval(function () {
+    if (_update.pending && _update.pending !== (window.XSCAPE_BUILD || "dev") && !isMidFight()) {
+      applyNewVersion(_update.pending);
+    }
+  }, 4000);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") checkXscapeVersion();
+  });
+  window.addEventListener("pageshow", function () { checkXscapeVersion(); });
+  window.addEventListener("focus", function () { checkXscapeVersion(); });
+})();
 </script>
 </body>
 </html>

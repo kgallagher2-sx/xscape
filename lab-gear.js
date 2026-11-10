@@ -542,6 +542,19 @@ function drawLabHead(c, id) {
       c.fillRect(-5.6, -20.4, 11.2, 1.15);
       return;
     }
+    if (kind === "partyhat") {
+      const sk = skinPal();
+      c.fillStyle = sk.dark;
+      c.beginPath(); c.arc(0, -25.4, 8.4, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath(); c.arc(0, -25.0, 7.6, 0, Math.PI * 2); c.fill();
+      // Nape and sides only — no crown cap or coif under the hat.
+      c.fillStyle = sk.hair;
+      c.beginPath(); c.ellipse(-6.6, -24.8, 2.2, 4.6, 0.1, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(6.6, -24.8, 2.2, 4.6, -0.1, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(0, -22.4, 6.4, 4.2, 0, 0, Math.PI * 2); c.fill();
+      return;
+    }
     // coif / leather coif — same silhouette as the in-game hood
     c.fillStyle = p.dark;
     c.beginPath(); c.arc(0, -26, 9.2, 0, Math.PI * 2); c.fill();
@@ -1391,9 +1404,9 @@ function drawHeroWeapon(c, t, eq, opt, facing) {
 
 function drawPartyhatOnHead(c, facing, st) {
   c.save();
-  if (facing === "front") c.translate(0, -34.2);
-  else if (facing === "right") c.translate(1.2, -33.6);
-  else c.translate(0, -34.6);
+  if (facing === "front") c.translate(0, -29.4);
+  else if (facing === "right") c.translate(1.2, -28.8);
+  else c.translate(0, -29.8);
   if (typeof drawPartyhat === "function") {
     c.scale(0.92, 0.92);
     drawPartyhat(c, 0);
@@ -2034,8 +2047,10 @@ function drawHeroHead(c, id, facing) {
         c.beginPath(); c.ellipse(0.8, -25.6, 7.2, 8.0, 0.05, 0, Math.PI * 2); c.fill();
         c.fillStyle = sk.skin;
         c.beginPath(); c.ellipse(1.4, -25.2, 6.4, 7.2, 0.05, 0, Math.PI * 2); c.fill();
+        // Nape / side hair below the brim only — no crown cap.
         c.fillStyle = sk.hair;
-        c.beginPath(); c.ellipse(-1.2, -30.2, 5.2, 3.4, -0.2, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.ellipse(-3.2, -26.4, 3.2, 4.6, -0.15, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.ellipse(-1.0, -23.8, 2.4, 3.2, 0, 0, Math.PI * 2); c.fill();
         c.fillStyle = sk.dark;
         c.beginPath(); c.ellipse(5.6, -26.2, 0.7, 0.9, 0, 0, Math.PI * 2); c.fill();
         c.fillStyle = sk.skin;
@@ -2133,11 +2148,15 @@ function drawHeroHead(c, id, facing) {
       c.beginPath(); c.arc(0, -25.4, 8.4, 0, Math.PI * 2); c.fill();
       c.fillStyle = sk.skin;
       c.beginPath(); c.arc(0, -25.0, 7.6, 0, Math.PI * 2); c.fill();
+      // Side hair + thin hairline fringe only — no crown cap above the brim.
       c.fillStyle = sk.hair;
-      c.beginPath(); c.ellipse(0, -30.4, 7.2, 3.6, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.hair;
-      c.fillRect(-6.6, -30, 2.2, 6);
-      c.fillRect(4.4, -30, 2.2, 6);
+      c.beginPath(); c.ellipse(-7.0, -25.6, 2.0, 4.2, 0.12, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(7.0, -25.6, 2.0, 4.2, -0.12, 0, Math.PI * 2); c.fill();
+      c.beginPath();
+      c.moveTo(-5.5, -28.0);
+      c.quadraticCurveTo(0, -26.8, 5.5, -28.0);
+      c.quadraticCurveTo(0, -27.4, -5.5, -28.0);
+      c.fill();
       c.fillStyle = "#fff8ee";
       c.beginPath(); c.arc(-2.3, -25.6, 1.5, 0, Math.PI * 2); c.fill();
       c.beginPath(); c.arc(2.3, -25.6, 1.5, 0, Math.PI * 2); c.fill();
