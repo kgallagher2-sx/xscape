@@ -10,9 +10,10 @@ const PLAYER_BODY_H = 48.4;
 const FK77_FOOT = 17.5;
 const FK77_BODY_H = 76.3; // hat tip ~-58.8 to boot 17.5
 const FK77_HEIGHT_MATCH = PLAYER_BODY_H / FK77_BODY_H;
-const PLAYER_BOW_X = 10.2;        // right side, overlapping the torso/shoulder
-const PLAYER_BOW_Y = -19.0;
-const PLAYER_BOW_TIP = -13;       // local tip Y in drawHeldCrossbow
+const PLAYER_BOW_SCALE = 0.8;     // 80% of the pre-change size
+const PLAYER_BOW_X = 13.4;        // right side; front pokes past the shoulder
+const PLAYER_BOW_Y = -21.5;
+const PLAYER_BOW_TIP = -13 * PLAYER_BOW_SCALE; // world-space tip Y offset for projectiles
 
 function shotAnimAt(shotT, attackTicks) {
   // Crossbow shot pose curve; shotT is in game ticks since the shot (0 = release).
@@ -44,87 +45,138 @@ function shotAnimAt(shotT, attackTicks) {
 
 function drawHeldCrossbow(c, anim) {
   anim = anim || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
-  const flex = (anim.flex || 0) * 3.2;
+  const flex = (anim.flex || 0) * 2.6;
   const str = anim.string == null ? 1 : anim.string;
-  const strY = 8 * str + (-4) * (1 - str);
-  const tipY = PLAYER_BOW_TIP;
-  const limb = 15;
+  const strY = 6.5 * str + (-3.2) * (1 - str);
+  const tipY = PLAYER_BOW_TIP / PLAYER_BOW_SCALE;
+  const limb = 14;
 
-  // Wooden stock — in front, aimed up. Sized to overlap the right shoulder/torso
-  // without burying the cape or hood.
+  c.save();
+  c.scale(PLAYER_BOW_SCALE, PLAYER_BOW_SCALE);
+
+  // Wooden stock — brown with a light highlight, aimed up toward Jad
   c.fillStyle = "#2a160c";
-  c.fillRect(-4.0, -5, 8.0, 26);
+  c.fillRect(-3.6, -6, 7.2, 24);
   c.fillStyle = "#6b3d16";
-  c.fillRect(-3.3, -4.2, 6.6, 24.4);
-  c.fillStyle = "#8a5524";
-  c.fillRect(-3.3, -4.2, 2.0, 24.4);
+  c.fillRect(-3.0, -5.4, 6.0, 22.8);
+  c.fillStyle = "#a56a32";
+  c.fillRect(-3.0, -5.4, 1.9, 22.8);
   c.fillStyle = "#4a2a10";
-  c.fillRect(1.6, -4.2, 1.4, 24.4);
+  c.fillRect(1.6, -5.4, 1.2, 22.8);
   // Grip / butt
   c.fillStyle = "#1e1208";
-  c.fillRect(-4.6, 16, 9.2, 7.2);
+  c.fillRect(-4.2, 14.2, 8.4, 6.6);
   c.fillStyle = "#5a3414";
-  c.fillRect(-3.8, 16.7, 7.6, 5.6);
-  c.fillStyle = "#7a4a20";
-  c.fillRect(-3.8, 16.7, 2.0, 5.6);
+  c.fillRect(-3.5, 14.8, 7.0, 5.2);
+  c.fillStyle = "#8a5524";
+  c.fillRect(-3.5, 14.8, 2.0, 5.2);
 
-  // Dark prod / limbs (flex outward on the snap)
-  c.fillStyle = "#16100a";
+  // Curved prod / limb across the front — lighter wood, a bar not a black X
+  const l = limb + flex;
+  const arch = tipY + 1.2 - flex * 0.45;
+  const back = -3.2;
+  c.fillStyle = "#3a2410";
   c.beginPath();
-  c.moveTo(-limb - flex, 1);
-  c.lineTo(-limb - 1 - flex, -8 - flex * 0.3);
-  c.quadraticCurveTo(0, tipY - 1 - flex * 0.5, limb + 1 + flex, -8 - flex * 0.3);
-  c.lineTo(limb + flex, 1);
-  c.quadraticCurveTo(0, -8, -limb - flex, 1);
+  c.moveTo(-l - 0.6, back + 1.2);
+  c.lineTo(-l - 1.2, -6.6 - flex * 0.25);
+  c.quadraticCurveTo(0, arch - 1.1, l + 1.2, -6.6 - flex * 0.25);
+  c.lineTo(l + 0.6, back + 1.2);
+  c.quadraticCurveTo(0, back - 1.6, -l - 0.6, back + 1.2);
   c.closePath();
   c.fill();
-  c.fillStyle = "#2c2016";
+  c.fillStyle = "#c49a58";
   c.beginPath();
-  c.moveTo(-limb + 1.5 - flex, 0.2);
-  c.lineTo(-limb - flex, -6.8 - flex * 0.25);
-  c.quadraticCurveTo(0, tipY + 2 - flex * 0.4, limb + flex, -6.8 - flex * 0.25);
-  c.lineTo(limb - 1.5 + flex, 0.2);
-  c.quadraticCurveTo(0, -6.5, -limb + 1.5 - flex, 0.2);
+  c.moveTo(-l + 0.7, back + 0.2);
+  c.lineTo(-l, -6.0 - flex * 0.22);
+  c.quadraticCurveTo(0, arch + 1.4, l, -6.0 - flex * 0.22);
+  c.lineTo(l - 0.7, back + 0.2);
+  c.quadraticCurveTo(0, back - 0.6, -l + 0.7, back + 0.2);
   c.closePath();
   c.fill();
-  c.strokeStyle = "#080604";
-  c.lineWidth = 1.35;
+  c.fillStyle = "#e8c888";
+  c.beginPath();
+  c.moveTo(-l + 1.2, -5.6);
+  c.quadraticCurveTo(0, arch + 2.4, l - 1.2, -5.6);
+  c.quadraticCurveTo(0, arch + 3.6, -l + 1.2, -5.6);
+  c.closePath();
+  c.fill();
+  c.strokeStyle = "#2a180c";
+  c.lineWidth = 1.15;
   c.lineJoin = "round";
   c.beginPath();
-  c.moveTo(-limb - flex, 1);
-  c.lineTo(-limb - 1 - flex, -8 - flex * 0.3);
-  c.quadraticCurveTo(0, tipY - 1 - flex * 0.5, limb + 1 + flex, -8 - flex * 0.3);
-  c.lineTo(limb + flex, 1);
+  c.moveTo(-l - 0.6, back + 1.2);
+  c.lineTo(-l - 1.2, -6.6 - flex * 0.25);
+  c.quadraticCurveTo(0, arch - 1.1, l + 1.2, -6.6 - flex * 0.25);
+  c.lineTo(l + 0.6, back + 1.2);
   c.stroke();
 
   // Visible string (cocked low, snapped forward toward the prod)
   c.strokeStyle = "#f4eee0";
-  c.lineWidth = 1.7;
+  c.lineWidth = 2.15;
   c.lineCap = "round";
   c.beginPath();
-  c.moveTo(-limb + 1 - flex * 0.8, -5.5 - flex * 0.2);
+  c.moveTo(-l + 1.1 - flex * 0.7, -5.8 - flex * 0.2);
   c.lineTo(0, strY);
-  c.lineTo(limb - 1 + flex * 0.8, -5.5 - flex * 0.2);
+  c.lineTo(l - 1.1 + flex * 0.7, -5.8 - flex * 0.2);
   c.stroke();
 
   // Rail / bolt groove
   c.fillStyle = "#c8a46a";
-  c.fillRect(-1.3, tipY + 3, 2.6, 20);
-  c.fillStyle = "#e8d09a";
-  c.fillRect(-0.6, tipY + 3, 1.1, 20);
+  c.fillRect(-1.15, tipY + 2.4, 2.3, 18);
+  c.fillStyle = "#efe0b0";
+  c.fillRect(-0.5, tipY + 2.4, 1.0, 18);
+
+  // Bolt (present while the string is cocked)
+  if (str > 0.18) {
+    const bz = tipY - 1.6;
+    c.fillStyle = "#5a3a18";
+    c.fillRect(-0.7, bz + 4, 1.4, 14.5);
+    c.fillStyle = "#8a5a28";
+    c.fillRect(-0.35, bz + 4, 0.7, 14.5);
+    // iron tip
+    c.fillStyle = "#c8c4b8";
+    c.beginPath();
+    c.moveTo(0, bz);
+    c.lineTo(1.35, bz + 4.2);
+    c.lineTo(-1.35, bz + 4.2);
+    c.closePath();
+    c.fill();
+    c.fillStyle = "#7a786c";
+    c.beginPath();
+    c.moveTo(0, bz + 0.7);
+    c.lineTo(0.7, bz + 4.2);
+    c.lineTo(-0.7, bz + 4.2);
+    c.closePath();
+    c.fill();
+    // fletching
+    c.fillStyle = "#6a8a3a";
+    c.beginPath();
+    c.moveTo(-0.6, bz + 15.8);
+    c.lineTo(-2.3, bz + 18.6);
+    c.lineTo(-0.6, bz + 17.4);
+    c.closePath();
+    c.fill();
+    c.beginPath();
+    c.moveTo(0.6, bz + 15.8);
+    c.lineTo(2.3, bz + 18.6);
+    c.lineTo(0.6, bz + 17.4);
+    c.closePath();
+    c.fill();
+  }
+
   // Trigger nut
   c.fillStyle = "#3a3a38";
-  c.fillRect(-2.4, 9, 4.8, 3.4);
-  c.fillStyle = "#6a6a66";
-  c.fillRect(-1.8, 9.3, 3.6, 1.4);
+  c.fillRect(-2.2, 7.6, 4.4, 3.1);
+  c.fillStyle = "#7a7a74";
+  c.fillRect(-1.6, 7.9, 3.2, 1.3);
 
   // Reload hand — near the prod so it stays visible from behind
   if (anim.reload > 0.05 && anim.reload < 0.98) {
-    const hy = -8 + anim.reload * 6;
+    const hy = -7 + anim.reload * 6;
     c.fillStyle = "#3a5a28";
-    c.beginPath(); c.ellipse(5.0, hy, 3.6, 3.0, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(4.6, hy, 3.2, 2.7, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#e8c8a0";
-    c.beginPath(); c.ellipse(5.0, hy, 1.9, 1.7, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(4.6, hy, 1.7, 1.5, 0, 0, Math.PI * 2); c.fill();
   }
 
   // Muzzle flash + puff at the tip
@@ -134,23 +186,25 @@ function drawHeldCrossbow(c, anim) {
     c.translate(0, tipY);
     c.globalAlpha = a;
     c.fillStyle = "#fff4a0";
-    c.beginPath(); c.arc(0, 0, 3.6 + (1 - a) * 2.2, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, 0, 3.2 + (1 - a) * 2.0, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#ffb024";
     c.beginPath();
     for (let i = 0; i < 5; i++) {
       const ang = -Math.PI / 2 + (i - 2) * 0.45;
       c.moveTo(0, 0);
-      c.lineTo(Math.cos(ang) * 8 * a, Math.sin(ang) * 8 * a);
+      c.lineTo(Math.cos(ang) * 7.2 * a, Math.sin(ang) * 7.2 * a);
     }
     c.strokeStyle = "#ffe07a";
-    c.lineWidth = 1.5;
+    c.lineWidth = 1.4;
     c.stroke();
     c.globalAlpha = a * 0.55;
     c.fillStyle = "#d8d0c4";
-    c.beginPath(); c.ellipse(-2.2, -6 - (1 - a) * 4, 3.4, 2.3, -0.3, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.ellipse(2.4, -7 - (1 - a) * 5, 2.8, 2.1, 0.2, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(-2.0, -5.4 - (1 - a) * 4, 3.0, 2.1, -0.3, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(2.2, -6.2 - (1 - a) * 5, 2.5, 1.9, 0.2, 0, Math.PI * 2); c.fill();
     c.restore();
   }
+
+  c.restore();
 }
 
 function drawWornFireCape(c, t) {
@@ -996,6 +1050,15 @@ function drawPlayerSprite(ctx, t, opt) {
   ctx.beginPath();
   ctx.ellipse(-12, -14.5, 2.6, 3.2, 0.15, 0, Math.PI * 2); ctx.fill();
 
+  // Crossbow held ahead toward Jad, UNDER the body and cape. The front
+  // (prod, string, bolt, a sliver of stock) pokes out past the right shoulder.
+  const recoil = opt.recoilBase || 0;
+  ctx.save();
+  ctx.translate(PLAYER_BOW_X, PLAYER_BOW_Y - shot.raise * 3.5 + shot.recoil * 1.5);
+  ctx.rotate(recoil * 0.25 - shot.raise * 0.04 + shot.recoil * 0.08 - 0.10);
+  drawHeldCrossbow(ctx, shot);
+  ctx.restore();
+
   // Torso back
   ctx.fillStyle = "#2e4e1c";
   ctx.fillRect(-11, -21, 22, 20);
@@ -1025,30 +1088,14 @@ function drawPlayerSprite(ctx, t, opt) {
   ctx.ellipse(0, -27.2, 4.2, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Right upper arm under the bow (bow is drawn in front of the body, cape, and shoulder)
+  // Right shoulder, seen from behind. The bow is under the body/cape, so this
+  // shoulder sits on top and the prod pokes out past it toward Jad.
   ctx.fillStyle = "#3a5a28";
   ctx.beginPath();
   ctx.ellipse(11.4, -16.0, 4.4, 5.6, -0.22, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = "#2a4018";
   ctx.beginPath();
   ctx.ellipse(11.6, -14.6, 2.6, 3.2, -0.22, 0, Math.PI * 2); ctx.fill();
-
-  // Crossbow IN FRONT of the player: after body + cape + hood, overlapping
-  // the right shoulder and torso, held out and angled up toward Jad.
-  const recoil = opt.recoilBase || 0;
-  ctx.save();
-  ctx.translate(PLAYER_BOW_X, PLAYER_BOW_Y - shot.raise * 3.5 + shot.recoil * 1.5);
-  ctx.rotate(recoil * 0.25 - shot.raise * 0.04 + shot.recoil * 0.08 - 0.08);
-  drawHeldCrossbow(ctx, shot);
-  ctx.restore();
-
-  // Small right hand on the lower grip only — does not hide the stock or limbs
-  ctx.fillStyle = "#3a5a28";
-  ctx.beginPath();
-  ctx.ellipse(PLAYER_BOW_X + 1.4, PLAYER_BOW_Y + 16.5, 3.0, 2.5, 0.12, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#e8c8a0";
-  ctx.beginPath();
-  ctx.ellipse(PLAYER_BOW_X + 1.6, PLAYER_BOW_Y + 16.3, 1.5, 1.3, 0.12, 0, Math.PI * 2); ctx.fill();
 
   ctx.restore();
 }
