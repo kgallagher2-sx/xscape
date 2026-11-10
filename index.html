@@ -493,6 +493,7 @@ const CLICK_MARK_MS = 300;        // OSRS-style yellow/red X click marker lifeti
 const ARENA_LAYOUT_V5 = 1;        // hosted-build marker: viewport-scaled Jad/player + mapped clicks
 const CUTSCENE_V6 = 1;            // hosted-build marker: intro + first-kill cutscenes
 const ART_V7 = 1;                 // hosted-build marker: partyhat FK77 + player cape/xbow order
+const ART_V8 = 1;                 // hosted-build marker: short partyhat, vest armour, player back view
 const JAD_ARENA_FRAC = 0.42;      // Jad idle height as a fraction of the arena
 const MUSIC_BPM = 96;
 const MUSIC_BPM_URGENT = 108;     // slightly faster once healers spawn
@@ -1449,7 +1450,7 @@ function playerAttack() {
   const dmg = rand(PLAYER_HIT_MIN, PLAYER_HIT_MAX);
   G.bolts.push({
     t: 0, dur: BOLT_TRAVEL, dmg, dest,
-    from: { x: G.player.x + 0.06, y: G.player.y - 0.16 },
+    from: { x: G.player.x, y: G.player.y - 0.22 },
     to: { x: dest.x, y: dest.y }
   });
   audio.crossbow();
@@ -2111,58 +2112,72 @@ function drawPlayer(t) {
   if (p.hp <= 0) ctx.globalAlpha = 0.45;
 
   ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
 
-  if (Profile.hasFireCape) drawWornFireCape(ctx, t);
-
-  // Back (left) arm, behind the torso
-  ctx.fillStyle = "#3a5a28";
-  ctx.fillRect(-13, -18, 5, 13);
-  ctx.fillStyle = "#e8c8a0";
-  ctx.fillRect(-13, -6, 5, 3);
-
-  // Legs + boots
-  ctx.fillStyle = "#3a5a28";
-  ctx.fillRect(-8, -2, 6, 12);
-  ctx.fillRect(2, -2, 6, 12);
-  ctx.fillStyle = "#3a2a18";
-  ctx.fillRect(-9, 9, 8, 4);
-  ctx.fillRect(1, 9, 8, 4);
-  // Torso
-  ctx.fillStyle = "#4a7a30";
-  ctx.fillRect(-10, -20, 20, 18);
-  ctx.fillStyle = "#2e4e1c";
-  ctx.fillRect(-10, -8, 20, 4);
-  // Head
-  ctx.fillStyle = "#5a8a38";
-  ctx.beginPath(); ctx.arc(0, -26, 8, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = "#e8c8a0";
-  ctx.beginPath(); ctx.arc(0, -24, 5, 0, Math.PI*2); ctx.fill();
-
-  // Front arm, drawn ON TOP of the torso, holding the crossbow
-  ctx.fillStyle = "#3a5a28";
-  ctx.beginPath();
-  ctx.moveTo(2, -18);
-  ctx.lineTo(10, -14);
-  ctx.lineTo(9, -9);
-  ctx.lineTo(1, -13);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "#e8c8a0";
-  ctx.beginPath(); ctx.arc(9, -12, 2.4, 0, Math.PI * 2); ctx.fill();
-
-  // Crossbow in FRONT of the body, aimed up at Jad (drawn last so it sits on the torso)
+  // Crossbow FIRST — held out in front toward Jad, so the body hides most of it.
+  // Prod / limbs poke out above the shoulders and to the sides, aimed up.
   ctx.save();
   const recoil = (G.player.atkCd >= PLAYER_ATTACK_TICKS - 1) ? -0.12 : 0;
-  ctx.translate(4, -14);
-  ctx.rotate(-0.16 + recoil);
-  ctx.scale(1.08, 1.08);
+  ctx.translate(0, -23);
+  ctx.rotate(recoil * 0.25);
   drawHeldCrossbow(ctx);
   ctx.restore();
 
+  // Legs + boots, from behind
+  ctx.fillStyle = "#2e4e1c";
+  ctx.fillRect(-8, -2, 6, 12);
+  ctx.fillRect(2, -2, 6, 12);
+  ctx.fillStyle = "#3a5a28";
+  ctx.fillRect(-7.2, -1, 4.4, 10);
+  ctx.fillRect(2.8, -1, 4.4, 10);
+  ctx.fillStyle = "#2a1c10";
+  ctx.fillRect(-9, 9, 8, 4.2);
+  ctx.fillRect(1, 9, 8, 4.2);
+
+  // Upper arms at the sides, going forward (foreshortened)
+  ctx.fillStyle = "#3a5a28";
+  ctx.beginPath();
+  ctx.ellipse(-12, -16, 4.2, 5.5, 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(12, -16, 4.2, 5.5, -0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#2a4018";
+  ctx.beginPath();
+  ctx.ellipse(-12, -14.5, 2.6, 3.2, 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(12, -14.5, 2.6, 3.2, -0.15, 0, Math.PI * 2); ctx.fill();
+
+  // Torso back
+  ctx.fillStyle = "#2e4e1c";
+  ctx.fillRect(-11, -21, 22, 20);
+  ctx.fillStyle = "#4a7a30";
+  ctx.fillRect(-10, -20, 20, 18);
+  ctx.fillStyle = "#2e4e1c";
+  ctx.fillRect(-1, -19, 2, 16);
+
+  // Head from BEHIND: hood / coif, no face
+  ctx.fillStyle = "#2e4e1c";
+  ctx.beginPath(); ctx.arc(0, -26, 9.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#4a7a30";
+  ctx.beginPath(); ctx.arc(0, -26.4, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#3a5a28";
+  ctx.beginPath();
+  ctx.moveTo(-7, -22);
+  ctx.lineTo(7, -22);
+  ctx.lineTo(5.5, -16);
+  ctx.lineTo(-5.5, -16);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#2a4018";
+  ctx.beginPath();
+  ctx.ellipse(0, -27.2, 4.2, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Fire cape ON TOP of the body — looking at the back, cape fully visible
+  if (Profile.hasFireCape) drawWornFireCape(ctx, t);
+
   if (G.prayer && p.hp > 0) {
     ctx.save();
-    ctx.translate(0, -54);
+    ctx.translate(0, -58);
     ctx.scale(OVERHEAD_SCALE, OVERHEAD_SCALE);
     drawOverhead(ctx, G.prayer);
     ctx.restore();
@@ -2997,8 +3012,8 @@ function showChat(name, text, opts) {
     const c = head.getContext("2d");
     c.clearRect(0, 0, head.width, head.height);
     c.save();
-    c.translate(32, 108);
-    c.scale(1.48, 1.48);
+    c.translate(32, 96);
+    c.scale(1.32, 1.32);
     drawBandosCharacter(c, now() / 1000, { face: 1, bust: true });
     c.restore();
   }
@@ -3316,60 +3331,63 @@ function drawLavaPool(t) {
 }
 
 function drawWornFireCape(c, t) {
+  // Back view: cape hangs from the shoulders and covers the back, fully visible.
   c.save();
-  const sway = Math.sin((t || 0) * 3.1) * 3.6;
+  const sway = Math.sin((t || 0) * 3.1) * 3.0;
   const pulse = 0.5 + 0.5 * Math.sin((t || 0) * 5.4);
-  // Cape hangs from the shoulders, behind the body, visible at the sides and below.
-  const grd = c.createLinearGradient(-2, -24, -16 + sway, 32);
+  const grd = c.createLinearGradient(0, -24, sway * 0.4, 34);
   grd.addColorStop(0, "#fff4a8");
   grd.addColorStop(0.12, "#ffd24a");
   grd.addColorStop(0.32, "#ff7a14");
-  grd.addColorStop(0.58, "#d02010");
-  grd.addColorStop(0.82, "#7a0c08");
+  grd.addColorStop(0.55, "#d02010");
+  grd.addColorStop(0.78, "#7a0c08");
   grd.addColorStop(1, "#2a0604");
   c.fillStyle = grd;
   c.beginPath();
-  c.moveTo(-8, -22);
-  c.lineTo(8, -22);
-  c.quadraticCurveTo(13, -12, 11, -2);
-  c.quadraticCurveTo(8 + sway * 0.3, 10, 2 + sway * 0.5, 22);
-  c.quadraticCurveTo(-8 + sway, 34, -20 + sway, 30);
-  c.quadraticCurveTo(-26 + sway, 12, -20, -4);
-  c.quadraticCurveTo(-16, -16, -8, -22);
+  c.moveTo(-11, -22);
+  c.lineTo(11, -22);
+  c.quadraticCurveTo(16, -10, 14, 2);
+  c.quadraticCurveTo(10 + sway * 0.4, 16, 6 + sway, 30);
+  c.quadraticCurveTo(0 + sway, 36, -6 + sway, 30);
+  c.quadraticCurveTo(-10 + sway * 0.4, 16, -14, 2);
+  c.quadraticCurveTo(-16, -10, -11, -22);
   c.closePath();
   c.fill();
-  // lava-glow veins
+  c.strokeStyle = "#3a0c00";
+  c.lineWidth = 1.15;
+  c.stroke();
+  // lava veins
   c.save();
-  c.globalAlpha = 0.45 + pulse * 0.45;
+  c.globalAlpha = 0.5 + pulse * 0.4;
   c.strokeStyle = "#ffe37a";
-  c.lineWidth = 1.2;
+  c.lineWidth = 1.25;
   c.lineCap = "round";
   c.beginPath();
-  c.moveTo(-2, -16);
-  c.quadraticCurveTo(-8 + sway, 4, -12 + sway, 22);
+  c.moveTo(-3, -16);
+  c.quadraticCurveTo(-6 + sway * 0.5, 4, -4 + sway, 24);
   c.moveTo(4, -14);
-  c.quadraticCurveTo(-2 + sway * 0.5, 8, -6 + sway, 20);
+  c.quadraticCurveTo(2 + sway * 0.4, 8, 3 + sway * 0.7, 22);
+  c.moveTo(0, -18);
+  c.quadraticCurveTo(sway * 0.3, 6, sway * 0.5, 26);
   c.stroke();
   c.restore();
-  // soft outer glow
   c.save();
-  c.globalAlpha = 0.22 + pulse * 0.18;
+  c.globalAlpha = 0.22 + pulse * 0.16;
   c.strokeStyle = "#ffb020";
   c.lineWidth = 3.2;
   c.beginPath();
-  c.moveTo(-8, -20);
-  c.quadraticCurveTo(-22 + sway, 6, -18 + sway, 28);
+  c.moveTo(-11, -20);
+  c.quadraticCurveTo(-8 + sway, 8, -6 + sway, 30);
+  c.moveTo(11, -20);
+  c.quadraticCurveTo(8 + sway, 8, 6 + sway, 30);
   c.stroke();
   c.restore();
-  c.strokeStyle = "#3a0c00";
-  c.lineWidth = 1.1;
-  c.stroke();
   c.restore();
 }
 
 function drawBandosCharacter(c, t, opt) {
   opt = opt || {};
-  const face = opt.face == null ? -1 : opt.face;
+  const faceDir = opt.face == null ? -1 : opt.face;
   const walking = !!opt.walk;
   const wave = opt.wave || 0;
   const bust = !!opt.bust;
@@ -3379,18 +3397,29 @@ function drawBandosCharacter(c, t, opt) {
   const sway = Math.sin(tm * 2.6) * 2.4 + (walking ? stride * 1.4 : 0);
 
   c.save();
-  if (face < 0) c.scale(-1, 1);
+  if (faceDir < 0) c.scale(-1, 1);
 
-  // Darker olive-brown Bandos plates, gold as trim only
-  const plate = "#3a2a10";
-  const plateLt = "#53401a";
-  const plateDk = "#140e08";
-  const gold = "#e0b83a";
-  const goldDk = "#8a6418";
-  const goldLt = "#f0d878";
+  const skin = "#d2a878";
+  const skinDk = "#a88258";
+  const skinSh = "#8a6844";
+  const vest = "#3a3228";
+  const vestLt = "#4a4234";
+  const vestDk = "#241e18";
+  const bronze = "#b08a3a";
+  const bronzeDk = "#7a5c20";
+  const beige = "#d8c9a0";
+  const cream = "#e8d9b0";
+  const creamDk = "#c8b890";
+  const mauve = "#4a3a48";
+  const mauveDk = "#322830";
+  const mauveLt = "#5a4a58";
+  const grey = "#6a6a68";
+  const greyLt = "#8a8a86";
+  const greyDk = "#3e3e3c";
+  const bone = "#e8e0d0";
+  const creamTrim = "#c8d0b0";
 
   if (!bust) {
-    // Ground shadow
     c.fillStyle = "rgba(0,0,0,0.5)";
     c.beginPath(); c.ellipse(0, 16, 20, 5.5, 0, 0, Math.PI * 2); c.fill();
 
@@ -3405,7 +3434,7 @@ function drawBandosCharacter(c, t, opt) {
     c.beginPath(); c.ellipse(0, -8, 36, 44, 0, 0, Math.PI * 2); c.fill();
     c.restore();
 
-    // Infernal cape (furthest back) — red/black with lava glow
+    // Infernal cape (furthest back)
     c.save();
     c.translate(0, -bob);
     const cg = c.createLinearGradient(4, -34, -26 + sway, 28);
@@ -3429,7 +3458,6 @@ function drawBandosCharacter(c, t, opt) {
     c.strokeStyle = "#1a0000";
     c.lineWidth = 1.1;
     c.stroke();
-    // lava cracks
     c.save();
     c.globalAlpha = 0.55 + 0.4 * Math.sin(tm * 5.2);
     c.strokeStyle = "#ffb020";
@@ -3444,7 +3472,6 @@ function drawBandosCharacter(c, t, opt) {
     c.quadraticCurveTo(-14 + sway, 8, -20 + sway, 22);
     c.stroke();
     c.restore();
-    // ember glow along the trailing edge
     c.save();
     c.globalAlpha = 0.28 + 0.2 * Math.sin(tm * 4.6);
     c.strokeStyle = "#ff6a12";
@@ -3456,11 +3483,10 @@ function drawBandosCharacter(c, t, opt) {
     c.restore();
     c.restore();
 
-    // Huge godsword on the back — massive silver blade, ornate gold hilt
+    // Huge godsword on the back
     c.save();
     c.translate(-9, -28 - bob);
     c.rotate(-0.58);
-    // blade shadow
     c.fillStyle = "#0c0e12";
     c.beginPath();
     c.moveTo(-4.4, 22);
@@ -3484,12 +3510,10 @@ function drawBandosCharacter(c, t, opt) {
     c.lineTo(-5.6, -50);
     c.closePath();
     c.fill();
-    // gold fuller
-    c.strokeStyle = goldLt;
+    c.strokeStyle = "#c9a032";
     c.lineWidth = 1.15;
     c.beginPath(); c.moveTo(0, 16); c.lineTo(0, -58); c.stroke();
-    // wing / cross guard (gold)
-    c.fillStyle = goldDk;
+    c.fillStyle = "#8a6418";
     c.beginPath();
     c.moveTo(-16, 16);
     c.lineTo(-14, 12);
@@ -3504,23 +3528,19 @@ function drawBandosCharacter(c, t, opt) {
     c.lineTo(5, 24);
     c.closePath();
     c.fill();
-    c.fillStyle = gold;
+    c.fillStyle = "#c9a032";
     c.fillRect(-14, 17, 28, 4.2);
-    c.fillStyle = goldLt;
+    c.fillStyle = "#e8d080";
     c.fillRect(-12, 17.6, 24, 1.4);
-    // grip
-    c.fillStyle = plateDk;
+    c.fillStyle = "#1a140c";
     c.fillRect(-2.6, 21, 5.2, 14);
-    c.strokeStyle = goldDk;
+    c.strokeStyle = "#8a6418";
     c.lineWidth = 0.8;
     for (let i = 0; i < 4; i++) {
       c.beginPath(); c.moveTo(-2.6, 23.5 + i * 3); c.lineTo(2.6, 23.5 + i * 3); c.stroke();
     }
-    // pommel
-    c.fillStyle = gold;
+    c.fillStyle = "#c9a032";
     c.beginPath(); c.arc(0, 37, 3.4, 0, Math.PI * 2); c.fill();
-    c.fillStyle = goldLt;
-    c.beginPath(); c.arc(-0.6, 36.2, 1.3, 0, Math.PI * 2); c.fill();
     c.restore();
   }
 
@@ -3531,232 +3551,328 @@ function drawBandosCharacter(c, t, opt) {
   const bootR = bust ? 0 : -stride * 5.4;
 
   if (!bust) {
-    // Plate legs — long, shaded
-    function leg(x, dy) {
-      c.fillStyle = plateDk;
-      c.fillRect(x - 0.4, -6 + dy * 0.25, 8.4, 18);
-      c.fillStyle = plate;
-      c.fillRect(x + 0.6, -5 + dy * 0.25, 6.4, 16);
-      c.fillStyle = plateLt;
-      c.fillRect(x + 0.8, -5 + dy * 0.25, 2.2, 16);
-      // gold greave edge
-      c.fillStyle = goldDk;
-      c.fillRect(x + 0.4, 4 + dy * 0.2, 7, 1.3);
+    // Bare tan legs
+    function bareLeg(x, dy) {
+      c.fillStyle = skinSh;
+      c.fillRect(x, -4 + dy * 0.25, 7.6, 16);
+      c.fillStyle = skin;
+      c.fillRect(x + 0.8, -3.5 + dy * 0.25, 5.2, 15);
+      c.fillStyle = skinDk;
+      c.fillRect(x + 4.4, -3.5 + dy * 0.25, 1.8, 15);
     }
-    leg(-9.2, bootL);
-    leg(0.8, bootR);
+    bareLeg(-8.8, bootL);
+    bareLeg(1.2, bootR);
 
-    // Bandos boots + gold toe / trim
+    // Chunky grey layered boots
     function boot(x, dy) {
-      c.fillStyle = plateDk;
-      c.fillRect(x, 11 + dy, 10.2, 6.4);
-      c.fillStyle = plate;
-      c.fillRect(x + 0.7, 11.3 + dy, 8.6, 3.6);
-      c.fillStyle = gold;
-      c.fillRect(x, 15.4 + dy, 10.2, 2.1);
-      c.fillStyle = goldLt;
-      c.fillRect(x + 0.4, 15.5 + dy, 4, 1.1);
+      c.fillStyle = greyDk;
+      c.fillRect(x, 10.5 + dy, 10.4, 7);
+      c.fillStyle = grey;
+      c.fillRect(x + 0.7, 10.8 + dy, 9, 3.6);
+      c.fillStyle = greyLt;
+      c.fillRect(x + 0.7, 10.8 + dy, 9, 1.2);
+      // layered ridge
+      c.fillStyle = greyDk;
+      c.fillRect(x + 0.4, 14.4 + dy, 9.6, 1.5);
+      c.fillStyle = grey;
+      c.fillRect(x + 0.4, 15.6 + dy, 9.6, 1.6);
     }
-    boot(-10.2, bootL);
-    boot(0.2, bootR);
+    boot(-10.0, bootL);
+    boot(-0.2, bootR);
 
-    // Tassets — layered skirt of plates
-    const swing = stride * 0.12;
-    function tassetCol(sx, rot, drop) {
-      c.save();
-      c.translate(sx, 1.6);
-      c.rotate(rot);
-      // back plate
-      c.fillStyle = plateDk;
+    // Dark mauve-grey skirt with jagged hem
+    c.fillStyle = mauveDk;
+    c.beginPath();
+    c.moveTo(-13, 0);
+    c.lineTo(13, 0);
+    c.lineTo(12, 8);
+    c.lineTo(-12, 8);
+    c.closePath();
+    c.fill();
+    c.fillStyle = mauve;
+    c.beginPath();
+    c.moveTo(-12, 0.4);
+    c.lineTo(12, 0.4);
+    c.lineTo(11, 7);
+    c.lineTo(-11, 7);
+    c.closePath();
+    c.fill();
+    // jagged hem triangles
+    const jags = [-11, -6.6, -2.2, 2.2, 6.6, 11];
+    c.fillStyle = mauveDk;
+    for (let i = 0; i < jags.length; i++) {
+      const jx = jags[i];
+      const jh = (i % 2 === 0) ? 5.2 : 4.2;
       c.beginPath();
-      c.moveTo(-6.2, -1); c.lineTo(6.2, -1); c.lineTo(5.2, 9 + drop); c.lineTo(-5.2, 9 + drop);
-      c.closePath(); c.fill();
-      // front plate, slightly shorter overlay
-      c.fillStyle = plate;
-      c.beginPath();
-      c.moveTo(-5.2, 0); c.lineTo(5.2, 0); c.lineTo(4.3, 8 + drop); c.lineTo(-4.3, 8 + drop);
-      c.closePath(); c.fill();
-      c.fillStyle = plateLt;
-      c.beginPath();
-      c.moveTo(-5.2, 0); c.lineTo(-2.4, 0); c.lineTo(-2.0, 8 + drop); c.lineTo(-4.3, 8 + drop);
-      c.closePath(); c.fill();
-      c.strokeStyle = gold;
-      c.lineWidth = 1.2;
-      c.beginPath();
-      c.moveTo(-5.2, 0); c.lineTo(5.2, 0); c.lineTo(4.3, 8 + drop); c.lineTo(-4.3, 8 + drop);
-      c.closePath(); c.stroke();
-      c.beginPath(); c.moveTo(0, 0.4); c.lineTo(0, 7.4 + drop); c.stroke();
-      c.restore();
+      c.moveTo(jx - 2.4, 6.4);
+      c.lineTo(jx + 2.4, 6.4);
+      c.lineTo(jx, 6.4 + jh);
+      c.closePath();
+      c.fill();
     }
-    tassetCol(-7.6, -0.12 + swing, 5);
-    tassetCol(0, 0, 6.5);
-    tassetCol(7.6, 0.12 - swing, 5);
+    c.fillStyle = mauveLt;
+    c.fillRect(-12, 0.4, 24, 1.4);
+
+    // Long cream/beige loincloth flap over the skirt
+    const flapSwing = stride * 1.1;
+    c.save();
+    c.translate(0, 1);
+    c.rotate(flapSwing * 0.03);
+    c.fillStyle = creamDk;
+    c.beginPath();
+    c.moveTo(-5.2, 0);
+    c.lineTo(5.2, 0);
+    c.lineTo(4.2, 16);
+    c.lineTo(0, 19);
+    c.lineTo(-4.2, 16);
+    c.closePath();
+    c.fill();
+    c.fillStyle = cream;
+    c.beginPath();
+    c.moveTo(-4.2, 0.4);
+    c.lineTo(4.2, 0.4);
+    c.lineTo(3.3, 15);
+    c.lineTo(0, 17.6);
+    c.lineTo(-3.3, 15);
+    c.closePath();
+    c.fill();
+    c.fillStyle = creamDk;
+    c.fillRect(-4.2, 0.4, 8.4, 1.3);
+    c.restore();
   }
 
-  // Chestplate — broad, dark olive-brown, gold trim
-  c.fillStyle = plateDk;
+  // Bare tan muscular chest (shows in the V and at the sides)
+  c.fillStyle = skinDk;
   c.beginPath();
-  c.moveTo(-15, -32);
-  c.lineTo(15, -32);
-  c.lineTo(16.5, -6);
-  c.lineTo(10, 3);
-  c.lineTo(-10, 3);
-  c.lineTo(-16.5, -6);
+  c.moveTo(-11, -32);
+  c.lineTo(11, -32);
+  c.lineTo(10, -6);
+  c.lineTo(-10, -6);
   c.closePath();
   c.fill();
-  c.fillStyle = plate;
+  c.fillStyle = skin;
   c.beginPath();
-  c.moveTo(-13.5, -30.5);
-  c.lineTo(13.5, -30.5);
-  c.lineTo(14.6, -7);
-  c.lineTo(8.5, 1.4);
-  c.lineTo(-8.5, 1.4);
-  c.lineTo(-14.6, -7);
+  c.moveTo(-9.5, -31);
+  c.lineTo(9.5, -31);
+  c.lineTo(8.6, -7);
+  c.lineTo(-8.6, -7);
   c.closePath();
   c.fill();
-  // chest highlight / plate split
-  c.fillStyle = plateLt;
-  c.beginPath();
-  c.moveTo(-13.5, -30.5);
-  c.lineTo(-3, -30.5);
-  c.lineTo(-3, 1.4);
-  c.lineTo(-8.5, 1.4);
-  c.lineTo(-14.6, -7);
-  c.closePath();
-  c.fill();
-  // gold trim
-  c.strokeStyle = gold;
-  c.lineWidth = 1.2;
-  c.beginPath();
-  c.moveTo(-13.5, -30.5);
-  c.lineTo(13.5, -30.5);
-  c.lineTo(14.6, -7);
-  c.lineTo(8.5, 1.4);
-  c.lineTo(-8.5, 1.4);
-  c.lineTo(-14.6, -7);
-  c.closePath();
-  c.stroke();
-  // gold mid-band
-  c.fillStyle = goldDk;
-  c.fillRect(-14.4, -15.6, 28.8, 1.8);
-  c.fillStyle = gold;
-  c.fillRect(-14.4, -15.3, 28.8, 0.8);
-  // belt + buckle
-  c.fillStyle = plateDk;
-  c.fillRect(-10, 0.2, 20, 4);
-  c.fillStyle = goldDk;
-  c.fillRect(-9.2, 0.6, 18.4, 3.2);
-  c.fillStyle = goldLt;
-  c.fillRect(-2.6, 0.8, 5.2, 2.8);
+  // pecs
+  c.fillStyle = skinDk;
+  c.beginPath(); c.ellipse(-4.2, -22, 4.4, 3.2, -0.15, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.ellipse(4.2, -22, 4.4, 3.2, 0.15, 0, Math.PI * 2); c.fill();
+  c.fillStyle = skin;
+  c.beginPath(); c.ellipse(-4.4, -22.6, 3.4, 2.4, -0.15, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.ellipse(4.4, -22.6, 3.4, 2.4, 0.15, 0, Math.PI * 2); c.fill();
 
-  // Original war-god chest emblem (horned gold mark, not a copied symbol)
+  // Dark grey-brown sleeveless vest / tabard, deep V neck
+  c.fillStyle = vestDk;
+  c.beginPath();
+  c.moveTo(-13.5, -32);
+  c.lineTo(-3.2, -32);
+  c.lineTo(0, -14);
+  c.lineTo(3.2, -32);
+  c.lineTo(13.5, -32);
+  c.lineTo(14.5, -5);
+  c.lineTo(8, 3);
+  c.lineTo(-8, 3);
+  c.lineTo(-14.5, -5);
+  c.closePath();
+  c.fill();
+  c.fillStyle = vest;
+  c.beginPath();
+  c.moveTo(-12.2, -31);
+  c.lineTo(-3.6, -31);
+  c.lineTo(0, -13.2);
+  c.lineTo(3.6, -31);
+  c.lineTo(12.2, -31);
+  c.lineTo(13.2, -5.5);
+  c.lineTo(7.2, 2);
+  c.lineTo(-7.2, 2);
+  c.lineTo(-13.2, -5.5);
+  c.closePath();
+  c.fill();
+  // left panel slightly lighter (flat facet)
+  c.fillStyle = vestLt;
+  c.beginPath();
+  c.moveTo(-12.2, -31);
+  c.lineTo(-3.6, -31);
+  c.lineTo(0, -13.2);
+  c.lineTo(0, 2);
+  c.lineTo(-7.2, 2);
+  c.lineTo(-13.2, -5.5);
+  c.closePath();
+  c.fill();
+  // recut the V so pecs stay visible
+  c.fillStyle = skin;
+  c.beginPath();
+  c.moveTo(-3.4, -31.2);
+  c.lineTo(3.4, -31.2);
+  c.lineTo(0, -13.6);
+  c.closePath();
+  c.fill();
+  c.fillStyle = skinDk;
+  c.beginPath(); c.ellipse(-3.6, -23, 3.4, 2.6, -0.2, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.ellipse(3.6, -23, 3.4, 2.6, 0.2, 0, Math.PI * 2); c.fill();
+  c.fillStyle = skin;
+  c.beginPath(); c.ellipse(-3.8, -23.5, 2.6, 1.9, -0.2, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.ellipse(3.8, -23.5, 2.6, 1.9, 0.2, 0, Math.PI * 2); c.fill();
+
+  // Small bronze buckle at the chest (base of the V)
+  c.fillStyle = bronzeDk;
+  c.fillRect(-2.4, -15.4, 4.8, 3.6);
+  c.fillStyle = bronze;
+  c.fillRect(-2.0, -15.0, 4.0, 2.8);
+  c.fillStyle = bronzeDk;
+  c.fillRect(-0.7, -14.6, 1.4, 2.0);
+
+  // Pale beige Bandos-like glyph on the belly
   c.save();
-  c.translate(0, -23.5);
-  c.fillStyle = gold;
+  c.translate(0, -5.5);
+  c.fillStyle = beige;
   c.beginPath();
-  c.moveTo(0, -6.5);
-  c.lineTo(3.2, -3.2);
-  c.lineTo(5.2, 0.6);
-  c.lineTo(2.4, 0.2);
-  c.lineTo(2.8, 5.2);
-  c.lineTo(0, 3.2);
-  c.lineTo(-2.8, 5.2);
-  c.lineTo(-2.4, 0.2);
-  c.lineTo(-5.2, 0.6);
-  c.lineTo(-3.2, -3.2);
+  c.moveTo(0, -5.4);
+  c.lineTo(2.6, -2.4);
+  c.lineTo(4.2, 0.8);
+  c.lineTo(1.8, 0.2);
+  c.lineTo(2.2, 4.6);
+  c.lineTo(0, 2.6);
+  c.lineTo(-2.2, 4.6);
+  c.lineTo(-1.8, 0.2);
+  c.lineTo(-4.2, 0.8);
+  c.lineTo(-2.6, -2.4);
   c.closePath();
   c.fill();
-  c.fillStyle = goldLt;
-  c.beginPath();
-  c.moveTo(0, -6.5);
-  c.lineTo(1.4, -3);
-  c.lineTo(0, -1.6);
-  c.lineTo(-1.4, -3);
-  c.closePath();
-  c.fill();
-  c.fillStyle = plateDk;
-  c.beginPath(); c.arc(-1.5, -1.2, 0.7, 0, Math.PI * 2); c.fill();
-  c.beginPath(); c.arc(1.5, -1.2, 0.7, 0, Math.PI * 2); c.fill();
-  c.fillRect(-0.7, 0.2, 1.4, 2);
+  c.fillStyle = vestDk;
+  c.beginPath(); c.arc(-1.2, -0.8, 0.55, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(1.2, -0.8, 0.55, 0, Math.PI * 2); c.fill();
+  c.fillRect(-0.55, 0.2, 1.1, 1.7);
   c.restore();
 
-  // Layered spiked pauldrons
-  function pauldron(px, dir) {
-    c.save();
-    c.translate(px, -28);
-    c.rotate(dir * 0.38);
-    // back layer
-    c.fillStyle = plateDk;
-    c.beginPath(); c.ellipse(0, 1, 10, 8.2, 0, 0, Math.PI * 2); c.fill();
-    // mid layer
-    c.fillStyle = plate;
-    c.beginPath(); c.ellipse(-0.6, 0, 8.4, 6.8, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = plateLt;
-    c.beginPath(); c.ellipse(-2, -1, 4, 4.2, 0, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = gold;
-    c.lineWidth = 1.35;
-    c.beginPath(); c.ellipse(0, 1, 10, 8.2, 0, 0, Math.PI * 2); c.stroke();
-    // spikes
-    c.fillStyle = gold;
-    c.beginPath(); c.moveTo(-3, -6); c.lineTo(0, -16); c.lineTo(3, -6); c.closePath(); c.fill();
-    c.beginPath(); c.moveTo(4, -4); c.lineTo(12, -11); c.lineTo(7, -1); c.closePath(); c.fill();
-    c.beginPath(); c.moveTo(-4, -3); c.lineTo(-12, -9); c.lineTo(-6, 0); c.closePath(); c.fill();
-    c.fillStyle = goldLt;
-    c.beginPath(); c.moveTo(-1, -7); c.lineTo(0, -14); c.lineTo(1, -7); c.closePath(); c.fill();
-    c.restore();
-  }
-  pauldron(-16.5, -1);
-  pauldron(16.5, 1);
-
-  // Arms + Bandos gloves
+  // Bare muscular arms + chunky grey spiky gauntlets
   function arm(px, rot, isWave) {
     c.save();
-    c.translate(px, -25);
+    c.translate(px, -26);
     c.rotate(rot);
-    // upper
-    c.fillStyle = plateDk;
-    c.fillRect(-3.4, -1, 6.8, 9);
-    c.fillStyle = plate;
-    c.fillRect(-2.6, -0.4, 5.2, 8);
-    // glove
-    c.fillStyle = plateDk;
-    c.fillRect(-3.6, 7.2, 7.2, 8.4);
-    c.fillStyle = plate;
-    c.fillRect(-3, 7.6, 6, 7.4);
-    c.fillStyle = gold;
-    c.fillRect(-3.6, 7.2, 7.2, 1.8);
-    c.fillRect(-3.6, 13.6, 7.2, 1.3);
+    // upper arm (bare tan)
+    c.fillStyle = skinDk;
+    c.fillRect(-3.4, -1, 6.8, 11);
+    c.fillStyle = skin;
+    c.fillRect(-2.6, -0.4, 5.2, 10);
+    c.fillStyle = skinSh;
+    c.fillRect(1.2, -0.4, 1.4, 10);
+    // chunky layered gauntlet / bracer
+    c.fillStyle = greyDk;
+    c.fillRect(-4.0, 8.4, 8.0, 10.2);
+    c.fillStyle = grey;
+    c.fillRect(-3.4, 8.8, 6.8, 9.2);
+    c.fillStyle = greyLt;
+    c.fillRect(-3.4, 8.8, 6.8, 2.0);
+    c.fillStyle = greyDk;
+    c.fillRect(-3.4, 12.4, 6.8, 1.4);
+    // small bone spikes on the bracer
+    c.fillStyle = bone;
+    c.beginPath(); c.moveTo(-2.2, 8.6); c.lineTo(-0.4, 8.6); c.lineTo(-1.3, 5.4); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(0.4, 8.6); c.lineTo(2.2, 8.6); c.lineTo(1.3, 5.2); c.closePath(); c.fill();
     if (isWave) {
-      // gloved fist (no bare cute hand)
-      c.fillStyle = plate;
-      c.beginPath(); c.ellipse(0.2, 17.4, 3.4, 3.0, 0, 0, Math.PI * 2); c.fill();
-      c.strokeStyle = gold;
-      c.lineWidth = 0.9;
-      c.stroke();
+      c.fillStyle = grey;
+      c.beginPath(); c.ellipse(0.2, 19.0, 3.4, 3.0, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = greyLt;
+      c.beginPath(); c.ellipse(-0.4, 18.4, 1.6, 1.4, 0, 0, Math.PI * 2); c.fill();
     }
     c.restore();
   }
-  arm(-15.5, 0.42, false);
-  arm(15.5, wave ? -2.05 : 0.36, !!wave);
+  arm(14.8, wave ? -2.05 : 0.36, !!wave); // right arm first (under)
+  arm(-15.2, 0.42, false);               // left arm
+
+  // ONE huge spiked pauldron on the LEFT shoulder only
+  c.save();
+  c.translate(-15.5, -30);
+  c.rotate(-0.35);
+  // rounded grey plate
+  c.fillStyle = greyDk;
+  c.beginPath(); c.ellipse(0, 1, 12.5, 10.2, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = grey;
+  c.beginPath(); c.ellipse(-0.8, 0.4, 10.6, 8.6, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = greyLt;
+  c.beginPath(); c.ellipse(-2.4, -0.8, 5.2, 4.4, 0, 0, Math.PI * 2); c.fill();
+  // pale-green / cream trim
+  c.strokeStyle = creamTrim;
+  c.lineWidth = 1.6;
+  c.beginPath(); c.ellipse(0, 1, 12.5, 10.2, 0, 0, Math.PI * 2); c.stroke();
+  // ~6 bone-white spikes
+  const spikes = [
+    { a: -2.4, l: 11 },
+    { a: -1.7, l: 13 },
+    { a: -0.95, l: 14.5 },
+    { a: -0.2, l: 13 },
+    { a: 0.55, l: 11.5 },
+    { a: 1.25, l: 9.5 }
+  ];
+  for (const s of spikes) {
+    c.save();
+    c.rotate(s.a);
+    c.fillStyle = bone;
+    c.beginPath();
+    c.moveTo(-2.1, -6);
+    c.lineTo(2.1, -6);
+    c.lineTo(0, -6 - s.l);
+    c.closePath();
+    c.fill();
+    c.fillStyle = "#c8c0b0";
+    c.beginPath();
+    c.moveTo(0.3, -6);
+    c.lineTo(2.1, -6);
+    c.lineTo(0, -6 - s.l);
+    c.closePath();
+    c.fill();
+    c.restore();
+  }
+  c.restore();
 
   // Neck
-  c.fillStyle = "#6a4a32";
-  c.fillRect(-3.2, -37, 6.4, 6);
-  c.fillStyle = plateDk;
-  c.fillRect(-4, -36.2, 8, 2.2);
+  c.fillStyle = skinDk;
+  c.fillRect(-3.2, -37, 6.4, 6.5);
+  c.fillStyle = skin;
+  c.fillRect(-2.6, -36.4, 5.2, 5.2);
 
-  // Head — stern face under a blue partyhat (no closed helm)
+  // Head — stern face, short brown hair, short blue partyhat
   const hy = -43;
-  // Larger, lighter face so the scowl reads at phone size
-  c.fillStyle = "#7a5230";
+  // skull
+  c.fillStyle = skinDk;
   c.beginPath(); c.ellipse(0, hy + 2.0, 9.6, 10.2, 0, 0, Math.PI * 2); c.fill();
   c.fillStyle = "#e8c49a";
   c.beginPath(); c.ellipse(0, hy + 2.2, 8.8, 9.4, 0, 0, Math.PI * 2); c.fill();
-  // cheek planes, keep skin visible
+  // Short brown hair — cap + sides + a little front, visible under the hat
+  c.fillStyle = "#3a2416";
+  c.beginPath();
+  c.ellipse(0, hy - 2.2, 9.4, 7.2, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = "#5a3820";
+  c.beginPath();
+  c.ellipse(-1, hy - 2.8, 6.4, 5.0, 0, 0, Math.PI * 2);
+  c.fill();
+  // sideburns / hair at the sides
+  c.fillStyle = "#3a2416";
+  c.beginPath(); c.ellipse(-8.2, hy + 2.4, 2.4, 4.2, 0.15, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.ellipse(8.2, hy + 2.4, 2.4, 4.2, -0.15, 0, Math.PI * 2); c.fill();
+  // front hairline peeking under the hat
+  c.fillStyle = "#3a2416";
+  c.beginPath();
+  c.moveTo(-6.5, hy - 4.2);
+  c.quadraticCurveTo(-3, hy - 1.6, -1.2, hy - 3.6);
+  c.quadraticCurveTo(0, hy - 1.2, 1.2, hy - 3.6);
+  c.quadraticCurveTo(3, hy - 1.6, 6.5, hy - 4.2);
+  c.quadraticCurveTo(0, hy - 6.4, -6.5, hy - 4.2);
+  c.closePath();
+  c.fill();
+
+  // cheeks
   c.fillStyle = "rgba(160,90,50,0.18)";
   c.beginPath(); c.ellipse(-4.6, hy + 4.2, 3.0, 3.2, 0, 0, Math.PI * 2); c.fill();
   c.beginPath(); c.ellipse(4.6, hy + 4.2, 3.0, 3.2, 0, 0, Math.PI * 2); c.fill();
-  // heavy scowl brows — thick, graphic, clearly angry
+  // heavy scowl brows
   c.fillStyle = "#1a0c08";
   c.beginPath();
   c.moveTo(-7.4, hy - 1.2);
@@ -3768,7 +3884,7 @@ function drawBandosCharacter(c, t, opt) {
   c.lineTo(-7.2, hy + 0.8);
   c.closePath();
   c.fill();
-  // eye sockets + gold slits (slightly larger so they read)
+  // eye sockets + gold slits
   c.fillStyle = "#1a1008";
   c.beginPath(); c.ellipse(-3.0, hy + 3.2, 2.25, 1.45, 0.12, 0, Math.PI * 2); c.fill();
   c.beginPath(); c.ellipse(3.0, hy + 3.2, 2.25, 1.45, -0.12, 0, Math.PI * 2); c.fill();
@@ -3787,7 +3903,7 @@ function drawBandosCharacter(c, t, opt) {
   c.lineTo(-1.4, hy + 6.6);
   c.closePath();
   c.fill();
-  // grim straight mouth
+  // grim mouth
   c.strokeStyle = "#3a1c10";
   c.lineWidth = 1.35;
   c.lineCap = "round";
@@ -3795,7 +3911,7 @@ function drawBandosCharacter(c, t, opt) {
   c.moveTo(-2.4, hy + 8.4);
   c.lineTo(2.4, hy + 8.4);
   c.stroke();
-  // compact chin beard — frames the jaw, doesn't hide the face
+  // compact chin beard
   c.fillStyle = "#3a2418";
   c.beginPath();
   c.moveTo(-4.8, hy + 8.8);
@@ -3805,95 +3921,109 @@ function drawBandosCharacter(c, t, opt) {
   c.closePath();
   c.fill();
 
-  // Classic OSRS-style BLUE PARTYHAT — sits high so the face stays visible
-  drawBluePartyhat(c, hy - 8.2);
+  // Short low blue partyhat, sitting on the hair, slightly tilted
+  c.save();
+  c.translate(0.8, hy - 6.6);
+  c.rotate(-0.12);
+  drawBluePartyhat(c, 0);
+  c.restore();
 
   c.restore(); // bob
   c.restore(); // face flip
 }
 
 function drawBluePartyhat(c, baseY) {
-  // Iconic paper partyhat: short cone, jagged triangular points, bright blue + highlights.
-  const blueDk = "#0a1e7a";
-  const blue = "#1a4ae0";
-  const blueMid = "#2a62f4";
-  const blueLt = "#6a98ff";
-  const blueHi = "#b0ccff";
-  // brim / head opening
-  c.fillStyle = blueDk;
+  // Short, low paper crown: a band wrapping the head with 5–6 broad triangular
+  // zig-zag points. Total height ~35–40% of the head. Flat-shaded royal blue.
+  // No gradients, no glow, no white streaks.
+  const blue = "#1f3fd0";
+  const blueShade = "#1732a8";
+  const blueBack = "#142880";
+  const blueFacet = "#2748d8";
+  const bandH = 4.2;
+  const pointH = 3.9;
+  const bandTop = baseY - bandH;
+  const rx = 9.6;
+  const ry = 3.15;
+
+  // Back of the band (darker), slightly above so it reads as wrapping around
+  c.fillStyle = blueBack;
   c.beginPath();
-  c.ellipse(0, baseY + 4.2, 10.2, 3.6, 0, 0, Math.PI * 2);
+  c.ellipse(0, baseY - 0.6, rx, ry, 0, Math.PI, Math.PI * 2);
   c.fill();
-  // short conical body
-  const panels = [
-    { x0: -10, x1: -6, col: blueDk, lite: blue },
-    { x0: -6,  x1: -2, col: blue,   lite: blueLt },
-    { x0: -2,  x1:  2, col: blueMid,lite: blueHi },
-    { x0:  2,  x1:  6, col: blue,   lite: blueLt },
-    { x0:  6,  x1: 10, col: blueDk, lite: blue }
+
+  // Back points (drawn first, darker) peeking behind the crown
+  const backPts = [
+    { x: -6.4, w: 5.2 },
+    { x: 0, w: 5.6 },
+    { x: 6.4, w: 5.2 }
   ];
-  const topY = baseY - 6.2;
-  const topS = 0.52;
-  for (const p of panels) {
-    c.fillStyle = p.col;
+  c.fillStyle = blueBack;
+  for (const p of backPts) {
     c.beginPath();
-    c.moveTo(p.x0, baseY + 3.4);
-    c.lineTo(p.x1, baseY + 3.4);
-    c.lineTo(p.x1 * topS, topY);
-    c.lineTo(p.x0 * topS, topY);
-    c.closePath();
-    c.fill();
-    c.fillStyle = p.lite;
-    c.beginPath();
-    c.moveTo(p.x0, baseY + 3.4);
-    c.lineTo(p.x0 + (p.x1 - p.x0) * 0.35, baseY + 3.4);
-    c.lineTo((p.x0 + (p.x1 - p.x0) * 0.35) * topS, topY);
-    c.lineTo(p.x0 * topS, topY);
+    c.moveTo(p.x - p.w / 2, bandTop + 0.6);
+    c.lineTo(p.x + p.w / 2, bandTop + 0.6);
+    c.lineTo(p.x, bandTop - pointH * 0.75);
     c.closePath();
     c.fill();
   }
-  // zig-zag paper points, slightly fanned, middle tallest
+
+  // Front band — solid flat paper wrap
+  c.fillStyle = blueShade;
+  c.beginPath();
+  c.moveTo(-rx, baseY);
+  c.lineTo(rx, baseY);
+  c.lineTo(rx - 0.4, bandTop);
+  c.lineTo(-rx + 0.4, bandTop);
+  c.closePath();
+  c.fill();
+  // two flat facets on the band (no gradient)
+  c.fillStyle = blue;
+  c.beginPath();
+  c.moveTo(-rx + 0.6, baseY - 0.15);
+  c.lineTo(1.2, baseY - 0.15);
+  c.lineTo(0.8, bandTop + 0.1);
+  c.lineTo(-rx + 1.0, bandTop + 0.1);
+  c.closePath();
+  c.fill();
+  c.fillStyle = blueFacet;
+  c.beginPath();
+  c.moveTo(-5.5, baseY - 0.15);
+  c.lineTo(-1.0, baseY - 0.15);
+  c.lineTo(-1.2, bandTop + 0.1);
+  c.lineTo(-5.2, bandTop + 0.1);
+  c.closePath();
+  c.fill();
+
+  // Front zig-zag: 5 broad triangles, each about as tall as the band
+  // Points sit on the top edge of the band, slightly overlapping like folded paper.
   const tips = [
-    { x: -8.8, h: 8.8, w: 5.0, col: blueDk, lite: blueLt },
-    { x: -4.5, h: 11.6, w: 5.2, col: blue,   lite: blueHi },
-    { x:  0.0, h: 14.8, w: 5.6, col: blueMid,lite: blueHi },
-    { x:  4.5, h: 11.6, w: 5.2, col: blue,   lite: blueLt },
-    { x:  8.8, h: 8.8, w: 5.0, col: blueDk, lite: blueLt }
+    { x: -8.2, w: 6.2, col: blueShade, facet: blue },
+    { x: -4.1, w: 6.4, col: blue, facet: blueFacet },
+    { x:  0.0, w: 6.6, col: blue, facet: blueFacet },
+    { x:  4.1, w: 6.4, col: blue, facet: blueShade },
+    { x:  8.2, w: 6.2, col: blueShade, facet: blueBack }
   ];
   for (const p of tips) {
-    const y0 = topY + 0.4;
-    const tipX = p.x * 1.08; // slight outward fan
+    const y0 = bandTop + 0.35;
     c.fillStyle = p.col;
     c.beginPath();
     c.moveTo(p.x - p.w / 2, y0);
     c.lineTo(p.x + p.w / 2, y0);
-    c.lineTo(tipX, y0 - p.h);
+    c.lineTo(p.x, y0 - pointH);
     c.closePath();
     c.fill();
-    // lit left edge of each point
-    c.fillStyle = p.lite;
+    // single darker/lighter facet, no white streak
+    c.fillStyle = p.facet;
     c.beginPath();
     c.moveTo(p.x - p.w / 2, y0);
-    c.lineTo(p.x - p.w * 0.12, y0);
-    c.lineTo(tipX, y0 - p.h);
-    c.closePath();
-    c.fill();
-    // dark right edge
-    c.fillStyle = blueDk;
-    c.beginPath();
-    c.moveTo(p.x + p.w * 0.12, y0);
-    c.lineTo(p.x + p.w / 2, y0);
-    c.lineTo(tipX, y0 - p.h);
+    c.lineTo(p.x - p.w * 0.08, y0);
+    c.lineTo(p.x, y0 - pointH);
     c.closePath();
     c.fill();
   }
-  // brim highlight
-  c.strokeStyle = "rgba(170,205,255,0.65)";
-  c.lineWidth = 1.05;
-  c.beginPath();
-  c.ellipse(0, baseY + 3.2, 9.6, 3.0, 0, Math.PI, Math.PI * 2);
-  c.stroke();
 }
+
 
 function drawFastKill77(t) {
   const cs = G.cs;
@@ -3912,7 +4042,7 @@ function drawFastKill77(t) {
   ctx.restore();
   // Name in OSRS yellow, not affected by facing flip
   ctx.save();
-  ctx.translate(x, y - 90 * L.sP * 1.62);
+  ctx.translate(x, y - 82 * L.sP * 1.62);
   ctx.font = "bold " + Math.max(11, Math.round(12 * L.sP)) + "px Trebuchet MS, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -4098,7 +4228,7 @@ window.KellenScape = {
     HEALER_MAX_HIT, JAD_KILL_GP_MIN, JAD_KILL_GP_MAX,
     SHARK_ATTACK_DELAY_TICKS, POT_ATTACK_DELAY_TICKS, CONSUME_COOLDOWN_TICKS,
     JAD_ATTACK_SPEED_TICKS, PLAYER_ATTACK_TICKS, SHARK_HEAL, ARENA_LAYOUT_V5, JAD_ARENA_FRAC,
-    CUTSCENE_V6, ART_V7
+    CUTSCENE_V6, ART_V7, ART_V8
   }
 };
 window.Xscape = window.KellenScape;
