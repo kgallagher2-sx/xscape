@@ -1518,7 +1518,10 @@
     const shot = (typeof shotAnimAt === "function") ? shotAnimAt(shotT, 4) : { raise:0, recoil:0 };
     const P = profileObj();
     if (typeof drawPlayerSprite === "function") {
-      drawPlayerSprite(ctx, t, { cape: !!(P && P.hasFireCape), shot: shot, recoilBase: (p.atkCd >= 3) ? -0.12 : 0 });
+      const capeOn = (typeof global.wearingFireCape === "function")
+        ? global.wearingFireCape()
+        : !!(P && ((P.equipment && P.equipment.cape === "fire_cape") || P.hasFireCape));
+      drawPlayerSprite(ctx, t, { cape: capeOn, shot: shot, recoilBase: (p.atkCd >= 3) ? -0.12 : 0 });
     } else {
       ctx.fillStyle = "#3a2a18"; ctx.fillRect(-8, -28, 16, 28);
     }
@@ -1835,6 +1838,37 @@
       if (t === "raid-enrage") api.skipToPhase(4);
       return st;
     },
+    ownsFireCape: function () {
+      if (typeof global.ownsFireCape === "function") {
+        try { return !!global.ownsFireCape(); } catch (e) {}
+      }
+      const P = profileObj();
+      if (P.hasFireCape || P.seenFirstKill) return true;
+      if (P.equipment && P.equipment.cape === "fire_cape") return true;
+      if (P.bank && P.bank.indexOf("fire_cape") !== -1) return true;
+      if (P.unlockedItems && P.unlockedItems.indexOf("fire_cape") !== -1) return true;
+      try {
+        const runs = JSON.parse(localStorage.getItem("kellenscape-runs") || "[]");
+        if (Array.isArray(runs) && runs.length) return true;
+        const best = JSON.parse(localStorage.getItem("kellenscape-best") || "null");
+        if (best && (best.result || best.score)) return true;
+      } catch (e) {}
+      return false;
+    },
+    updateRaidLock: function () {
+      if (typeof global.updateRaidLock === "function") {
+        try { global.updateRaidLock(); return; } catch (e) {}
+      }
+      const b = global.document && document.getElementById("btn-mode-raid");
+      if (!b) return;
+      const locked = !api.ownsFireCape();
+      b.classList.toggle("locked", locked);
+      b.disabled = locked;
+      b.setAttribute("aria-disabled", locked ? "true" : "false");
+      b.innerHTML = locked
+        ? 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>'
+        : 'Gloamhold<span class="sub">The Unsleeping · Raid</span>';
+    },
     installHubButton: function () {
       try {
         const list = document.querySelector(".mode-list");
@@ -1863,6 +1897,7 @@
         const duel = document.getElementById("btn-mode-duel");
         if (duel) list.insertBefore(b, duel);
         else list.appendChild(b);
+        api.updateRaidLock();
       } catch (e) {}
     },
     redirectIndexTest: function () {
@@ -1987,6 +2022,14 @@
     registerItems();
     remigrateHostBank();
     opts = opts || { room: "gate" };
+    const test = api.testFlag();
+    const bypassLock = !!(opts.fromQuery || opts.skipLock || (test && test.indexOf("raid") === 0));
+    if (!bypassLock && !api.ownsFireCape()) {
+      api.updateRaidLock();
+      if (typeof global.showTitle === "function") global.showTitle();
+      if (typeof global.flashMsg === "function") global.flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+      return;
+    }
     const skipBrief = !!(opts.skipBrief || opts.fromQuery);
     const seen = (typeof global.raidBriefSeen === "function") ? global.raidBriefSeen() : false;
     if (!skipBrief && !seen && typeof global.showRaidBriefing === "function" && document.getElementById("overlay-raid-tut")) {
@@ -2045,6 +2088,7 @@
     remigrateHostBank();
     hookXscape();
     api.installHubButton();
+    api.updateRaidLock();
     if (typeof global.Scenes !== "undefined") {
       global.Scenes.raid = {
         id: "raid",

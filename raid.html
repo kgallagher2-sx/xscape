@@ -429,6 +429,16 @@
       <button class="btn" id="btn-again-lose" type="button">RETRY ROOM</button>
       <button class="btn secondary" id="btn-title-lose" type="button">Title screen</button>
     </div>
+    <div class="overlay hidden" id="overlay-locked">
+      <div class="tut-card">
+        <h2>Gloamhold</h2>
+        <p>Requires a Fire cape — defeat TzTok-Jad</p>
+        <p>Clear the arcade Fight Caves and kill TzTok-Jad first. The cape goes to your bank; wear it from the Equipment tab, then return here.</p>
+        <div class="tut-actions" style="text-align:center;margin-top:12px">
+          <button class="btn" id="btn-locked-hub" type="button">Title screen</button>
+        </div>
+      </div>
+    </div>
     <div class="overlay" id="overlay-brief">
       <div class="tut-card brief-card">
         <h2>Gloamhold</h2>
@@ -608,14 +618,25 @@
   });
   if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
   fit();
+  try { if (Raid.loadProfile) Raid.loadProfile(); } catch (e) {}
   const test = Raid.testFlag();
+  const locked = !(test && test.indexOf("raid") === 0) && Raid.ownsFireCape && !Raid.ownsFireCape();
   if (test && test.indexOf("raid") === 0) {
     document.getElementById("overlay-brief").classList.add("hidden");
+    document.getElementById("overlay-locked").classList.add("hidden");
     briefOpen = false;
     go();
+  } else if (locked) {
+    document.getElementById("overlay-brief").classList.add("hidden");
+    document.getElementById("overlay-locked").classList.remove("hidden");
   } else if (briefSeen()) {
+    document.getElementById("overlay-locked").classList.add("hidden");
     hideBriefAndGo({ room: "gate" });
+  } else {
+    document.getElementById("overlay-locked").classList.add("hidden");
   }
+  const lockBtn = document.getElementById("btn-locked-hub");
+  if (lockBtn) lockBtn.addEventListener("click", function () { location.href = "index.html"; });
   window.Xscape = window.Xscape || {};
   window.Xscape.raid = Raid;
 })();

@@ -370,6 +370,7 @@
     .bank-item .tier { display: block; font-size: 10px; color: #8a7a58; margin-top: 2px; }
     .bank-item.unique { border-color: #8a60c0; }
     .bank-item.upgrade { border-color: #4a7a38; }
+    .slot-btn.jad, .bank-item.jad { border-color: #c06020; }
     #gear-bank-empty { font-size: 11px; color: #8a7a58; text-align: center; width: 100%; margin: 4px 0; }
     .gear-foot { font-size: 10px; color: #8a7a58; text-align: center; margin-top: 8px; line-height: 1.35; }
     #debug-combat {
@@ -787,6 +788,7 @@ const ITEMS = {
 
   coif:               { id: "coif", name: "Coif", slot: "head", tier: "upgrade", bonuses: b({ arange: 7, dstab: 4, dslash: 6, dcrush: 8, dmagic: 4, drange: 4 }) },
   avas_accumulator:   { id: "avas_accumulator", name: "Ava's accumulator", slot: "cape", tier: "upgrade", bonuses: b({ arange: 4, dstab: 0, dslash: 1, dcrush: 0, dmagic: 4, drange: 0 }) },
+  fire_cape:          { id: "fire_cape", name: "Fire cape", slot: "cape", tier: "jad", bonuses: b({ astab: 1, aslash: 1, acrush: 1, amagic: 1, arange: 1, dstab: 11, dslash: 11, dcrush: 11, dmagic: 11, drange: 11, str: 4 }) },
   amulet_of_fury:     { id: "amulet_of_fury", name: "Amulet of fury", slot: "neck", tier: "upgrade", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 15, dslash: 15, dcrush: 15, dmagic: 15, drange: 15, str: 8 }) },
   black_dhide_body:   { id: "black_dhide_body", name: "Black d'hide body", slot: "body", tier: "upgrade", bonuses: b({ arange: 30, amagic: -15, dstab: 30, dslash: 38, dcrush: 45, dmagic: 45, drange: 30 }) },
   black_dhide_chaps:  { id: "black_dhide_chaps", name: "Black d'hide chaps", slot: "legs", tier: "upgrade", bonuses: b({ arange: 17, amagic: -10, dstab: 18, dslash: 20, dcrush: 26, dmagic: 23, drange: 26 }) },
@@ -1547,6 +1549,7 @@ function refreshGearViews() {
 
 function gearTierClass(tier) {
   if (tier === "unique") return "unique";
+  if (tier === "jad") return "jad";
   if (tier === "upgrade" || tier === "mid") return "upgrade";
   return "";
 }
@@ -1585,7 +1588,7 @@ function renderEquipmentOverlay() {
       bankEl.innerHTML = items.map((id) => {
         const it = ITEMS[id];
         const klass = "bank-item " + gearTierClass(it.tier);
-        const tier = it.tier === "unique" ? "Gloamhold unique" : it.tier === "upgrade" || it.tier === "mid" ? "Upgrade" : "Starter";
+        const tier = it.tier === "unique" ? "Gloamhold unique" : it.tier === "jad" ? "TzTok-Jad" : it.tier === "upgrade" || it.tier === "mid" ? "Upgrade" : "Starter";
         return '<button type="button" class="' + klass + '" data-item="' + id + '">' +
           it.name + '<span class="tier">' + tier + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></button>";
       }).join("");
@@ -1611,6 +1614,64 @@ function gearSlotColor(tier) {
 
 
 /* Persistent player profile (name + GP). Modes read from this, not from fight state. */
+function wearingFireCape() {
+  const it = itemInSlot("cape");
+  return !!(it && it.id === "fire_cape");
+}
+
+function ownsFireCape() {
+  if (Profile.hasFireCape) return true;
+  if (isOwned("fire_cape")) return true;
+  if (Profile.equipment && Profile.equipment.cape === "fire_cape") return true;
+  if (Profile.unlockedItems && Profile.unlockedItems.indexOf("fire_cape") !== -1) return true;
+  return false;
+}
+
+function awardFireCape(opts) {
+  opts = opts || {};
+  const had = ownsFireCape();
+  Profile.hasFireCape = true;
+  ownItem("fire_cape");
+  if (!opts.skipEquip && !itemInSlot("cape")) equipItem("fire_cape");
+  else saveProfile();
+  if (typeof updateRaidLock === "function") updateRaidLock();
+  return !had;
+}
+
+function maybeGrantLegacyFireCape() {
+  let earned = !!Profile.hasFireCape || !!Profile.seenFirstKill || isOwned("fire_cape");
+  if (!earned) {
+    try {
+      const best = typeof loadBest === "function" ? loadBest() : null;
+      if (best && (best.result || best.score)) earned = true;
+      const runs = JSON.parse(localStorage.getItem(STORAGE.runs) || "[]");
+      if (Array.isArray(runs) && runs.length) earned = true;
+    } catch (e) {}
+  }
+  if (!earned) return false;
+  const hadItem = isOwned("fire_cape");
+  Profile.hasFireCape = true;
+  ownItem("fire_cape");
+  // Keep the old always-on look for veterans whose cape slot is empty.
+  if (!itemInSlot("cape")) equipItem("fire_cape");
+  else if (!hadItem) saveProfile();
+  return true;
+}
+
+function updateRaidLock() {
+  const b = document.getElementById("btn-mode-raid");
+  if (!b) return;
+  const locked = !ownsFireCape();
+  b.classList.toggle("locked", locked);
+  b.disabled = locked;
+  b.setAttribute("aria-disabled", locked ? "true" : "false");
+  if (locked) {
+    b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>';
+  } else {
+    b.innerHTML = 'Gloamhold<span class="sub">The Unsleeping · Raid</span>';
+  }
+}
+
 const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds() };
 
 function loadProfile() {
@@ -1647,10 +1708,12 @@ function loadProfile() {
     Profile.unlockedItems = [];
     Profile.bank = migrateOwned(null, Profile.equipment, []);
   }
+  maybeGrantLegacyFireCape();
   syncPlayerCaps();
   G.name = Profile.name;
   G.gp = Profile.gp;
   if (typeof $ === "function" && $("gear")) refreshGearViews();
+  if (typeof updateRaidLock === "function") updateRaidLock();
   return Profile;
 }
 
@@ -2851,6 +2914,7 @@ function endWin() {
   G.jad.hp = 0;
   const gpAwarded = rollJadGp();
   awardGp(gpAwarded);
+  awardFireCape();
   const result = buildResult();
   result.gpAwarded = gpAwarded;
   result.gpTotal = Profile.gp;
@@ -3212,7 +3276,7 @@ function drawPlayer(t) {
   const shot = playerShotAnim();
   drawPlayerSprite(ctx, t, {
     shot: shot,
-    cape: !!Profile.hasFireCape,
+    cape: wearingFireCape(),
     recoilBase: (G.player.atkCd >= PLAYER_ATTACK_TICKS - 1) ? -0.12 : 0
   });
   ctx.save();
@@ -3957,6 +4021,7 @@ function refreshHub() {
   const cape = $("hub-cape");
   if (cape) drawCape(cape.getContext("2d"), cape.width, cape.height, true);
   refreshGearViews();
+  updateRaidLock();
 }
 
 /* Modes are separate scene objects so Duel Arena can be plugged in later
@@ -4216,8 +4281,7 @@ function presentFkLine() {
   if (!line) return;
   if (line.item) {
     hideChat();
-    Profile.hasFireCape = true;
-    saveProfile();
+    awardFireCape();
     showItemPopup(line.text);
     audio.capeJingle();
   } else {
@@ -4483,8 +4547,7 @@ function applyTestQuery() {
     resetFight();
     startFirstKill({ force: true });
   } else if (test === "cape") {
-    Profile.hasFireCape = true;
-    saveProfile();
+    awardFireCape();
     startPlaying();
   } else if (test === "fireball") {
     try { localStorage.setItem(STORAGE.intro, "1"); } catch (e) {}
@@ -4679,6 +4742,7 @@ window.KellenScape = {
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
   ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView,
+  ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape,
   setDebug(on) { G.debugCombat = !!on; updateDebugCombat(); },
   getState() {
     const vs = (Profile.equipment) ? combatVsMonster("tztok-jad", "ranged") : null;
@@ -4729,6 +4793,10 @@ window.ownItem = ownItem;
 window.equipItem = equipItem;
 window.unequipSlot = unequipSlot;
 window.refreshGearViews = refreshGearViews;
+window.ownsFireCape = ownsFireCape;
+window.awardFireCape = awardFireCape;
+window.updateRaidLock = updateRaidLock;
+window.wearingFireCape = wearingFireCape;
 </script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
