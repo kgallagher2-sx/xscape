@@ -3840,6 +3840,7 @@ function startIntro(opts) {
   hideAllOverlays();
   if (!G.player || !G.jad) resetFight();
   layoutFighters();
+  setPlayingChrome(false);
   audio.unlock();
   audio.stopAmbient();
   G.mode = "intro";
@@ -3893,6 +3894,7 @@ function startFirstKill(opts) {
   hideAllOverlays();
   if (!G.player || !G.jad) resetFight();
   layoutFighters();
+  setPlayingChrome(false);
   audio.unlock();
   audio.stopAmbient();
   G.mode = "firstkill";
