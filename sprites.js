@@ -770,17 +770,24 @@ function drawPartyhat(c, baseY) {
   baseY = baseY || 0;
   const img = (typeof PARTYHAT_IMG !== "undefined") ? PARTYHAT_IMG : null;
   if (img && img.complete && img.naturalWidth > 0) {
-    // Skull is ~19.2 wide. Hat sits a bit wider so hair shows at the sides.
-    const destW = 19.2 * 1.20;
+    // Skull is ~19.2 wide. Previous draw was 1.20× skull; now ~83% of that
+    // so the hat is a bit smaller, still seated with the band at the hairline.
+    const destW = 19.2 * 1.20 * 0.83;
     const destH = destW * (img.naturalHeight / img.naturalWidth);
     const prev = c.imageSmoothingEnabled;
     c.imageSmoothingEnabled = true;
     if (c.imageSmoothingQuality) c.imageSmoothingQuality = "high";
     // Anchor the bottom of the band at baseY (hairline / just above the forehead).
+    // +2.6 is independent of size, so the band stays on the forehead as the hat shrinks.
     c.drawImage(img, -destW / 2, baseY - destH + 2.6, destW, destH);
     c.imageSmoothingEnabled = prev;
     return;
   }
+  // Procedural fallback, same 83% shrink as the reference image, scaled about the band.
+  c.save();
+  c.translate(0, baseY);
+  c.scale(0.83, 0.83);
+  c.translate(0, -baseY);
   const W = 12.4;
   const bandH = 3.2;
   const bandTop = baseY - bandH;
@@ -871,6 +878,7 @@ function drawPartyhat(c, baseY) {
   c.moveTo(-W, baseY);
   c.quadraticCurveTo(0, baseY + 1.05, W, baseY);
   c.stroke();
+  c.restore();
 }
 
 function drawAbyssalWhip(c, tm, opt) {
@@ -1146,3 +1154,305 @@ function drawChatHead(c, w, h, t) {
   c.restore();
 }
 
+
+/* ============================================================
+   Xscape title logo — original drawing in the spirit of the
+   classic RuneScape stone-letter wordmark (not a rip or crop).
+   Six lumpy grey pebbles spelling XSCAPE, sword laid across.
+   ============================================================ */
+function _logoRand(seed, k) {
+  const x = Math.sin(seed * 12.9898 + k * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function _logoPebblePath(c, rx, ry, seed) {
+  const n = 16;
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const wob = 0.90 + 0.16 * _logoRand(seed, i + 1);
+    const squish = 1 + 0.04 * Math.cos(a * 2 + seed * 0.3);
+    pts.push({ x: Math.cos(a) * rx * wob, y: Math.sin(a) * ry * wob * squish });
+  }
+  c.beginPath();
+  c.moveTo((pts[0].x + pts[n - 1].x) / 2, (pts[0].y + pts[n - 1].y) / 2);
+  for (let i = 0; i < n; i++) {
+    const nxt = pts[(i + 1) % n];
+    c.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + nxt.x) / 2, (pts[i].y + nxt.y) / 2);
+  }
+  c.closePath();
+}
+
+function _drawLogoStone(c, x, y, rw, rh, ch, tilt, seed) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(tilt);
+
+  // Drop shadow
+  c.save();
+  c.translate(2.4, 3.4);
+  _logoPebblePath(c, rw, rh, seed);
+  c.fillStyle = "rgba(0,0,0,0.38)";
+  c.fill();
+  c.restore();
+
+  _logoPebblePath(c, rw, rh, seed);
+  const g = c.createLinearGradient(-rw, -rh, rw * 0.7, rh * 0.95);
+  g.addColorStop(0, "#f0eee6");
+  g.addColorStop(0.22, "#c8c6be");
+  g.addColorStop(0.55, "#9a9890");
+  g.addColorStop(0.82, "#6a6862");
+  g.addColorStop(1, "#3e3c38");
+  c.fillStyle = g;
+  c.fill();
+
+  // Soft rim
+  c.strokeStyle = "rgba(20,18,14,0.55)";
+  c.lineWidth = Math.max(1.2, rw * 0.035);
+  c.stroke();
+
+  // Top-left highlight
+  c.save();
+  _logoPebblePath(c, rw, rh, seed);
+  c.clip();
+  const hg = c.createRadialGradient(-rw * 0.35, -rh * 0.42, rw * 0.05, -rw * 0.1, -rh * 0.15, rw * 1.1);
+  hg.addColorStop(0, "rgba(255,255,250,0.72)");
+  hg.addColorStop(0.35, "rgba(255,255,250,0.18)");
+  hg.addColorStop(1, "rgba(255,255,250,0)");
+  c.fillStyle = hg;
+  c.fillRect(-rw * 1.2, -rh * 1.2, rw * 2.4, rh * 2.4);
+
+  // Underside shade
+  const sg = c.createLinearGradient(0, 0, 0, rh);
+  sg.addColorStop(0, "rgba(0,0,0,0)");
+  sg.addColorStop(0.55, "rgba(0,0,0,0.05)");
+  sg.addColorStop(1, "rgba(0,0,0,0.28)");
+  c.fillStyle = sg;
+  c.fillRect(-rw * 1.2, 0, rw * 2.4, rh * 1.2);
+
+  // Pits / grain
+  for (let i = 0; i < 10; i++) {
+    const px = ( _logoRand(seed, 20 + i) - 0.5) * rw * 1.4;
+    const py = ( _logoRand(seed, 40 + i) - 0.5) * rh * 1.4;
+    const pr = 0.5 + _logoRand(seed, 60 + i) * 1.4;
+    c.fillStyle = "rgba(30,28,24," + (0.12 + _logoRand(seed, 80 + i) * 0.18) + ")";
+    c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2); c.fill();
+  }
+  // Cracks
+  c.strokeStyle = "rgba(25,22,18,0.38)";
+  c.lineWidth = 0.8;
+  c.lineCap = "round";
+  c.beginPath();
+  c.moveTo(-rw * 0.42, -rh * 0.18);
+  c.lineTo(-rw * 0.08, rh * 0.12);
+  c.lineTo(rw * 0.18, rh * 0.02);
+  c.stroke();
+  if (seed % 2 === 0) {
+    c.beginPath();
+    c.moveTo(rw * 0.28, -rh * 0.32);
+    c.lineTo(rw * 0.12, -rh * 0.04);
+    c.lineTo(rw * 0.36, rh * 0.16);
+    c.stroke();
+  }
+  c.restore();
+
+  // Engraved letter
+  const size = Math.min(rw, rh) * 1.18;
+  c.font = "bold " + size + "px Times New Roman, Times, Georgia, serif";
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  c.lineJoin = "round";
+  c.lineCap = "round";
+  // Sunken top-left edge
+  c.fillStyle = "rgba(0,0,0,0.55)";
+  c.fillText(ch, -size * 0.03, -size * 0.025);
+  // Main carved black
+  c.fillStyle = "#0a0a0a";
+  c.fillText(ch, 0, size * 0.02);
+  // Faint groove highlight on the lower-right lip
+  c.fillStyle = "rgba(90,90,86,0.28)";
+  c.fillText(ch, size * 0.025, size * 0.05);
+
+  c.restore();
+}
+
+function _drawLogoSword(c, x0, y0, len, ang) {
+  c.save();
+  c.translate(x0, y0);
+  c.rotate(ang);
+
+  const grip = len * 0.15;
+  const guard = grip + len * 0.012;
+  const tip = len;
+  const bladeW = Math.max(3.2, len * 0.018);
+  const mid = (guard + tip) * 0.5;
+
+  // Contact shadow on the stones
+  c.save();
+  c.translate(1.6, 2.8);
+  c.fillStyle = "rgba(0,0,0,0.28)";
+  c.beginPath();
+  c.moveTo(guard, -bladeW * 0.7);
+  c.lineTo(tip - 8, -bladeW * 0.25);
+  c.lineTo(tip, 0);
+  c.lineTo(tip - 8, bladeW * 0.25);
+  c.lineTo(guard, bladeW * 0.7);
+  c.closePath();
+  c.fill();
+  c.restore();
+
+  // Blade
+  const bg = c.createLinearGradient(0, -bladeW, 0, bladeW);
+  bg.addColorStop(0, "#9aa0a8");
+  bg.addColorStop(0.35, "#e8eaee");
+  bg.addColorStop(0.5, "#ffffff");
+  bg.addColorStop(0.65, "#c8ccd2");
+  bg.addColorStop(1, "#5a6068");
+  c.fillStyle = bg;
+  c.beginPath();
+  c.moveTo(guard, -bladeW);
+  c.lineTo(tip - len * 0.09, -bladeW * 0.45);
+  c.lineTo(tip, 0);
+  c.lineTo(tip - len * 0.09, bladeW * 0.45);
+  c.lineTo(guard, bladeW);
+  c.closePath();
+  c.fill();
+  c.strokeStyle = "rgba(20,22,26,0.55)";
+  c.lineWidth = 0.8;
+  c.stroke();
+  // Central ridge
+  c.strokeStyle = "rgba(255,255,255,0.7)";
+  c.lineWidth = 1.15;
+  c.beginPath();
+  c.moveTo(guard + 2, 0);
+  c.lineTo(tip - 4, 0);
+  c.stroke();
+  c.strokeStyle = "rgba(40,44,50,0.25)";
+  c.lineWidth = 0.7;
+  c.beginPath();
+  c.moveTo(guard + 2, 1.1);
+  c.lineTo(tip - 6, 0.4);
+  c.stroke();
+
+  // Gold crossguard
+  const gw = len * 0.085, gh = Math.max(3.2, len * 0.016);
+  const gold = c.createLinearGradient(guard, -gw, guard, gw);
+  gold.addColorStop(0, "#fff0a0");
+  gold.addColorStop(0.25, "#e8c44a");
+  gold.addColorStop(0.55, "#c9a024");
+  gold.addColorStop(1, "#6a4a10");
+  c.fillStyle = gold;
+  c.beginPath();
+  c.moveTo(guard - gh, -gw);
+  c.quadraticCurveTo(guard + gh * 0.4, -gw * 0.15, guard + gh, -gh);
+  c.lineTo(guard + gh, gh);
+  c.quadraticCurveTo(guard + gh * 0.4, gw * 0.15, guard - gh, gw);
+  c.closePath();
+  c.fill();
+  c.strokeStyle = "rgba(60,40,0,0.55)";
+  c.lineWidth = 0.8;
+  c.stroke();
+  // Guard knobs
+  for (const ky of [-gw * 0.92, gw * 0.92]) {
+    const kg = c.createRadialGradient(guard, ky, 0, guard, ky, gh * 1.6);
+    kg.addColorStop(0, "#fff6c0");
+    kg.addColorStop(0.5, "#e0b030");
+    kg.addColorStop(1, "#6a4a10");
+    c.fillStyle = kg;
+    c.beginPath(); c.ellipse(guard, ky, gh * 1.3, gh * 1.5, 0, 0, Math.PI * 2); c.fill();
+  }
+
+  // Dark grip
+  const gripG = c.createLinearGradient(0, -bladeW * 0.7, 0, bladeW * 0.7);
+  gripG.addColorStop(0, "#4a3424");
+  gripG.addColorStop(0.4, "#1a100a");
+  gripG.addColorStop(1, "#0a0604");
+  c.fillStyle = gripG;
+  c.beginPath();
+  c.moveTo(2, -bladeW * 0.72);
+  c.lineTo(grip, -bladeW * 0.82);
+  c.lineTo(grip, bladeW * 0.82);
+  c.lineTo(2, bladeW * 0.72);
+  c.closePath();
+  c.fill();
+  c.strokeStyle = "rgba(0,0,0,0.5)";
+  c.lineWidth = 0.7;
+  c.stroke();
+  // Wrap lines
+  c.strokeStyle = "rgba(90,70,40,0.55)";
+  c.lineWidth = 1;
+  for (let i = 1; i <= 4; i++) {
+    const gx = 2 + (grip - 2) * (i / 5);
+    c.beginPath();
+    c.moveTo(gx, -bladeW * 0.72);
+    c.lineTo(gx + 3, bladeW * 0.72);
+    c.stroke();
+  }
+
+  // Gold pommel
+  const pr = Math.max(3.4, len * 0.022);
+  const pg = c.createRadialGradient(-1, -pr * 0.3, 0.5, 0, 0, pr * 1.15);
+  pg.addColorStop(0, "#fff6c0");
+  pg.addColorStop(0.4, "#e8c44a");
+  pg.addColorStop(1, "#6a4a10");
+  c.fillStyle = pg;
+  c.beginPath(); c.arc(0, 0, pr, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = "rgba(60,40,0,0.6)";
+  c.lineWidth = 0.8;
+  c.stroke();
+
+  c.restore();
+}
+
+function drawXscapeLogo(c, w, h) {
+  c.save();
+  c.clearRect(0, 0, w, h);
+  const letters = ["X", "S", "C", "A", "P", "E"];
+  const n = letters.length;
+  const cx = w * 0.5;
+  const cy = h * 0.52;
+  const span = w * 0.86;
+  const rw = span / n * 0.72;
+  const rh = h * 0.34;
+  const stagger = [0.10, -0.12, 0.07, -0.06, 0.11, -0.09];
+  const tilt = [-0.11, 0.08, -0.05, 0.10, -0.08, 0.05];
+  const fat = [1.04, 0.96, 1.00, 0.98, 1.03, 0.97];
+  const startX = cx - span * 0.5 + rw * 0.85;
+  const gap = (span - rw * 1.1) / (n - 1);
+
+  // Soft ground shadow under the whole word
+  c.save();
+  c.fillStyle = "rgba(0,0,0,0.22)";
+  c.beginPath();
+  c.ellipse(cx, cy + rh * 0.95, span * 0.46, rh * 0.22, 0, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+
+  for (let i = 0; i < n; i++) {
+    const x = startX + i * gap;
+    const y = cy + stagger[i] * rh * 1.15;
+    _drawLogoStone(c, x, y, rw * fat[i], rh * fat[i], letters[i], tilt[i], 11 + i * 17);
+  }
+
+  // Sword: shallow diagonal, hilt just left of X, tip past E
+  const sx = startX - rw * 0.75;
+  const sy = cy - rh * 0.36;
+  const slen = span * 0.92 + rw * 0.15;
+  const sang = 0.18;
+  _drawLogoSword(c, sx, sy, slen, sang);
+  c.restore();
+}
+
+function paintXscapeLogo(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  drawXscapeLogo(ctx, canvas.width, canvas.height);
+}
+
+function paintAllXscapeLogos() {
+  if (typeof document === "undefined") return;
+  const nodes = document.querySelectorAll("canvas.logo-canvas");
+  for (let i = 0; i < nodes.length; i++) paintXscapeLogo(nodes[i]);
+}

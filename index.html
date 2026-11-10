@@ -270,6 +270,16 @@
     .tut-card .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 2px; }
     .share-card { text-align: center; }
     .share-card .logo { font-size: 40px; margin-bottom: 4px; letter-spacing: 1px; }
+    .logo-canvas {
+      display: block;
+      width: min(340px, 92%);
+      height: auto;
+      margin: 0 auto 8px;
+    }
+    .share-card .logo-canvas {
+      width: min(250px, 86%);
+      margin: 2px auto 6px;
+    }
     .share-card .win-title {
       font-family: Impact, "Arial Black", sans-serif; font-size: 28px; color: #ffe44a;
       text-shadow: 0 2px 0 #000, 0 0 12px #ff8800; margin: 4px 0 8px; letter-spacing: 0.5px;
@@ -299,28 +309,69 @@
       text-shadow: 0 2px 0 #000, 0 0 8px #000; pointer-events: none; z-index: 5; opacity: 0;
     }
 
-    #hub-gear {
-      width: 100%; max-width: 340px;
-      background: #140e08; border: 1px solid #6a5430; border-radius: 4px;
-      padding: 8px 10px; margin: 0 0 10px; text-align: left;
+    #hub-gear-note {
+      font-size: 11px; color: #8a7a58; text-align: center; margin: 0 0 8px; line-height: 1.35;
+      max-width: 300px;
     }
-    #hub-gear .hub-gear-title {
-      color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
-      text-align: center; margin-bottom: 6px;
+    #btn-equipment { min-width: 200px; }
+    #btn-raid-help {
+      display: none; z-index: 25; width: 28px; height: 24px; border-radius: 4px;
+      background: rgba(20,12,8,0.7); border: 1px solid #6a5430; color: #ffe9a0;
+      font-size: 14px; font-weight: 700; cursor: pointer; flex: 0 0 auto; line-height: 1;
+      font-family: inherit; padding: 0;
     }
-    #hub-gear-slots {
-      display: grid; grid-template-columns: 72px 1fr; gap: 2px 8px; font-size: 12px;
+    #btn-raid-help.visible { display: inline-flex; align-items: center; justify-content: center; }
+    .tut-card { max-height: 86%; overflow-y: auto; }
+    .tut-card.brief-card {
+      display: flex; flex-direction: column; overflow: hidden; max-height: 86%;
     }
-    #hub-gear-slots .k { color: #8a7a58; }
-    #hub-gear-slots .v { color: #fff4c0; font-weight: 700; }
-    #hub-gear-bonuses {
-      margin-top: 6px; font-size: 11px; color: #d8c48a;
+    .tut-card.brief-card .tut-scroll { overflow-y: auto; flex: 1 1 auto; -webkit-overflow-scrolling: touch; }
+    .tut-card.brief-card .tut-actions { flex: 0 0 auto; text-align: center; margin-top: 10px; padding-top: 6px; border-top: 1px solid #6a5430; }
+    .tut-card.brief-card .tut-actions .btn { margin: 0; }
+    #overlay-gear .gear-card {
+      width: 100%; max-width: 340px; max-height: 90%; overflow-y: auto;
+      background: linear-gradient(#3a2c1c, #24180e);
+      border: 3px solid #c9a24a; box-shadow: 0 8px 24px #000, inset 0 0 0 1px #1a1008;
+      border-radius: 8px; padding: 14px 14px 12px; color: var(--beige);
+    }
+    #overlay-gear .gear-card h2 {
+      font-family: Impact, "Arial Black", sans-serif; color: var(--gold);
+      text-align: center; margin: 0 0 6px; font-size: 26px; letter-spacing: 1px;
+      text-shadow: 0 2px 0 #000;
+    }
+    #gear-bonuses {
+      margin: 4px 0 8px; font-size: 11px; color: #d8c48a;
       display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center;
     }
-    #hub-gear-bonuses b { color: var(--gold); }
-    #hub-gear .hub-gear-note {
-      font-size: 10px; color: #8a7a58; text-align: center; margin-top: 6px; line-height: 1.35;
+    #gear-bonuses b { color: var(--gold); }
+    #gear-worn { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 10px; }
+    .slot-btn {
+      display: grid; grid-template-columns: 58px 1fr auto; gap: 8px; align-items: center;
+      background: #140e08; border: 1px solid #6a5430; color: #fff4c0;
+      padding: 6px 8px; border-radius: 3px; font-family: inherit; font-size: 12px;
+      text-align: left; cursor: pointer; width: 100%;
     }
+    .slot-btn.empty { color: #8a7a58; }
+    .slot-btn .k { color: #8a7a58; font-size: 11px; }
+    .slot-btn .act { color: #c9a24a; font-size: 10px; letter-spacing: 0.3px; }
+    .slot-btn.unique { border-color: #8a60c0; }
+    .slot-btn.upgrade { border-color: #4a7a38; }
+    .gear-sec {
+      color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+      text-align: center; margin: 8px 0 6px;
+    }
+    #gear-bank { display: flex; flex-wrap: wrap; gap: 6px; }
+    .bank-item {
+      flex: 1 1 calc(50% - 6px); min-width: 130px;
+      background: #140e08; border: 1px solid #6a5430; color: #fff4c0;
+      padding: 7px 8px; border-radius: 3px; font-family: inherit; font-size: 12px;
+      text-align: left; cursor: pointer;
+    }
+    .bank-item .tier { display: block; font-size: 10px; color: #8a7a58; margin-top: 2px; }
+    .bank-item.unique { border-color: #8a60c0; }
+    .bank-item.upgrade { border-color: #4a7a38; }
+    #gear-bank-empty { font-size: 11px; color: #8a7a58; text-align: center; width: 100%; margin: 4px 0; }
+    .gear-foot { font-size: 10px; color: #8a7a58; text-align: center; margin-top: 8px; line-height: 1.35; }
     #debug-combat {
       position: absolute; left: 6px; top: 6px; z-index: 7;
       background: rgba(8,4,2,0.78); border: 1px solid #6a5430; border-radius: 3px;
@@ -337,13 +388,8 @@
       font-family: inherit; font-weight: 700; cursor: pointer;
       border-radius: 6px;
     }
-    #btn-move-left, #btn-move-right {
-      width: 44px; height: 44px; bottom: 8px; font-size: 18px; line-height: 1;
-    }
-    #btn-move-left { left: 6px; }
-    #btn-move-right { right: 6px; }
     #btn-run {
-      left: 6px; bottom: 56px; height: 26px; padding: 0 8px;
+      left: 6px; bottom: 8px; height: 26px; padding: 0 8px;
       font-size: 10px; letter-spacing: 0.4px;
     }
     #btn-run.running { border-color: #c9a24a; color: #ffe44a; }
@@ -371,9 +417,8 @@
       <div id="debug-combat" class="hidden"></div>
       <div id="move-pad">
         <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
-        <button type="button" id="btn-move-left" aria-label="Step left">◀</button>
-        <button type="button" id="btn-move-right" aria-label="Step right">▶</button>
       </div>
+      <button id="btn-raid-help" type="button" aria-label="Gloamhold instructions">?</button>
     </div>
     <div id="mid">
       <div class="bars">
@@ -384,10 +429,6 @@
         <div class="bar-row">
           <div class="bar-lab">Pray</div>
           <div class="bar-track"><div class="bar-fill" id="prayer-fill"></div><div class="bar-txt" id="prayer-txt">99/99</div></div>
-        </div>
-        <div class="bar-row" id="atk-row">
-          <div class="bar-lab">Atk</div>
-          <div class="bar-track atk-track"><div class="bar-fill" id="atk-fill"></div><div class="bar-txt" id="atk-txt">—</div></div>
         </div>
       </div>
       <div class="gear-row">
@@ -418,7 +459,7 @@
     </div>
 
     <div class="overlay" id="overlay-login">
-      <h1 class="logo"><span class="logo-x">X</span>scape</h1>
+      <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
       <p class="tagline">Enter your adventurer name</p>
       <div class="name-row">
         <label for="name-input">Adventurer name</label>
@@ -428,16 +469,12 @@
     </div>
 
     <div class="overlay hidden" id="overlay-hub">
-      <h1 class="logo"><span class="logo-x">X</span>scape</h1>
+      <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div id="hub-gear">
-        <div class="hub-gear-title">Equipment</div>
-        <div id="hub-gear-slots"></div>
-        <div id="hub-gear-bonuses"></div>
-        <div class="hub-gear-note">Gear upgrades come later. Better armour and a stronger crossbow will raise your accuracy and max hit.</div>
-      </div>
+      <div class="hub-gear-note" id="hub-gear-note">Clear Gloamhold for a chance at better gear. Equip it from your bank.</div>
+      <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <div class="mode-list">
         <button class="btn mode-btn" id="btn-mode-jad" type="button">
           TzTok-Jad
@@ -449,6 +486,7 @@
         </button>
       </div>
       <button class="btn secondary" id="btn-how" type="button">How to play</button>
+      <button class="btn secondary" id="btn-how-raid" type="button">Gloamhold guide</button>
       <button class="btn secondary" id="btn-change-name" type="button">Change name</button>
       <div class="best-line" id="title-best"></div>
     </div>
@@ -461,7 +499,7 @@
         <p><b>Missiles:</b> he slams down and stomps the ground. You'll hear a heavy low thud. Protect from Missiles.</p>
         <p><b>Melee:</b> he lunges forward with his claws. Protect from Melee.</p>
         <p>Your crossbow fires on its own. At half health, healers appear — <b>tap them</b> to pull them off Jad.</p>
-        <p>You can <b>step left or right</b> across the tiles (buttons, tap a tile, or A/D). Later bosses will throw fireballs onto your square — walk off before they land. Jad does not use those attacks.</p>
+        <p>You can <b>tap a floor tile</b> to step left or right (or use A/D on a keyboard). A yellow X marks your destination. Later bosses will throw fireballs onto your square — walk off before they land. Jad does not use those attacks.</p>
         <p>Eat sharks (heal 20) and sip prayer potions if you slip — each one lands on the next tick and delays your next shot, so eat back up above 70 after a hit. Prayer switching is free.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">Keys 1 / 2 / 3 · F food · P potion</p>
         <div style="text-align:center;margin-top:10px">
@@ -470,9 +508,54 @@
       </div>
     </div>
 
+
+    <div class="overlay hidden" id="overlay-gear">
+      <div class="gear-card">
+        <h2>Equipment</h2>
+        <div id="gear-bonuses"></div>
+        <div class="gear-sec">Worn</div>
+        <div id="gear-worn"></div>
+        <div class="gear-sec">Bank</div>
+        <div id="gear-bank"></div>
+        <div class="gear-foot">Tap a bank item to wear it. Tap a worn item to unequip it back to the bank. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
+        <div style="text-align:center;margin-top:10px">
+          <button class="btn" id="btn-gear-close" type="button">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-raid-tut">
+      <div class="tut-card brief-card">
+        <h2>Gloamhold</h2>
+        <div class="tut-scroll">
+        <p>A sealed crypt-fortress under a drowned moon. Clear its rooms and defeat <b>Morvane the Unsleeping</b> to open the Vault Chest. Starter gear makes the throne nearly impossible — vault-forged kit and clean execution can just clear it.</p>
+        <p><b>Rooms, in order:</b> The Veil Gate → Supply Alcove → The Wailing Court → Supply Alcove → The Eclipse Corridor → The Last Alcove → The Hollow Throne → The Vault Chest. A small map at the top shows where you are. Dying lets you retry the room from when you entered it, or return to the hub. Loot still needs a Morvane kill.</p>
+        <p><b>Move:</b> tap a floor tile to walk (one tile per tick, two if Run is on). A yellow X marks your destination. Keyboard A/D or arrow keys also work. Watch telegraphs and walk off marked tiles before they land.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons.</p>
+        <p><b>Magic (1):</b> a violet rear-up, arms lifting, airy whoosh. Protect from Magic.</p>
+        <p><b>Missiles (2):</b> a shard throw and a sharper mid cue. Protect from Missiles.</p>
+        <p><b>Melee (3):</b> a sword slam and a low thud. Protect from Melee. Cinder Shades always melee.</p>
+        <p><b>The Veil Gate:</b> rune tiles light in a sequence — step them in order (three rounds). Gloom lances mark your tile and land two ticks later; walk off. Then step the exit tile on the right.</p>
+        <p><b>The Wailing Court:</b> the Pale Warden swaps Magic / Missiles with two-tick tells. Shades must be killed; if they live too long they heal him or explode on you.</p>
+        <p><b>The Eclipse Corridor:</b> waves of marked tiles. Dodge, then step the exit.</p>
+        <p><b>Morvane — four phases</b> (by remaining HP):</p>
+        <p><b>Twin Crowns</b> (above 55%): Magic / Missiles, slower three-tick tells.</p>
+        <p><b>Court of Shades</b> (28–55%): melee joins, faster tells. Shades spawn. Stand on the crown sigil or take Judgment. Don't stand still.</p>
+        <p><b>Nightfall</b> (10–28%): quicker flicks, sometimes a one-tick tell, and an occasional Magic → Missiles → Melee combo. After a hit, your tile is marked — walk off. Seek the moon tile or your prayer drains. Rows of tiles go unsafe.</p>
+        <p><b>The Eye Opens</b> (last 10%): enrage. Very fast, one-tick tells. Eye beams mark your tile. Prayer drains faster. Stillness is punished sooner.</p>
+        <p><b>Supplies:</b> chests along the way are limited. F / Shark heals 20. P / Prayer pot restores 31 prayer. B / Brew heals 16 but costs 5 prayer. R / Range pot boosts your ranged. On-screen buttons work too. Each bite or sip delays your next shot.</p>
+        <p><b>Loot:</b> the vault always drops a Gloamhold unique (a small chance of a second) plus GP. Mid-tier upgrade pieces can appear in earlier chests. New gear goes to your bank — open Equipment on the hub to put it on.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · B brew · R range pot</p>
+        </div>
+        <div class="tut-actions">
+          <button class="btn" id="btn-raid-tut-ok" type="button">GOT IT</button>
+        </div>
+      </div>
+    </div>
+
     <div class="overlay hidden" id="overlay-win">
       <div class="share-card" id="share-card">
-        <div class="logo"><span class="logo-x">X</span>scape</div>
+        <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
         <div class="win-title">FIRE CAPE OBTAINED!</div>
         <canvas id="cape-canvas" width="100" height="120"></canvas>
         <div class="result-grid" id="win-stats"></div>
@@ -484,7 +567,7 @@
 
     <div class="overlay hidden" id="overlay-lose">
       <div class="share-card">
-        <div class="logo"><span class="logo-x">X</span>scape</div>
+        <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
         <div class="lose-title">Oh dear, you are dead!</div>
         <div class="result-grid" id="lose-stats"></div>
       </div>
@@ -566,6 +649,7 @@ const ART_V10 = 1;                // hosted-build marker: abyssal whip, on-head 
 const ART_V11 = 1;                // hosted-build marker: paper crown, neck cape, right-hand xbow, thick whip
 const ART_V12 = 1;                // hosted-build marker: jointed whip, front xbow, bold crown, no atk dial
 const MECH_V13 = 1;               // hosted-build marker: tiles, gear, OSRS combat math
+const MECH_V14 = 1;               // equipment bank, prayer sfx, tap-to-move, raid briefing
 // Sprite geometry constants (PLAYER_FOOT, FK77_*, PLAYER_BOW_*) live in sprites.js
 const JAD_ARENA_FRAC = 0.42;      // Jad idle height as a fraction of the arena
 const MUSIC_BPM = 96;
@@ -583,7 +667,8 @@ const STORAGE = {
   last: "kellenscape-last",
   muted: "kellenscape-muted",
   profile: "kellenscape-profile",
-  intro: "kellenscape-intro-seen"
+  intro: "kellenscape-intro-seen",
+  raidBrief: "kellenscape-raid-brief-seen"
 };
 
 function computeScore(result) {
@@ -760,7 +845,9 @@ function normalizeEquipment(raw) {
     const id = raw[s];
     if (id == null || id === "") { e[s] = null; continue; }
     const it = ITEMS[id];
-    e[s] = (it && it.slot === s) ? id : e[s];
+    if (it && it.slot === s) e[s] = id;
+    else if (!it && typeof id === "string") e[s] = id; // keep until raid items register
+    else if (id == null || id === "") e[s] = null;
   }
   return e;
 }
@@ -789,9 +876,104 @@ function syncPlayerCaps() {
   PLAYER_MAX_PRAYER = playerMaxPray();
 }
 
+function starterOwnedIds() {
+  const ids = [];
+  const L = LOADOUTS.starter || {};
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const id = L[EQUIP_SLOTS[i]];
+    if (id) ids.push(id);
+  }
+  return ids;
+}
+
+function migrateOwned(rawBank, equipment, unlocked) {
+  const seen = {};
+  const out = [];
+  function add(id) {
+    if (!id || typeof id !== "string" || seen[id]) return;
+    seen[id] = true;
+    out.push(id);
+  }
+  starterOwnedIds().forEach(add);
+  if (equipment) {
+    for (let i = 0; i < EQUIP_SLOTS.length; i++) add(equipment[EQUIP_SLOTS[i]]);
+  }
+  if (Array.isArray(unlocked)) unlocked.forEach(add);
+  if (Array.isArray(rawBank)) rawBank.forEach(add);
+  return out;
+}
+
+function ownItem(id) {
+  if (!id) return false;
+  if (!Profile.bank) Profile.bank = migrateOwned(null, Profile.equipment, Profile.unlockedItems);
+  if (Profile.bank.indexOf(id) === -1) Profile.bank.push(id);
+  if (!Profile.unlockedItems) Profile.unlockedItems = [];
+  const it = ITEMS[id];
+  if (it && it.tier && it.tier !== "starter" && Profile.unlockedItems.indexOf(id) === -1) {
+    Profile.unlockedItems.push(id);
+  }
+  return true;
+}
+
+function isOwned(id) {
+  if (!id) return false;
+  const bank = Profile.bank || [];
+  if (bank.indexOf(id) !== -1) return true;
+  const eq = Profile.equipment || {};
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) if (eq[EQUIP_SLOTS[i]] === id) return true;
+  return false;
+}
+
+function bankList() {
+  const eq = Profile.equipment || {};
+  const worn = {};
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const id = eq[EQUIP_SLOTS[i]];
+    if (id) worn[id] = true;
+  }
+  return (Profile.bank || []).filter((id) => ITEMS[id] && !worn[id]);
+}
+
+function unequipSlot(slot, silent) {
+  const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
+  const id = eq[slot];
+  if (!id) return false;
+  ownItem(id);
+  eq[slot] = null;
+  if (!silent) {
+    saveProfile();
+    refreshGearViews();
+  }
+  return true;
+}
+
+function equipItem(id) {
+  const it = ITEMS[id];
+  if (!it || !it.slot) return false;
+  ownItem(id);
+  const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
+  if (eq[it.slot] && eq[it.slot] !== id) ownItem(eq[it.slot]);
+  if (it.twohand && eq.shield) unequipSlot("shield", true);
+  if (it.slot === "shield") {
+    const w = itemInSlot("weapon");
+    if (w && w.twohand) unequipSlot("weapon", true);
+  }
+  eq[it.slot] = id;
+  saveProfile();
+  refreshGearViews();
+  return true;
+}
+
 function equipLoadout(name) {
   if (!LOADOUTS[name]) return false;
-  Profile.equipment = cloneLoadout(name);
+  const next = cloneLoadout(name);
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const s = EQUIP_SLOTS[i];
+    const cur = Profile.equipment && Profile.equipment[s];
+    if (cur && cur !== next[s]) ownItem(cur);
+    if (next[s]) ownItem(next[s]);
+  }
+  Profile.equipment = next;
   saveProfile();
   refreshGearViews();
   updateDebugCombat();
@@ -1117,6 +1299,7 @@ function setRunning(on) {
     btn.classList.toggle("running", G.running);
     btn.textContent = G.running ? "Run" : "Walk";
   }
+  if (window.XscapeRaid && window.XscapeRaid.setRunning) window.XscapeRaid.setRunning(G.running);
 }
 
 function processMovement() {
@@ -1359,19 +1542,19 @@ function updateDebugCombat() {
 
 function refreshGearViews() {
   drawGearIcons(true);
-  renderHubGear();
+  renderEquipmentOverlay();
 }
 
-function renderHubGear() {
-  const slots = $("hub-gear-slots");
-  const bonusEl = $("hub-gear-bonuses");
-  if (!slots) return;
-  const eq = Profile.equipment || cloneLoadout("starter");
-  slots.innerHTML = EQUIP_SLOTS.map((s) => {
-    const it = eq[s] && ITEMS[eq[s]];
-    const name = it ? it.name : "—";
-    return '<div class="k">' + SLOT_LABELS[s] + '</div><div class="v">' + name + "</div>";
-  }).join("");
+function gearTierClass(tier) {
+  if (tier === "unique") return "unique";
+  if (tier === "upgrade" || tier === "mid") return "upgrade";
+  return "";
+}
+
+function renderEquipmentOverlay() {
+  const worn = $("gear-worn");
+  const bankEl = $("gear-bank");
+  const bonusEl = $("gear-bonuses");
   if (bonusEl) {
     const pb = playerBonuses();
     const vs = combatVsMonster("tztok-jad", "ranged");
@@ -1381,6 +1564,44 @@ function renderHubGear() {
       "<span>Def (range) <b>+" + pb.drange + "</b></span>" +
       "<span>vs Jad <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
   }
+  if (worn) {
+    const eq = Profile.equipment || cloneLoadout("starter");
+    worn.innerHTML = EQUIP_SLOTS.map((s) => {
+      const it = eq[s] && ITEMS[eq[s]];
+      const name = it ? it.name : "Empty";
+      const klass = "slot-btn" + (it ? " " + gearTierClass(it.tier) : " empty");
+      const act = it ? "Unequip" : "";
+      return '<button type="button" class="' + klass + '" data-slot="' + s + '">' +
+        '<span class="k">' + SLOT_LABELS[s] + "</span>" +
+        "<span>" + name + "</span>" +
+        '<span class="act">' + act + "</span></button>";
+    }).join("");
+  }
+  if (bankEl) {
+    const items = bankList();
+    if (!items.length) {
+      bankEl.innerHTML = '<div id="gear-bank-empty">Bank is empty. Unequip something, or win gear in Gloamhold.</div>';
+    } else {
+      bankEl.innerHTML = items.map((id) => {
+        const it = ITEMS[id];
+        const klass = "bank-item " + gearTierClass(it.tier);
+        const tier = it.tier === "unique" ? "Gloamhold unique" : it.tier === "upgrade" || it.tier === "mid" ? "Upgrade" : "Starter";
+        return '<button type="button" class="' + klass + '" data-item="' + id + '">' +
+          it.name + '<span class="tier">' + tier + " · " + (SLOT_LABELS[it.slot] || it.slot) + "</span></button>";
+      }).join("");
+    }
+  }
+}
+
+function openEquipmentView() {
+  hideAllOverlays();
+  renderEquipmentOverlay();
+  $("overlay-gear").classList.remove("hidden");
+}
+
+function closeEquipmentView() {
+  $("overlay-gear").classList.add("hidden");
+  if (G.scene === "hub" || G.mode === "hub") $("overlay-hub").classList.remove("hidden");
 }
 
 function gearSlotColor(tier) {
@@ -1390,7 +1611,7 @@ function gearSlotColor(tier) {
 
 
 /* Persistent player profile (name + GP). Modes read from this, not from fight state. */
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter") };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds() };
 
 function loadProfile() {
   try {
@@ -1405,6 +1626,7 @@ function loadProfile() {
       Profile.unlockedItems = Array.isArray(raw.unlockedItems) ? raw.unlockedItems.slice() : [];
       Profile.raidCompletions = Number(raw.raidCompletions) || 0;
       Profile.raidBestTicks = raw.raidBestTicks || null;
+      Profile.bank = migrateOwned(raw.bank, Profile.equipment, Profile.unlockedItems);
     } else {
       Profile.name = loadName();
       Profile.gp = 0;
@@ -1412,6 +1634,8 @@ function loadProfile() {
       Profile.seenFirstKill = false;
       Profile.levels = defaultLevels();
       Profile.equipment = cloneLoadout("starter");
+      Profile.unlockedItems = [];
+      Profile.bank = migrateOwned(null, Profile.equipment, []);
     }
   } catch (e) {
     Profile.name = loadName();
@@ -1420,6 +1644,8 @@ function loadProfile() {
     Profile.seenFirstKill = false;
     Profile.levels = defaultLevels();
     Profile.equipment = cloneLoadout("starter");
+    Profile.unlockedItems = [];
+    Profile.bank = migrateOwned(null, Profile.equipment, []);
   }
   syncPlayerCaps();
   G.name = Profile.name;
@@ -1436,6 +1662,7 @@ function saveProfile() {
       levels: Profile.levels || defaultLevels(),
       equipment: Profile.equipment || cloneLoadout("starter"),
       unlockedItems: Profile.unlockedItems || [],
+      bank: Profile.bank || migrateOwned(null, Profile.equipment, Profile.unlockedItems),
       raidCompletions: Profile.raidCompletions || 0,
       raidBestTicks: Profile.raidBestTicks || null
     }));
@@ -1559,14 +1786,31 @@ const audio = {
     src.connect(f); f.connect(g); g.connect(this.out());
     src.start(t0); src.stop(t0 + dur + 0.02);
   },
-  prayerOn() {
-    this.tone(1174, 0.09, "triangle", 0.16);
-    this.tone(1568, 0.14, "triangle", 0.13, 0.06);
-    this.tone(2349, 0.1, "sine", 0.06, 0.08);
+  prayerOn(kind) {
+    if (kind === "mage") {
+      // High, airy, crystalline chime — Protect from Magic
+      this.tone(1568, 0.10, "sine", 0.14);
+      this.tone(2093, 0.16, "triangle", 0.11, 0.04);
+      this.tone(3136, 0.10, "sine", 0.05, 0.08);
+    } else if (kind === "range") {
+      // Mid, sharp, slightly metallic ping — Protect from Missiles
+      this.tone(880, 0.07, "square", 0.09);
+      this.tone(1320, 0.12, "triangle", 0.12, 0.03);
+      this.tone(1760, 0.08, "sine", 0.05, 0.07);
+    } else if (kind === "melee") {
+      // Lower, punchy bronze thud-chime — Protect from Melee
+      this.tone(196, 0.08, "triangle", 0.12);
+      this.tone(392, 0.12, "sawtooth", 0.07, 0.02);
+      this.tone(523, 0.10, "triangle", 0.10, 0.05);
+    } else {
+      this.tone(1174, 0.09, "triangle", 0.16);
+      this.tone(1568, 0.14, "triangle", 0.13, 0.06);
+    }
   },
   prayerOff() {
-    this.tone(520, 0.07, "triangle", 0.1);
-    this.tone(390, 0.08, "sine", 0.06, 0.04);
+    // Short downward settle, distinct from all three activation chimes
+    this.tone(330, 0.08, "triangle", 0.10);
+    this.tone(196, 0.10, "sine", 0.07, 0.04);
   },
   /* High, airy, fiery whoosh — clearly distinct from the range rumble. */
   mageWindup() {
@@ -2497,7 +2741,7 @@ function setPrayer(kind) {
     audio.prayerOff();
   } else {
     G.prayer = kind;
-    audio.prayerOn();
+    audio.prayerOn(kind);
   }
   updatePrayerButtons();
 }
@@ -3544,8 +3788,6 @@ bindPrayer("btn-melee", "melee");
 
 $("btn-shark").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); eatShark(); });
 $("btn-pot").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); sipPot(); });
-if ($("btn-move-left")) $("btn-move-left").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); queueMoveBy(-1, 0); });
-if ($("btn-move-right")) $("btn-move-right").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); queueMoveBy(1, 0); });
 if ($("btn-run")) $("btn-run").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); setRunning(!G.running); });
 
 window.addEventListener("pointerup", () => { if (G.cs) G.cs.holding = false; });
@@ -3696,7 +3938,7 @@ function refreshTitleBest() {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-win","overlay-lose"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-gear","overlay-win","overlay-lose"].forEach((id) => {
     const el = $(id);
     if (el) el.classList.add("hidden");
   });
@@ -4274,6 +4516,65 @@ $("btn-how").addEventListener("click", () => {
   hideAllOverlays();
   $("overlay-tut").classList.remove("hidden");
 });
+if ($("btn-equipment")) $("btn-equipment").addEventListener("click", () => { audio.unlock(); openEquipmentView(); });
+if ($("btn-gear-close")) $("btn-gear-close").addEventListener("click", () => { audio.unlock(); closeEquipmentView(); });
+if ($("gear-worn")) $("gear-worn").addEventListener("click", (e) => {
+  const btn = e.target.closest && e.target.closest("[data-slot]");
+  if (!btn) return;
+  audio.unlock();
+  unequipSlot(btn.getAttribute("data-slot"));
+});
+if ($("gear-bank")) $("gear-bank").addEventListener("click", (e) => {
+  const btn = e.target.closest && e.target.closest("[data-item]");
+  if (!btn) return;
+  audio.unlock();
+  equipItem(btn.getAttribute("data-item"));
+});
+
+let raidBriefReturn = { start: false, opts: null };
+
+function raidBriefSeen() {
+  try { return localStorage.getItem(STORAGE.raidBrief) === "1"; } catch (e) { return false; }
+}
+function markRaidBriefSeen() {
+  try { localStorage.setItem(STORAGE.raidBrief, "1"); } catch (e) {}
+}
+function setRaidBriefPause(on) {
+  if (window.XscapeRaid && window.XscapeRaid.setBriefPause) window.XscapeRaid.setBriefPause(!!on);
+}
+function setRaidHelpVisible(on) {
+  const btn = $("btn-raid-help");
+  if (btn) btn.classList.toggle("visible", !!on);
+}
+function showRaidBriefing(opts) {
+  opts = opts || {};
+  raidBriefReturn = { start: !!opts.start, opts: opts.startOpts || null, fromHub: !!opts.fromHub };
+  audio.unlock();
+  hideAllOverlays();
+  if (G.scene === "raid") setRaidBriefPause(true);
+  $("overlay-raid-tut").classList.remove("hidden");
+}
+function closeRaidBriefing() {
+  markRaidBriefSeen();
+  $("overlay-raid-tut").classList.add("hidden");
+  setRaidBriefPause(false);
+  if (raidBriefReturn.start) {
+    const opts = Object.assign({}, raidBriefReturn.opts || { room: "gate" }, { skipBrief: true });
+    raidBriefReturn = { start: false, opts: null };
+    if (window.XscapeRaid && window.XscapeRaid.startRaidInGame) window.XscapeRaid.startRaidInGame(opts);
+    return;
+  }
+  if (G.scene === "raid") return;
+  showTitle();
+}
+if ($("btn-how-raid")) $("btn-how-raid").addEventListener("click", () => { showRaidBriefing({ fromHub: true }); });
+if ($("btn-raid-tut-ok")) $("btn-raid-tut-ok").addEventListener("click", () => { audio.unlock(); closeRaidBriefing(); });
+if ($("btn-raid-help")) $("btn-raid-help").addEventListener("click", () => { showRaidBriefing({ fromHub: false }); });
+window.showRaidBriefing = showRaidBriefing;
+window.raidBriefSeen = raidBriefSeen;
+window.markRaidBriefSeen = markRaidBriefSeen;
+window.setRaidHelpVisible = setRaidHelpVisible;
+
 $("btn-tut-ok").addEventListener("click", () => {
   audio.unlock();
   try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
@@ -4377,6 +4678,7 @@ window.KellenScape = {
   launchTileAttack, testFireball, queueMoveTo, queueMoveBy, setRunning,
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
+  ownItem, equipItem, unequipSlot, bankList, isOwned, openEquipmentView,
   setDebug(on) { G.debugCombat = !!on; updateDebugCombat(); },
   getState() {
     const vs = (Profile.equipment) ? combatVsMonster("tztok-jad", "ranged") : null;
@@ -4392,6 +4694,8 @@ window.KellenScape = {
         running: !!G.running
       },
       equipment: Profile.equipment,
+      bank: Profile.bank,
+      unlockedItems: Profile.unlockedItems,
       levels: Profile.levels,
       combat: vs && { chance: vs.chance, maxHit: vs.maxHit, atkRoll: vs.atkRoll, defRoll: vs.defRoll, expected: vs.expected },
       tileHazards: (G.tileHazards || []).map((h) => ({ kind: h.kind, col: h.col, row: h.row, delay: h.delay })),
@@ -4408,7 +4712,7 @@ window.KellenScape = {
     HEALER_MAX_HIT, JAD_KILL_GP_MIN, JAD_KILL_GP_MAX,
     SHARK_ATTACK_DELAY_TICKS, POT_ATTACK_DELAY_TICKS, CONSUME_COOLDOWN_TICKS,
     JAD_ATTACK_SPEED_TICKS, PLAYER_ATTACK_TICKS, SHARK_HEAL, ARENA_LAYOUT_V5, JAD_ARENA_FRAC,
-    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, ART_V10, ART_V11, ART_V12, MECH_V13, FK77_HEIGHT_MATCH
+    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, ART_V10, ART_V11, ART_V12, MECH_V13, MECH_V14, FK77_HEIGHT_MATCH
   }
 };
 window.Xscape = window.KellenScape;
@@ -4416,6 +4720,15 @@ window.G = G;
 window.Profile = Profile;
 window.Scenes = Scenes;
 window.audio = audio;
+window.ITEMS = ITEMS;
+window.LOADOUTS = LOADOUTS;
+window.MONSTERS = MONSTERS;
+window.EQUIP_SLOTS = EQUIP_SLOTS;
+window.migrateOwned = migrateOwned;
+window.ownItem = ownItem;
+window.equipItem = equipItem;
+window.unequipSlot = unequipSlot;
+window.refreshGearViews = refreshGearViews;
 </script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
@@ -4427,7 +4740,9 @@ if (window.XscapeRaid) {
 
 drawGearIcons();
 refreshPrayIcons();
+if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
 $("top-hud").appendChild($("sound-btn"));
+if ($("btn-raid-help")) $("top-hud").appendChild($("btn-raid-help"));
 resize();
 showTitle();
 refreshTitleBest();

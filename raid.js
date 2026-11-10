@@ -272,6 +272,8 @@
           P.hasFireCape = !!raw.hasFireCape;
           P.unlockedItems = raw.unlockedItems || [];
           P.gear = raw.gear || raw.equipped || deep(STARTER_LOADOUT);
+          if (raw.bank) P.bank = raw.bank;
+          if (raw.equipment) P.equipment = raw.equipment;
           P.raidCompletions = raw.raidCompletions || 0;
           P.raidBestTicks = raw.raidBestTicks || null;
         }
@@ -299,6 +301,8 @@
       raw.hasFireCape = !!P.hasFireCape;
       raw.seenFirstKill = !!P.seenFirstKill;
       raw.unlockedItems = P.unlockedItems || [];
+      if (P.bank) raw.bank = P.bank;
+      if (P.equipment) raw.equipment = P.equipment;
       raw.gear = P.gear || raw.gear;
       raw.raidCompletions = P.raidCompletions || 0;
       if (P.raidBestTicks != null) raw.raidBestTicks = P.raidBestTicks;
@@ -309,6 +313,12 @@
     const P = profileObj();
     if (!P.unlockedItems) P.unlockedItems = [];
     if (id && P.unlockedItems.indexOf(id) === -1) P.unlockedItems.push(id);
+    if (typeof global.ownItem === "function") {
+      try { global.ownItem(id); } catch (e) {}
+    } else {
+      if (!P.bank) P.bank = [];
+      if (id && P.bank.indexOf(id) === -1) P.bank.push(id);
+    }
     saveRaidProfile();
   }
   function awardGp(n) {
@@ -329,7 +339,7 @@
   }
   function defaultInv() { return { sharks: 10, pots: 6, brews: 0, ranging: 0 }; }
 
-  let R = null, host = null, acc = 0, lastTs = 0, raf = 0, running = false;
+  let R = null, host = null, acc = 0, lastTs = 0, raf = 0, running = false, briefPause = false, raidRunning = false;
 
   function newState(opts) {
     opts = opts || {};
@@ -483,14 +493,22 @@
     if (name === "mark" && ra) return ra.mark();
     if (name === "sigil" && ra) return ra.sigil();
     if (name === "enrage" && ra) return ra.enrage();
+    if (name === "prayerOn" && ra && (!a || !a.prayerOn)) return ra.prayerOn(arg);
+    if (name === "prayerOff" && ra && (!a || !a.prayerOff)) return ra.prayerOff();
     if (!a) return;
     try {
       if (name === "hit" && a.hit) a.hit();
       else if (name === "block" && a.block) a.block();
       else if (name === "eat" && a.eat) a.eat();
       else if (name === "sip" && a.sip) a.sip();
-      else if (name === "prayerOn" && a.prayerOn) a.prayerOn();
-      else if (name === "prayerOff" && a.prayerOff) a.prayerOff();
+      else if (name === "prayerOn") {
+        if (a.prayerOn) a.prayerOn(arg);
+        else if (ra && ra.prayerOn) ra.prayerOn(arg);
+      }
+      else if (name === "prayerOff") {
+        if (a.prayerOff) a.prayerOff();
+        else if (ra && ra.prayerOff) ra.prayerOff();
+      }
       else if (name === "crossbow" && a.crossbow) a.crossbow();
       else if (name === "win" && a.win) a.win();
       else if (name === "death" && a.death) a.death();
@@ -547,6 +565,13 @@
     mark: function () { this.tone(140, 0.12, "square", 0.04); },
     sigil: function () { this.tone(520, 0.2, "sine", 0.05); this.tone(780, 0.25, "sine", 0.04, 0.05); },
     enrage: function () { this.tone(40, 0.8, "sawtooth", 0.1); this.tone(80, 0.8, "triangle", 0.06, 0.05); },
+    prayerOn: function (kind) {
+      if (kind === "mage") { this.tone(1568, 0.10, "sine", 0.14); this.tone(2093, 0.16, "triangle", 0.11, 0.04); this.tone(3136, 0.10, "sine", 0.05, 0.08); }
+      else if (kind === "range") { this.tone(880, 0.07, "square", 0.09); this.tone(1320, 0.12, "triangle", 0.12, 0.03); this.tone(1760, 0.08, "sine", 0.05, 0.07); }
+      else if (kind === "melee") { this.tone(196, 0.08, "triangle", 0.12); this.tone(392, 0.12, "sawtooth", 0.07, 0.02); this.tone(523, 0.10, "triangle", 0.10, 0.05); }
+      else { this.tone(1174, 0.09, "triangle", 0.14); this.tone(1568, 0.14, "triangle", 0.10, 0.05); }
+    },
+    prayerOff: function () { this.tone(330, 0.08, "triangle", 0.10); this.tone(196, 0.10, "sine", 0.07, 0.04); },
     startMusic: function () {
       if (this.muted()) return;
       const ctx = this.ensure();
@@ -637,7 +662,7 @@
     else if (id === "loot") setupLoot(st);
     else if (id.indexOf("chest") === 0) setupChest(st, id);
     if (!keepSnap) st.snapshot = snapshotRoom(st);
-    flash(st, ROOM_TITLE[id] || id, "#e8d090");
+    // Room name is already on the map strip and in the HUD — don't flash it over the boss plate.
   }
   function snapshotRoom(st) {
     return { room: st.room, hp: st.player.hp, prayerPts: st.player.prayerPts, inv: deep(st.inv), loadout: deep(st.player.loadout), rangingLeft: st.player.rangingLeft };
@@ -709,14 +734,16 @@
     // can be stepped off before it resolves.
     const p = st.player;
     p.prevCol = p.col; p.prevRow = p.row; p.stepping = false;
-    if (p.path && p.path.length) {
+    const steps = raidRunning ? 2 : 1;
+    let moved = false;
+    for (let s = 0; s < steps && p.path && p.path.length; s++) {
       const step = p.path.shift();
       p.col = step.c; p.row = step.r;
       p.stepping = true;
-      p.stillTicks = 0;
-    } else {
-      p.stillTicks = (p.stillTicks || 0) + 1;
+      moved = true;
     }
+    if (moved) p.stillTicks = 0;
+    else p.stillTicks = (p.stillTicks || 0) + 1;
 
     const landed = [];
     for (let i = 0; i < st.marks.length; i++) {
@@ -1280,7 +1307,7 @@
     if (st.mode !== "playing") return;
     if (st.player.prayerPts <= 0) { flash(st, "No prayer!", "#ff8a70"); return; }
     if (st.prayer === kind) { st.prayer = null; st.player.prayer = null; sfx(st, "prayerOff"); }
-    else { st.prayer = kind; st.player.prayer = kind; sfx(st, "prayerOn"); }
+    else { st.prayer = kind; st.player.prayer = kind; sfx(st, "prayerOn", kind); }
     if (host && host.updatePrayer) host.updatePrayer(st.prayer);
   }
   function clickTile(st, col, row) {
@@ -1350,8 +1377,14 @@
     ctx.save();
     ctx.font = "bold 11px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "rgba(8,6,12,0.55)";
+    ctx.fillRect(W / 2 - 90, 24, 180, 16);
     ctx.fillStyle = "#e8d090";
-    ctx.fillText(ROOM_TITLE[st.room] || "", W / 2, 34);
+    ctx.strokeStyle = "rgba(0,0,0,0.8)";
+    ctx.lineWidth = 3;
+    ctx.strokeText(ROOM_TITLE[st.room] || "", W / 2, 26);
+    ctx.fillText(ROOM_TITLE[st.room] || "", W / 2, 26);
     ctx.restore();
 
     const prog = tickProgress(st);
@@ -1424,23 +1457,34 @@
   function drawCenterpiece(st, ctx, W, H, t, prog) {
     const cx = W * 0.5, cy = H * 0.28;
     const scale = clamp(Math.min(W, H) / 390, 0.7, 1.25);
+    const HEADER_BOTTOM = 58; // map + room title reserved band
     if (st.boss && st.boss.kind === "morvane") {
       const b = st.boss;
       const telProg = b.phase === "telegraph" ? (1 - (b.telLeft - prog) / Math.max(1, b.telLen)) : 0;
       const pose = b.phase === "telegraph" ? clamp(telProg / 0.35, 0, 1) : (b.phase === "recover" ? 0.25 : 0);
-      ctx.save(); ctx.translate(cx, cy); ctx.scale(scale * 0.95, scale * 0.95);
+      const s = scale * 0.95;
+      const plateY = -128;
+      let by = cy;
+      const plateTop = by + plateY * s;
+      if (plateTop < HEADER_BOTTOM) by += (HEADER_BOTTOM - plateTop);
+      ctx.save(); ctx.translate(cx, by); ctx.scale(s, s);
       if (typeof drawMorvane === "function") {
         drawMorvane(ctx, t, { style: (b.phase === "telegraph" || b.phase === "recover") ? b.style : null, pose: pose, hurt: b.hurt, enrage: phaseOf(st) >= 4, dead: b.hp <= 0, eyeOpen: phaseOf(st) >= 4 ? 1 : 0.45 });
       }
-      if (typeof drawBossPlate === "function") drawBossPlate(ctx, "Morvane", b.hp, b.hpMax, -128);
+      if (typeof drawBossPlate === "function") drawBossPlate(ctx, "Morvane", b.hp, b.hpMax, plateY);
       ctx.restore();
     } else if (st.boss && st.boss.kind === "warden") {
       const b = st.boss;
       const telProg = b.phase === "telegraph" ? (1 - (b.telLeft - prog) / Math.max(1, b.telLen)) : 0;
       const pose = b.phase === "telegraph" ? clamp(telProg / 0.35, 0, 1) : 0;
-      ctx.save(); ctx.translate(cx, cy + 8); ctx.scale(scale * 1.05, scale * 1.05);
+      const s = scale * 1.05;
+      const plateY = -80;
+      let by = cy + 8;
+      const plateTop = by + plateY * s;
+      if (plateTop < HEADER_BOTTOM) by += (HEADER_BOTTOM - plateTop);
+      ctx.save(); ctx.translate(cx, by); ctx.scale(s, s);
       if (typeof drawPaleWarden === "function") drawPaleWarden(ctx, t, { style: b.style, pose: pose, hurt: b.hurt, dead: b.hp <= 0 });
-      if (typeof drawBossPlate === "function") drawBossPlate(ctx, "Pale Warden", b.hp, b.hpMax, -80);
+      if (typeof drawBossPlate === "function") drawBossPlate(ctx, "Pale Warden", b.hp, b.hpMax, plateY);
       ctx.restore();
     } else if (st.room === "loot" || (st.room && st.room.indexOf("chest") === 0)) {
       const rs = st.roomState;
@@ -1516,7 +1560,7 @@
   }
   function stop() { running = false; try { raidAudio.stopMusic(); } catch (e) {} }
   function tickLive() {
-    if (!R || R.mode !== "playing") return;
+    if (!R || R.mode !== "playing" || briefPause) return;
     gameTick(R);
     if (host && host.updateHud) host.updateHud(R);
   }
@@ -1526,7 +1570,7 @@
     if (!lastTs) lastTs = ts;
     const dt = Math.min(0.05, (ts - lastTs) / 1000);
     lastTs = ts;
-    if (R && R.mode === "playing") {
+    if (R && R.mode === "playing" && !briefPause) {
       R.elapsedMs = ts - R.startMs;
       acc += dt * 1000;
       while (acc >= TICK_MS) { tickLive(); acc -= TICK_MS; }
@@ -1875,7 +1919,7 @@
     });
   }
   function hostTick() {
-    if (!R || R.mode !== "playing") return;
+    if (!R || R.mode !== "playing" || briefPause) return;
     tickLive();
     hostUpdateHud(R);
     if (typeof global.G !== "undefined" && global.G && global.G.player && R.player) {
@@ -1892,7 +1936,7 @@
     if (!hostLast) hostLast = ts;
     const dt = Math.min(0.05, (ts - hostLast) / 1000);
     hostLast = ts;
-    if (R.mode === "playing") {
+    if (R.mode === "playing" && !briefPause) {
       hostAcc += dt * 1000;
       while (hostAcc >= TICK_MS) { hostTick(); hostAcc -= TICK_MS; }
     }
@@ -1941,6 +1985,14 @@
   }
   function startRaidInGame(opts) {
     registerItems();
+    remigrateHostBank();
+    opts = opts || { room: "gate" };
+    const skipBrief = !!(opts.skipBrief || opts.fromQuery);
+    const seen = (typeof global.raidBriefSeen === "function") ? global.raidBriefSeen() : false;
+    if (!skipBrief && !seen && typeof global.showRaidBriefing === "function" && document.getElementById("overlay-raid-tut")) {
+      global.showRaidBriefing({ start: true, startOpts: opts });
+      return;
+    }
     if (typeof global.hideAllOverlays === "function") global.hideAllOverlays();
     if (typeof global.G !== "undefined") {
       global.G.scene = "raid";
@@ -1949,6 +2001,7 @@
     }
     const pad = document.getElementById("move-pad");
     if (pad) pad.classList.add("visible");
+    if (typeof global.setRaidHelpVisible === "function") global.setRaidHelpVisible(true);
     ensureRaidConsumables();
     bindHost({
       flashMsg: function (t, c) { if (typeof global.flashMsg === "function") global.flashMsg(t, c); },
@@ -1980,8 +2033,16 @@
     brew.addEventListener("pointerdown", function (e) { e.preventDefault(); api.brew(); });
     rng.addEventListener("pointerdown", function (e) { e.preventDefault(); api.ranging(); });
   }
+  function remigrateHostBank() {
+    if (typeof global.migrateOwned === "function" && typeof global.Profile !== "undefined") {
+      const P = global.Profile;
+      P.bank = global.migrateOwned(P.bank, P.equipment, P.unlockedItems);
+      if (typeof global.refreshGearViews === "function") global.refreshGearViews();
+    }
+  }
   function installIntoGame() {
     registerItems();
+    remigrateHostBank();
     hookXscape();
     api.installHubButton();
     if (typeof global.Scenes !== "undefined") {
@@ -1990,8 +2051,10 @@
         enter: function () { startRaidInGame({ room: "gate" }); },
         exit: function () {
           try { api.stop(); } catch (e) {}
+          briefPause = false;
           const pad = document.getElementById("move-pad");
           if (pad) pad.classList.add("visible"); // jad also uses it
+          if (typeof global.setRaidHelpVisible === "function") global.setRaidHelpVisible(false);
         }
       };
     }
@@ -2024,6 +2087,17 @@
   api.hostFrame = hostFrame;
   api.startRaidInGame = startRaidInGame;
   api.installIntoGame = installIntoGame;
+  api.setBriefPause = function (on) { briefPause = !!on; if (!on) hostAcc = 0; };
+  api.setRunning = function (on) {
+    raidRunning = !!on;
+    const btn = global.document && document.getElementById("btn-run");
+    if (btn) {
+      btn.classList.toggle("running", raidRunning);
+      btn.textContent = raidRunning ? "Run" : "Walk";
+    }
+  };
+  api.isRunning = function () { return !!raidRunning; };
+  api.remigrateHostBank = remigrateHostBank;
   api.hostUpdateHud = hostUpdateHud;
   api.HOST_RAID_ITEMS = HOST_RAID_ITEMS;
 

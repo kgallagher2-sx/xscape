@@ -267,6 +267,12 @@
     .tut-card .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 2px; }
     .share-card { text-align: center; }
     .share-card .logo { font-size: 40px; margin-bottom: 4px; letter-spacing: 1px; }
+    .logo-canvas {
+      display: block;
+      width: min(250px, 86%);
+      height: auto;
+      margin: 2px auto 6px;
+    }
     .share-card .win-title {
       font-family: Impact, "Arial Black", sans-serif; font-size: 28px; color: #ffe44a;
       text-shadow: 0 2px 0 #000, 0 0 12px #ff8800; margin: 4px 0 8px; letter-spacing: 0.5px;
@@ -334,15 +340,23 @@
       font-family: inherit; font-weight: 700; cursor: pointer;
       border-radius: 6px;
     }
-    #btn-move-left, #btn-move-right {
-      width: 44px; height: 44px; bottom: 8px; font-size: 18px; line-height: 1;
-    }
-    #btn-move-left { left: 6px; }
-    #btn-move-right { right: 6px; }
     #btn-run {
-      left: 6px; bottom: 56px; height: 26px; padding: 0 8px;
+      left: 6px; bottom: 8px; height: 26px; padding: 0 8px;
       font-size: 10px; letter-spacing: 0.4px;
     }
+    #btn-raid-help {
+      position: absolute; top: 6px; right: 6px; z-index: 8;
+      width: 28px; height: 24px; border-radius: 4px;
+      background: rgba(20,12,8,0.7); border: 1px solid #6a5430; color: #ffe9a0;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; padding: 0;
+    }
+    .tut-card { max-height: 86%; overflow-y: auto; }
+    .tut-card.brief-card {
+      display: flex; flex-direction: column; overflow: hidden; max-height: 86%;
+    }
+    .tut-card.brief-card .tut-scroll { overflow-y: auto; flex: 1 1 auto; -webkit-overflow-scrolling: touch; }
+    .tut-card.brief-card .tut-actions { flex: 0 0 auto; text-align: center; margin-top: 10px; padding-top: 6px; border-top: 1px solid #6a5430; }
+    .tut-card.brief-card .tut-actions .btn { margin: 0; }
     #btn-run.running { border-color: #c9a24a; color: #ffe44a; }
     #move-pad button:active { filter: brightness(1.25); }
 
@@ -370,9 +384,8 @@
       <div class="float-msg" id="float-msg"></div>
       <div id="move-pad" class="visible">
         <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
-        <button type="button" id="btn-move-left" aria-label="Step left">◀</button>
-        <button type="button" id="btn-move-right" aria-label="Step right">▶</button>
       </div>
+      <button id="btn-raid-help" type="button" aria-label="Gloamhold instructions">?</button>
     </div>
     <div id="mid">
       <div class="bars">
@@ -400,7 +413,7 @@
 
     <div class="overlay hidden" id="overlay-win">
       <div class="share-card">
-        <div class="logo"><span class="logo-x">X</span>scape</div>
+        <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
         <div class="win-title">GLOAMHOLD CLEARED</div>
         <div class="result-grid" id="win-stats"></div>
       </div>
@@ -409,7 +422,7 @@
     </div>
     <div class="overlay hidden" id="overlay-lose">
       <div class="share-card">
-        <div class="logo"><span class="logo-x">X</span>scape</div>
+        <canvas class="logo-canvas" width="720" height="270" aria-label="Xscape"></canvas>
         <div class="lose-title">Oh dear, you are dead!</div>
         <div class="result-grid" id="lose-stats"></div>
       </div>
@@ -417,15 +430,30 @@
       <button class="btn secondary" id="btn-title-lose" type="button">Title screen</button>
     </div>
     <div class="overlay" id="overlay-brief">
-      <div class="tut-card">
+      <div class="tut-card brief-card">
         <h2>Gloamhold</h2>
-        <p>A sealed crypt-fortress under a drowned moon. Its master, <b>Morvane the Unsleeping</b>, still answers the stones.</p>
-        <p><b>Tap a floor tile</b> or use ◀ ▶ / A D to step (one tile per tick). Watch the telegraphs and walk off marked tiles before they land.</p>
-        <p>Switch protection prayers <b>before</b> the hit: 1 Magic, 2 Missiles, 3 Melee. Pose and audio are the tells.</p>
-        <p>Your crossbow fires on its own. Eat sharks (F), sip prayer pots (P), brews (B), or a ranging pot (R). Each sip or bite delays the next shot.</p>
-        <p>Supply chests along the way are limited. Starter gear makes the final fight nearly impossible. Vault-forged gear and clean execution can just clear it.</p>
-        <div style="text-align:center;margin-top:10px">
-          <button class="btn" id="btn-brief-ok" type="button">ENTER THE VAULT</button>
+        <div class="tut-scroll">
+        <p>A sealed crypt-fortress under a drowned moon. Clear its rooms and defeat <b>Morvane the Unsleeping</b> to open the Vault Chest. Starter gear makes the throne nearly impossible — vault-forged kit and clean execution can just clear it.</p>
+        <p><b>Rooms, in order:</b> The Veil Gate → Supply Alcove → The Wailing Court → Supply Alcove → The Eclipse Corridor → The Last Alcove → The Hollow Throne → The Vault Chest. A small map at the top shows where you are. Dying lets you retry the room from when you entered it, or return to the hub. Loot still needs a Morvane kill.</p>
+        <p><b>Move:</b> tap a floor tile to walk (one tile per tick, two if Run is on). A yellow X marks your destination. Keyboard A/D or arrow keys also work. Watch telegraphs and walk off marked tiles before they land.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons.</p>
+        <p><b>Magic (1):</b> a violet rear-up, arms lifting, airy whoosh. Protect from Magic.</p>
+        <p><b>Missiles (2):</b> a shard throw and a sharper mid cue. Protect from Missiles.</p>
+        <p><b>Melee (3):</b> a sword slam and a low thud. Protect from Melee. Cinder Shades always melee.</p>
+        <p><b>The Veil Gate:</b> rune tiles light in a sequence — step them in order (three rounds). Gloom lances mark your tile and land two ticks later; walk off. Then step the exit tile on the right.</p>
+        <p><b>The Wailing Court:</b> the Pale Warden swaps Magic / Missiles with two-tick tells. Shades must be killed; if they live too long they heal him or explode on you.</p>
+        <p><b>The Eclipse Corridor:</b> waves of marked tiles. Dodge, then step the exit.</p>
+        <p><b>Morvane — four phases</b> (by remaining HP):</p>
+        <p><b>Twin Crowns</b> (above 55%): Magic / Missiles, slower three-tick tells.</p>
+        <p><b>Court of Shades</b> (28–55%): melee joins, faster tells. Shades spawn. Stand on the crown sigil or take Judgment. Don't stand still.</p>
+        <p><b>Nightfall</b> (10–28%): quicker flicks, sometimes a one-tick tell, and an occasional Magic → Missiles → Melee combo. After a hit, your tile is marked — walk off. Seek the moon tile or your prayer drains. Rows of tiles go unsafe.</p>
+        <p><b>The Eye Opens</b> (last 10%): enrage. Very fast, one-tick tells. Eye beams mark your tile. Prayer drains faster. Stillness is punished sooner.</p>
+        <p><b>Supplies:</b> chests along the way are limited. F / Shark heals 20. P / Prayer pot restores 31 prayer. B / Brew heals 16 but costs 5 prayer. R / Range pot boosts your ranged. On-screen buttons work too. Each bite or sip delays your next shot.</p>
+        <p><b>Loot:</b> the vault always drops a Gloamhold unique (a small chance of a second) plus GP. Mid-tier upgrade pieces can appear in earlier chests. New gear goes to your bank — open Equipment on the hub to put it on.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · B brew · R range pot</p>
+        </div>
+        <div class="tut-actions">
+          <button class="btn" id="btn-brief-ok" type="button">GOT IT</button>
         </div>
       </div>
     </div>
@@ -509,7 +537,36 @@
     Raid.startLoop();
   }
 
-  document.getElementById("btn-brief-ok").addEventListener("click", function () { go(); });
+  const BRIEF_KEY = "kellenscape-raid-brief-seen";
+  function briefSeen() { try { return localStorage.getItem(BRIEF_KEY) === "1"; } catch (e) { return false; } }
+  function markBrief() { try { localStorage.setItem(BRIEF_KEY, "1"); } catch (e) {} }
+  let briefOpen = true;
+  function showBrief() {
+    briefOpen = true;
+    if (Raid.setBriefPause) Raid.setBriefPause(true);
+    document.getElementById("overlay-brief").classList.remove("hidden");
+  }
+  function hideBriefAndGo(opts) {
+    markBrief();
+    briefOpen = false;
+    if (Raid.setBriefPause) Raid.setBriefPause(false);
+    go(opts);
+  }
+  document.getElementById("btn-brief-ok").addEventListener("click", function () {
+    markBrief();
+    briefOpen = false;
+    if (Raid.setBriefPause) Raid.setBriefPause(false);
+    if (Raid.getState && Raid.getState() && Raid.getState().mode === "playing") {
+      document.getElementById("overlay-brief").classList.add("hidden");
+      return;
+    }
+    go();
+  });
+  document.getElementById("btn-raid-help").addEventListener("click", function () { showBrief(); });
+  document.getElementById("btn-run").addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    Raid.setRunning(!Raid.isRunning());
+  });
   document.getElementById("btn-again-win").addEventListener("click", function () { go({ room: "gate" }); });
   document.getElementById("btn-again-lose").addEventListener("click", function () { if (Raid.retryRoom) Raid.retryRoom(); });
   document.getElementById("btn-title-win").addEventListener("click", function () { location.href = "index.html"; });
@@ -521,8 +578,6 @@
   document.getElementById("btn-mage").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("mage"); });
   document.getElementById("btn-range").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("range"); });
   document.getElementById("btn-melee").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.setPrayer("melee"); });
-  document.getElementById("btn-move-left").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.stepDir(-1, 0); });
-  document.getElementById("btn-move-right").addEventListener("pointerdown", function (e) { e.preventDefault(); Raid.stepDir(1, 0); });
   canvas.addEventListener("pointerdown", function (e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (cssW / rect.width);
@@ -551,10 +606,15 @@
     onWin: function () { document.getElementById("overlay-win").classList.remove("hidden"); },
     onLose: function () { document.getElementById("overlay-lose").classList.remove("hidden"); }
   });
+  if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
   fit();
   const test = Raid.testFlag();
   if (test && test.indexOf("raid") === 0) {
+    document.getElementById("overlay-brief").classList.add("hidden");
+    briefOpen = false;
     go();
+  } else if (briefSeen()) {
+    hideBriefAndGo({ room: "gate" });
   }
   window.Xscape = window.Xscape || {};
   window.Xscape.raid = Raid;
