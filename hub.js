@@ -414,6 +414,19 @@
     return state.peerMoves[id];
   }
 
+  function dropPeer(id) {
+    if (id && state.peerMoves && state.peerMoves[id]) delete state.peerMoves[id];
+  }
+
+  function dropPeerIfOtherScene(p) {
+    if (!p || !p.uid) return false;
+    if (p.scene && p.scene !== (state.area || "bank")) {
+      dropPeer(p.uid);
+      return true;
+    }
+    return false;
+  }
+
   function stepPeer(peer, tick) {
     if (!peer.path || !peer.path.length) {
       peer.moving = false;
@@ -454,7 +467,7 @@
   function onMoveIntent(p) {
     if (!p || !p.uid) return;
     if (myUid() && p.uid === myUid()) return;
-    if (p.scene && p.scene !== (state.area || "bank")) return;
+    if (dropPeerIfOtherScene(p)) return;
     var peer = getPeer(p.uid);
     if (p.scene) peer.scene = p.scene;
     peer.col = p.col;
@@ -476,7 +489,7 @@
   function onMoveSnapshot(p) {
     if (!p || !p.uid) return;
     if (myUid() && p.uid === myUid()) return;
-    if (p.scene && p.scene !== (state.area || "bank")) return;
+    if (dropPeerIfOtherScene(p)) return;
     var peer = getPeer(p.uid);
     if (p.scene) peer.scene = p.scene;
     if (p.username) peer.username = p.username;
@@ -586,6 +599,7 @@
     state.spawnedAt = (typeof performance !== "undefined" ? performance.now() : Date.now());
     publishPresence();
     var cloud = global.XscapeCloud;
+    try { broadcastPosSnapshot(); } catch (e) {}
     if (cloud && typeof cloud.flushHeartbeat === "function") {
       try { cloud.flushHeartbeat(); } catch (e) {}
     }
@@ -724,7 +738,10 @@
       var p = rows[i];
       if (!p || (me && p.id === me)) continue;
       var want = state.area || "bank";
-      if ((p.scene || "bank") !== want) continue;
+      if ((p.scene || "bank") !== want) {
+        if (state.peerMoves && state.peerMoves[p.id]) delete state.peerMoves[p.id];
+        continue;
+      }
       var mv = state.peerMoves && state.peerMoves[p.id];
       var merged = {
         id: p.id,
