@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Xscape">
@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <title>Xscape — Sprite Lab</title>
 <style>
-  html, body { margin: 0; background: #1a0f0a; color: #f0e0b0; font: 13px/1.35 "Trebuchet MS", sans-serif; }
+  html, body { margin: 0; background: #1a0f0a; color: #f0e0b0; font: 13px/1.35 "Trebuchet MS", sans-serif; overflow-x: hidden; max-width: 100%; }
   header { padding: 10px 14px 4px; padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
   h1 { margin: 0; font-size: 18px; color: #ffcf3a; text-shadow: 0 2px 0 #000; }
   .sub { color: #b89a70; font-size: 12px; }
@@ -63,13 +63,31 @@
     gap: 3px;
     min-width: 0;
   }
-  .preview-cell canvas {
+  .preview-frame {
+    position: relative;
     width: 100%;
-    height: auto;
-    aspect-ratio: 160 / 200;
+    height: 0;
+    padding-bottom: 125%; /* 200/160 — avoids iOS Safari canvas height collapse in grid */
     background: #0c0604;
     border-radius: 6px;
     border: 1px solid #2a1810;
+    overflow: hidden;
+  }
+  .preview-frame canvas,
+  .preview-cell canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #0c0604;
+    border-radius: 6px;
+  }
+  .card { max-width: 100%; box-sizing: border-box; overflow: hidden; }
+  .card .row { flex-wrap: wrap; max-width: 100%; }
+  .cell canvas { max-width: 100%; height: auto !important; }
+  @media (max-width: 430px) {
+    .cell canvas { max-width: min(240px, calc(100vw - 130px)); }
   }
   .preview-cell span {
     font-size: 10px;
@@ -181,15 +199,21 @@
     <div class="h2-row"><h2>Player preview</h2><span class="sub" id="preset-label">Starter</span></div>
     <div class="preview-trio" id="preview-trio">
       <div class="preview-cell">
-        <canvas id="gear-preview-front" width="160" height="200"></canvas>
+        <div class="preview-frame">
+          <canvas id="gear-preview-front" width="160" height="200"></canvas>
+        </div>
         <span>FRONT</span>
       </div>
       <div class="preview-cell">
-        <canvas id="gear-preview-back" width="160" height="200"></canvas>
+        <div class="preview-frame">
+          <canvas id="gear-preview-back" width="160" height="200"></canvas>
+        </div>
         <span>BACK</span>
       </div>
       <div class="preview-cell">
-        <canvas id="gear-preview-side" width="160" height="200"></canvas>
+        <div class="preview-frame">
+          <canvas id="gear-preview-side" width="160" height="200"></canvas>
+        </div>
         <span>SIDE</span>
       </div>
     </div>
@@ -252,12 +276,16 @@
 </section>
 
 <div class="grid" id="grid"></div>
-<script src="partyhat-img.js"></script>
-<script src="whip-img.js"></script>
-<script src="sprites.js"></script>
-<script src="lab-gear.js"></script>
+<script src="partyhat-img.js?v=20-1"></script>
+<script src="whip-img.js?v=20-1"></script>
+<script src="sprites.js?v=20-1"></script>
+<script src="lab-gear.js?v=20-1"></script>
 <script>
 "use strict";
+if (navigator.serviceWorker) {
+  navigator.serviceWorker.register("sw.js?v=20-1").catch(function () {});
+}
+
 // Lab only: no game logic. Each sprite renders into a 1x canvas at CSS-pixel game scale
 // (DPR 1, like the game's backing pixels on a 1x screen), then is zoomed 4x nearest-neighbour.
 const TICK = 0.6;
@@ -332,7 +360,7 @@ const PREVIEW_VIEWS = [
 ];
 const previewCanvases = PREVIEW_VIEWS.map((v) => {
   const el = document.getElementById(v.id);
-  return { ...v, el, ctx: el.getContext("2d") };
+  return { id: v.id, facing: v.facing, walk: v.walk, el: el, ctx: el ? el.getContext("2d") : null };
 });
 const jsonBox = document.getElementById("gear-json");
 const toast = document.getElementById("copy-toast");
@@ -482,6 +510,7 @@ function paintPreview(t) {
   const focus = LabGear.facing || "back";
   for (const view of previewCanvases) {
     const c = view.ctx;
+    if (!c || !view.el) continue;
     const w = view.el.width, h = view.el.height;
     c.setTransform(1, 0, 0, 1, 0, 0);
     bg(c, w, h);

@@ -230,6 +230,7 @@
       equipment: (P.equipment && Object.keys(P.equipment).length ? P.equipment : null) || raw.equipment || {},
       unlockedItems: (P.unlockedItems && P.unlockedItems.length ? P.unlockedItems : null) || raw.unlockedItems || [],
       bank: (P.bank && P.bank.length ? P.bank : null) || raw.bank || [],
+      inventory: (P.inventory && P.inventory.length ? P.inventory : null) || raw.inventory || [],
       raidCompletions: P.raidCompletions || Number(raw.raidCompletions) || 0,
       raidBestTicks: P.raidBestTicks || raw.raidBestTicks || null,
       kreeKills: P.kreeKills || Number(raw.kreeKills) || 0,
@@ -254,6 +255,10 @@
     if (p.equipment && typeof p.equipment === "object" && Object.keys(p.equipment).length) P.equipment = p.equipment;
     if (Array.isArray(p.unlockedItems)) P.unlockedItems = p.unlockedItems.slice();
     if (Array.isArray(p.bank)) P.bank = p.bank.slice();
+    if (Array.isArray(p.inventory)) P.inventory = p.inventory.slice();
+    if (typeof global.normalizeContainers === "function") {
+      try { global.normalizeContainers(); } catch (e) {}
+    }
     if (typeof p.raidCompletions === "number") P.raidCompletions = p.raidCompletions;
     if (p.raidBestTicks != null) P.raidBestTicks = p.raidBestTicks;
     if (typeof p.kreeKills === "number") P.kreeKills = p.kreeKills;
@@ -467,16 +472,15 @@
     var hasLocal = localHasProgress(rawLocal) || (localHasProgress(payload) && !cloudHasCharacter(cloudProfile));
     var hasCloud = cloudHasCharacter(cloudProfile);
 
-    if (hasCloud && hasLocal && !alreadyMigratedHere()) {
-      showConflictDialog(cloudProfile, payload);
-      return;
-    }
-    if (hasCloud && !hasLocal) {
+    // Cloud already has a character: it always wins. Load it silently and
+    // ignore (overwrite) whatever guest/local save is on this phone.
+    if (hasCloud) {
       applyCloudProfile(cloudProfile);
       markLocalMigrated();
       return;
     }
     if (!hasLocal) return;
+    // First sign-in: this account has no cloud save yet, so import the phone's progress.
     var res = await rpc("migrate_local_save", { p_payload: payload });
     if (res.ok && res.profile) {
       applyCloudProfile(res.profile);
@@ -485,28 +489,6 @@
       console.warn("migrate_local_save", res.error);
       setAuthMsg(res.error);
     }
-  }
-
-  async function chooseCloudSave() {
-    hideConflictDialog();
-    if (cloudProfile) applyCloudProfile(cloudProfile);
-    markLocalMigrated();
-    showSignedInHub();
-  }
-
-  async function chooseLocalSave() {
-    hideConflictDialog();
-    var payload = localPayload();
-    var fn = cloudHasCharacter(cloudProfile) ? "merge_local_save" : "migrate_local_save";
-    var res = await rpc(fn, { p_payload: payload });
-    if (res.ok && res.profile) {
-      applyCloudProfile(res.profile);
-      markLocalMigrated();
-    } else {
-      alert((res && res.error) || "Could not import this phone's save.");
-      if (cloudProfile) applyCloudProfile(cloudProfile);
-    }
-    showSignedInHub();
   }
 
   async function claimNameAndEnter() {
@@ -820,18 +802,6 @@
     on($("cloud-prompt-close"), "click", hideSignInPrompt);
     on(wrap, "click", function (e) { if (e.target === wrap) hideSignInPrompt(); });
 
-    var conf = document.createElement("div");
-    conf.id = "cloud-conflict";
-    conf.innerHTML = '<div class="card">' +
-      '<h2>Which character?</h2>' +
-      '<p id="cloud-conflict-body"></p>' +
-      '<div class="cloud-btns">' +
-        '<button type="button" class="cloud-btn" id="cloud-keep-cloud">Keep cloud character</button>' +
-        '<button type="button" class="cloud-btn guest" id="cloud-keep-local">Use this phone\'s save</button>' +
-      "</div></div>";
-    root.appendChild(conf);
-    on($("cloud-keep-cloud"), "click", function () { chooseCloudSave(); });
-    on($("cloud-keep-local"), "click", function () { chooseLocalSave(); });
   }
 
   function promptButtonsHtml() {
@@ -878,24 +848,6 @@
     if (el) el.classList.remove("open");
   }
 
-  function showConflictDialog(cloud, local) {
-    ensurePromptUi();
-    var el = $("cloud-conflict");
-    var body = $("cloud-conflict-body");
-    if (body) {
-      body.innerHTML = "This account already has <b>" + escapeHtml(cloud.username || "a cloud character") +
-        "</b> (" + escapeHtml(fmtGpSafe(cloud.gp || 0)) + ", " + (cloud.jadKills || 0) + " Jad kills). This phone has a local save (" +
-        escapeHtml(fmtGpSafe(local.gp || 0)) + ", " + (local.jadKills || 0) + " Jad kills). " +
-        "Using this phone's save merges the best of both, with caps, and only known items.";
-    }
-    el.classList.add("open");
-  }
-
-  function hideConflictDialog() {
-    var el = $("cloud-conflict");
-    if (el) el.classList.remove("open");
-  }
-
   function requireSignIn(reason) {
     if (!isRestrictedGuest()) return false;
     showSignInPrompt({ title: "Sign in to save your progress", body: reason || defaultGuestBody() });
@@ -910,8 +862,10 @@
     chip.id = "cloud-account";
     chip.innerHTML = '<div class="cloud-chip-who" id="cloud-chip-who">Guest</div>' +
       '<button type="button" id="cloud-chip-action">Sign in</button>';
+    var mount = $("hub-chrome-mount");
     var welcome = $("hub-welcome");
-    if (welcome && welcome.parentNode) welcome.parentNode.insertBefore(chip, welcome.nextSibling);
+    if (mount) mount.appendChild(chip);
+    else if (welcome && welcome.parentNode) welcome.parentNode.insertBefore(chip, welcome.nextSibling);
     else hub.insertBefore(chip, hub.firstChild);
     tap(chip.querySelector("#cloud-chip-action"), function () {
       var action = $("cloud-chip-action");
@@ -1197,6 +1151,56 @@
     }).join("");
   }
 
+  var presenceExtra = { scene: "bank" };
+  var trackTimer = null;
+
+  function trackPayload() {
+    var uid = session && session.user && session.user.id;
+    var name = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "Adventurer";
+    var payload = {
+      id: uid,
+      username: name,
+      at: Date.now(),
+      scene: presenceExtra.scene || "bank",
+      col: presenceExtra.col,
+      row: presenceExtra.row,
+      facing: presenceExtra.facing || "back",
+      equipment: presenceExtra.equipment || null
+    };
+    return payload;
+  }
+
+  function trackPresence() {
+    if (!hubChannel || !session) return;
+    try { hubChannel.track(trackPayload()); } catch (e) {}
+  }
+
+  function setPresenceExtra(extra) {
+    extra = extra || {};
+    for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) presenceExtra[k] = extra[k];
+    if (trackTimer) return;
+    trackTimer = setTimeout(function () {
+      trackTimer = null;
+      trackPresence();
+    }, 280);
+  }
+
+  function getPresenceMap() { return presenceMap; }
+
+  function getPresenceList() {
+    var out = [];
+    Object.keys(presenceMap).forEach(function (id) {
+      var p = presenceMap[id];
+      if (p) out.push(p);
+    });
+    return out;
+  }
+
+  function broadcast(event, payload) {
+    if (!hubChannel) return Promise.resolve();
+    return hubChannel.send({ type: "broadcast", event: event, payload: payload || {} });
+  }
+
   async function startLobby() {
     if (!sb || !session || page !== "hub") return;
     if (isRestrictedGuest() || isAnonymousUser(session.user)) {
@@ -1230,9 +1234,19 @@
     hubChannel.on("postgres_changes", { event: "*", schema: "public", table: "duel_challenges" }, function () {
       refreshChallenges();
     });
+    hubChannel.on("broadcast", { event: "party-invite" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (payload.toId === uid && global.XscapeHub && XscapeHub.onPartyInvite) {
+        global.XscapeHub.onPartyInvite(payload);
+      }
+    });
+    hubChannel.on("broadcast", { event: "party-start" }, function (msg) {
+      var payload = (msg && msg.payload) || {};
+      if (global.XscapeHub && XscapeHub.onPartyStart) global.XscapeHub.onPartyStart(payload);
+    });
     hubChannel.subscribe(function (status) {
       if (status === "SUBSCRIBED") {
-        hubChannel.track({ id: uid, username: name, at: Date.now() });
+        trackPresence();
       }
     });
     renderPresence();
@@ -1582,12 +1596,33 @@
     get session() { return session; },
     get profile() { return cloudProfile; },
     hasSession: function () { return !!session; },
+    isPermanent: function () { return typeof isPermanentUser === "function" && isPermanentUser(); },
+    userId: function () { return session && session.user && session.user.id; },
     routeTitle: routeTitle,
     showNameEditor: showNameEditor,
     showSignInScreen: showSignInScreen,
+    requireSignIn: requireSignIn,
     client: function () { return sb; },
+    rpc: rpc,
     reloadLeaderboard: loadLeaderboard,
-    startLobby: startLobby
+    startLobby: startLobby,
+    setPresenceExtra: setPresenceExtra,
+    trackPresence: trackPresence,
+    getPresenceMap: getPresenceMap,
+    getPresenceList: getPresenceList,
+    broadcast: broadcast,
+    createParty: function (raid) { return rpc("create_party", { p_raid: raid || "gloamhold" }); },
+    joinParty: function (code) { return rpc("join_party", { p_code: String(code || "").trim() }); },
+    leaveParty: function (id) { return rpc("leave_party", { p_party: id }); },
+    startParty: function (id) { return rpc("start_party", { p_party: id }); },
+    setPartyReady: function (id, ready) { return rpc("set_party_ready", { p_party: id, p_ready: !!ready }); },
+    myParty: function () { return rpc("my_party", {}); },
+    escrowDuel: function (id) { return rpc("escrow_duel", { p_id: id }); },
+    settleDuel: function (id, winner, ticks, forfeit) {
+      return rpc("settle_duel", { p_id: id, p_winner: winner, p_ticks: ticks || null, p_forfeit: !!forfeit });
+    },
+    refundDuel: function (id) { return rpc("refund_duel", { p_id: id }); },
+    challengeUser: challengeUser
   };
   global.XscapeCloud = api;
 
