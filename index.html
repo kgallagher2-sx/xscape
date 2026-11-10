@@ -298,6 +298,57 @@
       font-family: Impact, "Arial Black", sans-serif; font-size: 28px; color: var(--gold);
       text-shadow: 0 2px 0 #000, 0 0 8px #000; pointer-events: none; z-index: 5; opacity: 0;
     }
+
+    #hub-gear {
+      width: 100%; max-width: 340px;
+      background: #140e08; border: 1px solid #6a5430; border-radius: 4px;
+      padding: 8px 10px; margin: 0 0 10px; text-align: left;
+    }
+    #hub-gear .hub-gear-title {
+      color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+      text-align: center; margin-bottom: 6px;
+    }
+    #hub-gear-slots {
+      display: grid; grid-template-columns: 72px 1fr; gap: 2px 8px; font-size: 12px;
+    }
+    #hub-gear-slots .k { color: #8a7a58; }
+    #hub-gear-slots .v { color: #fff4c0; font-weight: 700; }
+    #hub-gear-bonuses {
+      margin-top: 6px; font-size: 11px; color: #d8c48a;
+      display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center;
+    }
+    #hub-gear-bonuses b { color: var(--gold); }
+    #hub-gear .hub-gear-note {
+      font-size: 10px; color: #8a7a58; text-align: center; margin-top: 6px; line-height: 1.35;
+    }
+    #debug-combat {
+      position: absolute; left: 6px; top: 6px; z-index: 7;
+      background: rgba(8,4,2,0.78); border: 1px solid #6a5430; border-radius: 3px;
+      color: #c8e8a0; font: 10px/1.35 ui-monospace, Menlo, Consolas, monospace;
+      padding: 4px 6px; pointer-events: none; white-space: pre;
+    }
+    #debug-combat.hidden { display: none; }
+    #move-pad { display: none; position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+    #move-pad.visible { display: block; }
+    #move-pad button {
+      pointer-events: auto; position: absolute;
+      background: linear-gradient(#4a3824, #2c2014);
+      border: 2px solid #7a6238; color: #ffe9a0;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+      border-radius: 6px;
+    }
+    #btn-move-left, #btn-move-right {
+      width: 44px; height: 44px; bottom: 8px; font-size: 18px; line-height: 1;
+    }
+    #btn-move-left { left: 6px; }
+    #btn-move-right { right: 6px; }
+    #btn-run {
+      left: 6px; bottom: 56px; height: 26px; padding: 0 8px;
+      font-size: 10px; letter-spacing: 0.4px;
+    }
+    #btn-run.running { border-color: #c9a24a; color: #ffe44a; }
+    #move-pad button:active { filter: brightness(1.25); }
+
     @media (max-height: 700px) {
       .pray-btn { height: 78px; }
       .pray-btn canvas { width: 40px; height: 40px; }
@@ -317,6 +368,12 @@
     <div id="arena-wrap">
       <canvas id="arena"></canvas>
       <div class="float-msg" id="float-msg"></div>
+      <div id="debug-combat" class="hidden"></div>
+      <div id="move-pad">
+        <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
+        <button type="button" id="btn-move-left" aria-label="Step left">◀</button>
+        <button type="button" id="btn-move-right" aria-label="Step right">▶</button>
+      </div>
     </div>
     <div id="mid">
       <div class="bars">
@@ -375,6 +432,12 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
+      <div id="hub-gear">
+        <div class="hub-gear-title">Equipment</div>
+        <div id="hub-gear-slots"></div>
+        <div id="hub-gear-bonuses"></div>
+        <div class="hub-gear-note">Gear upgrades come later. Better armour and a stronger crossbow will raise your accuracy and max hit.</div>
+      </div>
       <div class="mode-list">
         <button class="btn mode-btn" id="btn-mode-jad" type="button">
           TzTok-Jad
@@ -398,6 +461,7 @@
         <p><b>Missiles:</b> he slams down and stomps the ground. You'll hear a heavy low thud. Protect from Missiles.</p>
         <p><b>Melee:</b> he lunges forward with his claws. Protect from Melee.</p>
         <p>Your crossbow fires on its own. At half health, healers appear — <b>tap them</b> to pull them off Jad.</p>
+        <p>You can <b>step left or right</b> across the tiles (buttons, tap a tile, or A/D). Later bosses will throw fireballs onto your square — walk off before they land. Jad does not use those attacks.</p>
         <p>Eat sharks (heal 20) and sip prayer potions if you slip — each one lands on the next tick and delays your next shot, so eat back up above 70 after a hit. Prayer switching is free.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">Keys 1 / 2 / 3 · F food · P potion</p>
         <div style="text-align:center;margin-top:10px">
@@ -460,8 +524,8 @@
    TUNING KNOBS (easy to tweak)
    ============================================================ */
 const TICK_MS = 600;
-const PLAYER_MAX_HP = 99;
-const PLAYER_MAX_PRAYER = 99;
+let PLAYER_MAX_HP = 99;
+let PLAYER_MAX_PRAYER = 99;
 const JAD_MAX_HP = 360;
 const JAD_MAX_HIT = 97;          // OSRS TzTok-Jad max hit
 const JAD_ACCURACY = 0.92;       // chance an unprotected attack deals damage
@@ -469,7 +533,7 @@ const JAD_HIT_BIAS = 3;          // take the max of this many uniform 0..97 roll
 const HEALER_MAX_HIT = 14;       // pulled healers melee the player for small hits
 const HEALER_ACCURACY = 0.65;
 const HEALER_ATTACK_TICKS = 4;
-const PLAYER_HIT_MIN = 14;
+const PLAYER_HIT_MIN = 14;          // deprecated: hits now use OSRS combat math
 const PLAYER_HIT_MAX = 23;
 const PLAYER_ATTACK_TICKS = 4;
 const SHARK_HEAL = 20;
@@ -501,6 +565,7 @@ const ART_V9 = 1;                 // hosted-build marker: FK77 matches player wo
 const ART_V10 = 1;                // hosted-build marker: abyssal whip, on-head partyhat, shoot anim
 const ART_V11 = 1;                // hosted-build marker: paper crown, neck cape, right-hand xbow, thick whip
 const ART_V12 = 1;                // hosted-build marker: jointed whip, front xbow, bold crown, no atk dial
+const MECH_V13 = 1;               // hosted-build marker: tiles, gear, OSRS combat math
 // Sprite geometry constants (PLAYER_FOOT, FK77_*, PLAYER_BOW_*) live in sprites.js
 const JAD_ARENA_FRAC = 0.42;      // Jad idle height as a fraction of the arena
 const MUSIC_BPM = 96;
@@ -574,8 +639,756 @@ function saveName(n) {
   try { localStorage.setItem(STORAGE.name, n); } catch (e) {}
 }
 
+/* ============================================================
+   MECH_V13 — tiles, gear, and OSRS-faithful combat math
+   Public API (also on window.Xscape once the game boots):
+
+     TILE.cols / TILE.rows
+     tileCenter(col, row)        -> {x, y}  normalized arena coords
+     tileAt(nx, ny)              -> {col, row} or null
+     playerTile()                -> {col, row}
+     queueMoveTo(col, row)
+     queueMoveBy(dcol, drow)
+     setRunning(boolean)
+
+     ITEMS, LOADOUTS, EQUIP_SLOTS, MONSTERS
+     equipLoadout("starter"|"upgrade")
+     playerBonuses()             -> summed equipment bonuses
+     combatVsMonster(monsterId, style)
+     monsterVsPlayer(monsterId, style)
+     launchTileAttack(opts)      -> hazard  (see function comment)
+     testFireball(opts)
+     estimateKill(monsterId, loadout)
+     simulateJadKill(opts)
+
+   Jad itself does not use tile-targeted attacks. Future bosses (Vorkath-style
+   fireballs, raids) should call launchTileAttack and read playerTile().
+   ============================================================ */
+
+const EQUIP_SLOTS = ["head","cape","neck","ammo","weapon","body","shield","legs","hands","feet","ring"];
+const SLOT_LABELS = {
+  head: "Head", cape: "Cape", neck: "Neck", ammo: "Ammo", weapon: "Weapon",
+  body: "Body", shield: "Shield", legs: "Legs", hands: "Hands", feet: "Feet", ring: "Ring"
+};
+
+/* Bonus keys: astab, aslash, acrush, amagic, arange,
+               dstab, dslash, dcrush, dmagic, drange,
+               str (melee), rstr (ranged strength), mdmg (magic damage %). */
+function emptyBonuses() {
+  return {
+    astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0,
+    dstab: 0, dslash: 0, dcrush: 0, dmagic: 0, drange: 0,
+    str: 0, rstr: 0, mdmg: 0
+  };
+}
+
+function b(partial) { return Object.assign(emptyBonuses(), partial); }
+
+/*
+  Item table. Starter pieces are slightly nerfed so Jad is a longer fight and
+  upgrades matter. Upgrade-tier numbers are in the spirit of public OSRS
+  bonuses (black d'hide, rune crossbow, rune bolts, Ava's accumulator).
+  TODO: award an upgrade after a milestone (first cape, a shop, a drop).
+  Call equipLoadout("upgrade") or set Profile.equipment[slot] = itemId.
+*/
+const ITEMS = {
+  leather_cowl:       { id: "leather_cowl", name: "Leather cowl", slot: "head", tier: "starter", bonuses: b({ arange: 1, dstab: 2, dslash: 3, dcrush: 4, dmagic: 2, drange: 3 }) },
+  leather_body:       { id: "leather_body", name: "Leather body", slot: "body", tier: "starter", bonuses: b({ arange: 2, dstab: 8, dslash: 9, dcrush: 10, dmagic: 4, drange: 9 }) },
+  leather_chaps:      { id: "leather_chaps", name: "Leather chaps", slot: "legs", tier: "starter", bonuses: b({ arange: 2, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 1 }) },
+  leather_vambraces:  { id: "leather_vambraces", name: "Leather vambraces", slot: "hands", tier: "starter", bonuses: b({ arange: 3, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 0 }) },
+  leather_boots:      { id: "leather_boots", name: "Leather boots", slot: "feet", tier: "starter", bonuses: b({ dstab: 1, dslash: 1, dcrush: 2, dmagic: 0, drange: 0 }) },
+  bronze_crossbow:    { id: "bronze_crossbow", name: "Bronze crossbow", slot: "weapon", tier: "starter", twohand: false, speed: 4, bonuses: b({ arange: 16 }) },
+  bronze_bolts:       { id: "bronze_bolts", name: "Bronze bolts", slot: "ammo", tier: "starter", bonuses: b({ rstr: 14 }) },
+
+  coif:               { id: "coif", name: "Coif", slot: "head", tier: "upgrade", bonuses: b({ arange: 7, dstab: 4, dslash: 6, dcrush: 8, dmagic: 4, drange: 4 }) },
+  avas_accumulator:   { id: "avas_accumulator", name: "Ava's accumulator", slot: "cape", tier: "upgrade", bonuses: b({ arange: 4, dstab: 0, dslash: 1, dcrush: 0, dmagic: 4, drange: 0 }) },
+  amulet_of_fury:     { id: "amulet_of_fury", name: "Amulet of fury", slot: "neck", tier: "upgrade", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 15, dslash: 15, dcrush: 15, dmagic: 15, drange: 15, str: 8 }) },
+  black_dhide_body:   { id: "black_dhide_body", name: "Black d'hide body", slot: "body", tier: "upgrade", bonuses: b({ arange: 30, amagic: -15, dstab: 30, dslash: 38, dcrush: 45, dmagic: 45, drange: 30 }) },
+  black_dhide_chaps:  { id: "black_dhide_chaps", name: "Black d'hide chaps", slot: "legs", tier: "upgrade", bonuses: b({ arange: 17, amagic: -10, dstab: 18, dslash: 20, dcrush: 26, dmagic: 23, drange: 26 }) },
+  black_dhide_vambs:  { id: "black_dhide_vambs", name: "Black d'hide vambs", slot: "hands", tier: "upgrade", bonuses: b({ arange: 11, dstab: 6, dslash: 5, dcrush: 7, dmagic: 8, drange: 0 }) },
+  snakeskin_boots:    { id: "snakeskin_boots", name: "Snakeskin boots", slot: "feet", tier: "upgrade", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
+  rune_crossbow:      { id: "rune_crossbow", name: "Rune crossbow", slot: "weapon", tier: "upgrade", twohand: false, speed: 4, bonuses: b({ arange: 90 }) },
+  rune_bolts:         { id: "rune_bolts", name: "Rune bolts", slot: "ammo", tier: "upgrade", bonuses: b({ rstr: 115 }) },
+  archers_ring:       { id: "archers_ring", name: "Archers ring", slot: "ring", tier: "upgrade", bonuses: b({ arange: 8 }) }
+};
+
+const LOADOUTS = {
+  starter: {
+    head: "leather_cowl", cape: null, neck: null, ammo: "bronze_bolts",
+    weapon: "bronze_crossbow", body: "leather_body", shield: null,
+    legs: "leather_chaps", hands: "leather_vambraces", feet: "leather_boots", ring: null
+  },
+  // TODO: award this (or individual pieces) after a milestone. No shop yet.
+  upgrade: {
+    head: "coif", cape: "avas_accumulator", neck: "amulet_of_fury", ammo: "rune_bolts",
+    weapon: "rune_crossbow", body: "black_dhide_body", shield: null,
+    legs: "black_dhide_chaps", hands: "black_dhide_vambs", feet: "snakeskin_boots", ring: "archers_ring"
+  }
+};
+
+function defaultLevels() {
+  return { attack: 99, strength: 99, defence: 99, ranged: 99, magic: 99, hitpoints: 99, prayer: 99 };
+}
+
+function emptyEquipment() {
+  const e = {};
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) e[EQUIP_SLOTS[i]] = null;
+  return e;
+}
+
+function cloneLoadout(name) {
+  return Object.assign(emptyEquipment(), LOADOUTS[name] || LOADOUTS.starter);
+}
+
+function normalizeLevels(raw) {
+  const d = defaultLevels();
+  if (!raw || typeof raw !== "object") return d;
+  const out = {};
+  for (const k of Object.keys(d)) {
+    const n = Number(raw[k]);
+    out[k] = isFinite(n) ? clamp(Math.round(n), 1, 99) : d[k];
+  }
+  return out;
+}
+
+function normalizeEquipment(raw) {
+  const e = cloneLoadout("starter");
+  if (!raw || typeof raw !== "object") return e;
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const s = EQUIP_SLOTS[i];
+    if (!Object.prototype.hasOwnProperty.call(raw, s)) continue;
+    const id = raw[s];
+    if (id == null || id === "") { e[s] = null; continue; }
+    const it = ITEMS[id];
+    e[s] = (it && it.slot === s) ? id : e[s];
+  }
+  return e;
+}
+
+function itemInSlot(slot) {
+  const id = Profile.equipment && Profile.equipment[slot];
+  return (id && ITEMS[id]) || null;
+}
+
+function playerBonuses() {
+  const sum = emptyBonuses();
+  const eq = Profile.equipment || emptyEquipment();
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const it = ITEMS[eq[EQUIP_SLOTS[i]]];
+    if (!it || !it.bonuses) continue;
+    for (const k of Object.keys(sum)) sum[k] += (it.bonuses[k] || 0);
+  }
+  return sum;
+}
+
+function playerMaxHp() { return (Profile.levels && Profile.levels.hitpoints) || 99; }
+function playerMaxPray() { return (Profile.levels && Profile.levels.prayer) || 99; }
+
+function syncPlayerCaps() {
+  PLAYER_MAX_HP = playerMaxHp();
+  PLAYER_MAX_PRAYER = playerMaxPray();
+}
+
+function equipLoadout(name) {
+  if (!LOADOUTS[name]) return false;
+  Profile.equipment = cloneLoadout(name);
+  saveProfile();
+  refreshGearViews();
+  updateDebugCombat();
+  return true;
+}
+
+/* ---------- Monsters ----------
+   Jad defence is arcade-tuned (OSRS TzTok-Jad is defence 480 with 0 style
+   bonuses, which would make a bronze crossbow nearly useless). Attack levels
+   and the 97 max hit follow public OSRS figures so an un-prayed hit is still
+   deadly. Healer numbers keep the existing arcade feel. */
+const MONSTERS = {
+  "tztok-jad": {
+    id: "tztok-jad",
+    name: "TzTok-Jad",
+    hitpoints: 360,
+    attack: 750,
+    strength: 240,
+    defence: 60,       // arcade; OSRS is 480 (see osrsDefence)
+    osrsDefence: 480,
+    magic: 510,
+    ranged: 960,
+    bonuses: b({ amagic: 60, arange: 60, str: 0, rstr: 0 }),
+    defBonuses: b({}),
+    maxHit: { mage: 97, ranged: 97, melee: 97 },
+    attackSpeed: 8
+  },
+  healer: {
+    id: "healer",
+    name: "Yt-HurKot",
+    hitpoints: 32,
+    attack: 190,
+    strength: 70,
+    defence: 40,
+    magic: 1,
+    ranged: 1,
+    bonuses: b({ astab: 0, aslash: 0, acrush: 0, str: 0 }),
+    defBonuses: b({ drange: 0 }),
+    maxHit: { melee: 14 },
+    attackSpeed: 4
+  }
+};
+
+/* ---------- OSRS combat formulas (Wiki: Damage per second) ----------
+   Players:  effectiveLevel = floor(level * prayerMult) + stanceBonus + 8
+   NPCs:     effectiveAttack / Defence = skill + 9
+   maxAttackRoll  = effectiveAttack  * (attackBonus + 64)
+   maxDefenceRoll = effectiveDefence * (defenceBonus + 64)
+   If atk > def:  hitChance = 1 - (def + 2) / (2 * (atk + 1))
+   else:          hitChance = atk / (2 * (def + 1))
+   Ranged max hit: floor(0.5 + effectiveRanged * (rangedStr + 64) / 640)
+   Melee max hit:  floor(0.5 + effectiveStr    * (meleeStr  + 64) / 640)
+
+   Stance: the player's crossbow uses Rapid (+0 visible levels) at the
+   arcade attack speed of PLAYER_ATTACK_TICKS (4). Offensive prayers are
+   not wired up yet (prayerMult = 1). Protection prayers still zero a
+   matching style's damage after the roll. */
+function effectivePlayerLevel(level, prayerMult, stanceBonus) {
+  return Math.floor((level || 1) * (prayerMult == null ? 1 : prayerMult)) + (stanceBonus || 0) + 8;
+}
+function effectiveNpcLevel(level) {
+  return (level || 1) + 9;
+}
+function maxRoll(effectiveLevel, bonus) {
+  return effectiveLevel * ((bonus || 0) + 64);
+}
+function hitChance(atkRoll, defRoll) {
+  atkRoll = Math.max(0, atkRoll);
+  defRoll = Math.max(0, defRoll);
+  if (atkRoll > defRoll) return 1 - (defRoll + 2) / (2 * (atkRoll + 1));
+  return atkRoll / (2 * (defRoll + 1));
+}
+function maxHitFrom(effectiveLevel, styleBonus) {
+  return Math.floor(0.5 + effectiveLevel * ((styleBonus || 0) + 64) / 640);
+}
+function rollHit(maxHit, chance) {
+  if (Math.random() >= chance) return 0;
+  return rand(0, Math.max(0, maxHit));
+}
+function expectedDamage(maxHit, chance) {
+  return chance * (Math.max(0, maxHit) / 2);
+}
+
+function styleAttackBonus(bonuses, style) {
+  if (style === "ranged" || style === "range") return bonuses.arange || 0;
+  if (style === "mage" || style === "magic") return bonuses.amagic || 0;
+  if (style === "slash") return bonuses.aslash || 0;
+  if (style === "stab") return bonuses.astab || 0;
+  return bonuses.acrush || 0; // melee / crush default
+}
+function styleDefenceBonus(bonuses, style) {
+  if (style === "ranged" || style === "range") return bonuses.drange || 0;
+  if (style === "mage" || style === "magic") return bonuses.dmagic || 0;
+  if (style === "slash") return bonuses.dslash || 0;
+  if (style === "stab") return bonuses.dstab || 0;
+  return bonuses.dcrush || 0;
+}
+
+function combatVsMonster(monsterId, style) {
+  style = style || "ranged";
+  const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
+  const lv = Profile.levels || defaultLevels();
+  const pb = playerBonuses();
+  const stance = 0; // Rapid
+  let atkLevel, atkBonus, strBonus, max;
+  if (style === "ranged" || style === "range") {
+    atkLevel = effectivePlayerLevel(lv.ranged, 1, stance);
+    atkBonus = pb.arange;
+    strBonus = pb.rstr;
+    max = maxHitFrom(atkLevel, strBonus);
+  } else if (style === "mage" || style === "magic") {
+    atkLevel = effectivePlayerLevel(lv.magic, 1, stance);
+    atkBonus = pb.amagic;
+    max = 0; // no player mage kit yet
+  } else {
+    atkLevel = effectivePlayerLevel(lv.attack, 1, stance);
+    atkBonus = styleAttackBonus(pb, style);
+    max = maxHitFrom(effectivePlayerLevel(lv.strength, 1, stance), pb.str);
+  }
+  const atkRoll = maxRoll(atkLevel, atkBonus);
+  const defRoll = maxRoll(effectiveNpcLevel(mon.defence), styleDefenceBonus(mon.defBonuses || emptyBonuses(), style));
+  const chance = hitChance(atkRoll, defRoll);
+  return {
+    style, maxHit: max, chance, atkRoll, defRoll,
+    atkLevel, atkBonus, defLevel: mon.defence,
+    defBonus: styleDefenceBonus(mon.defBonuses || emptyBonuses(), style),
+    expected: expectedDamage(max, chance)
+  };
+}
+
+function monsterVsPlayer(monsterId, style) {
+  style = style || "ranged";
+  if (style === "range") style = "ranged";
+  if (style === "magic") style = "mage";
+  const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
+  const lv = Profile.levels || defaultLevels();
+  const pb = playerBonuses();
+  let atkSkill;
+  if (style === "ranged") atkSkill = mon.ranged;
+  else if (style === "mage") atkSkill = mon.magic;
+  else atkSkill = mon.attack;
+  const atkRoll = maxRoll(effectiveNpcLevel(atkSkill), styleAttackBonus(mon.bonuses || emptyBonuses(), style === "mage" ? "magic" : style));
+  const defRoll = maxRoll(effectivePlayerLevel(lv.defence, 1, 0), styleDefenceBonus(pb, style === "mage" ? "magic" : style));
+  const max = (mon.maxHit && (mon.maxHit[style] || mon.maxHit.melee || mon.maxHit.ranged)) || 1;
+  const chance = hitChance(atkRoll, defRoll);
+  return { style, maxHit: max, chance, atkRoll, defRoll, expected: expectedDamage(max, chance) };
+}
+
+function estimateKill(monsterId, loadout) {
+  const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
+  const saved = Profile.equipment;
+  if (loadout && LOADOUTS[loadout]) Profile.equipment = cloneLoadout(loadout);
+  const vs = combatVsMonster(mon.id, "ranged");
+  Profile.equipment = saved;
+  const ev = Math.max(0.01, vs.expected);
+  const shots = Math.ceil(mon.hitpoints / ev);
+  // resetFight starts atkCd at 1, so the first shot is on tick 1, then every PLAYER_ATTACK_TICKS.
+  const ticks = 1 + Math.max(0, shots - 1) * PLAYER_ATTACK_TICKS;
+  const seconds = ticks * (TICK_MS / 1000);
+  return {
+    loadout: loadout || "current",
+    maxHit: vs.maxHit,
+    chance: vs.chance,
+    expectedPerShot: ev,
+    shots, ticks, seconds,
+    // Assumes healers are pulled immediately (they otherwise out-heal starter DPS).
+    note: "expected-value, healers pulled, no movement delay"
+  };
+}
+
+function simulateJadKill(opts) {
+  opts = opts || {};
+  const saved = Profile.equipment;
+  if (opts.loadout && LOADOUTS[opts.loadout]) Profile.equipment = cloneLoadout(opts.loadout);
+  const vs = combatVsMonster("tztok-jad", "ranged");
+  const hpTotal = (MONSTERS["tztok-jad"] && MONSTERS["tztok-jad"].hitpoints) || JAD_MAX_HP;
+  let hp = hpTotal;
+  let ticks = 0, shots = 0, hits = 0, damage = 0;
+  let atkCd = 1;
+  const cap = opts.maxTicks || 5000;
+  const useExpected = !!opts.expected;
+  while (hp > 0 && ticks < cap) {
+    ticks++;
+    atkCd--;
+    if (atkCd <= 0) {
+      shots++;
+      const dmg = useExpected ? vs.expected : rollHit(vs.maxHit, vs.chance);
+      if (dmg > 0) hits++;
+      damage += dmg;
+      hp -= dmg;
+      atkCd = PLAYER_ATTACK_TICKS;
+    }
+  }
+  Profile.equipment = saved;
+  return {
+    loadout: opts.loadout || "current",
+    ticks, seconds: ticks * (TICK_MS / 1000),
+    shots, hits, misses: shots - hits, damage, killed: hp <= 0,
+    maxHit: vs.maxHit, chance: vs.chance, expectedPerShot: vs.expected
+  };
+}
+
+/* ---------- Tile grid + tile-targeted attacks ----------
+   A single row of TILE.cols tiles along the arena floor. TILE.rows is 1 for
+   now; tileCenter / queueMoveTo already take a row so later bosses can add
+   rows toward the boss without changing the API.
+
+   launchTileAttack(opts):
+     kind        visual id ("fireball", "acid", ...). "fireball" gets a falling orb.
+     col, row    targeted tile (row defaults to 0). Locked in at launch.
+     delayTicks  ticks until impact. Decremented at the start of each gameTick.
+                 Movement is applied first, so walking off on the landing tick dodges.
+     damage      number, or function(hazard, player) -> number
+     prayer      if set ("mage"/"range"/"melee") and the player has it on, damage is 0
+     source, onHit, onMiss  optional
+   Returns the hazard object (also pushed onto G.tileHazards). */
+const TILE = {
+  cols: 5,
+  rows: 1,
+  x0: 0.16,
+  x1: 0.84
+};
+
+function tileCenter(col, row) {
+  col = clamp(col, 0, TILE.cols - 1);
+  row = clamp(row == null ? 0 : row, 0, Math.max(0, TILE.rows - 1));
+  const x = TILE.cols <= 1 ? 0.5 : TILE.x0 + (TILE.x1 - TILE.x0) * (col / (TILE.cols - 1));
+  const yBase = (L && L.playerY) || 0.88;
+  const y = yBase - row * tileSpanY();
+  return { x, y };
+}
+
+function tileSpanY() {
+  const s = tileSizeCss();
+  return (s.h / Math.max(1, cssH)) * 0.92;
+}
+
+function tileSizeCss() {
+  const span = (TILE.x1 - TILE.x0);
+  const w = (cssW * span) / Math.max(1, TILE.cols - 1);
+  const size = Math.max(28, Math.min(w * 0.86, cssH * 0.11, cssW * 0.16));
+  return { w: size, h: size };
+}
+
+function tileRect(col, row) {
+  const c = tileCenter(col, row);
+  const s = tileSizeCss();
+  return { x: c.x * cssW - s.w / 2, y: c.y * cssH - s.h * 0.35, w: s.w, h: s.h };
+}
+
+function tileAt(nx, ny) {
+  for (let r = 0; r < TILE.rows; r++) {
+    for (let c = 0; c < TILE.cols; c++) {
+      const rec = tileRect(c, r);
+      const x = nx * cssW, y = ny * cssH;
+      if (x >= rec.x && x <= rec.x + rec.w && y >= rec.y && y <= rec.y + rec.h) {
+        return { col: c, row: r };
+      }
+    }
+  }
+  return null;
+}
+
+function playerTile() {
+  if (!G.player) return { col: Math.floor(TILE.cols / 2), row: 0 };
+  return {
+    col: G.player.tileCol != null ? G.player.tileCol : Math.floor(TILE.cols / 2),
+    row: G.player.tileRow != null ? G.player.tileRow : 0
+  };
+}
+
+function ensurePlayerTile() {
+  if (!G.player) return;
+  const mid = Math.floor(TILE.cols / 2);
+  if (G.player.tileCol == null) G.player.tileCol = mid;
+  if (G.player.tileRow == null) G.player.tileRow = 0;
+  G.player.tileCol = clamp(G.player.tileCol, 0, TILE.cols - 1);
+  G.player.tileRow = clamp(G.player.tileRow, 0, Math.max(0, TILE.rows - 1));
+  if (G.player.prevCol == null) G.player.prevCol = G.player.tileCol;
+  if (G.player.prevRow == null) G.player.prevRow = G.player.tileRow;
+}
+
+function syncPlayerWorldPos(snap) {
+  if (!G.player) return;
+  ensurePlayerTile();
+  const cur = tileCenter(G.player.tileCol, G.player.tileRow);
+  if (snap || !G.player.movedThisTick || G.mode !== "playing") {
+    G.player.x = cur.x;
+    G.player.y = cur.y;
+    return;
+  }
+  const prev = tileCenter(G.player.prevCol, G.player.prevRow);
+  const u = tickProgress();
+  G.player.x = prev.x + (cur.x - prev.x) * u;
+  G.player.y = prev.y + (cur.y - prev.y) * u;
+}
+
+function queueMoveTo(col, row) {
+  if (!G.player || G.mode !== "playing" || G.player.hp <= 0) return false;
+  ensurePlayerTile();
+  const c = clamp(col, 0, TILE.cols - 1);
+  const r = clamp(row == null ? G.player.tileRow : row, 0, Math.max(0, TILE.rows - 1));
+  if (c === G.player.tileCol && r === G.player.tileRow && G.player.destCol == null) return false;
+  G.player.destCol = c;
+  G.player.destRow = r;
+  return true;
+}
+
+function queueMoveBy(dcol, drow) {
+  if (!G.player) return false;
+  ensurePlayerTile();
+  const fromC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
+  const fromR = (G.player.destRow != null) ? G.player.destRow : G.player.tileRow;
+  return queueMoveTo(fromC + (dcol || 0), fromR + (drow || 0));
+}
+
+function setRunning(on) {
+  G.running = !!on;
+  const btn = $("btn-run");
+  if (btn) {
+    btn.classList.toggle("running", G.running);
+    btn.textContent = G.running ? "Run" : "Walk";
+  }
+}
+
+function processMovement() {
+  if (!G.player) return false;
+  ensurePlayerTile();
+  const destC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
+  const destR = (G.player.destRow != null) ? G.player.destRow : G.player.tileRow;
+  if (destC === G.player.tileCol && destR === G.player.tileRow) {
+    G.player.movedThisTick = false;
+    G.player.prevCol = G.player.tileCol;
+    G.player.prevRow = G.player.tileRow;
+    G.player.destCol = null;
+    G.player.destRow = null;
+    return false;
+  }
+  G.player.prevCol = G.player.tileCol;
+  G.player.prevRow = G.player.tileRow;
+  let remaining = G.running ? 2 : 1;
+  const dc = destC - G.player.tileCol;
+  const stepC = Math.min(remaining, Math.abs(dc)) * (dc > 0 ? 1 : dc < 0 ? -1 : 0);
+  G.player.tileCol = clamp(G.player.tileCol + stepC, 0, TILE.cols - 1);
+  remaining -= Math.abs(stepC);
+  const dr = destR - G.player.tileRow;
+  const stepR = Math.min(remaining, Math.abs(dr)) * (dr > 0 ? 1 : dr < 0 ? -1 : 0);
+  G.player.tileRow = clamp(G.player.tileRow + stepR, 0, Math.max(0, TILE.rows - 1));
+  G.player.movedThisTick = (G.player.tileCol !== G.player.prevCol) || (G.player.tileRow !== G.player.prevRow);
+  if (G.player.tileCol === destC && G.player.tileRow === destR) {
+    G.player.destCol = null;
+    G.player.destRow = null;
+  }
+  return G.player.movedThisTick;
+}
+
+function launchTileAttack(opts) {
+  opts = opts || {};
+  if (!G.tileHazards) G.tileHazards = [];
+  const pt = playerTile();
+  const hazard = {
+    kind: opts.kind || "aoe",
+    col: clamp(opts.col != null ? opts.col : pt.col, 0, TILE.cols - 1),
+    row: clamp(opts.row != null ? opts.row : pt.row, 0, Math.max(0, TILE.rows - 1)),
+    delay: Math.max(0, opts.delayTicks == null ? 4 : opts.delayTicks | 0),
+    damage: opts.damage,
+    prayer: opts.prayer || null,
+    source: opts.source || null,
+    onHit: opts.onHit || null,
+    onMiss: opts.onMiss || null,
+    bornTick: G.ticks || 0,
+    t: 0
+  };
+  G.tileHazards.push(hazard);
+  if (hazard.delay <= 0) {
+    resolveTileAttack(hazard);
+    G.tileHazards = G.tileHazards.filter((h) => h !== hazard);
+  }
+  return hazard;
+}
+
+function resolveTileAttack(h) {
+  if (G.mode !== "playing" || !G.player || G.player.hp <= 0) return;
+  const here = playerTile();
+  const onTile = here.col === h.col && here.row === h.row;
+  const c = tileCenter(h.col, h.row);
+  if (!onTile) {
+    if (typeof h.onMiss === "function") h.onMiss(h);
+    flashMsg("Dodged!", "#7dff7d");
+    burst(c.x * cssW, c.y * cssH, "#ffaa44", 8);
+    return;
+  }
+  let dmg = 0;
+  if (h.prayer && G.prayer === h.prayer) {
+    spawnSplat(G.player.x, G.player.y - 0.1, 0, "blue");
+    if (typeof h.onHit === "function") h.onHit(h, 0);
+    return;
+  }
+  if (typeof h.damage === "function") dmg = h.damage(h, G.player) | 0;
+  else dmg = (h.damage == null ? 40 : h.damage) | 0;
+  dmg = Math.max(0, dmg);
+  G.player.hp = clamp(G.player.hp - dmg, 0, PLAYER_MAX_HP);
+  if (dmg > 0) G.damageTaken += dmg;
+  spawnSplat(G.player.x, G.player.y - 0.1, dmg, dmg > 0 ? "red" : "blue");
+  if (dmg > 0) {
+    shake = dmg >= 40 ? 14 : 8;
+    audio.hit();
+    burst(c.x * cssW, c.y * cssH, "#ff6a20", 16);
+  }
+  if (typeof h.onHit === "function") h.onHit(h, dmg);
+  if (G.player.hp <= 0) endLose();
+  updateHud();
+}
+
+function tickTileAttacks() {
+  if (!G.tileHazards || !G.tileHazards.length) return;
+  const keep = [];
+  for (let i = 0; i < G.tileHazards.length; i++) {
+    const h = G.tileHazards[i];
+    h.delay--;
+    if (h.delay <= 0) resolveTileAttack(h);
+    else keep.push(h);
+  }
+  G.tileHazards = keep;
+}
+
+function testFireball(opts) {
+  opts = opts || {};
+  if (G.mode !== "playing") {
+    try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
+    try { localStorage.setItem(STORAGE.intro, "1"); } catch (e) {}
+    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (typeof window.Xscape !== "undefined" && window.Xscape.startFight) window.Xscape.startFight();
+    else if (typeof startPlaying === "function") startPlaying();
+  }
+  const pt = playerTile();
+  return launchTileAttack({
+    kind: "fireball",
+    col: opts.col != null ? opts.col : pt.col,
+    row: opts.row != null ? opts.row : pt.row,
+    delayTicks: opts.delayTicks != null ? opts.delayTicks : 4,
+    damage: opts.damage != null ? opts.damage : 40,
+    prayer: null,
+    source: "debug"
+  });
+}
+
+function drawArenaTiles(t) {
+  if (G.mode !== "playing" || !cssW) return;
+  const s = tileSizeCss();
+  for (let r = 0; r < TILE.rows; r++) {
+    for (let c = 0; c < TILE.cols; c++) {
+      const rec = tileRect(c, r);
+      const stand = G.player && G.player.tileCol === c && G.player.tileRow === r;
+      ctx.save();
+      ctx.globalAlpha = stand ? 0.42 : 0.22;
+      ctx.fillStyle = stand ? "#5a3c24" : "#3a2618";
+      ctx.strokeStyle = "#c4a06a";
+      ctx.lineWidth = 1.2;
+      const rr = 4;
+      ctx.beginPath();
+      ctx.moveTo(rec.x + rr, rec.y);
+      ctx.lineTo(rec.x + rec.w - rr, rec.y);
+      ctx.quadraticCurveTo(rec.x + rec.w, rec.y, rec.x + rec.w, rec.y + rr);
+      ctx.lineTo(rec.x + rec.w, rec.y + rec.h - rr);
+      ctx.quadraticCurveTo(rec.x + rec.w, rec.y + rec.h, rec.x + rec.w - rr, rec.y + rec.h);
+      ctx.lineTo(rec.x + rr, rec.y + rec.h);
+      ctx.quadraticCurveTo(rec.x, rec.y + rec.h, rec.x, rec.y + rec.h - rr);
+      ctx.lineTo(rec.x, rec.y + rr);
+      ctx.quadraticCurveTo(rec.x, rec.y, rec.x + rr, rec.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = stand ? 0.55 : 0.28;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  if (G.player && G.player.destCol != null) {
+    const rec = tileRect(G.player.destCol, G.player.destRow || 0);
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = "#ffe44a";
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(rec.x + 3, rec.y + 3, rec.w - 6, rec.h - 6);
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = "#ffe44a";
+    ctx.fillRect(rec.x + 3, rec.y + 3, rec.w - 6, rec.h - 6);
+    ctx.restore();
+  }
+}
+
+function drawTileHazards(t) {
+  if (!G.tileHazards || !G.tileHazards.length) return;
+  for (let i = 0; i < G.tileHazards.length; i++) {
+    const h = G.tileHazards[i];
+    const rec = tileRect(h.col, h.row);
+    const cx = rec.x + rec.w / 2, cy = rec.y + rec.h / 2;
+    const pulse = 0.55 + Math.sin((t || 0) * 8 + h.delay) * 0.25;
+    ctx.save();
+    ctx.globalAlpha = 0.35 + pulse * 0.25;
+    ctx.fillStyle = "rgba(180,30,10,0.85)";
+    ctx.strokeStyle = "#ffb040";
+    ctx.lineWidth = 2.4;
+    ctx.fillRect(rec.x + 2, rec.y + 2, rec.w - 4, rec.h - 4);
+    ctx.strokeRect(rec.x + 2, rec.y + 2, rec.w - 4, rec.h - 4);
+    if (h.kind === "fireball") {
+      const fall = clamp(1 - h.delay / 4, 0, 1);
+      const orbY = cy - rec.h * 1.6 * (1 - fall);
+      const rad = 9 + fall * 4;
+      const grd = ctx.createRadialGradient(cx, orbY, 1, cx, orbY, rad);
+      grd.addColorStop(0, "#fff6c0");
+      grd.addColorStop(0.35, "#ff9a20");
+      grd.addColorStop(1, "rgba(180,20,0,0)");
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(cx, orbY, rad, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = "#ffe9a0";
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.globalAlpha = 0.95;
+    ctx.fillText(String(Math.max(0, h.delay)), cx, rec.y - 8);
+    ctx.restore();
+  }
+}
+
+function setPlayingChrome(on) {
+  const pad = $("move-pad");
+  if (pad) pad.classList.toggle("visible", !!on);
+  updateDebugCombat();
+}
+
+function debugEnabled() {
+  if (G.debugCombat) return true;
+  try {
+    const q = new URLSearchParams(location.search);
+    if (!q.has("debug")) return false;
+    const v = q.get("debug");
+    return v === "" || v === "1" || v.toLowerCase() === "true";
+  } catch (e) { return false; }
+}
+
+function updateDebugCombat() {
+  const el = $("debug-combat");
+  if (!el) return;
+  const show = debugEnabled();
+  el.classList.toggle("hidden", !show);
+  if (!show) return;
+  const vs = combatVsMonster("tztok-jad", "ranged");
+  const def = monsterVsPlayer("tztok-jad", "ranged");
+  const pb = playerBonuses();
+  const tile = playerTile();
+  const weapon = itemInSlot("weapon");
+  el.textContent = [
+    "vs Jad  acc " + Math.round(vs.chance * 1000) / 10 + "%  max " + vs.maxHit,
+    "atkRoll " + vs.atkRoll + "  defRoll " + vs.defRoll,
+    "rAtk +" + pb.arange + "  rStr +" + pb.rstr + "  " + (weapon ? weapon.name : "unarmed"),
+    "Jad hits you  acc " + Math.round(def.chance * 1000) / 10 + "%  max " + def.maxHit,
+    "tile " + tile.col + "," + tile.row + (G.running ? "  RUN" : "  walk")
+  ].join("\n");
+}
+
+function refreshGearViews() {
+  drawGearIcons(true);
+  renderHubGear();
+}
+
+function renderHubGear() {
+  const slots = $("hub-gear-slots");
+  const bonusEl = $("hub-gear-bonuses");
+  if (!slots) return;
+  const eq = Profile.equipment || cloneLoadout("starter");
+  slots.innerHTML = EQUIP_SLOTS.map((s) => {
+    const it = eq[s] && ITEMS[eq[s]];
+    const name = it ? it.name : "—";
+    return '<div class="k">' + SLOT_LABELS[s] + '</div><div class="v">' + name + "</div>";
+  }).join("");
+  if (bonusEl) {
+    const pb = playerBonuses();
+    const vs = combatVsMonster("tztok-jad", "ranged");
+    bonusEl.innerHTML =
+      "<span>Ranged atk <b>+" + pb.arange + "</b></span>" +
+      "<span>Ranged str <b>+" + pb.rstr + "</b></span>" +
+      "<span>Def (range) <b>+" + pb.drange + "</b></span>" +
+      "<span>vs Jad <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
+  }
+}
+
+function gearSlotColor(tier) {
+  return tier === "upgrade" ? "#3a5a28" : "#5a3a1c";
+}
+
+
+
 /* Persistent player profile (name + GP). Modes read from this, not from fight state. */
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter") };
 
 function loadProfile() {
   try {
@@ -585,20 +1398,28 @@ function loadProfile() {
       Profile.gp = Math.max(0, Number(raw.gp) || 0);
       Profile.hasFireCape = !!raw.hasFireCape;
       Profile.seenFirstKill = !!raw.seenFirstKill;
+      Profile.levels = normalizeLevels(raw.levels);
+      Profile.equipment = normalizeEquipment(raw.equipment);
     } else {
       Profile.name = loadName();
       Profile.gp = 0;
       Profile.hasFireCape = false;
       Profile.seenFirstKill = false;
+      Profile.levels = defaultLevels();
+      Profile.equipment = cloneLoadout("starter");
     }
   } catch (e) {
     Profile.name = loadName();
     Profile.gp = 0;
     Profile.hasFireCape = false;
     Profile.seenFirstKill = false;
+    Profile.levels = defaultLevels();
+    Profile.equipment = cloneLoadout("starter");
   }
+  syncPlayerCaps();
   G.name = Profile.name;
   G.gp = Profile.gp;
+  if (typeof $ === "function" && $("gear")) refreshGearViews();
   return Profile;
 }
 
@@ -606,7 +1427,9 @@ function saveProfile() {
   try {
     localStorage.setItem(STORAGE.profile, JSON.stringify({
       name: Profile.name, gp: Profile.gp,
-      hasFireCape: !!Profile.hasFireCape, seenFirstKill: !!Profile.seenFirstKill
+      hasFireCape: !!Profile.hasFireCape, seenFirstKill: !!Profile.seenFirstKill,
+      levels: Profile.levels || defaultLevels(),
+      equipment: Profile.equipment || cloneLoadout("starter")
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
   } catch (e) {}
@@ -1217,7 +2040,10 @@ function layoutFighters() {
   };
   if (typeof csActive !== "function" || !csActive()) {
     if (G.jad) { G.jad.x = 0.5; G.jad.y = L.jadY; }
-    if (G.player) { G.player.x = 0.5; G.player.y = L.playerY; }
+    if (G.player) {
+      G.player.y = L.playerY;
+      syncPlayerWorldPos(true);
+    }
     layoutHealers();
   } else if (G.cs && G.cs.kind === "firstkill" && G.cs.fkY != null) {
     G.cs.fkY = L.playerY;
@@ -1292,6 +2118,9 @@ const G = {
   waveFlash: 0,
   lastTickMs: 0,
   clickMarks: [],
+  tileHazards: [],
+  running: false,
+  debugCombat: false,
   eatCd: 0,
   potCd: 0,
   pendingEat: false,
@@ -1312,7 +2141,14 @@ function telegraphTicksForHp(hpFrac) {
 }
 
 function resetFight() {
-  G.player = { hp: PLAYER_MAX_HP, prayerPts: PLAYER_MAX_PRAYER, atkCd: 1, x: 0.5, y: 0.86, gp: Profile.gp };
+  syncPlayerCaps();
+  const mid = Math.floor(TILE.cols / 2);
+  G.player = {
+    hp: PLAYER_MAX_HP, prayerPts: PLAYER_MAX_PRAYER, atkCd: 1,
+    x: 0.5, y: 0.86, gp: Profile.gp,
+    tileCol: mid, tileRow: 0, prevCol: mid, prevRow: 0,
+    destCol: null, destRow: null, movedThisTick: false
+  };
   G.jad = {
     hp: JAD_MAX_HP, phase: "idle", style: null, telLeft: 0, recLeft: 1,
     bob: 0, hurt: 0, x: 0.5, y: 0.44
@@ -1339,10 +2175,13 @@ function resetFight() {
   G.waveFlash = 1.2;
   G.lastTickMs = now();
   G.clickMarks = [];
+  G.tileHazards = [];
   shake = 0;
   layoutFighters();
+  syncPlayerWorldPos(true);
   updateHud();
   updatePrayerButtons();
+  updateDebugCombat();
 }
 
 function pickJadStyle() {
@@ -1387,14 +2226,12 @@ function jadImpact() {
   G.jad.style = null;
 }
 
-function rollJadDamage() {
-  if (Math.random() > JAD_ACCURACY) return 0;
-  let dmg = 0;
-  for (let i = 0; i < JAD_HIT_BIAS; i++) dmg = Math.max(dmg, rand(0, JAD_MAX_HIT));
-  return dmg;
+function rollJadDamage(style) {
+  const vs = monsterVsPlayer("tztok-jad", style || "ranged");
+  return rollHit(vs.maxHit, vs.chance);
 }
 
-function applyJadHit(protectedOk) {
+function applyJadHit(protectedOk, style) {
   if (G.mode !== "playing" || !G.player || G.player.hp <= 0) return;
   if (protectedOk) {
     spawnSplat(G.player.x, G.player.y - 0.1, 0, "blue");
@@ -1402,7 +2239,7 @@ function applyJadHit(protectedOk) {
     audio.block();
     flashMsg("PROTECTED", "#7ad8ff");
   } else {
-    const dmg = rollJadDamage();
+    const dmg = rollJadDamage(style);
     G.player.hp = clamp(G.player.hp - dmg, 0, PLAYER_MAX_HP);
     if (dmg > 0) G.damageTaken += dmg;
     spawnSplat(G.player.x, G.player.y - 0.1, dmg, dmg > 0 ? "red" : "blue");
@@ -1455,7 +2292,9 @@ function playerAttack() {
     G.target = "jad";
   }
   const dest = boltTarget();
-  const dmg = rand(PLAYER_HIT_MIN, PLAYER_HIT_MAX);
+  const monId = dest.kind === "healer" ? "healer" : "tztok-jad";
+  const vs = combatVsMonster(monId, "ranged");
+  const dmg = rollHit(vs.maxHit, vs.chance);
   G.bolts.push({
     t: 0, dur: BOLT_TRAVEL, dmg, dest,
     from: (function () {
@@ -1488,11 +2327,12 @@ function applyHealerHit(h) {
     spawnSplat(G.player.x + (Math.random() - 0.5) * 0.06, G.player.y - 0.08, 0, "blue");
     return;
   }
-  if (Math.random() > HEALER_ACCURACY) {
+  const vs = monsterVsPlayer("healer", "melee");
+  const dmg = rollHit(vs.maxHit, vs.chance);
+  if (dmg <= 0) {
     spawnSplat(G.player.x + (Math.random() - 0.5) * 0.06, G.player.y - 0.08, 0, "blue");
     return;
   }
-  const dmg = rand(0, HEALER_MAX_HIT);
   G.player.hp = clamp(G.player.hp - dmg, 0, PLAYER_MAX_HP);
   if (dmg > 0) G.damageTaken += dmg;
   spawnSplat(G.player.x + (Math.random() - 0.5) * 0.06, G.player.y - 0.08, dmg, dmg > 0 ? "red" : "blue");
@@ -1550,14 +2390,19 @@ function gameTick() {
     }
   }
 
+  const moved = processMovement();
+  tickTileAttacks();
+
   G.player.atkCd--;
-  if (G.player.atkCd <= 0 && G.player.hp > 0 && j.hp > 0) {
+  if (G.player.atkCd < 0) G.player.atkCd = 0;
+  if (!moved && G.player.atkCd <= 0 && G.player.hp > 0 && j.hp > 0) {
     playerAttack();
     G.player.atkCd = PLAYER_ATTACK_TICKS;
   }
 
   tickHealers();
   updateHud();
+  updateDebugCombat();
 }
 
 function tickProgress() {
@@ -1703,6 +2548,7 @@ function updateHud() {
   $("hud-time").textContent = fmtTime(G.elapsedMs / 1000);
   $("hud-score").textContent = String(liveScore());
   updateConsumeVisuals();
+  setPlayingChrome(G.mode === "playing");
 }
 
 function buildResult() {
@@ -1745,6 +2591,7 @@ function fillResultGrid(el, result, score, survived) {
 
 function endWin() {
   if (G.mode !== "playing") return;
+  setPlayingChrome(false);
   G.jad.hp = 0;
   const gpAwarded = rollJadGp();
   awardGp(gpAwarded);
@@ -1763,6 +2610,7 @@ function endWin() {
 
 function endLose() {
   if (G.mode !== "playing") return;
+  setPlayingChrome(false);
   G.mode = "lose";
   G.player.hp = 0;
   const result = buildResult();
@@ -2380,7 +3228,7 @@ function drawProjectiles(dt) {
       ctx.arc(p.to.x * cssW, p.to.y * cssH, 20 + k * 16, -0.2, 1.4);
       ctx.stroke();
     }
-    if (p.t >= p.dur) applyJadHit(G.prayer === p.kind);
+    if (p.t >= p.dur) applyJadHit(G.prayer === p.kind, p.kind);
     else keep.push(p);
   }
   G.projectiles = keep;
@@ -2555,47 +3403,54 @@ function refreshPrayIcons() {
   drawPrayerIcon(mel.getContext("2d"), "melee", G.prayer === "melee");
 }
 
-function drawGearIcons() {
+function drawGearIcons(force) {
   const host = $("gear");
-  if (host.dataset.ready) return;
-  const items = ["helm","neck","cape","body","bow","legs","boots","ammo"];
+  if (!host) return;
+  const key = JSON.stringify(Profile.equipment || {});
+  if (!force && host.dataset.ready === key) return;
+  const order = ["head","neck","cape","body","weapon","legs","feet","ammo"];
   host.innerHTML = "";
-  for (const id of items) {
+  for (const slot of order) {
+    const it = itemInSlot(slot);
     const wrap = document.createElement("div");
     wrap.className = "gslot";
-    wrap.title = id;
+    wrap.title = it ? it.name : SLOT_LABELS[slot];
     const c = document.createElement("canvas");
     c.width = 56; c.height = 56;
     wrap.appendChild(c);
     host.appendChild(wrap);
     const g = c.getContext("2d");
     g.scale(2, 2);
-    if (id === "helm") {
-      g.fillStyle = "#4a7a30"; g.beginPath(); g.arc(14, 15, 9, 0, Math.PI*2); g.fill();
+    const col = it ? gearSlotColor(it.tier) : "#2a2014";
+    const id = slot;
+    if (id === "head") {
+      g.fillStyle = col; g.beginPath(); g.arc(14, 15, 9, 0, Math.PI*2); g.fill();
       g.fillStyle = "#e8c8a0"; g.beginPath(); g.arc(14, 16, 5, 0, Math.PI); g.fill();
     } else if (id === "neck") {
-      g.strokeStyle = "#e0c040"; g.lineWidth = 2; g.beginPath(); g.arc(14, 12, 7, 0.2, Math.PI-0.2); g.stroke();
-      g.fillStyle = "#c03020"; g.beginPath(); g.arc(14, 20, 3, 0, Math.PI*2); g.fill();
+      g.strokeStyle = it ? "#e0c040" : "#5a4a28"; g.lineWidth = 2; g.beginPath(); g.arc(14, 12, 7, 0.2, Math.PI-0.2); g.stroke();
+      if (it) { g.fillStyle = "#c03020"; g.beginPath(); g.arc(14, 20, 3, 0, Math.PI*2); g.fill(); }
     } else if (id === "cape") {
-      g.fillStyle = "#4a6a28"; g.beginPath(); g.moveTo(10,6); g.lineTo(8,24); g.lineTo(20,24); g.lineTo(18,6); g.fill();
+      g.fillStyle = it ? (it.tier === "upgrade" ? "#3a6a28" : col) : "#2a2014";
+      g.beginPath(); g.moveTo(10,6); g.lineTo(8,24); g.lineTo(20,24); g.lineTo(18,6); g.fill();
     } else if (id === "body") {
-      g.fillStyle = "#4a7a30"; g.fillRect(6, 6, 16, 18); g.fillStyle = "#2e4e1c"; g.fillRect(6, 14, 16, 3);
-    } else if (id === "bow") {
+      g.fillStyle = col; g.fillRect(6, 6, 16, 18); g.fillStyle = "#1e140c"; g.fillRect(6, 14, 16, 3);
+    } else if (id === "weapon") {
       g.fillStyle = "#5a3214"; g.fillRect(12, 6, 4, 16);
-      g.fillStyle = "#8a5a28";
+      g.fillStyle = it && it.tier === "upgrade" ? "#6a7a88" : "#8a5a28";
       g.beginPath(); g.moveTo(4, 7); g.lineTo(4, 11); g.quadraticCurveTo(14, 4, 24, 11); g.lineTo(24, 7); g.quadraticCurveTo(14, 2, 4, 7); g.fill();
       g.strokeStyle = "#e8e0d0"; g.lineWidth = 1;
       g.beginPath(); g.moveTo(5, 8); g.lineTo(14, 16); g.lineTo(23, 8); g.stroke();
       g.fillStyle = "#c0a070"; g.fillRect(13, 5, 2, 10);
     } else if (id === "legs") {
-      g.fillStyle = "#3a5a28"; g.fillRect(8, 5, 5, 18); g.fillRect(15, 5, 5, 18);
-    } else if (id === "boots") {
-      g.fillStyle = "#3a2a18"; g.fillRect(5, 14, 8, 7); g.fillRect(15, 14, 8, 7);
+      g.fillStyle = col; g.fillRect(8, 5, 5, 18); g.fillRect(15, 5, 5, 18);
+    } else if (id === "feet") {
+      g.fillStyle = col; g.fillRect(5, 14, 8, 7); g.fillRect(15, 14, 8, 7);
     } else if (id === "ammo") {
-      g.fillStyle = "#888"; g.fillRect(8, 8, 12, 4); g.fillStyle = "#c0a040"; g.fillRect(18, 8, 4, 4);
+      g.fillStyle = it && it.tier === "upgrade" ? "#6a7a88" : "#8a6a40";
+      g.fillRect(8, 8, 12, 4); g.fillStyle = "#c0a040"; g.fillRect(18, 8, 4, 4);
     }
   }
-  host.dataset.ready = "1";
+  host.dataset.ready = key;
 }
 
 let acc = 0, lastTs = 0, raf = 0;
@@ -2636,6 +3491,11 @@ function frame(ts) {
   ctx.translate(sx, sy);
   const t = ts / 1000;
   drawBackground(t);
+  if (G.mode === "playing") {
+    syncPlayerWorldPos(false);
+    drawArenaTiles(t);
+    drawTileHazards(t);
+  }
   if ((typeof csActive === "function" && csActive()) || (G.jad && G.jad.sink > 0)) drawLavaPool(t);
   if (G.jad) drawJad(t);
   drawHealers(t);
@@ -2668,6 +3528,9 @@ bindPrayer("btn-melee", "melee");
 
 $("btn-shark").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); eatShark(); });
 $("btn-pot").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); sipPot(); });
+if ($("btn-move-left")) $("btn-move-left").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); queueMoveBy(-1, 0); });
+if ($("btn-move-right")) $("btn-move-right").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); queueMoveBy(1, 0); });
+if ($("btn-run")) $("btn-run").addEventListener("pointerdown", (e) => { e.preventDefault(); audio.unlock(); setRunning(!G.running); });
 
 window.addEventListener("pointerup", () => { if (G.cs) G.cs.holding = false; });
 window.addEventListener("pointercancel", () => { if (G.cs) G.cs.holding = false; });
@@ -2689,6 +3552,9 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "3") setPrayer("melee");
   if (e.key === "f" || e.key === "F") eatShark();
   if (e.key === "p" || e.key === "P") sipPot();
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); queueMoveBy(-1, 0); }
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); queueMoveBy(1, 0); }
+  if (e.key === "r" || e.key === "R") setRunning(!G.running);
 });
 
 canvas.addEventListener("pointerdown", (e) => {
@@ -2728,6 +3594,11 @@ canvas.addEventListener("pointerdown", (e) => {
       flashMsg("Attacking Jad", "#ffe44a");
       hitNpc = true;
     }
+  }
+  // Tap a floor tile to walk there (OSRS-style). NPCs still take priority.
+  if (!hitNpc) {
+    const tile = tileAt(pt.nx, pt.ny);
+    if (tile) queueMoveTo(tile.col, tile.row);
   }
   // Classic OSRS click marker: red X on Jad/healers, yellow X on empty ground.
   // Buttons/UI are not on this canvas, so they never get a marker.
@@ -2814,6 +3685,7 @@ function refreshHub() {
   refreshTitleBest();
   const cape = $("hub-cape");
   if (cape) drawCape(cape.getContext("2d"), cape.width, cape.height, true);
+  refreshGearViews();
 }
 
 /* Modes are separate scene objects so Duel Arena can be plugged in later
@@ -2994,7 +3866,16 @@ function beginCombat() {
   showCutsceneLayer(false);
   hideChat();
   hideItemPopup();
-  if (G.player) { G.player.x = 0.5; G.player.y = L.playerY; }
+  if (G.player) {
+    G.player.y = L.playerY;
+    if (G.player.destCol == null) {
+      G.player.tileCol = Math.floor(TILE.cols / 2);
+      G.player.tileRow = 0;
+      G.player.prevCol = G.player.tileCol;
+      G.player.prevRow = 0;
+    }
+    syncPlayerWorldPos(true);
+  }
   if (G.jad) { G.jad.sink = 0; G.jad.x = 0.5; G.jad.y = L.jadY; G.jad.hp = JAD_MAX_HP; }
   G.cs = null;
   G.mode = "playing";
@@ -3004,6 +3885,8 @@ function beginCombat() {
   G.waveFlash = 0;
   audio.unlock();
   if (!audio.muted) audio.startAmbient();
+  setPlayingChrome(true);
+  updateDebugCombat();
 }
 
 function startFirstKill(opts) {
@@ -3325,6 +4208,10 @@ function applyTestQuery() {
     Profile.hasFireCape = true;
     saveProfile();
     startPlaying();
+  } else if (test === "fireball") {
+    try { localStorage.setItem(STORAGE.intro, "1"); } catch (e) {}
+    startPlaying();
+    setTimeout(function () { testFireball({ delayTicks: 4, damage: 40 }); }, 800);
   }
 }
 
@@ -3450,14 +4337,28 @@ window.KellenScape = {
   },
   advanceDialog() { advanceCutsceneDialog(); },
   loseNow() { if (G.mode !== "playing") this.startFight(); endLose(); },
+  TILE, ITEMS, LOADOUTS, MONSTERS, EQUIP_SLOTS,
+  launchTileAttack, testFireball, queueMoveTo, queueMoveBy, setRunning,
+  playerTile, tileCenter, tileAt, playerBonuses,
+  combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
+  setDebug(on) { G.debugCombat = !!on; updateDebugCombat(); },
   getState() {
+    const vs = (Profile.equipment) ? combatVsMonster("tztok-jad", "ranged") : null;
     return {
       mode: G.mode,
       scene: G.scene,
       gp: Profile.gp,
       name: Profile.name,
       jad: G.jad && { hp: G.jad.hp, phase: G.jad.phase, style: G.jad.style },
-      player: G.player && { hp: G.player.hp, prayer: G.prayer, gp: G.player.gp, atkCd: G.player.atkCd },
+      player: G.player && {
+        hp: G.player.hp, prayer: G.prayer, gp: G.player.gp, atkCd: G.player.atkCd,
+        tile: playerTile(), dest: G.player.destCol != null ? { col: G.player.destCol, row: G.player.destRow } : null,
+        running: !!G.running
+      },
+      equipment: Profile.equipment,
+      levels: Profile.levels,
+      combat: vs && { chance: vs.chance, maxHit: vs.maxHit, atkRoll: vs.atkRoll, defRoll: vs.defRoll, expected: vs.expected },
+      tileHazards: (G.tileHazards || []).map((h) => ({ kind: h.kind, col: h.col, row: h.row, delay: h.delay })),
       eatCd: G.eatCd, potCd: G.potCd, pendingEat: G.pendingEat, pendingPot: G.pendingPot,
       sharks: G.sharks, pots: G.pots,
       healers: G.healers.length,
@@ -3471,7 +4372,7 @@ window.KellenScape = {
     HEALER_MAX_HIT, JAD_KILL_GP_MIN, JAD_KILL_GP_MAX,
     SHARK_ATTACK_DELAY_TICKS, POT_ATTACK_DELAY_TICKS, CONSUME_COOLDOWN_TICKS,
     JAD_ATTACK_SPEED_TICKS, PLAYER_ATTACK_TICKS, SHARK_HEAL, ARENA_LAYOUT_V5, JAD_ARENA_FRAC,
-    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, ART_V10, ART_V11, ART_V12, FK77_HEIGHT_MATCH
+    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, ART_V10, ART_V11, ART_V12, MECH_V13, FK77_HEIGHT_MATCH
   }
 };
 window.Xscape = window.KellenScape;
