@@ -1658,9 +1658,9 @@
 
   function startKree() {
     closeSheet("overlay-boss");
-    if (global.XscapeKree && XscapeKree.tryEnter) XscapeKree.tryEnter();
+    if (typeof enterScene === "function") enterScene("kree");
+    else if (global.XscapeKree && XscapeKree.tryEnter) XscapeKree.tryEnter();
     else if (global.XscapeKree && XscapeKree.startFight) XscapeKree.startFight({});
-    else if (typeof enterScene === "function") enterScene("kree");
   }
 
   function chooseGloamhold() {
@@ -2122,7 +2122,10 @@
       hub.classList.remove("hidden");
     }
     var app = $("app");
-    if (app) app.classList.add("hub-world");
+    if (app) {
+      app.classList.remove("fight-world");
+      app.classList.add("hub-world");
+    }
     hideCtx();
     endChatLayer();
     if (typeof fitViewport === "function") fitViewport();

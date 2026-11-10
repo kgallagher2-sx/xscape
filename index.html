@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110180626-89b59be";</script>
+  <script>window.XSCAPE_BUILD = "20261110182426-0661424";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -712,6 +712,15 @@
     .boss-choice { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
 
     /* Duel Arena */
+    /* Fight scenes must never keep the bank/arena dock or hide fight chrome. */
+    #app.fight-world #overlay-hub { display: none !important; }
+    #app.fight-world.hub-world #mid,
+    #app.fight-world.hub-world #consumables,
+    #app.fight-world.hub-world #prayers,
+    #app.fight-world.hub-world #top-hud { display: revert !important; }
+    #app.fight-world.hub-world #btn-raid-help,
+    #app.fight-world.hub-world #btn-kree-help { display: revert !important; }
+
     #app.duel-world #overlay-hub,
     #app.duel-world #mid,
     #app.duel-world #consumables,
@@ -2561,7 +2570,7 @@ function closeEquipmentView() {
   if (!el || el.classList.contains("hidden")) return;
   el.classList.add("hidden");
   swallowNextTaps();
-  if (G.scene === "hub" || G.mode === "hub") $("overlay-hub").classList.remove("hidden");
+  if (inHubScene()) $("overlay-hub").classList.remove("hidden");
 }
 
 function openShop() {
@@ -2574,7 +2583,7 @@ function closeShop() {
   if (!el || el.classList.contains("hidden")) return;
   el.classList.add("hidden");
   swallowNextTaps();
-  if (G.scene === "hub" || G.mode === "hub") $("overlay-hub").classList.remove("hidden");
+  if (inHubScene()) $("overlay-hub").classList.remove("hidden");
 }
 function shopRemaining() {
   return SHOP_BUNDLE.ids.filter((id) => !isOwned(id));
@@ -5466,9 +5475,37 @@ function refreshTitleBest() {
   }
 }
 
+function inHubScene() {
+  return !!(G && G.scene === "hub");
+}
+
+function teardownHubForFight(scene) {
+  if (window.XscapeHub && typeof XscapeHub.leave === "function") {
+    try { XscapeHub.leave(); } catch (e) {}
+  }
+  const hub = $("overlay-hub");
+  if (hub) {
+    hub.classList.add("hidden");
+    hub.classList.remove("is-world");
+    hub.classList.remove("chat-open");
+  }
+  const app = $("app");
+  if (app) {
+    app.classList.remove("hub-world");
+    app.classList.add("fight-world");
+  }
+  const cloud = window.XscapeCloud;
+  if (cloud && typeof cloud.setPresenceExtra === "function" && scene) {
+    try { cloud.setPresenceExtra({ scene: scene }); } catch (e) {}
+  }
+}
+
 function hideAllOverlays() {
   ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
-    if (id === "overlay-hub" && G && (G.scene === "hub" || G.mode === "hub")) return;
+    // Only keep the bank/arena dock while actually in the hub. G.mode can
+    // linger as "hub" after a fight starts, which used to leak the dock
+    // over Kree'arra / Jad / Gloamhold.
+    if (id === "overlay-hub" && inHubScene()) return;
     const el = $(id);
     if (el) el.classList.add("hidden");
   });
@@ -5507,6 +5544,7 @@ const Scenes = {
     id: "hub",
     enter() {
       G.mode = "hub";
+      if ($("app")) $("app").classList.remove("fight-world");
       hideAllOverlays();
       $("overlay-hub").classList.remove("hidden");
       refreshHub();
@@ -5599,6 +5637,7 @@ function beginFight() {
   Profile.name = name;
   saveProfile();
   G.scene = "jad";
+  if (typeof teardownHubForFight === "function") teardownHubForFight("jad");
   hideAllOverlays();
   let seen = false;
   try { seen = localStorage.getItem(STORAGE.tutorial) === "1"; } catch (e) {}
@@ -6154,8 +6193,9 @@ function applyTestQuery() {
 
 
 function startPlaying() {
-  hideAllOverlays();
   G.scene = "jad";
+  if (typeof teardownHubForFight === "function") teardownHubForFight("jad");
+  hideAllOverlays();
   resetFight();
   acc = 0;
   G._last = performance.now();
@@ -6290,6 +6330,8 @@ bindTap($("btn-raid-tut-ok"), () => { audio.unlock(); closeRaidBriefing(); });
 bindTap($("btn-raid-tut-x"), () => { audio.unlock(); closeRaidBriefing(); });
 bindBackdropClose($("overlay-raid-tut"), () => { audio.unlock(); closeRaidBriefing(); });
 if ($("btn-raid-help")) bindTap($("btn-raid-help"), () => { showRaidBriefing({ fromHub: false }); });
+window.teardownHubForFight = teardownHubForFight;
+window.inHubScene = inHubScene;
 window.showRaidBriefing = showRaidBriefing;
 window.raidBriefSeen = raidBriefSeen;
 window.markRaidBriefSeen = markRaidBriefSeen;

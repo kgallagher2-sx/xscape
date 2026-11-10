@@ -2265,6 +2265,7 @@
     flushSave: flushSave,
     canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,
+    getPresenceExtra: function () { return Object.assign({}, presenceExtra); },
     flushHeartbeat: function () { return tickHeartbeat(); },
     trackPresence: trackPresence,
     getPresenceMap: getPresenceMap,

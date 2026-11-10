@@ -714,9 +714,10 @@
   function startFight(opts) {
     opts = opts || {};
     const G = g();
-    if (typeof global.hideAllOverlays === "function") hideAllOverlays();
     G.scene = "kree";
     G.mode = "playing";
+    if (typeof global.teardownHubForFight === "function") teardownHubForFight("kree");
+    if (typeof global.hideAllOverlays === "function") hideAllOverlays();
     G._retryKree = true;
     G.kreeGod = !!opts.godMode || !!G.kreeGod;
     resetKreeState();

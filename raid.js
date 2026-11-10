@@ -2960,12 +2960,13 @@
       global.showRaidBriefing({ start: true, startOpts: opts });
       return;
     }
-    if (typeof global.hideAllOverlays === "function") global.hideAllOverlays();
     if (typeof global.G !== "undefined") {
       global.G.scene = "raid";
       global.G.mode = "playing";
       global.G.jad = null;
     }
+    if (typeof global.teardownHubForFight === "function") global.teardownHubForFight("raid");
+    if (typeof global.hideAllOverlays === "function") global.hideAllOverlays();
     const pad = document.getElementById("move-pad");
     if (pad) pad.classList.add("visible");
     if (typeof global.setRaidHelpVisible === "function") global.setRaidHelpVisible(true);
