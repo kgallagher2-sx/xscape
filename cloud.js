@@ -289,6 +289,10 @@
     if (p.jadBestTicks != null) P.jadBestTicks = p.jadBestTicks;
     lastKreeKills = P.kreeKills || 0;
     lastRaidClears = P.raidCompletions || 0;
+    if (p.revision != null && p.revision !== "") {
+      var rev = Number(p.revision);
+      if (!isNaN(rev)) saveRevision = rev;
+    }
     if (global.G) {
       if (P.name) global.G.name = P.name;
       global.G.gp = P.gp;
@@ -304,6 +308,8 @@
     }
     refreshCloudChrome();
   }
+
+  var saveRevision = 0;
 
   var _rawSaveProfile = function () {};
 
@@ -457,9 +463,11 @@
       var hasName = !!(cloudProfile && cloudProfile.username);
       var localName = (global.Profile && Profile.name) || "";
       if (hasName) {
-        // Do not overwrite a richer local save with an empty cloud row before import.
-        if (cloudHasCharacter(cloudProfile) || alreadyMigratedHere()) {
-          applyCloudProfile(cloudProfile);
+        // Signed-in named accounts always start from the cloud copy.
+        // Local storage is only a cache. First-time import still happens in
+        // maybeMigrate when the cloud row has not been migrated yet.
+        if (cloudProfile.migratedAt || cloudHasCharacter(cloudProfile) || alreadyMigratedHere()) {
+          applyCloudProfile(cloudProfile, { fromCloudLoad: true });
         }
         await maybeMigrate();
         showSignedInHub();
@@ -486,9 +494,14 @@
 
   async function maybeMigrate() {
     if (!session || isAnonymousUser(session.user)) return;
-    if (alreadyMigratedHere() && cloudProfile) {
-      applyCloudProfile(cloudProfile);
-      return;
+    // Named or already-migrated cloud accounts always win. Do not import a
+    // leftover local save over server GP / progress.
+    if (cloudProfile && (cloudProfile.migratedAt || cloudProfile.username || alreadyMigratedHere())) {
+      if (cloudProfile.migratedAt || cloudHasCharacter(cloudProfile) || alreadyMigratedHere()) {
+        applyCloudProfile(cloudProfile, { fromCloudLoad: true });
+        markLocalMigrated();
+        return;
+      }
     }
     var payload = localPayload();
     var rawLocal = null;
@@ -500,7 +513,7 @@
     // Cloud already has a character: it always wins. Load it silently and
     // ignore (overwrite) whatever guest/local save is on this phone.
     if (hasCloud) {
-      applyCloudProfile(cloudProfile);
+      applyCloudProfile(cloudProfile, { fromCloudLoad: true });
       markLocalMigrated();
       return;
     }
@@ -2044,15 +2057,25 @@
       settings.raidBrief = localStorage.getItem("kellenscape-raid-brief-seen") === "1";
       settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
     } catch (e) {}
-    await rpc("save_player_state", {
+    var res = await rpc("save_player_state", {
       p_payload: {
         levels: P.levels || {},
         equipment: P.equipment || {},
         unlockedItems: P.unlockedItems || [],
         bank: P.bank || [],
-        settings: settings
+        inventory: P.inventory || [],
+        settings: settings,
+        revision: saveRevision
       }
     });
+    if (res && res.stale && res.profile) {
+      applyCloudProfile(res.profile, { fromCloudLoad: true });
+      return;
+    }
+    if (res && res.ok && res.profile && res.profile.revision != null) {
+      var nextRev = Number(res.profile.revision);
+      if (!isNaN(nextRev)) saveRevision = nextRev;
+    }
   }
 
   var lastOwnItems = [];
@@ -2153,7 +2176,7 @@
           var mine = await rpc("my_profile", {});
           if (mine.ok && mine.profile) {
             cloudProfile = mine.profile;
-            if (cloudHasCharacter(cloudProfile) || alreadyMigratedHere()) applyCloudProfile(cloudProfile);
+            if (cloudHasCharacter(cloudProfile) || alreadyMigratedHere() || (cloudProfile && cloudProfile.migratedAt)) applyCloudProfile(cloudProfile, { fromCloudLoad: true });
           }
         } catch (e) {}
       }
