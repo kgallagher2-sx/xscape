@@ -2074,7 +2074,29 @@
     saveTimer = setTimeout(pushState, 800);
   }
 
+  var pushInFlight = null;
+  var pushAgain = false;
+
   async function pushState() {
+    if (!session) return;
+    if (pushInFlight) {
+      pushAgain = true;
+      return pushInFlight;
+    }
+    pushInFlight = (async function () {
+      try {
+        do {
+          pushAgain = false;
+          await pushStateOnce();
+        } while (pushAgain && session);
+      } finally {
+        pushInFlight = null;
+      }
+    })();
+    return pushInFlight;
+  }
+
+  async function pushStateOnce() {
     if (!session) return;
     var P = global.Profile || {};
     var settings = {};
