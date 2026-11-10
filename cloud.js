@@ -1894,10 +1894,56 @@
     }
   }
 
-  var pendingJad = { ticks: null, score: null, timer: null, dirty: false, retries: 0 };
+  var PENDING_JAD_KEY = "xscape-pending-jad";
+  var pendingJad = { ticks: null, score: null, nonce: null, timer: null, dirty: false, retries: 0 };
+
+  function newJadNonce() {
+    try { if (global.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return "jad-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  }
+  function persistPendingJad() {
+    try {
+      if (pendingJad.dirty && pendingJad.nonce) {
+        sessionStorage.setItem(PENDING_JAD_KEY, JSON.stringify({
+          nonce: pendingJad.nonce,
+          ticks: pendingJad.ticks,
+          score: pendingJad.score
+        }));
+      } else {
+        sessionStorage.removeItem(PENDING_JAD_KEY);
+      }
+    } catch (e) {}
+  }
+  function clearPendingJad() {
+    pendingJad.dirty = false;
+    pendingJad.ticks = null;
+    pendingJad.score = null;
+    pendingJad.nonce = null;
+    pendingJad.retries = 0;
+    if (pendingJad.timer) { clearTimeout(pendingJad.timer); pendingJad.timer = null; }
+    try { sessionStorage.removeItem(PENDING_JAD_KEY); } catch (e) {}
+  }
+  function restorePendingJad() {
+    try {
+      var raw = sessionStorage.getItem(PENDING_JAD_KEY);
+      if (!raw) return false;
+      var p = JSON.parse(raw);
+      if (!p || !p.nonce) return false;
+      pendingJad.nonce = p.nonce;
+      pendingJad.ticks = p.ticks;
+      pendingJad.score = p.score;
+      pendingJad.dirty = true;
+      pendingJad.retries = 0;
+      return true;
+    } catch (e) { return false; }
+  }
+
   function queueJadRecord(local) {
-    if (local && local.gpAwarded) pendingJad.dirty = true;
-    if (local && local.firstCape) pendingJad.dirty = true;
+    if (local && (local.gpAwarded || local.firstCape)) pendingJad.dirty = true;
+    // Always mark dirty once submitScore/award has queued a record.
+    pendingJad.dirty = true;
+    if (!pendingJad.nonce) pendingJad.nonce = newJadNonce();
+    persistPendingJad();
     if (pendingJad.timer) clearTimeout(pendingJad.timer);
     // Batch award + submitScore on the same turn, then flush immediately.
     pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 0);
@@ -1905,22 +1951,26 @@
   async function flushJadRecord() {
     if (pendingJad.timer) { clearTimeout(pendingJad.timer); pendingJad.timer = null; }
     if (!session) return { ok: false, error: "offline" };
+    if (!pendingJad.dirty) return { ok: true, skipped: true };
     if (recordingKill) return { ok: false, error: "busy" };
     recordingKill = true;
     try {
       var ticks = pendingJad.ticks;
       if (ticks != null && ticks < 20) ticks = null;
-      var res = await rpc("record_jad_kill", { p_ticks: ticks, p_score: pendingJad.score });
+      if (!pendingJad.nonce) pendingJad.nonce = newJadNonce();
+      persistPendingJad();
+      var res = await rpc("record_jad_kill", {
+        p_ticks: ticks,
+        p_score: pendingJad.score,
+        p_nonce: pendingJad.nonce
+      });
       if (res && res.ok && res.profile) {
-        pendingJad.dirty = false;
-        pendingJad.retries = 0;
+        clearPendingJad();
         applyCloudProfile(res.profile, { fromAward: true });
-        if (res.gpAwarded && typeof global.flashMsg === "function" && !res.firstCape) {
-          /* Client already toasted the local award; chip is refreshed in applyCloudProfile. */
-        }
         return res;
       }
       pendingJad.dirty = true;
+      persistPendingJad();
       pendingJad.retries = (pendingJad.retries || 0) + 1;
       if (pendingJad.retries < 5) {
         pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 600 * pendingJad.retries);
@@ -1928,6 +1978,7 @@
       return res || { ok: false, error: "record_jad_kill failed" };
     } catch (e) {
       pendingJad.dirty = true;
+      persistPendingJad();
       pendingJad.retries = (pendingJad.retries || 0) + 1;
       if (pendingJad.retries < 5) {
         pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 600 * pendingJad.retries);
@@ -1942,9 +1993,10 @@
     try { if (typeof global.saveProfile === "function") global.saveProfile(); } catch (e) {}
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
     var jadRes = null;
-    if (pendingJad.dirty || pendingJad.ticks != null || pendingJad.score != null) {
-      jadRes = await flushJadRecord();
-    }
+    // Only record a kill that has not yet been confirmed. Leftover ticks/score
+    // after a successful payout must not trigger another record_jad_kill on
+    // pagehide / reload.
+    if (pendingJad.dirty) jadRes = await flushJadRecord();
     try { await pushState(); } catch (e) {}
     return jadRes || { ok: true };
   }
@@ -2095,6 +2147,7 @@
       refreshCloudChrome();
     } else if (session) {
       await afterSignedIn({ fresh: false });
+      if (restorePendingJad()) await flushJadRecord();
     } else if (page === "hub") {
       routeTitle();
     }
