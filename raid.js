@@ -1807,6 +1807,10 @@
             global.enterScene("raid");
             return;
           }
+          if (typeof api.startRaidInGame === "function") {
+            api.startRaidInGame({ room: "gate" });
+            return;
+          }
           const path = location.pathname || "/";
           const dir = path.replace(/index\.html?$/, "");
           const base = dir.endsWith("/") ? dir : dir + "/";
