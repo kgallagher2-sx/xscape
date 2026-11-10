@@ -114,10 +114,10 @@
     return -1;
   }
 
-  function isJad() { return !!(global.G && G.scene === "jad"); }
+  function isJad() { return !!(global.G && global.G.scene === "jad"); }
 
   function jadCount(fam) {
-    const kit = global.G && G.jadKit;
+    const kit = global.G && global.G.jadKit;
     if (!kit) return 0;
     return kit[fam] || 0;
   }
@@ -309,7 +309,7 @@
   }
 
   function clearJadKit() {
-    if (global.G) { G.jadKit = null; }
+    if (global.G) { global.G.jadKit = null; }
   }
 
   function startBroughtSupplies() {
@@ -506,7 +506,7 @@
   }
 
   function queueUse(fam) {
-    if (global.G && G.scene === "raid" && global.XscapeRaid && XscapeRaid.queueSupply) {
+    if (global.G && global.G.scene === "raid" && global.XscapeRaid && XscapeRaid.queueSupply) {
       return XscapeRaid.queueSupply(fam);
     }
     const ok = canUse(fam);
