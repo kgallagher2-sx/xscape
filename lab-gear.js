@@ -1362,12 +1362,16 @@ function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase) {
   const recoil = recoilBase || 0;
   c.save();
   if (facing === "front") {
-    // Character's right hand = screen-left; prod up, stock down, in front of the torso
-    c.translate(-12.4, -18 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
-    c.rotate(0.18 - recoil * 0.2);
+    // Right hand (screen-left). Muzzle down and outward, ~37° off vertical.
+    // Translate to the grip, then offset so local stock y≈8 sits in the hand.
+    c.translate(-10.6, -9.6 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
+    c.rotate(Math.PI + 0.58 - recoil * 0.2);
+    c.translate(0, -8.2);
   } else if (facing === "right") {
-    c.translate(12.5, -16 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
-    c.rotate(-0.15 + recoil * 0.2);
+    // Relaxed at the side: muzzle down and ahead, grip in the near hand
+    c.translate(9.6, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
+    c.rotate(Math.PI - 0.65 + recoil * 0.2);
+    c.translate(0, -8.2);
   } else {
     const bowX = typeof PLAYER_BOW_X === "number" ? PLAYER_BOW_X : 13.4;
     const bowY = typeof PLAYER_BOW_Y === "number" ? PLAYER_BOW_Y : -21.5;
@@ -2230,8 +2234,8 @@ function drawLabPlayerFront(ctx, t, opt) {
   drawHeroBody(ctx, eq.body, "front");
   drawHeroNeck(ctx, eq.neck, "front");
   drawHeroHead(ctx, eq.head, "front");
-  drawHeroWeapon(ctx, t, eq, opt, "front"); // in front of body/legs, screen-left
-  drawHeroNearArm(ctx, eq.hands, "front", stride); // right hand over the grip
+  drawHeroNearArm(ctx, eq.hands, "front", stride); // right arm first
+  drawHeroWeapon(ctx, t, eq, opt, "front"); // on top of the arm and hand
   drawHeroRing(ctx, eq.ring, "front");
   ctx.restore();
 }
@@ -2252,8 +2256,8 @@ function drawLabPlayerSide(ctx, t, opt) {
   drawHeroBody(ctx, eq.body, "right");
   drawHeroNeck(ctx, eq.neck, "right");
   drawHeroHead(ctx, eq.head, "right");
-  drawHeroWeapon(ctx, t, eq, opt, "right");
-  drawHeroNearArm(ctx, eq.hands, "right", stride);
+  drawHeroNearArm(ctx, eq.hands, "right", stride); // near arm first
+  drawHeroWeapon(ctx, t, eq, opt, "right"); // on top of the arm and hand
   drawHeroRing(ctx, eq.ring, "right");
   ctx.restore();
 }

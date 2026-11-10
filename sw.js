@@ -1,6 +1,6 @@
-/* Xscape service worker v20-2.
+/* Xscape service worker v20-3.
    Network-first for everything. Lab files are never served stale. */
-var CACHE = "xscape-v20-2";
+var CACHE = "xscape-v20-3";
 var LAB_RE = /(?:^|\/)(lab\.html|lab-gear\.js)(?:\?|$)/;
 
 self.addEventListener("install", function (event) {
