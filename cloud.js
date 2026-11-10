@@ -252,10 +252,23 @@
     if (p.gp != null && p.gp !== "") {
       var cloudGp = Number(p.gp);
       if (!isNaN(cloudGp)) {
+        var prevGp = Number(P.gp) || 0;
         // A just-awarded Jad payout may not have reached the server yet.
         // Never let a stale my_profile / reload clobber that local credit.
-        if (pendingJad.dirty && !opts.fromAward) P.gp = Math.max(P.gp || 0, cloudGp);
+        if (pendingJad.dirty && !opts.fromAward) P.gp = Math.max(prevGp, cloudGp);
         else P.gp = Math.max(0, cloudGp);
+        // Server-side grants (admin correction, etc.) should toast on next load.
+        // Skip fight-payout applies, which already toasted locally.
+        if (!opts.fromAward && !pendingJad.dirty && cloudGp > prevGp && typeof global.flashMsg === "function") {
+          var delta = cloudGp - prevGp;
+          var label = delta.toLocaleString("en-US") + " GP";
+          var color = "#ffe44a";
+          if (typeof global.gpStyle === "function") {
+            var gs = gpStyle(delta);
+            if (gs && gs.color) color = gs.color;
+          }
+          try { flashMsg("+" + label + "!", color); } catch (e) {}
+        }
       }
     }
     if (p.hasFireCape) P.hasFireCape = true;
