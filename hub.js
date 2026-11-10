@@ -1636,9 +1636,10 @@
       if (!canHubChat()) {
         if (bar) {
           bar.innerHTML = '<div class="chat-blocked">Sign in to chat</div>' +
+            '<button type="button" class="btn secondary hidden" id="btn-chat-history" title="Chat history">History</button>' +
             '<button type="button" class="btn secondary" id="hub-chat-close">X</button>';
-          var c = $("hub-chat-close");
-          if (c) c.addEventListener("click", function () { setChatOpen(false); });
+          bindChatBar();
+          syncChatHistoryButton();
         }
         return;
       }
@@ -1646,9 +1647,12 @@
       if (bar && !bar.querySelector("#hub-chat-input")) {
         bar.innerHTML = '<input id="hub-chat-input" type="text" maxlength="80" autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true" enterkeyhint="send" placeholder="Enter message..." />' +
           '<button type="button" class="btn" id="hub-chat-send">Send</button>' +
+          '<button type="button" class="btn secondary hidden" id="btn-chat-history" title="Chat history">History</button>' +
           '<button type="button" class="btn secondary" id="hub-chat-close" aria-label="Close chat">X</button>';
         bindChatBar();
+        syncChatHistoryButton();
       }
+      syncChatHistoryButton();
       if (input || $("hub-chat-input")) {
         var el = $("hub-chat-input");
         try { el.focus(); } catch (e) {}
@@ -1673,6 +1677,8 @@
     }
     if (send) send.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go(); };
     if (close) close.onclick = function (e) { e.preventDefault(); e.stopPropagation(); setChatOpen(false); };
+    var hist = $("btn-chat-history");
+    if (hist) hist.onclick = function (e) { e.preventDefault(); e.stopPropagation(); openChatHistory(); };
     if (input && !input._bound) {
       input._bound = true;
       input.addEventListener("keydown", function (e) {
@@ -2364,7 +2370,9 @@
         if (act === "inv") openInventory();
         else if (act === "gear") { if (typeof openEquipmentView === "function") openEquipmentView(); }
         else if (act === "chat") openChat();
-        else if (act === "chat-history") openChatHistory();
+        else if (act === "hotkeys") {
+          if (global.XscapeSupplies && XscapeSupplies.openHotkeys) XscapeSupplies.openHotkeys();
+        }
         else if (act === "online") openOnline();
       });
     }
@@ -2475,6 +2483,10 @@
     if ($("overlay-party") && !$("overlay-party").classList.contains("hidden")) { closeSheet("overlay-party"); return true; }
     if ($("overlay-online") && !$("overlay-online").classList.contains("hidden")) { closeOnline(); return true; }
     if ($("overlay-raid-choice") && !$("overlay-raid-choice").classList.contains("hidden")) { closeSheet("overlay-raid-choice"); return true; }
+    if ($("overlay-hotkeys") && !$("overlay-hotkeys").classList.contains("hidden")) {
+      if (global.XscapeSupplies && XscapeSupplies.closeHotkeys) XscapeSupplies.closeHotkeys();
+      return true;
+    }
     return false;
   }
 

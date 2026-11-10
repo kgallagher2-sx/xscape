@@ -58,6 +58,7 @@
   let assigning = -1;
   let dirtySave = false;
   let shopQty = 1;
+  let hotkeysOpen = false;
 
   function $(id) { return global.document && document.getElementById(id); }
   function clamp(n, a, b) { return n < a ? a : n > b ? b : n; }
@@ -316,11 +317,11 @@
   }
 
   function layoutForFight() {
+    // Fights use the saved 8-slot lineup. Only Jad still fills leftover empty
+    // slots with its free kit so a first-time fight still has food and pots.
     const slots = layout.map(function (s) { return s ? { type: s.type, id: s.id } : null; });
-    if (isJad()) {
-      return fillItemSlots(slots, ["shark", "prayer_potion", "ranging_potion"]);
-    }
-    return fillItemSlots(slots, carriedFamilies());
+    if (isJad()) return fillItemSlots(slots, ["shark", "prayer_potion", "ranging_potion"]);
+    return slots;
   }
 
   function loadLayout(raw) {
@@ -747,6 +748,8 @@
       }
       if (slot && slot.type === "item") {
         const fam = slot.id;
+        const have = available(fam);
+        btn.classList.toggle("dimmed", have <= 0);
         const cooling = playing && ((isFood(fam) && ((G.eatCd || 0) > 0 || G.pendingEat)) || (!isFood(fam) && ((G.potCd || 0) > 0 || (G.rangeCd || 0) > 0 || G.pendingPot || G.pendingRange)));
         btn.classList.toggle("cooling", cooling && !editing);
         btn.classList.toggle("pending", !!(G && G.pendingUse === fam) && !editing);
@@ -760,10 +763,12 @@
         }
         btn.disabled = !editing && (!playing || available(fam) <= 0);
       } else if (slot && slot.type === "prayer") {
+        btn.classList.toggle("dimmed", false);
         btn.disabled = !editing && !playing;
         btn.classList.toggle("cooling", false);
         btn.classList.toggle("pending", false);
       } else {
+        btn.classList.toggle("dimmed", false);
         btn.disabled = !editing;
       }
     }
@@ -826,28 +831,29 @@
     queueUse(slot.id);
   }
 
-  function openPicker(i) {
+  function openPicker(i, opts) {
     assigning = i;
     const ov = $("overlay-quick-edit");
     if (!ov) return;
     const body = $("quick-edit-list");
+    const allSupplies = !!(opts && opts.all) || hotkeysOpen;
     if (body) {
       let html = '<button type="button" class="quick-pick" data-clear="1">Empty slot</button>';
       html += '<div class="quick-pick-h">Prayers</div>';
       PRAYERS.forEach(function (p) {
         html += '<button type="button" class="quick-pick" data-type="prayer" data-id="' + p.id + '">' + p.name + "</button>";
       });
-      html += '<div class="quick-pick-h">Inventory</div>';
-      const fams = uniqueFamiliesForPicker();
+      html += '<div class="quick-pick-h">' + (allSupplies ? "Supplies" : "Inventory") + "</div>";
+      const fams = uniqueFamiliesForPicker(allSupplies);
       if (!fams.length) html += '<div class="quick-pick-empty">No food or potions in your inventory.</div>';
       fams.forEach(function (fam) {
-        const n = countFamily(fam);
+        const n = isFood(fam) ? countFamily(fam) : totalDoses(fam);
         const extra = isJad() && JAD_KIT[fam] != null ? " (Jad kit " + jadCount(fam) + ")" : "";
         html += '<button type="button" class="quick-pick" data-type="item" data-id="' + fam + '">' +
           '<canvas width="40" height="40" data-icon="' + fam + '"></canvas>' +
           '<span>' + labelFor({ type: "item", id: fam }) + " ×" + n + extra + "</span></button>";
       });
-      if (isJad()) {
+      if (isJad() && !allSupplies) {
         ["shark", "prayer_potion", "ranging_potion"].forEach(function (fam) {
           if (fams.indexOf(fam) >= 0) return;
           html += '<button type="button" class="quick-pick" data-type="item" data-id="' + fam + '">' +
@@ -866,24 +872,108 @@
         persistLayout();
         hidePicker();
         refresh();
+        if (hotkeysOpen) renderHotkeys();
       };
     }
     ov.classList.remove("hidden");
     refresh();
+    if (hotkeysOpen) renderHotkeys();
   }
 
-  function uniqueFamiliesForPicker() {
-    const out = carriedFamilies();
-    // Include any already-assigned item families so they can be re-placed.
-    layout.forEach(function (s) {
-      if (s && s.type === "item" && s.id && out.indexOf(s.id) < 0) out.push(s.id);
+  function uniqueFamiliesForPicker(allSupplies) {
+    const out = [];
+    if (allSupplies) {
+      SHOP_ROWS.forEach(function (row) {
+        if (row && row.id && out.indexOf(row.id) < 0) out.push(row.id);
+      });
+    }
+    carriedFamilies().forEach(function (fam) {
+      if (out.indexOf(fam) < 0) out.push(fam);
     });
+    if (!allSupplies) {
+      layout.forEach(function (s) {
+        if (s && s.type === "item" && s.id && out.indexOf(s.id) < 0) out.push(s.id);
+      });
+    }
     return out;
   }
 
   function hidePicker() {
     assigning = -1;
     const ov = $("overlay-quick-edit");
+    if (ov) ov.classList.add("hidden");
+    if (hotkeysOpen) renderHotkeys();
+  }
+
+  function slotQty(slot) {
+    if (!slot || slot.type !== "item") return "";
+    return qtyFor(slot);
+  }
+
+  function renderHotkeys() {
+    const grid = $("hotkeys-grid");
+    if (!grid) return;
+    if (!grid._built) {
+      grid._built = true;
+      grid.innerHTML = "";
+      for (let i = 0; i < SLOT_COUNT; i++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "quick-slot";
+        btn.setAttribute("data-hotkey-slot", String(i));
+        btn.innerHTML = '<canvas width="64" height="64"></canvas><span class="q-lab"></span><span class="q-qty"></span>';
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          openPicker(i, { all: true });
+        });
+        grid.appendChild(btn);
+      }
+    }
+    const btns = grid.querySelectorAll(".quick-slot");
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      const btn = btns[i];
+      if (!btn) continue;
+      const slot = layout[i];
+      btn.classList.toggle("empty", !slot);
+      btn.classList.toggle("assigning", assigning === i);
+      const have = slot && slot.type === "item" ? available(slot.id) : 1;
+      btn.classList.toggle("dimmed", !!(slot && slot.type === "item" && have <= 0));
+      const cv = btn.querySelector("canvas");
+      drawIcon(cv, slot, false);
+      const lab = btn.querySelector(".q-lab");
+      const qty = btn.querySelector(".q-qty");
+      if (lab) {
+        if (!slot) lab.textContent = "";
+        else if (slot.type === "prayer") lab.textContent = (PRAYERS.filter(function (p) { return p.id === slot.id; })[0] || { name: slot.id }).name.replace("Protect from ", "");
+        else lab.textContent = labelFor(slot);
+      }
+      if (qty) {
+        if (slot && slot.type === "item") {
+          qty.textContent = slotQty(slot);
+          qty.classList.remove("hidden");
+        } else {
+          qty.textContent = "";
+          qty.classList.add("hidden");
+        }
+      }
+    }
+  }
+
+  function openHotkeys() {
+    hotkeysOpen = true;
+    assigning = -1;
+    hidePicker();
+    const ov = $("overlay-hotkeys");
+    if (ov) ov.classList.remove("hidden");
+    renderHotkeys();
+  }
+
+  function closeHotkeys() {
+    hotkeysOpen = false;
+    assigning = -1;
+    const picker = $("overlay-quick-edit");
+    if (picker) picker.classList.add("hidden");
+    const ov = $("overlay-hotkeys");
     if (ov) ov.classList.add("hidden");
   }
 
@@ -1052,6 +1142,8 @@
     if ($("btn-supply-shop-close")) $("btn-supply-shop-close").addEventListener("click", closeShop);
     if ($("btn-supply-shop-x")) $("btn-supply-shop-x").addEventListener("click", closeShop);
     if ($("btn-quick-edit-close")) $("btn-quick-edit-close").addEventListener("click", hidePicker);
+    if ($("btn-hotkeys-close")) $("btn-hotkeys-close").addEventListener("click", function (e) { e.preventDefault(); closeHotkeys(); });
+    if ($("btn-hotkeys-x")) $("btn-hotkeys-x").addEventListener("click", function (e) { e.preventDefault(); closeHotkeys(); });
     try {
       const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
       if (raw) loadLayout(raw);
@@ -1098,6 +1190,9 @@
     flushSave: flushSave,
     endEdit: endEdit,
     toggleEdit: toggleEdit,
+    hidePicker: hidePicker,
+    openHotkeys: openHotkeys,
+    closeHotkeys: closeHotkeys,
     drawItemIcon: drawItemIcon,
     decorateSlotButton: decorateSlotButton,
     decorateContainer: decorateContainer,

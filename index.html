@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261110213451-cd2bf8a";</script>
+  <script>window.XSCAPE_BUILD = "20261110214149-6de2eda";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -317,7 +317,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-chat-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -679,6 +679,18 @@
       text-shadow: 0 1px 0 #000;
     }
     #btn-chat-history { letter-spacing: 0; }
+    #hub-chat-bar #btn-chat-history { min-width: 0; padding: 0 8px; font-size: 12px; }
+    #hub-chat-bar #btn-chat-history.hidden { display: none !important; }
+    #overlay-hotkeys .sheet-card { width: 100%; max-width: 340px; }
+    #hotkeys-hint { color: #c9a24a; font-size: 12px; margin: 0 0 8px; text-align: left; }
+    #hotkeys-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, auto);
+      gap: 6px; margin: 0 0 10px;
+    }
+    #hotkeys-grid .quick-slot { height: 64px; min-height: 60px; }
+    #hotkeys-grid .quick-slot.dimmed { opacity: 0.4; }
+    #hotkeys-scroll { max-height: 64vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .quick-slot.dimmed { opacity: 0.4; }
     #overlay-chat-history .sheet-card { width: 100%; max-width: 340px; }
     #chat-history-list {
       max-height: 58vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -946,13 +958,14 @@
         <button type="button" class="btn secondary" data-dock="inv">Inv</button>
         <button type="button" class="btn secondary" data-dock="gear">Gear</button>
         <button type="button" class="btn secondary" data-dock="chat">Chat</button>
-        <button type="button" class="btn secondary hidden" id="btn-chat-history" data-dock="chat-history">Chat history</button>
+        <button type="button" class="btn secondary" id="btn-hotkeys" data-dock="hotkeys">Hotkeys</button>
         <button type="button" class="btn secondary" data-dock="online">Online</button>
       </div>
       <div id="hub-chat-log" class="hub-chrome hidden" aria-live="polite"></div>
       <div id="hub-chat-bar" class="hub-chrome hidden">
         <input id="hub-chat-input" type="text" maxlength="80" autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true" enterkeyhint="send" placeholder="Enter message..." />
         <button type="button" class="btn" id="hub-chat-send">Send</button>
+        <button type="button" class="btn secondary hidden" id="btn-chat-history" title="Chat history">History</button>
         <button type="button" class="btn secondary" id="hub-chat-close" aria-label="Close chat">X</button>
       </div>
       <div id="hub-ctx" class="hidden" role="menu"></div>
@@ -1103,6 +1116,20 @@
         </div>
         <div class="sheet-actions">
           <button class="btn" id="btn-supply-shop-close" type="button">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-hotkeys">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-hotkeys-x" type="button" aria-label="Close">×</button>
+        <h2>Hotkeys</h2>
+        <div class="sheet-scroll" id="hotkeys-scroll">
+          <p id="hotkeys-hint">Tap a slot to assign a food, potion, or prayer. Empty slots stay empty in a fight. Items you are not carrying show as 0.</p>
+          <div id="hotkeys-grid" role="toolbar" aria-label="Hotkey slots"></div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn" id="btn-hotkeys-close" type="button">EXIT</button>
         </div>
       </div>
     </div>
@@ -5656,7 +5683,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-quick-edit","overlay-chat-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -6400,7 +6427,8 @@ bindTap($("btn-shop-close"), () => { audio.unlock(); closeShop(); });
 bindTap($("btn-shop-x"), () => { audio.unlock(); closeShop(); });
 bindBackdropClose($("overlay-shop"), () => { audio.unlock(); closeShop(); });
 if ($("overlay-supply-shop")) bindBackdropClose($("overlay-supply-shop"), () => { audio.unlock(); if (window.closeSupplyShop) closeSupplyShop(); });
-if ($("overlay-quick-edit")) bindBackdropClose($("overlay-quick-edit"), () => { if (window.XscapeSupplies) XscapeSupplies.endEdit(); });
+if ($("overlay-hotkeys")) bindBackdropClose($("overlay-hotkeys"), () => { if (window.XscapeSupplies && XscapeSupplies.closeHotkeys) XscapeSupplies.closeHotkeys(); });
+if ($("overlay-quick-edit")) bindBackdropClose($("overlay-quick-edit"), () => { if (window.XscapeSupplies && XscapeSupplies.hidePicker) XscapeSupplies.hidePicker(); });
 if ($("overlay-chat-history")) bindBackdropClose($("overlay-chat-history"), () => { if (window.XscapeHub && XscapeHub.closeChatHistory) XscapeHub.closeChatHistory(); });
 if ($("shop-list")) $("shop-list").addEventListener("click", (e) => {
   const btn = e.target.closest && e.target.closest("[data-shop]");
