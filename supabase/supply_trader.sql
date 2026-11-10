@@ -9,6 +9,9 @@ SET search_path = public, pg_temp
 AS $$
   SELECT p_id IN (
     'swordfish','shark','dark_crab',
+    'super_attack','super_strength','super_defence',
+    'ranging_potion','magic_potion','super_restore','saradomin_brew','prayer_potion',
+    -- leftover dosed ids still count as supplies so a stale save is not collapsed
     'super_attack_4','super_attack_3','super_attack_2','super_attack_1',
     'super_strength_4','super_strength_3','super_strength_2','super_strength_1',
     'super_defence_4','super_defence_3','super_defence_2','super_defence_1',
@@ -22,6 +25,23 @@ $$;
 
 REVOKE ALL ON FUNCTION game.is_supply_item(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION game.is_supply_item(text) TO authenticated;
+
+-- Collapse leftover dose suffixes (super_attack_4 → super_attack). Each bottle is one sip.
+CREATE OR REPLACE FUNCTION game.undose_supply_id(p_id text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT CASE
+    WHEN p_id ~ '^(super_attack|super_strength|super_defence|ranging_potion|magic_potion|super_restore|saradomin_brew|prayer_potion)_[1-4]$'
+    THEN regexp_replace(p_id, '_[1-4]$', '')
+    ELSE p_id
+  END;
+$$;
+
+REVOKE ALL ON FUNCTION game.undose_supply_id(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION game.undose_supply_id(text) TO authenticated;
 
 -- Unique for gear; supplies may repeat (each copy is one inventory/bank slot).
 CREATE OR REPLACE FUNCTION game.parse_stackable_item_ids(p_items jsonb, p_cap int)
@@ -44,6 +64,7 @@ BEGIN
     IF NOT game.ok_item_id(v_id) THEN
       CONTINUE;
     END IF;
+    v_id := game.undose_supply_id(v_id);
     IF game.is_supply_item(v_id) THEN
       v := v || v_id;
     ELSIF NOT v_id = ANY (v_seen) THEN
@@ -152,17 +173,17 @@ LANGUAGE sql
 IMMUTABLE
 SET search_path = public, pg_temp
 AS $$
-  SELECT CASE p_item_id
+  SELECT CASE game.undose_supply_id(p_item_id)
     WHEN 'swordfish' THEN 'swordfish'
     WHEN 'shark' THEN 'shark'
     WHEN 'dark_crab' THEN 'dark_crab'
-    WHEN 'super_attack' THEN 'super_attack_4'
-    WHEN 'super_strength' THEN 'super_strength_4'
-    WHEN 'super_defence' THEN 'super_defence_4'
-    WHEN 'ranging_potion' THEN 'ranging_potion_4'
-    WHEN 'magic_potion' THEN 'magic_potion_4'
-    WHEN 'super_restore' THEN 'super_restore_4'
-    WHEN 'saradomin_brew' THEN 'saradomin_brew_4'
+    WHEN 'super_attack' THEN 'super_attack'
+    WHEN 'super_strength' THEN 'super_strength'
+    WHEN 'super_defence' THEN 'super_defence'
+    WHEN 'ranging_potion' THEN 'ranging_potion'
+    WHEN 'magic_potion' THEN 'magic_potion'
+    WHEN 'super_restore' THEN 'super_restore'
+    WHEN 'saradomin_brew' THEN 'saradomin_brew'
     ELSE NULL
   END;
 $$;

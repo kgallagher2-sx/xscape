@@ -68,7 +68,7 @@
     { id: "oswin", name: "Oswin the Provisioner", title: "Oswin", kind: "supplier", col: 8, row: 5, facing: "left",
       examine: "He sells food and potions for adventurers who must bring their own supplies.",
       talk: [
-        { name: "Oswin the Provisioner", text: "Jad feeds you for free. Everyone else pays. I've fish, crabs, and potions — four doses, fair prices." },
+        { name: "Oswin the Provisioner", text: "Jad feeds you for free. Everyone else pays. I've fish, crabs, and potions — fair prices." },
         { name: "Oswin the Provisioner", text: "Watch your pack, though. Twenty-eight slots, and a full bag means no sale." }
       ],
       after: "supplies"

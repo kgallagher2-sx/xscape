@@ -23,13 +23,13 @@
     { id: "swordfish", name: "Swordfish", kind: "food", heal: 14, desc: "Heals 14 Hitpoints." },
     { id: "shark", name: "Shark", kind: "food", heal: 20, desc: "Heals 20 Hitpoints." },
     { id: "dark_crab", name: "Dark crab", kind: "food", heal: 22, desc: "Heals 22 Hitpoints." },
-    { id: "super_attack", name: "Super attack (4)", kind: "potion", desc: "Attack +5 + 15%." },
-    { id: "super_strength", name: "Super strength (4)", kind: "potion", desc: "Strength +5 + 15%." },
-    { id: "super_defence", name: "Super defence (4)", kind: "potion", desc: "Defence +5 + 15%." },
-    { id: "ranging_potion", name: "Ranging potion (4)", kind: "potion", desc: "Ranged +4 + 10%." },
-    { id: "magic_potion", name: "Magic potion (4)", kind: "potion", desc: "Magic +4." },
-    { id: "super_restore", name: "Super restore (4)", kind: "potion", desc: "Restores stats and prayer (8 + 25%)." },
-    { id: "saradomin_brew", name: "Saradomin brew (4)", kind: "potion", desc: "Heals 16, boosts Defence, drains other combat stats." }
+    { id: "super_attack", name: "Super attack", kind: "potion", desc: "Attack +5 + 15%." },
+    { id: "super_strength", name: "Super strength", kind: "potion", desc: "Strength +5 + 15%." },
+    { id: "super_defence", name: "Super defence", kind: "potion", desc: "Defence +5 + 15%." },
+    { id: "ranging_potion", name: "Ranging potion", kind: "potion", desc: "Ranged +4 + 10%." },
+    { id: "magic_potion", name: "Magic potion", kind: "potion", desc: "Magic +4." },
+    { id: "super_restore", name: "Super restore", kind: "potion", desc: "Restores stats and prayer (8 + 25%)." },
+    { id: "saradomin_brew", name: "Saradomin brew", kind: "potion", desc: "Heals 16, boosts Defence, drains other combat stats." }
   ];
 
   const POTION_FAMILIES = {
@@ -61,27 +61,36 @@
   function clamp(n, a, b) { return n < a ? a : n > b ? b : n; }
   function profile() { return global.Profile || (global.Profile = { inventory: [] }); }
 
+  const POTION_IDS = "super_attack|super_strength|super_defence|ranging_potion|magic_potion|super_restore|saradomin_brew|prayer_potion";
+  const POTION_ID_RE = new RegExp("^(" + POTION_IDS + ")(?:_([1-4]))?$");
+
   function isSupplyId(id) {
     if (!id) return false;
     if (id === "swordfish" || id === "shark" || id === "dark_crab") return true;
-    return !!parseDose(id);
+    return !!familyOf(id);
   }
 
+  // Legacy dosed ids (super_attack_4 … _1) still parse so old bags can migrate.
   function parseDose(id) {
     if (!id || typeof id !== "string") return null;
-    const m = id.match(/^(super_attack|super_strength|super_defence|ranging_potion|magic_potion|super_restore|saradomin_brew|prayer_potion)_([1-4])$/);
+    const m = id.match(new RegExp("^(" + POTION_IDS + ")_([1-4])$"));
     if (!m) return null;
     return { family: m[1], dose: Number(m[2]) };
   }
 
+  function canonicalSupplyId(id) {
+    const d = parseDose(id);
+    return d ? d.family : id;
+  }
+
   function familyOf(id) {
+    if (!id) return null;
     const d = parseDose(id);
     if (d) return d.family;
+    if (POTION_FAMILIES[id]) return id;
     if (id === "swordfish" || id === "shark" || id === "dark_crab") return id;
     return null;
   }
-
-  function doseId(family, dose) { return family + "_" + dose; }
 
   function invArr() {
     const P = profile();
@@ -96,16 +105,6 @@
       if (familyOf(arr[i]) === fam) n++;
     }
     return n;
-  }
-
-  function bestDoseIndex(fam, list) {
-    const arr = list || invArr();
-    let best = -1, bestD = 0;
-    for (let i = 0; i < arr.length; i++) {
-      const d = parseDose(arr[i]);
-      if (d && d.family === fam && d.dose > bestD) { best = i; bestD = d.dose; }
-    }
-    return best;
   }
 
   function firstIndex(fam, list) {
@@ -142,15 +141,20 @@
     function food(id, name, heal) {
       ITEMS[id] = { id: id, name: name, slot: "inventory", tier: "supply", kind: "food", consumable: true, heal: heal };
     }
-    function pot(family, label, dose) {
-      const id = doseId(family, dose);
-      ITEMS[id] = { id: id, name: label + " (" + dose + ")", slot: "inventory", tier: "supply", kind: "potion", consumable: true, family: family, dose: dose };
+    function pot(family, label) {
+      const rec = { id: family, name: label, slot: "inventory", tier: "supply", kind: "potion", consumable: true, family: family };
+      ITEMS[family] = rec;
+      // Keep leftover dose ids recognized (same name, no dose label) so a stale bag still renders.
+      for (let d = 4; d >= 1; d--) {
+        const id = family + "_" + d;
+        ITEMS[id] = { id: id, name: label, slot: "inventory", tier: "supply", kind: "potion", consumable: true, family: family, legacyDose: d };
+      }
     }
     food("swordfish", "Swordfish", 14);
     food("shark", "Shark", 20);
     food("dark_crab", "Dark crab", 22);
     Object.keys(POTION_FAMILIES).forEach(function (fam) {
-      for (let d = 4; d >= 1; d--) pot(fam, POTION_FAMILIES[fam].name, d);
+      pot(fam, POTION_FAMILIES[fam].name);
     });
   }
 
@@ -183,7 +187,8 @@
       for (let i = 0; i < slots.length; i++) if (eq[slots[i]]) worn[eq[slots[i]]] = true;
       const inv = [];
       const invSeen = {};
-      (P.inventory || []).forEach(function (id) {
+      (P.inventory || []).forEach(function (raw) {
+        const id = canonicalSupplyId(raw);
         if (!id || !ITEMS[id]) return;
         if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
         if (worn[id] && !isSupplyId(id)) return;
@@ -197,7 +202,8 @@
       P.inventory = inv;
       const bank = [];
       const bankSeen = {};
-      (P.bank || []).forEach(function (id) {
+      (P.bank || []).forEach(function (raw) {
+        const id = canonicalSupplyId(raw);
         if (!id || !ITEMS[id]) return;
         if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
         if (worn[id] && !isSupplyId(id)) return;
@@ -372,12 +378,9 @@
       markDirty();
       return true;
     }
-    const i = bestDoseIndex(fam, arr);
+    const i = firstIndex(fam, arr);
     if (i < 0) return false;
-    const d = parseDose(arr[i]);
-    if (!d) return false;
-    if (d.dose > 1) arr[i] = doseId(fam, d.dose - 1);
-    else arr.splice(i, 1);
+    arr.splice(i, 1);
     markDirty();
     return true;
   }
@@ -624,18 +627,7 @@
 
   function qtyFor(slot) {
     if (!slot || slot.type !== "item") return "";
-    const n = available(slot.id);
-    const d = bestDoseForFamily(slot.id);
-    if (d && n > 0) return d + "  ×" + n;
-    return String(n);
-  }
-
-  function bestDoseForFamily(fam) {
-    if (isFood(fam) || isJad()) return 0;
-    const i = bestDoseIndex(fam);
-    if (i < 0) return 0;
-    const d = parseDose(invArr()[i]);
-    return d ? d.dose : 0;
+    return String(available(slot.id));
   }
 
   function refresh() {
@@ -969,8 +961,19 @@
     } catch (e) {}
   }
 
+  function migrateCarried() {
+    const P = profile();
+    function fix(list) {
+      if (!Array.isArray(list)) return list;
+      return list.map(canonicalSupplyId);
+    }
+    if (P.inventory) P.inventory = fix(P.inventory);
+    if (P.bank) P.bank = fix(P.bank);
+  }
+
   function init() {
     registerItems();
+    migrateCarried();
     patchContainers();
     bindUi();
   }
