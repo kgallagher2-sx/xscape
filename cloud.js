@@ -1006,8 +1006,9 @@
     var list = $("cloud-online-list");
     if (!list) return;
     var others = [];
-    Object.keys(presenceMap).forEach(function (id) {
-      var p = presenceMap[id];
+    var map = mergedPresenceMap();
+    Object.keys(map).forEach(function (id) {
+      var p = map[id];
       if (!p || !p.username) return;
       if (session && session.user && id === session.user.id) return;
       others.push(p);
@@ -1190,12 +1191,30 @@
     }, 280);
   }
 
-  function getPresenceMap() { return presenceMap; }
+  function mergedPresenceMap() {
+    var out = {};
+    var id;
+    for (id in heartbeatMap) {
+      if (Object.prototype.hasOwnProperty.call(heartbeatMap, id) && heartbeatMap[id]) {
+        out[id] = heartbeatMap[id];
+      }
+    }
+    // Live Realtime presence wins when both sources have the same player.
+    for (id in presenceMap) {
+      if (Object.prototype.hasOwnProperty.call(presenceMap, id) && presenceMap[id]) {
+        out[id] = presenceMap[id];
+      }
+    }
+    return out;
+  }
+
+  function getPresenceMap() { return mergedPresenceMap(); }
 
   function getPresenceList() {
+    var map = mergedPresenceMap();
     var out = [];
-    Object.keys(presenceMap).forEach(function (id) {
-      var p = presenceMap[id];
+    Object.keys(map).forEach(function (id) {
+      var p = map[id];
       if (p) out.push(p);
     });
     return out;
@@ -1243,16 +1262,109 @@
     return null;
   }
 
+  var heartbeatMap = {};
+  var heartbeatTimer = null;
+  var heartbeatInFlight = false;
+  var lobbyRetryTimer = null;
+  var lobbyRetryMs = 1500;
+  var lobbyGen = 0;
+  var lobbyHooked = false;
+
+  function applyHeartbeatPlayers(players) {
+    var next = {};
+    var me = session && session.user && session.user.id;
+    (players || []).forEach(function (p) {
+      if (!p || !p.id || !p.username) return;
+      if (me && p.id === me) return;
+      next[p.id] = p;
+    });
+    heartbeatMap = next;
+    renderPresence();
+  }
+
+  async function tickHeartbeat() {
+    if (heartbeatInFlight) return;
+    if (!sb || !session) return;
+    if (isRestrictedGuest() || isAnonymousUser(session.user)) return;
+    var name = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name);
+    if (!name && !isHubChatTest()) return;
+    heartbeatInFlight = true;
+    try {
+      var payload = trackPayload();
+      await rpc("hub_heartbeat", {
+        p_scene: payload.scene || "bank",
+        p_col: payload.col != null ? payload.col : null,
+        p_row: payload.row != null ? payload.row : null,
+        p_facing: payload.facing || null,
+        p_equipment: payload.equipment || null
+      });
+      var online = await rpc("hub_online", {});
+      if (online && online.ok) applyHeartbeatPlayers(online.players || []);
+    } catch (e) {
+      console.warn("hub heartbeat", e);
+    } finally {
+      heartbeatInFlight = false;
+    }
+  }
+
+  function hookLobbyVisibility() {
+    if (lobbyHooked) return;
+    lobbyHooked = true;
+    try {
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") {
+          try { startLobby(); } catch (e) {}
+          tickHeartbeat();
+        }
+      });
+    } catch (e) {}
+  }
+
+  function startHeartbeat() {
+    hookLobbyVisibility();
+    if (heartbeatTimer) return;
+    tickHeartbeat();
+    heartbeatTimer = setInterval(tickHeartbeat, 4000);
+  }
+
+  function stopHeartbeat() {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+    if (lobbyRetryTimer) {
+      clearTimeout(lobbyRetryTimer);
+      lobbyRetryTimer = null;
+    }
+    heartbeatMap = {};
+  }
+
+  function scheduleLobbyRetry() {
+    if (lobbyRetryTimer) return;
+    var wait = lobbyRetryMs;
+    lobbyRetryMs = Math.min(15000, Math.floor(lobbyRetryMs * 1.7));
+    lobbyRetryTimer = setTimeout(function () {
+      lobbyRetryTimer = null;
+      try { startLobby(); } catch (e) {}
+    }, wait);
+  }
+
   async function startLobby() {
+
     if (!sb || page !== "hub") return;
     var testChat = isHubChatTest();
     if (!testChat && (!session || isRestrictedGuest() || isAnonymousUser(session.user))) {
       renderPresence();
       return;
     }
-    if (!testChat) await refreshChallenges();
+    hookLobbyVisibility();
+    if (!testChat) startHeartbeat();
+    // Do not block presence/heartbeat on the duel-challenge fetch.
+    if (!testChat) { try { refreshChallenges(); } catch (e) {} }
+    var gen = ++lobbyGen;
     if (hubChannel) {
       try { await sb.removeChannel(hubChannel); } catch (e) {}
+      if (gen !== lobbyGen) return;
       hubChannel = null;
     }
     presenceMap = {};
@@ -1306,17 +1418,24 @@
       if (global.XscapeHub && XscapeHub.onHubChat) global.XscapeHub.onHubChat(payload);
     });
     hubChannel.subscribe(function (status) {
+      if (gen !== lobbyGen) return;
       if (status === "SUBSCRIBED") {
+        lobbyRetryMs = 1500;
         trackPresence();
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        scheduleLobbyRetry();
       }
     });
     renderPresence();
   }
 
   async function signOut() {
+    lobbyGen += 1;
+    stopHeartbeat();
     try { if (hubChannel && sb) await sb.removeChannel(hubChannel); } catch (e) {}
     hubChannel = null;
     presenceMap = {};
+    heartbeatMap = {};
     challenges = [];
     if (sb) await sb.auth.signOut();
     session = null;
