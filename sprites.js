@@ -1409,11 +1409,12 @@ function drawXscapeLogo(c, w, h) {
   c.clearRect(0, 0, w, h);
   const letters = ["X", "S", "C", "A", "P", "E"];
   const n = letters.length;
-  const cx = w * 0.5;
-  const cy = h * 0.52;
-  const span = w * 0.86;
+  const cx = w * 0.52;
+  // Sit the word a little high and right so the lowered, in-front sword has room.
+  const cy = h * 0.44;
+  const span = w * 0.82;
   const rw = span / n * 0.72;
-  const rh = h * 0.34;
+  const rh = Math.min(h * 0.27, w * 0.128);
   const stagger = [0.10, -0.12, 0.07, -0.06, 0.11, -0.09];
   const tilt = [-0.11, 0.08, -0.05, 0.10, -0.08, 0.05];
   const fat = [1.04, 0.96, 1.00, 0.98, 1.03, 0.97];
@@ -1428,19 +1429,19 @@ function drawXscapeLogo(c, w, h) {
   c.fill();
   c.restore();
 
-  // Sword first (behind the stones): shallow diagonal along the lower edge
-  // so only the hilt (left of X) and tip (past E) poke out. Letters stay fully readable.
-  const sx = startX - rw * 0.92;
-  const sy = cy + rh * 0.50;
-  const slen = span * 0.99 + rw * 0.55;
-  const sang = 0.085;
-  _drawLogoSword(c, sx, sy, slen, sang);
-
   for (let i = 0; i < n; i++) {
     const x = startX + i * gap;
     const y = cy + stagger[i] * rh * 1.15;
     _drawLogoStone(c, x, y, rw * fat[i], rh * fat[i], letters[i], tilt[i], 11 + i * 17);
   }
+
+  // Sword in front of the stones, low across their lower edge, below the
+  // engraved letters. Hilt lower-left of X, tip past E, gold guard visible.
+  const sx = startX - rw * 1.18;
+  const sy = cy + rh * 0.88;
+  const slen = span * 1.06 + rw * 0.70;
+  const sang = 0.08;
+  _drawLogoSword(c, sx, sy, slen, sang);
   c.restore();
 }
 
