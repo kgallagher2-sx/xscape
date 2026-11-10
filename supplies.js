@@ -292,6 +292,8 @@
     if (typeof global.saveProfile === "function") {
       try { global.saveProfile(); } catch (e) {}
     }
+    dirtySave = true;
+    flushSave();
   }
 
   function settingsSlice() {
