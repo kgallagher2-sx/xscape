@@ -495,12 +495,13 @@ const CUTSCENE_V6 = 1;            // hosted-build marker: intro + first-kill cut
 const ART_V7 = 1;                 // hosted-build marker: partyhat FK77 + player cape/xbow order
 const ART_V8 = 1;                 // hosted-build marker: short partyhat, vest armour, player back view
 const ART_V9 = 1;                 // hosted-build marker: FK77 matches player world height
+const ART_V10 = 1;                // hosted-build marker: abyssal whip, on-head partyhat, shoot anim
 // Player: hood top -35.2 to boot sole 13.2 (48.4 units).
 // Fast Kill77: hat tip ~-57.4 to boot sole 17.5 (74.9 units).
 const PLAYER_FOOT = 13.2;
 const PLAYER_BODY_H = 48.4;
 const FK77_FOOT = 17.5;
-const FK77_BODY_H = 74.9;
+const FK77_BODY_H = 77.9; // hat tip ~-60.4 to boot 17.5
 const FK77_HEIGHT_MATCH = PLAYER_BODY_H / FK77_BODY_H;
 const JAD_ARENA_FRAC = 0.42;      // Jad idle height as a fraction of the arena
 const MUSIC_BPM = 96;
@@ -1458,7 +1459,7 @@ function playerAttack() {
   const dmg = rand(PLAYER_HIT_MIN, PLAYER_HIT_MAX);
   G.bolts.push({
     t: 0, dur: BOLT_TRAVEL, dmg, dest,
-    from: { x: G.player.x, y: G.player.y - 0.22 },
+    from: { x: G.player.x, y: G.player.y + (-35 * L.sP) / cssH },
     to: { x: dest.x, y: dest.y }
   });
   audio.crossbow();
@@ -2074,32 +2075,70 @@ function drawHealers(t) {
 }
 
 
-function drawHeldCrossbow(c) {
+function playerShotAnim() {
+  const z = { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1, shotT: 99 };
+  if (!G.player) return z;
+  let shotT;
+  if (G._shotAnimT != null) shotT = G._shotAnimT;
+  else {
+    if (G.mode !== "playing") return z;
+    const remain = Math.max(0, (G.player.atkCd || 0) - tickProgress());
+    shotT = PLAYER_ATTACK_TICKS - remain;
+  }
+  z.shotT = shotT;
+  if (shotT < 0 || shotT > PLAYER_ATTACK_TICKS + 0.05) return z;
+  if (shotT < 0.12) {
+    z.raise = shotT / 0.12;
+    z.string = 1;
+  } else if (shotT < 0.45) {
+    const u = (shotT - 0.12) / 0.33;
+    z.raise = 1 - u * 0.45;
+    z.snap = 1;
+    z.string = 0;
+    z.flex = Math.sin(u * Math.PI);
+    z.flash = u < 0.55 ? 1 - u / 0.55 : 0;
+    z.recoil = Math.sin(Math.min(1, u * 1.25) * Math.PI);
+  } else if (shotT < 1.05) {
+    const u = (shotT - 0.45) / 0.60;
+    z.recoil = Math.max(0, 1 - u * 1.8) * 0.35;
+    z.reload = u;
+    z.string = u;
+  } else {
+    z.string = 1;
+  }
+  return z;
+}
+
+function drawHeldCrossbow(c, anim) {
+  anim = anim || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
+  const flex = (anim.flex || 0) * 3.2;
+  const str = anim.string == null ? 1 : anim.string;
+  const strY = 8 * str + (-3) * (1 - str);
   // Stock / body, pointing up (toward Jad)
   c.fillStyle = "#5a3214";
   c.fillRect(-3, -4, 6, 24);
   c.fillStyle = "#3a2010";
   c.fillRect(-3.5, 16, 7, 6);
-  // Prod / limbs (horizontal bow at the front)
+  // Prod / limbs (flex outward on the snap)
   c.fillStyle = "#8a5a28";
   c.beginPath();
-  c.moveTo(-16, -2);
-  c.lineTo(-16, -7);
-  c.quadraticCurveTo(0, -14, 16, -7);
-  c.lineTo(16, -2);
-  c.quadraticCurveTo(0, -7, -16, -2);
+  c.moveTo(-16 - flex, -2);
+  c.lineTo(-16 - flex, -7 - flex * 0.3);
+  c.quadraticCurveTo(0, -14 - flex * 0.4, 16 + flex, -7 - flex * 0.3);
+  c.lineTo(16 + flex, -2);
+  c.quadraticCurveTo(0, -7, -16 - flex, -2);
   c.closePath();
   c.fill();
   c.strokeStyle = "#3a2010";
   c.lineWidth = 1;
   c.stroke();
-  // String
+  // String (cocked at y=8, snapped forward toward the prod)
   c.strokeStyle = "#e8e0d0";
   c.lineWidth = 1;
   c.beginPath();
-  c.moveTo(-15, -5);
-  c.lineTo(0, 8);
-  c.lineTo(15, -5);
+  c.moveTo(-15 - flex * 0.8, -5 - flex * 0.2);
+  c.lineTo(0, strY);
+  c.lineTo(15 + flex * 0.8, -5 - flex * 0.2);
   c.stroke();
   // Rail / bolt groove
   c.fillStyle = "#c0a070";
@@ -2107,6 +2146,39 @@ function drawHeldCrossbow(c) {
   // Trigger nut
   c.fillStyle = "#555";
   c.fillRect(-2, 7, 4, 3);
+  // Reload hand — kept near the prod so it stays visible above the body from behind
+  if (anim.reload > 0.05 && anim.reload < 0.98) {
+    const hy = -6 + anim.reload * 5;
+    c.fillStyle = "#3a5a28";
+    c.beginPath(); c.ellipse(4.2, hy, 3.4, 2.8, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#e8c8a0";
+    c.beginPath(); c.ellipse(4.2, hy, 1.8, 1.6, 0, 0, Math.PI * 2); c.fill();
+  }
+  // Muzzle flash + puff at the tip
+  if (anim.flash > 0.02) {
+    const a = anim.flash;
+    c.save();
+    c.translate(0, -12);
+    c.globalAlpha = a;
+    c.fillStyle = "#fff4a0";
+    c.beginPath(); c.arc(0, 0, 3.2 + (1 - a) * 2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#ffb024";
+    c.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const ang = -Math.PI / 2 + (i - 2) * 0.45;
+      c.moveTo(0, 0);
+      c.lineTo(Math.cos(ang) * 7 * a, Math.sin(ang) * 7 * a);
+    }
+    c.strokeStyle = "#ffe07a";
+    c.lineWidth = 1.4;
+    c.stroke();
+    // smoke puff
+    c.globalAlpha = a * 0.55;
+    c.fillStyle = "#d8d0c4";
+    c.beginPath(); c.ellipse(-2, -5 - (1 - a) * 4, 3.2, 2.2, -0.3, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(2.2, -6 - (1 - a) * 5, 2.6, 2.0, 0.2, 0, Math.PI * 2); c.fill();
+    c.restore();
+  }
 }
 
 function drawPlayer(t) {
@@ -2122,13 +2194,17 @@ function drawPlayer(t) {
   ctx.fillStyle = "rgba(0,0,0,0.4)";
   ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
 
+  // Shot anim: raise, snap, recoil kick, flash, reload. Body jolts back (down on screen).
+  const shot = playerShotAnim();
+  ctx.translate(0, shot.recoil * 6);
+
   // Crossbow FIRST — held out in front toward Jad, so the body hides most of it.
   // Prod / limbs poke out above the shoulders and to the sides, aimed up.
   ctx.save();
   const recoil = (G.player.atkCd >= PLAYER_ATTACK_TICKS - 1) ? -0.12 : 0;
-  ctx.translate(0, -23);
-  ctx.rotate(recoil * 0.25);
-  drawHeldCrossbow(ctx);
+  ctx.translate(0, -23 - shot.raise * 3.5 + shot.recoil * 1.5);
+  ctx.rotate(recoil * 0.25 - shot.raise * 0.04 + shot.recoil * 0.06);
+  drawHeldCrossbow(ctx, shot);
   ctx.restore();
 
   // Legs + boots, from behind
@@ -3019,9 +3095,11 @@ function showChat(name, text, opts) {
   if (head) {
     const c = head.getContext("2d");
     c.clearRect(0, 0, head.width, head.height);
+    c.fillStyle = "#140c08";
+    c.fillRect(0, 0, head.width, head.height);
     c.save();
-    c.translate(32, 96);
-    c.scale(1.32, 1.32);
+    c.translate(32, 66);
+    c.scale(1.02, 1.02);
     drawBandosCharacter(c, now() / 1000, { face: 1, bust: true });
     c.restore();
   }
@@ -3491,65 +3569,6 @@ function drawBandosCharacter(c, t, opt) {
     c.restore();
     c.restore();
 
-    // Huge godsword on the back
-    c.save();
-    c.translate(-9, -28 - bob);
-    c.rotate(-0.58);
-    c.fillStyle = "#0c0e12";
-    c.beginPath();
-    c.moveTo(-4.4, 22);
-    c.lineTo(4.4, 22);
-    c.lineTo(7.2, -52);
-    c.lineTo(0, -78);
-    c.lineTo(-7.2, -52);
-    c.closePath();
-    c.fill();
-    const sg = c.createLinearGradient(-5, 0, 6, 0);
-    sg.addColorStop(0, "#5a6570");
-    sg.addColorStop(0.4, "#f3f6fa");
-    sg.addColorStop(0.55, "#c8d0d8");
-    sg.addColorStop(1, "#6a7380");
-    c.fillStyle = sg;
-    c.beginPath();
-    c.moveTo(-3.2, 20);
-    c.lineTo(3.2, 20);
-    c.lineTo(5.6, -50);
-    c.lineTo(0, -74);
-    c.lineTo(-5.6, -50);
-    c.closePath();
-    c.fill();
-    c.strokeStyle = "#c9a032";
-    c.lineWidth = 1.15;
-    c.beginPath(); c.moveTo(0, 16); c.lineTo(0, -58); c.stroke();
-    c.fillStyle = "#8a6418";
-    c.beginPath();
-    c.moveTo(-16, 16);
-    c.lineTo(-14, 12);
-    c.lineTo(-5, 18);
-    c.lineTo(-5, 24);
-    c.closePath();
-    c.fill();
-    c.beginPath();
-    c.moveTo(16, 16);
-    c.lineTo(14, 12);
-    c.lineTo(5, 18);
-    c.lineTo(5, 24);
-    c.closePath();
-    c.fill();
-    c.fillStyle = "#c9a032";
-    c.fillRect(-14, 17, 28, 4.2);
-    c.fillStyle = "#e8d080";
-    c.fillRect(-12, 17.6, 24, 1.4);
-    c.fillStyle = "#1a140c";
-    c.fillRect(-2.6, 21, 5.2, 14);
-    c.strokeStyle = "#8a6418";
-    c.lineWidth = 0.8;
-    for (let i = 0; i < 4; i++) {
-      c.beginPath(); c.moveTo(-2.6, 23.5 + i * 3); c.lineTo(2.6, 23.5 + i * 3); c.stroke();
-    }
-    c.fillStyle = "#c9a032";
-    c.beginPath(); c.arc(0, 37, 3.4, 0, Math.PI * 2); c.fill();
-    c.restore();
   }
 
   c.save();
@@ -3791,8 +3810,16 @@ function drawBandosCharacter(c, t, opt) {
     }
     c.restore();
   }
-  arm(14.8, wave ? -2.05 : 0.36, !!wave); // right arm first (under)
+  const rightAng = wave ? -2.05 : 0.36;
+  arm(14.8, rightAng, !!wave); // right arm first (under)
   arm(-15.2, 0.42, false);               // left arm
+  // Abyssal whip in the right hand (hangs down, slight idle sway)
+  const handX = 14.8 - 18 * Math.sin(rightAng);
+  const handY = -26 + 18 * Math.cos(rightAng);
+  c.save();
+  c.translate(handX, handY);
+  drawAbyssalWhip(c, tm, { bust: bust });
+  c.restore();
 
   // ONE huge spiked pauldron on the LEFT shoulder only
   c.save();
@@ -3929,10 +3956,11 @@ function drawBandosCharacter(c, t, opt) {
   c.closePath();
   c.fill();
 
-  // Short low blue partyhat, sitting on the hair, slightly tilted
+  // Blue partyhat sits DOWN ON the head: band wraps the crown,
+  // bottom edge just above the brows, over the hair.
   c.save();
-  c.translate(0.8, hy - 6.6);
-  c.rotate(-0.12);
+  c.translate(0, hy - 1.15);
+  c.rotate(-0.05);
   drawBluePartyhat(c, 0);
   c.restore();
 
@@ -3941,97 +3969,120 @@ function drawBandosCharacter(c, t, opt) {
 }
 
 function drawBluePartyhat(c, baseY) {
-  // Short, low paper crown: a band wrapping the head with 5–6 broad triangular
-  // zig-zag points. Total height ~35–40% of the head. Flat-shaded royal blue.
-  // No gradients, no glow, no white streaks.
-  const blue = "#1f3fd0";
-  const blueShade = "#1732a8";
-  const blueBack = "#142880";
-  const blueFacet = "#2748d8";
-  const bandH = 4.2;
-  const pointH = 3.9;
+  // Paper crown sitting ON the head. Clear horizontal band, ~5 BIG broad
+  // triangular points, solid saturated blue, darker back points, thin dark
+  // outline. Slightly wider than the skull. Exaggerated so it reads at small size.
+  const blue = "#1c44e6";
+  const blueHi = "#2c58f2";
+  const blueDk = "#1636c4";
+  const blueBack = "#102080";
+  const ink = "#0a1438";
+  const bandH = 6.2;
+  const pointH = 10.2;
+  const rx = 11.5;
   const bandTop = baseY - bandH;
-  const rx = 9.6;
-  const ry = 3.15;
 
-  // Back of the band (darker), slightly above so it reads as wrapping around
-  c.fillStyle = blueBack;
-  c.beginPath();
-  c.ellipse(0, baseY - 0.6, rx, ry, 0, Math.PI, Math.PI * 2);
-  c.fill();
-
-  // Back points (drawn first, darker) peeking behind the crown
-  const backPts = [
-    { x: -6.4, w: 5.2 },
-    { x: 0, w: 5.6 },
-    { x: 6.4, w: 5.2 }
-  ];
-  c.fillStyle = blueBack;
-  for (const p of backPts) {
+  function tri(x, w, h, col) {
+    c.fillStyle = col;
     c.beginPath();
-    c.moveTo(p.x - p.w / 2, bandTop + 0.6);
-    c.lineTo(p.x + p.w / 2, bandTop + 0.6);
-    c.lineTo(p.x, bandTop - pointH * 0.75);
+    c.moveTo(x - w / 2, bandTop + 0.6);
+    c.lineTo(x + w / 2, bandTop + 0.6);
+    c.lineTo(x, bandTop + 0.6 - h);
     c.closePath();
     c.fill();
   }
 
-  // Front band — solid flat paper wrap
-  c.fillStyle = blueShade;
+  // Back points (darker), peeking between / behind the front row
+  tri(-6.6, 7.4, pointH * 0.86, blueBack);
+  tri(0, 7.8, pointH * 0.9, blueBack);
+  tri(6.6, 7.4, pointH * 0.86, blueBack);
+
+  // Band wraps the crown — bottom curves with the forehead
+  c.fillStyle = blueDk;
   c.beginPath();
-  c.moveTo(-rx, baseY);
-  c.lineTo(rx, baseY);
-  c.lineTo(rx - 0.4, bandTop);
-  c.lineTo(-rx + 0.4, bandTop);
+  c.moveTo(-rx, baseY - 0.2);
+  c.quadraticCurveTo(0, baseY + 1.8, rx, baseY - 0.2);
+  c.lineTo(rx, bandTop);
+  c.quadraticCurveTo(0, bandTop - 1.1, -rx, bandTop);
   c.closePath();
   c.fill();
-  // two flat facets on the band (no gradient)
+  // front facet (flat, not a glow)
   c.fillStyle = blue;
   c.beginPath();
-  c.moveTo(-rx + 0.6, baseY - 0.15);
-  c.lineTo(1.2, baseY - 0.15);
-  c.lineTo(0.8, bandTop + 0.1);
-  c.lineTo(-rx + 1.0, bandTop + 0.1);
-  c.closePath();
-  c.fill();
-  c.fillStyle = blueFacet;
-  c.beginPath();
-  c.moveTo(-5.5, baseY - 0.15);
-  c.lineTo(-1.0, baseY - 0.15);
-  c.lineTo(-1.2, bandTop + 0.1);
-  c.lineTo(-5.2, bandTop + 0.1);
+  c.moveTo(-rx + 1.2, baseY - 0.5);
+  c.quadraticCurveTo(-3, baseY + 0.7, 1.5, baseY - 0.4);
+  c.lineTo(rx - 4, bandTop + 0.5);
+  c.lineTo(-rx + 1.6, bandTop + 0.5);
   c.closePath();
   c.fill();
 
-  // Front zig-zag: 5 broad triangles, each about as tall as the band
-  // Points sit on the top edge of the band, slightly overlapping like folded paper.
+  // 5 BIG broad front points
   const tips = [
-    { x: -8.2, w: 6.2, col: blueShade, facet: blue },
-    { x: -4.1, w: 6.4, col: blue, facet: blueFacet },
-    { x:  0.0, w: 6.6, col: blue, facet: blueFacet },
-    { x:  4.1, w: 6.4, col: blue, facet: blueShade },
-    { x:  8.2, w: 6.2, col: blueShade, facet: blueBack }
+    { x: -9.4, w: 8.0, h: pointH * 0.92, col: blueDk },
+    { x: -4.7, w: 8.4, h: pointH * 0.98, col: blue },
+    { x:  0.0, w: 8.8, h: pointH,        col: blueHi },
+    { x:  4.7, w: 8.4, h: pointH * 0.98, col: blue },
+    { x:  9.4, w: 8.0, h: pointH * 0.92, col: blueDk }
   ];
+  for (const p of tips) tri(p.x, p.w, p.h, p.col);
+
+  // Dark outline along the band bottom — this is what separates the hat from the hair
+  c.strokeStyle = ink;
+  c.lineWidth = 1.45;
+  c.lineJoin = "round";
+  c.beginPath();
+  c.moveTo(-rx, baseY - 0.2);
+  c.quadraticCurveTo(0, baseY + 1.8, rx, baseY - 0.2);
+  c.stroke();
+  // Thinner mid-blue outline on the points so the tips stay visible
+  c.strokeStyle = "#0c2068";
+  c.lineWidth = 0.9;
   for (const p of tips) {
-    const y0 = bandTop + 0.35;
-    c.fillStyle = p.col;
     c.beginPath();
-    c.moveTo(p.x - p.w / 2, y0);
-    c.lineTo(p.x + p.w / 2, y0);
-    c.lineTo(p.x, y0 - pointH);
-    c.closePath();
-    c.fill();
-    // single darker/lighter facet, no white streak
-    c.fillStyle = p.facet;
-    c.beginPath();
-    c.moveTo(p.x - p.w / 2, y0);
-    c.lineTo(p.x - p.w * 0.08, y0);
-    c.lineTo(p.x, y0 - pointH);
-    c.closePath();
-    c.fill();
+    c.moveTo(p.x - p.w / 2, bandTop + 0.6);
+    c.lineTo(p.x, bandTop + 0.6 - p.h);
+    c.lineTo(p.x + p.w / 2, bandTop + 0.6);
+    c.stroke();
   }
 }
 
+function drawAbyssalWhip(c, tm, opt) {
+  opt = opt || {};
+  const sway = Math.sin((tm || 0) * 2.8) * 3.0;
+  const sway2 = Math.cos((tm || 0) * 2.15) * 1.6;
+  // Short dark handle
+  c.fillStyle = "#14100c";
+  c.fillRect(-1.4, -5.5, 2.8, 11.5);
+  c.fillStyle = "#2a2218";
+  c.fillRect(-0.7, -5, 1.3, 10.5);
+  // Reddish-purple pommel
+  c.fillStyle = "#4a1028";
+  c.beginPath(); c.arc(0, 7.4, 2.5, 0, Math.PI * 2); c.fill();
+  c.fillStyle = "#9a2858";
+  c.beginPath(); c.arc(-0.25, 7.05, 1.8, 0, Math.PI * 2); c.fill();
+  c.fillStyle = "#c44878";
+  c.beginPath(); c.arc(-0.55, 6.65, 0.7, 0, Math.PI * 2); c.fill();
+
+  // Long thin segmented lash, loose S-curve hanging down, idle sway
+  const len = opt.bust ? 18 : 34;
+  const segs = opt.bust ? 7 : 11;
+  let px = 0, py = -5.5;
+  for (let i = 1; i <= segs; i++) {
+    const u = i / segs;
+    const x = 6.2 * Math.sin(u * Math.PI * 1.15) + sway * u + sway2 * u * u;
+    const y = -5.5 + u * len;
+    c.strokeStyle = (i % 2) ? "#2a3848" : "#3a4c5c";
+    c.lineWidth = Math.max(0.9, 1.85 - u * 0.7);
+    c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(px, py);
+    c.lineTo(x, y);
+    c.stroke();
+    c.fillStyle = "#1a2830";
+    c.beginPath(); c.arc(x, y, Math.max(0.55, 1.2 - u * 0.45), 0, Math.PI * 2); c.fill();
+    px = x; py = y;
+  }
+}
 
 function drawFastKill77(t) {
   const cs = G.cs;
@@ -4053,7 +4104,7 @@ function drawFastKill77(t) {
   ctx.restore();
   // Name in OSRS yellow, just above the short partyhat
   ctx.save();
-  ctx.translate(x, y + footAlign - 66 * fkS);
+  ctx.translate(x, y + footAlign - 68 * fkS);
   ctx.font = "bold " + Math.max(11, Math.round(12 * L.sP)) + "px Trebuchet MS, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -4209,6 +4260,8 @@ window.KellenScape = {
     G.elapsedMs = 78000; G.ticks = 130; G.perfectPrayers = 12; G.damageTaken = 36;
     startFirstKill({ force: true });
   },
+  seekShot(t) { G._shotAnimT = t; },
+  clearShot() { G._shotAnimT = null; },
   seekCutscene(t) {
     if (!G.cs) return;
     G.cs.t = Math.max(0, t);
@@ -4239,7 +4292,7 @@ window.KellenScape = {
     HEALER_MAX_HIT, JAD_KILL_GP_MIN, JAD_KILL_GP_MAX,
     SHARK_ATTACK_DELAY_TICKS, POT_ATTACK_DELAY_TICKS, CONSUME_COOLDOWN_TICKS,
     JAD_ATTACK_SPEED_TICKS, PLAYER_ATTACK_TICKS, SHARK_HEAL, ARENA_LAYOUT_V5, JAD_ARENA_FRAC,
-    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, FK77_HEIGHT_MATCH
+    CUTSCENE_V6, ART_V7, ART_V8, ART_V9, ART_V10, FK77_HEIGHT_MATCH
   }
 };
 window.Xscape = window.KellenScape;
