@@ -1341,6 +1341,10 @@
   /* ---------- Host loop ---------- */
   function hostFrame(ts, ctx, cssW, cssH, dpr) {
     if (!state.active) return;
+    if (state.justSpawned) {
+      resolveSpawnCollision();
+      if ((ts || 0) - (state.spawnedAt || 0) > 4000) state.justSpawned = false;
+    }
     if (!state.lastTs) state.lastTs = ts;
     var dt = Math.min(0.05, (ts - state.lastTs) / 1000);
     state.lastTs = ts;
@@ -1382,14 +1386,106 @@
   }
 
   /* ---------- Enter / leave ---------- */
+  function hashSpawnKey(s) {
+    var h = 2166136261;
+    s = String(s || "");
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function mySpawnKey() {
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.userId === "function" && cloud.userId()) return "uid:" + cloud.userId();
+    if (global.Profile && Profile.name) return "name:" + Profile.name;
+    return "local";
+  }
+
+  // South doorway first, then a ring spreading along the entrance, then
+  // further into the lobby if the doorway is packed.
+  var SPAWN_CANDIDATES = [
+    [4, 8], [3, 8], [5, 8], [2, 8], [6, 8], [1, 8], [7, 8], [0, 8], [8, 8],
+    [4, 9], [3, 9], [5, 9], [2, 9], [6, 9], [1, 9], [7, 9], [0, 9], [8, 9],
+    [4, 7], [3, 7], [5, 7], [2, 7], [6, 7], [1, 7], [7, 7], [0, 7], [8, 7],
+    [4, 5], [3, 5], [5, 5], [2, 5], [6, 5], [1, 5], [7, 5], [0, 5], [8, 5]
+  ];
+
+  function occupiedSpawnTiles() {
+    var taken = {};
+    var rows = othersInBank() || [];
+    for (var i = 0; i < rows.length; i++) {
+      var p = rows[i];
+      if (!p || p.col == null || p.row == null) continue;
+      taken[p.col + "," + p.row] = true;
+    }
+    return taken;
+  }
+
+  function pickSpawnTile() {
+    var taken = occupiedSpawnTiles();
+    var list = SPAWN_CANDIDATES;
+    var rot = hashSpawnKey(mySpawnKey()) % list.length;
+    var i, c, r;
+    for (i = 0; i < list.length; i++) {
+      var spot = list[(rot + i) % list.length];
+      c = spot[0]; r = spot[1];
+      if (!walkable(c, r) || npcAt(c, r)) continue;
+      if (taken[c + "," + r]) continue;
+      return { c: c, r: r };
+    }
+    var all = [];
+    for (r = ROWS - 1; r >= 0; r--) {
+      for (c = 0; c < COLS; c++) {
+        if (walkable(c, r) && !npcAt(c, r) && !taken[c + "," + r]) all.push({ c: c, r: r });
+      }
+    }
+    if (all.length) return all[hashSpawnKey(mySpawnKey()) % all.length];
+    var fb = list[rot];
+    return { c: fb[0], r: fb[1] };
+  }
+
+  function applySpawn(tile) {
+    state.col = tile.c;
+    state.row = tile.r;
+    state.prevCol = tile.c;
+    state.prevRow = tile.r;
+    state.path = [];
+    state.moving = false;
+    state.destCol = null;
+    state.destRow = null;
+    state.facing = "back";
+  }
+
+  function resolveSpawnCollision() {
+    if (!state.active || !state.justSpawned) return false;
+    if (state.path && state.path.length) {
+      state.justSpawned = false;
+      return false;
+    }
+    var taken = occupiedSpawnTiles();
+    if (!taken[state.col + "," + state.row]) return false;
+    applySpawn(pickSpawnTile());
+    publishPresence();
+    return true;
+  }
+
   function enter() {
+    var wasActive = state.active;
     state.active = true;
     state.acc = 0;
     state.lastTs = 0;
     state.path = [];
     state.pending = null;
     state.talk = null;
-    if (state.col == null) { state.col = 4; state.row = 7; }
+    if (!wasActive) {
+      applySpawn(pickSpawnTile());
+      state.justSpawned = true;
+      state.spawnedAt = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    } else {
+      resolveSpawnCollision();
+    }
     var hub = $("overlay-hub");
     if (hub) {
       hub.classList.add("is-world");
@@ -1416,6 +1512,7 @@
           try { refreshGearViews(); } catch (e2) {}
         }
         paintGearCharacter(typeof performance !== "undefined" ? performance.now() : Date.now());
+        resolveSpawnCollision();
         publishPresence();
         refreshGpChip();
       }).catch(function () {});
@@ -1424,6 +1521,7 @@
 
   function leave() {
     state.active = false;
+    state.justSpawned = false;
     state.talk = null;
     hideCtx();
     endChatLayer();
