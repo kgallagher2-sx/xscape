@@ -87,7 +87,7 @@
   const STARTER_LOADOUT = { weapon: "worn-xbow", body: "patched-body", legs: "patched-chaps", hands: "patched-vambs", boots: "starter-boots", neck: null, cape: null };
   const MID_LOADOUT = { weapon: "tempered-xbow", body: "duskhide-body", legs: "duskhide-chaps", hands: "duskhide-vambs", boots: "starter-boots", neck: null, cape: null };
   const BEST_LOADOUT = { weapon: "hollowbolt-xbow", body: "veilhide-body", legs: "veilhide-chaps", hands: "veilhide-vambs", boots: "crownshard-boots", neck: "unsleeping-stole", cape: "gloamheart-cape" };
-  const UNIQUES = ["hollowbolt-xbow","veilhide-body","veilhide-chaps","veilhide-vambs","crownshard-boots","unsleeping-stole","gloamheart-cape"];
+  const UNIQUES = ["eclipse_coif","eclipse_body","eclipse_chaps","eclipse_longbow","eclipse_pendant","eclipse_band","unsleeping_hood","unsleeping_robe_top","unsleeping_robe_bottom","nightfall_staff","unsleeping_charm","dreamless_ring","hollowplate_helm","hollowplate_body","hollowplate_legs","hollow_halberd","hollow_torque","hollow_signet"];
   const MIDS = ["tempered-xbow","duskhide-body","duskhide-chaps","duskhide-vambs"];
   function midPool() {
     return MIDS;
@@ -143,11 +143,25 @@
     "duskhide-chaps": { id: "duskhide-chaps", name: "Duskhide chaps", slot: "legs", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:-2,arange:4, dstab:10,dslash:10,dcrush:10,dmagic:4,drange:16, str:0, rstr:0, mdmg:0 } },
     "duskhide-vambs": { id: "duskhide-vambs", name: "Duskhide vambraces", slot: "hands", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:6, dstab:2,dslash:2,dcrush:2,dmagic:1,drange:2, str:0, rstr:0, mdmg:0 } }
   };
-  const HOST_UNIQUES = ["hollowbolt_xbow","hollow_bolts","veilhide_body","veilhide_chaps","veilhide_vambs","crownshard_boots","unsleeping_stole","gloamheart_cape"];
+  const HOST_UNIQUES = [
+    "eclipse_coif","eclipse_body","eclipse_chaps","eclipse_longbow","eclipse_pendant","eclipse_band",
+    "unsleeping_hood","unsleeping_robe_top","unsleeping_robe_bottom","nightfall_staff","unsleeping_charm","dreamless_ring",
+    "hollowplate_helm","hollowplate_body","hollowplate_legs","hollow_halberd","hollow_torque","hollow_signet"
+  ];
   const GLOAMHOLD_LOADOUT = {
-    head: "coif", cape: "gloamheart_cape", neck: "unsleeping_stole", ammo: "hollow_bolts",
-    weapon: "hollowbolt_xbow", body: "veilhide_body", shield: null,
-    legs: "veilhide_chaps", hands: "veilhide_vambs", feet: "crownshard_boots", ring: "archers_ring"
+    head: "eclipse_coif", cape: "fire_cape", neck: "eclipse_pendant", ammo: null,
+    weapon: "eclipse_longbow", body: "eclipse_body", shield: null,
+    legs: "eclipse_chaps", hands: null, feet: null, ring: "eclipse_band"
+  };
+  const GLOAMHOLD_MELEE_LOADOUT = {
+    head: "hollowplate_helm", cape: "fire_cape", neck: "hollow_torque", ammo: null,
+    weapon: "hollow_halberd", body: "hollowplate_body", shield: null,
+    legs: "hollowplate_legs", hands: null, feet: null, ring: "hollow_signet"
+  };
+  const GLOAMHOLD_MAGE_LOADOUT = {
+    head: "unsleeping_hood", cape: "fire_cape", neck: "unsleeping_charm", ammo: null,
+    weapon: "nightfall_staff", body: "unsleeping_robe_top", shield: null,
+    legs: "unsleeping_robe_bottom", hands: null, feet: null, ring: "dreamless_ring"
   };
   const HOST_MONSTERS = {
     morvane: {
@@ -184,7 +198,9 @@
       }
     }
     if (typeof global.LOADOUTS !== "undefined") {
-      if (!global.LOADOUTS.gloamhold) global.LOADOUTS.gloamhold = GLOAMHOLD_LOADOUT;
+      global.LOADOUTS.gloamhold = GLOAMHOLD_LOADOUT;
+      global.LOADOUTS.gloamhold_melee = GLOAMHOLD_MELEE_LOADOUT;
+      global.LOADOUTS.gloamhold_mage = GLOAMHOLD_MAGE_LOADOUT;
     }
     if (typeof global.MONSTERS !== "undefined") {
       for (const k of Object.keys(HOST_MONSTERS)) {
@@ -251,7 +267,7 @@
     if (!it) return "ranged";
     if (it.style) return it.style;
     if (it.kind === "wand" || it.slot === "wand") return "mage";
-    if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "slash" || it.kind === "stab" || it.kind === "crush") {
+    if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "halberd" || it.kind === "slash" || it.kind === "stab" || it.kind === "crush") {
       return it.kind === "spear" || it.style === "stab" ? "stab" : (it.kind === "axe" || it.kind === "crush" ? "crush" : "slash");
     }
     return "ranged";
@@ -519,6 +535,61 @@
      with supabase/alcove_mid_loot.sql: chest1=0, chest2=0.45, chest3=0.35,
      pool = tempered-xbow, duskhide-body, duskhide-chaps, duskhide-vambs. */
   const ALCOVE_MID_CHANCE = { chest1: 0, chest2: 0.45, chest3: 0.35 };
+  const ALCOVE_GP = { chest1: [0, 0], chest2: [100000, 150000], chest3: [150000, 200000] };
+  const ALCOVE_BONUS_POOL = {
+    chest2: [{ id: "dark_crab", qty: 2 }, { id: "super_restore", qty: 1 }, { id: "antipoison", qty: 1 }],
+    chest3: [{ id: "dark_crab", qty: 3 }, { id: "super_restore", qty: 1 }, { id: "super_defence", qty: 1 }, { id: "antipoison", qty: 1 }]
+  };
+  const END_CHEST_COMMONS = ["dark_crab","dark_crab","dark_crab","dark_crab","prayer_potion_4","prayer_potion_4","saradomin_brew_4"];
+  function fmtRaidGp(n) {
+    if (typeof global.fmtGp === "function") return global.fmtGp(n);
+    var x = Math.floor(Number(n) || 0);
+    if (x >= 1000000) return (Math.round(x / 100000) / 10) + "M";
+    if (x >= 1000) return Math.round(x / 1000) + "k";
+    return String(x);
+  }
+  function alcoveSupplyFamily(id) {
+    if (!id) return null;
+    if (global.XscapeSupplies && typeof XscapeSupplies.familyOf === "function") {
+      return XscapeSupplies.familyOf(id) || id;
+    }
+    return String(id).replace(/_[1-4]$/, "");
+  }
+  function applyAlcoveSupplies(st, items) {
+    if (!st || !items || !items.length) return;
+    if (!st.found) st.found = {};
+    if (!st.inv) st.inv = emptyInv();
+    for (var i = 0; i < items.length; i++) {
+      var fam = alcoveSupplyFamily(items[i]);
+      if (!fam) continue;
+      st.found[fam] = (st.found[fam] || 0) + 1;
+      if (isGroup(st)) {
+        allFighters(st).forEach(function (f) {
+          if (!f.inv) f.inv = emptyInv();
+          bumpInv(f.inv, fam, 1);
+        });
+        restoreLocalFighter(st);
+      } else {
+        bumpInv(st.inv, fam, 1);
+      }
+    }
+    if (global.XscapeSupplies && XscapeSupplies.refresh) {
+      try { XscapeSupplies.refresh(); } catch (e) {}
+    }
+  }
+  function rollLocalAlcoveLoot(st, room) {
+    var rng = st && st.rng ? st.rng : Math.random;
+    var range = ALCOVE_GP[room] || [0, 0];
+    var gp = (range[1] > 0) ? irand(rng, range[0], range[1]) : 0;
+    var items = [];
+    var chance = ALCOVE_MID_CHANCE[room] || 0;
+    var pool = ALCOVE_BONUS_POOL[room];
+    if (chance && pool && pool.length && rng() < chance) {
+      var pick = pool[Math.floor(rng() * pool.length)];
+      for (var i = 0; i < (pick.qty || 1); i++) items.push(pick.id);
+    }
+    return { gp: gp, items: items };
+  }
   function isLocalAlcoveMode() {
     try {
       var t = (new URLSearchParams(global.location.search).get("test") || "").trim();
@@ -619,6 +690,15 @@
       if (res && res.ok) {
         st._alcoveClaim[room] = "done";
         applyAlcoveItems(st, items);
+        var bonus = res.bonus_items || res.bonusItems || [];
+        if (typeof bonus === "string") {
+          try { bonus = JSON.parse(bonus); } catch (e) { bonus = []; }
+        }
+        if (!Array.isArray(bonus)) bonus = [];
+        if (!res.already && bonus.length) applyAlcoveSupplies(st, bonus);
+        if (res.profile && res.profile.gp != null && global.Profile) {
+          try { global.Profile.gp = res.profile.gp; } catch (e) {}
+        }
         var cloud = global.XscapeCloud;
         if (res.profile && cloud && typeof cloud.applyProfile === "function") {
           try { cloud.applyProfile(res.profile, { fromAward: true }); } catch (e) {}
@@ -1425,6 +1505,43 @@
     if (live) { st.target = { kind: "add", id: live.id }; return { type: "add", ref: live, mon: MONSTERS.shade }; }
     return null;
   }
+  function tileManhattan(c1, r1, c2, r2) {
+    return Math.abs((c1 || 0) - (c2 || 0)) + Math.abs((r1 || 0) - (r2 || 0));
+  }
+  function targetTile(t) {
+    return {
+      col: (t && t.ref && t.ref.col != null) ? t.ref.col : 2,
+      row: (t && t.ref && t.ref.row != null) ? t.ref.row : 0
+    };
+  }
+  function meleeReachFor(eq) {
+    var it = getItem(eq && eq.weapon);
+    if (it && it.reach != null) return Math.max(1, it.reach | 0);
+    return 1;
+  }
+  function inMeleeReach(st, t, reach) {
+    var tt = targetTile(t);
+    return tileManhattan(st.player.col, st.player.row, tt.col, tt.row) <= reach;
+  }
+  function pathTowardReach(st, t, reach) {
+    if (!st || !st.player) return;
+    var tt = targetTile(t);
+    var bestC = null, bestR = null, bestPd = 99, bestD = 99;
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var d = tileManhattan(c, r, tt.col, tt.row);
+        if (d > reach) continue;
+        var pd = tileManhattan(st.player.col, st.player.row, c, r);
+        if (pd < bestPd || (pd === bestPd && d < bestD)) {
+          bestPd = pd; bestD = d; bestC = c; bestR = r;
+        }
+      }
+    }
+    if (bestC == null) return;
+    if (bestC === st.player.col && bestR === st.player.row) return;
+    st.player.path = pathTo(st, bestC, bestR);
+    sendRaidInput(st, { destCol: bestC, destRow: bestR, target: st.target });
+  }
   function playerAttack(st) {
     const t = currentTarget(st);
     if (!t) return;
@@ -1433,6 +1550,17 @@
     const vsStyle = vsStyleOf(style);
     const isMagic = vsStyle === "magic" || vsStyle === "mage";
     const isMelee = !isMagic && vsStyle !== "ranged";
+    if (isMelee) {
+      var reach = meleeReachFor(eq);
+      if (!inMeleeReach(st, t, reach)) {
+        if (!st._tooFarAt || (st.ticks - st._tooFarAt) >= 8) {
+          st._tooFarAt = st.ticks || 0;
+          flash(st, "Too far", "#ff8a70");
+        }
+        if (!st.player.path || !st.player.path.length) pathTowardReach(st, t, reach);
+        return;
+      }
+    }
     st.player.atkCd = playerSpeedFrom(eq);
     if (isMagic) sfx(st, "wind");
     else if (!isMelee) sfx(st, "crossbow");
@@ -1942,18 +2070,25 @@
     if (tab.ranging) bits.push(tab.ranging + " ranging pot");
     let mid = null;
     if (isLocalAlcoveMode()) {
-      var localChance = (ALCOVE_MID_CHANCE[st.room] != null) ? ALCOVE_MID_CHANCE[st.room] : (tab.midChance || 0);
-      if (localChance && st.rng() < localChance) {
-        mid = pickMissing(st.rng, midPool(), profileObj().unlockedItems);
-        if (mid) {
-          applyAlcoveItems(st, [mid]);
-          bits.push((getItem(mid) && getItem(mid).name) || mid);
-        }
+      var localLoot = rollLocalAlcoveLoot(st, st.room);
+      if (localLoot.gp) bits.push(fmtRaidGp(localLoot.gp) + " GP");
+      if (localLoot.items && localLoot.items.length) {
+        applyAlcoveSupplies(st, localLoot.items);
+        bits.push.apply(bits, alcoveItemNames(localLoot.items));
       }
-    } else if (ALCOVE_MID_CHANCE[st.room]) {
+    } else if (ALCOVE_MID_CHANCE[st.room] || (ALCOVE_GP[st.room] && ALCOVE_GP[st.room][1] > 0)) {
       requestAlcoveClaim(st, st.room, function (res) {
-        var items = (res && res.items) || [];
-        var names = alcoveItemNames(items);
+        var names = [];
+        var gp = res && (res.already ? res.gp : (res.gpAwarded != null ? res.gpAwarded : res.gp));
+        if (gp) names.push(fmtRaidGp(gp) + " GP");
+        var bonus = (res && (res.bonus_items || res.bonusItems)) || [];
+        if (typeof bonus === "string") {
+          try { bonus = JSON.parse(bonus); } catch (e) { bonus = []; }
+        }
+        if (!Array.isArray(bonus)) bonus = [];
+        names = names.concat(alcoveItemNames(bonus));
+        var midNames = alcoveItemNames((res && res.items) || []);
+        if (midNames.length) names = names.concat(midNames);
         if (names.length) flash(st, names.join(", "), "#ffe9a0");
       });
     }
@@ -1978,16 +2113,19 @@
   }
   function rollFinalLoot(rng) {
     const gp = irand(rng, 2000000, 8000000);
-    const items = [];
-    const uni = uniquePool();
-    const owned = (profileObj().unlockedItems || []).slice();
-    items.push(pickMissing(rng, uni, owned));
-    let band = "rare";
-    if (rng() < 0.10) {
-      band = "ultrarare";
-      items.push(pickMissing(rng, uni, owned.concat(items)));
+    const items = END_CHEST_COMMONS.slice();
+    let band = "common";
+    let uniqueHit = false;
+    if (rng() < (1 / 8)) {
+      const uni = uniquePool();
+      const id = pick(rng, uni);
+      if (id) {
+        items.unshift(id);
+        uniqueHit = true;
+        band = "rare";
+      }
     }
-    return { gp: gp, items: items, band: band };
+    return { gp: gp, items: items, band: band, uniqueHit: uniqueHit, bonusGp: 0 };
   }
   function applyLoot(st, loot) {
     awardGp(loot.gp);
@@ -2036,6 +2174,11 @@
     if (fam === "prayer_potion" || fam === "super_restore") return st.inv.pots || 0;
     if (fam === "saradomin_brew") return st.inv.brews || 0;
     if (fam === "ranging_potion") return st.inv.ranging || 0;
+    if (fam === "antipoison") return st.inv.antipoison || 0;
+    if (fam === "super_defence") return st.inv.super_defence || 0;
+    if (fam === "super_attack") return st.inv.super_attack || 0;
+    if (fam === "super_strength") return st.inv.super_strength || 0;
+    if (fam === "magic_potion") return st.inv.magic_potion || 0;
     return 0;
   }
   function queueSupply(fam) {
@@ -2139,6 +2282,13 @@
       flash(st, fam.replace("super_", "Super "), "#7af07a");
       return true;
     }
+    if (fam === "antipoison") {
+      p.antipoisonLeft = 150;
+      if (local && PS && PS.applyAntipoison) PS.applyAntipoison();
+      st.potCd = CONSUME_CD; sfx(st, "sip");
+      flash(st, "Antipoison", "#7af0a0");
+      return true;
+    }
     return false;
   }
   function bumpInv(inv, fam, delta) {
@@ -2149,6 +2299,11 @@
     else if (fam === "prayer_potion" || fam === "super_restore") inv.pots = Math.max(0, (inv.pots || 0) + delta);
     else if (fam === "saradomin_brew") inv.brews = Math.max(0, (inv.brews || 0) + delta);
     else if (fam === "ranging_potion") inv.ranging = Math.max(0, (inv.ranging || 0) + delta);
+    else if (fam === "antipoison") inv.antipoison = Math.max(0, (inv.antipoison || 0) + delta);
+    else if (fam === "super_defence") inv.super_defence = Math.max(0, (inv.super_defence || 0) + delta);
+    else if (fam === "super_attack") inv.super_attack = Math.max(0, (inv.super_attack || 0) + delta);
+    else if (fam === "super_strength") inv.super_strength = Math.max(0, (inv.super_strength || 0) + delta);
+    else if (fam === "magic_potion") inv.magic_potion = Math.max(0, (inv.magic_potion || 0) + delta);
   }
   function resolveConsumables(st) {
     const p = st.player;
@@ -2780,23 +2935,38 @@
       if (R.god) { R.player.hp = PLAYER_MAX_HP; R.player.prayerPts = PLAYER_MAX_PRAYER; }
       flash(R, R.god ? "God mode on" : "God mode off", "#ffe44a");
     },
-    giveBestGear: function () {
+    giveKit: function (name) {
       registerItems();
+      const key = String(name || "eclipse").toLowerCase();
+      const map = {
+        melee: GLOAMHOLD_MELEE_LOADOUT, halberd: GLOAMHOLD_MELEE_LOADOUT, hollowplate: GLOAMHOLD_MELEE_LOADOUT,
+        mage: GLOAMHOLD_MAGE_LOADOUT, staff: GLOAMHOLD_MAGE_LOADOUT, nightfall: GLOAMHOLD_MAGE_LOADOUT, unsleeping: GLOAMHOLD_MAGE_LOADOUT,
+        eclipse: GLOAMHOLD_LOADOUT, ranged: GLOAMHOLD_LOADOUT, gloamhold: GLOAMHOLD_LOADOUT, bow: GLOAMHOLD_LOADOUT
+      };
+      const load = map[key] || GLOAMHOLD_LOADOUT;
+      const loadName = (load === GLOAMHOLD_MELEE_LOADOUT) ? "gloamhold_melee" : (load === GLOAMHOLD_MAGE_LOADOUT) ? "gloamhold_mage" : "gloamhold";
       const P = loadRaidProfile();
-      const uni = uniquePool();
-      const midIds = midPool();
       if (isLocalAlcoveMode()) {
+        const uni = uniquePool();
         for (let i = 0; i < uni.length; i++) unlockItem(uni[i]);
-        for (let i = 0; i < midIds.length; i++) unlockItem(midIds[i]);
+        unlockItem("fire_cape");
       }
-      if (typeof global.equipLoadout === "function" && typeof global.LOADOUTS !== "undefined" && global.LOADOUTS.gloamhold) {
-        global.equipLoadout("gloamhold");
+      if (typeof global.equipLoadout === "function" && typeof global.LOADOUTS !== "undefined" && global.LOADOUTS[loadName]) {
+        global.equipLoadout(loadName);
       } else {
-        P.gear = deep(BEST_LOADOUT);
+        P.gear = deep(load);
+        if (global.Profile) global.Profile.equipment = deep(load);
         saveRaidProfile();
       }
-      if (R) R.player.loadout = deep(BEST_LOADOUT);
-      if (R) flash(R, "Best gear equipped", "#ffe44a");
+      if (R) {
+        R.player.loadout = deep(load);
+        if (R.player.equipment) R.player.equipment = deep(load);
+        flash(R, "Kit: " + loadName, "#ffe44a");
+      }
+      return loadName;
+    },
+    giveBestGear: function () {
+      return api.giveKit("eclipse");
     },
     giveStarterGear: function () {
       const P = loadRaidProfile();
@@ -2855,6 +3025,10 @@
     saveProfile: saveRaidProfile,
     profile: profileObj,
     rollFinalLoot: rollFinalLoot,
+    showRaidResult: showRaidResult,
+    meleeReachFor: meleeReachFor,
+    inMeleeReach: inMeleeReach,
+    HOST_UNIQUES: HOST_UNIQUES,
     raidAudio: raidAudio,
     testFlag: function () {
       try { return (new URLSearchParams(global.location.search).get("test") || "").toLowerCase(); }
@@ -2864,7 +3038,10 @@
       const t = api.testFlag();
       const map = { "raid":"gate", "raid-gate":"gate", "raid-court":"court", "raid-corridor":"corridor", "raid-boss":"throne", "raid-boss2":"throne", "raid-boss3":"throne", "raid-enrage":"throne", "raid-loot":"loot" };
       if (!t || !map[t]) return fallback ? start(fallback) : null;
+      let kit = "";
+      try { kit = (new URLSearchParams(global.location.search).get("kit") || "").toLowerCase(); } catch (e) { kit = ""; }
       const st = start({ room: map[t] });
+      if (kit) api.giveKit(kit);
       if (t === "raid-boss2") api.skipToPhase(2);
       if (t === "raid-boss3") api.skipToPhase(3);
       if (t === "raid-enrage") api.skipToPhase(4);
@@ -3243,8 +3420,8 @@
       items: rawItems,
       died: !!res.died,
       halfGp: !!(res.halfGp || res.died),
-      uniqueHit: !!(res.uniqueHit || rares.length),
-      noRare: !rares.length && !res.died,
+      uniqueHit: !!(res.uniqueHit || rares.some(function (id) { return HOST_UNIQUES.indexOf(id) !== -1; })),
+      noRare: !res.uniqueHit && !rares.some(function (id) { return HOST_UNIQUES.indexOf(id) !== -1; }) && !res.died,
       score: res.score != null ? res.score : computeRaidScore(st.player)
     };
     st.loot = loot;
@@ -3430,14 +3607,20 @@
     if (loot) {
       const bits = [];
       if (loot.died || loot.halfGp) bits.push("Died, half GP");
-      const rares = (loot.items || []).filter(function (id) { return id && id !== "hollow_bolts"; });
-      if (rares.length) {
-        rares.forEach(function (id) {
+      const uniques = (loot.items || []).filter(function (id) { return id && HOST_UNIQUES.indexOf(id) !== -1; });
+      const commons = (loot.items || []).filter(function (id) { return id && HOST_UNIQUES.indexOf(id) === -1 && id !== "hollow_bolts"; });
+      if (uniques.length) {
+        uniques.forEach(function (id) {
           if (global.XscapeIcons) {
             bits.push('<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + id + '"></canvas><span>' + lootLabel(id) + "</span></span>");
           } else bits.push(lootLabel(id));
         });
-      } else if (!(loot.died || loot.halfGp)) bits.push("No rare this time");
+      } else if (!(loot.died || loot.halfGp) && loot.uniqueHit !== true) bits.push("No rare this time");
+      commons.forEach(function (id) {
+        if (global.XscapeIcons) {
+          bits.push('<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + id + '"></canvas><span>' + lootLabel(id) + "</span></span>");
+        } else bits.push(lootLabel(id));
+      });
       lootTxt = bits.join(" · ") || "—";
     }
     const gpTxt = loot && loot.gp

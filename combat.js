@@ -100,6 +100,26 @@
 
 
     /* The only blue partyhat in the game. Granted server-side; never sold or dropped. Not stakeable. */
+    /* Gloamhold tier-3 uniques. Ids must match game.gloamhold_unique_items. */
+    eclipse_coif:       { id: "eclipse_coif", name: "Eclipse coif", slot: "head", tier: "unique", bonuses: b({ amagic: 8, arange: 14, dstab: 8, dslash: 10, dcrush: 12, dmagic: 8, drange: 10 }) },
+    eclipse_body:       { id: "eclipse_body", name: "Eclipse body", slot: "body", tier: "unique", bonuses: b({ amagic: -6, arange: 48, rstr: 6, dstab: 48, dslash: 48, dcrush: 52, dmagic: 36, drange: 56 }) },
+    eclipse_chaps:      { id: "eclipse_chaps", name: "Eclipse chaps", slot: "legs", tier: "unique", bonuses: b({ amagic: -5, arange: 30, dstab: 28, dslash: 26, dcrush: 30, dmagic: 20, drange: 38 }) },
+    eclipse_longbow:    { id: "eclipse_longbow", name: "Eclipse longbow", slot: "weapon", tier: "unique", kind: "bow", twohand: true, speed: 5, style: "ranged", bonuses: b({ amagic: -8, arange: 120, rstr: 340 }) },
+    eclipse_pendant:    { id: "eclipse_pendant", name: "Eclipse pendant", slot: "neck", tier: "unique", bonuses: b({ arange: 18, rstr: 4, dstab: 6, dslash: 6, dcrush: 6, dmagic: 6, drange: 6 }) },
+    eclipse_band:       { id: "eclipse_band", name: "Eclipse band", slot: "ring", tier: "unique", bonuses: b({ arange: 12, rstr: 4 }) },
+    unsleeping_hood:        { id: "unsleeping_hood", name: "Unsleeping hood", slot: "head", tier: "unique", bonuses: b({ amagic: 14, mdmg: 3, dstab: 8, dslash: 8, dcrush: 8, dmagic: 16, drange: 8 }) },
+    unsleeping_robe_top:    { id: "unsleeping_robe_top", name: "Unsleeping robe top", slot: "body", tier: "unique", bonuses: b({ amagic: 42, mdmg: 4, dstab: 18, dslash: 16, dcrush: 20, dmagic: 38, drange: 12 }) },
+    unsleeping_robe_bottom: { id: "unsleeping_robe_bottom", name: "Unsleeping robe bottom", slot: "legs", tier: "unique", bonuses: b({ amagic: 26, mdmg: 3, dstab: 12, dslash: 10, dcrush: 14, dmagic: 28, drange: 8 }) },
+    nightfall_staff:        { id: "nightfall_staff", name: "Nightfall staff", slot: "weapon", tier: "unique", kind: "staff", twohand: true, speed: 5, magicBase: 38, style: "magic", bonuses: b({ amagic: 95, mdmg: 20 }) },
+    unsleeping_charm:       { id: "unsleeping_charm", name: "Unsleeping charm", slot: "neck", tier: "unique", bonuses: b({ amagic: 16, mdmg: 4, dmagic: 8 }) },
+    dreamless_ring:         { id: "dreamless_ring", name: "Dreamless ring", slot: "ring", tier: "unique", bonuses: b({ amagic: 10, mdmg: 3 }) },
+    hollowplate_helm:   { id: "hollowplate_helm", name: "Hollowplate helm", slot: "head", tier: "unique", bonuses: b({ astab: 12, aslash: 12, acrush: 12, str: 5, dstab: 38, dslash: 40, dcrush: 36, dmagic: -2, drange: 36 }) },
+    hollowplate_body:   { id: "hollowplate_body", name: "Hollowplate plate", slot: "body", tier: "unique", bonuses: b({ astab: 16, aslash: 16, acrush: 16, str: 8, dstab: 70, dslash: 68, dcrush: 66, dmagic: -4, drange: 68 }) },
+    hollowplate_legs:   { id: "hollowplate_legs", name: "Hollowplate legs", slot: "legs", tier: "unique", bonuses: b({ astab: 10, aslash: 10, acrush: 10, str: 6, dstab: 54, dslash: 52, dcrush: 50, dmagic: -3, drange: 52 }) },
+    hollow_halberd:     { id: "hollow_halberd", name: "Hollow halberd", slot: "weapon", tier: "unique", kind: "halberd", twohand: true, speed: 6, reach: 2, style: "slash", bonuses: b({ astab: 90, aslash: 125, acrush: 20, str: 168 }) },
+    hollow_torque:      { id: "hollow_torque", name: "Hollow torque", slot: "neck", tier: "unique", bonuses: b({ astab: 16, aslash: 16, acrush: 16, str: 12, dstab: 8, dslash: 8, dcrush: 8, dmagic: 8, drange: 8 }) },
+    hollow_signet:      { id: "hollow_signet", name: "Hollow signet", slot: "ring", tier: "unique", bonuses: b({ astab: 8, aslash: 8, acrush: 8, str: 12 }) },
+
     blue_partyhat:      { id: "blue_partyhat", name: "Blue partyhat", slot: "head", tier: "partyhat", unique: true, unstakeable: true, kind: "partyhat", bonuses: b({}) },
 
     /* Legacy starter — migrated off; hidden if a stale id remains. */
