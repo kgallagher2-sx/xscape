@@ -4,7 +4,7 @@
    drawers with default palettes unless tweaks are present. */
 "use strict";
 
-const LAB_SLOTS = ["head", "cape", "neck", "body", "legs", "hands", "feet", "weapon", "ammo", "ring"];
+const LAB_SLOTS = ["head", "cape", "neck", "body", "legs", "hands", "feet", "weapon", "shield", "ammo", "ring"];
 
 const LAB_ITEMS = {
   green_dhide_coif:   { id: "green_dhide_coif", name: "Green d'hide coif", slot: "head", tier: "starter", kind: "coif" },
@@ -34,6 +34,12 @@ const LAB_ITEMS = {
   armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", kind: "armadyl" },
   armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", kind: "armadyl" },
   armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", kind: "armadyl" },
+
+  widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow" },
+  widow_weaver_top:    { id: "widow_weaver_top", name: "Widow Weaver robe top", slot: "body", tier: "widow", kind: "widow" },
+  widow_weaver_bottom: { id: "widow_weaver_bottom", name: "Widow Weaver robe bottom", slot: "legs", tier: "widow", kind: "widow" },
+  widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow" },
+  widow_weaver_book:   { id: "widow_weaver_book", name: "Widow Weaver spellbook", slot: "shield", tier: "widow", kind: "widow" },
 
   hollowbolt_xbow:    { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", kind: "hollow" },
   hollow_bolts:       { id: "hollow_bolts", name: "Hollow bolts", slot: "ammo", tier: "unique", kind: "hollow" },
@@ -68,15 +74,21 @@ const LAB_LOADOUTS = {
     head: "black_dhide_coif", cape: "gloamheart_cape", neck: "unsleeping_stole", ammo: "hollow_bolts",
     weapon: "hollowbolt_xbow", body: "veilhide_body", shield: null,
     legs: "veilhide_chaps", hands: "veilhide_vambs", feet: "crownshard_boots", ring: "archers_ring"
+  },
+  widow: {
+    head: "widow_weaver_hood", cape: null, neck: null, ammo: null,
+    weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
+    legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
   }
 };
 
-const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "unique", "other"];
+const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "unique", "other"];
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
   tier2: "Tier 2 — black d'hide",
   jad: "Jad",
   armadyl: "Armadyl — Kree'arra",
+  widow: "Widow Weaver — Widow Queen",
   unique: "Gloamhold uniques",
   other: "Other (kept if owned)"
 };
@@ -111,6 +123,12 @@ const LAB_DEFAULTS = {
   armadyl_chestplate: { main: "#8aa0b8", trim: "#d4b03a", scale: 1 },
   armadyl_chainskirt: { main: "#8aa0b8", trim: "#d4b03a", scale: 1 },
   armadyl_crossbow:   { main: "#d4b03a", trim: "#e8e4d8", scale: 1 },
+
+  widow_weaver_hood:   { main: "#161014", trim: "#e01828", scale: 1 },
+  widow_weaver_top:    { main: "#161014", trim: "#e01828", scale: 1 },
+  widow_weaver_bottom: { main: "#161014", trim: "#e01828", scale: 1 },
+  widow_weaver_wand:   { main: "#161014", trim: "#ff3040", scale: 1 },
+  widow_weaver_book:   { main: "#161014", trim: "#e01828", scale: 1 },
 
   hollowbolt_xbow:    { main: "#3a3048", trim: "#c8b890", scale: 1 },
   hollow_bolts:       { main: "#c8c0e0", trim: "#3a3048", scale: 1 },
@@ -286,6 +304,10 @@ function drawLabLegs(c, id) {
   const it = labItem(id);
   const kind = it ? it.kind : "hide";
   withScale(c, 0, 4, st.scale, () => {
+    if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBottom) {
+      XscapeWidowArt.drawBottom(c, st, "back");
+      return;
+    }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
       c.beginPath();
@@ -358,8 +380,19 @@ function drawLabLegs(c, id) {
   });
 }
 
+
+function labBodyIsWidow() {
+  const it = labItem((LabGear.equipment || {}).body);
+  return !!(it && it.kind === "widow");
+}
+function labSleeveStyle(id) {
+  if (id) return labStyle(id);
+  if (labBodyIsWidow()) return labStyle((LabGear.equipment || {}).body);
+  return { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+}
+
 function drawLabVamb(c, id, side) {
-  const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+  const st = labSleeveStyle(id);
   const p = pal(st);
   const it = labItem(id);
   const x = side < 0 ? -12 : 11.4;
@@ -389,6 +422,10 @@ function drawLabBody(c, id) {
   const it = labItem(id);
   const kind = it ? it.kind : "hide";
   withScale(c, 0, -11, st.scale, () => {
+    if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawTop) {
+      XscapeWidowArt.drawTop(c, st, "back");
+      return;
+    }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
       c.beginPath();
@@ -475,6 +512,10 @@ function drawLabHead(c, id) {
   const it = labItem(id);
   const kind = it ? it.kind : "coif";
   withScale(c, 0, -26, st.scale, () => {
+    if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawHood) {
+      XscapeWidowArt.drawHood(c, st, "back");
+      return;
+    }
     if (kind === "armadyl") {
       // avian helm from behind: rounded skull, raised crest, wing flanges
       c.fillStyle = p.dark;
@@ -1010,6 +1051,7 @@ function drawLabPlayerBack(ctx, t, opt) {
   drawLabVamb(ctx, eq.hands, -1);
 
   if (eq.weapon) drawHeroWeapon(ctx, t, eq, opt, "back");
+  if (eq.shield) drawHeroShield(ctx, t, eq, "back");
 
   drawLabBody(ctx, eq.body);
   if (opt.showCape !== false && (opt.showCape === true || typeof LabGear === "undefined" || LabGear.showCape !== false)) {
@@ -1182,6 +1224,11 @@ function drawLabItemIcon(c, id, t) {
   c.save();
   c.scale(st.scale || 1, st.scale || 1);
 
+  if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawItemIcon) {
+    XscapeWidowArt.drawItemIcon(c, id, st, t);
+    c.restore();
+    return;
+  }
   if (slot === "ammo") {
     drawBoltBundle(c, st, kind);
   } else if (slot === "weapon") {
@@ -1338,6 +1385,8 @@ function weaponKind(id) {
   const it = labItem(id);
   if (it && it.kind === "whip") return "whip";
   if (String(id).indexOf("whip") !== -1) return "whip";
+  if (it && it.kind === "widow") return "wand";
+  if (String(id).indexOf("widow_weaver_wand") !== -1) return "wand";
   return "bow";
 }
 
@@ -1395,11 +1444,25 @@ function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase) {
   c.restore();
 }
 
+
+function drawHeroShield(c, t, eq, facing) {
+  const id = eq && eq.shield;
+  if (!id) return;
+  const it = labItem(id);
+  if (it && it.kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBookHeld) {
+    XscapeWidowArt.drawBookHeld(c, labStyle(id), facing, t);
+  }
+}
+
 function drawHeroWeapon(c, t, eq, opt, facing) {
   const kind = weaponKind(eq && eq.weapon);
   if (!kind) return;
   if (kind === "whip") drawHeroWhip(c, t, labStyle(eq.weapon), facing);
-  else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase);
+  else if (kind === "wand") {
+    if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
+      XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t);
+    }
+  } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase);
 }
 
 function drawPartyhatOnHead(c, facing, st) {
@@ -1710,6 +1773,10 @@ function drawHeroLegs(c, id, facing, stride) {
   const kind = it ? it.kind : "hide";
   const s = stride || 0;
   withScale(c, 0, 4, st.scale, () => {
+    if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBottom) {
+      XscapeWidowArt.drawBottom(c, st, facing === "right" ? "right" : "front");
+      return;
+    }
     if (facing === "right") {
       const far = -s * 0.7, near = s * 0.7;
       c.fillStyle = p.dark;
@@ -1786,6 +1853,10 @@ function drawHeroBody(c, id, facing) {
   const sk = skinPal();
   withScale(c, 0, -11, st.scale, () => {
     if (facing === "right") {
+      if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawTop) {
+        XscapeWidowArt.drawTop(c, st, "right");
+        return;
+      }
       c.fillStyle = p.dark;
       c.beginPath();
       c.moveTo(-6.5, -21.2);
@@ -1820,6 +1891,10 @@ function drawHeroBody(c, id, facing) {
       return;
     }
     // front chest
+    if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawTop) {
+      XscapeWidowArt.drawTop(c, st, "front");
+      return;
+    }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
       c.beginPath();
@@ -1906,7 +1981,7 @@ function drawHeroBody(c, id, facing) {
 }
 
 function drawHeroArms(c, id, facing, stride) {
-  const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+  const st = labSleeveStyle(id);
   const p = pal(st);
   const it = labItem(id);
   const s = stride || 0;
@@ -1925,6 +2000,12 @@ function drawHeroArms(c, id, facing, stride) {
       c.lineWidth = 0.85;
       c.beginPath();
       c.ellipse(x, y, (rx || 4.1) * 0.92, (ry || 5.3) * 0.92, rot, 0.2, Math.PI * 1.4);
+      c.stroke();
+    } else if (labBodyIsWidow()) {
+      c.strokeStyle = p.trim;
+      c.lineWidth = 0.9;
+      c.beginPath();
+      c.ellipse(x, y + 1.6, (rx || 4.1) * 0.85, (ry || 5.3) * 0.42, rot, 0, Math.PI * 2);
       c.stroke();
     }
   }
@@ -1951,7 +2032,7 @@ function drawHeroArms(c, id, facing, stride) {
 
 function drawHeroNearArm(c, id, facing, stride) {
   if (facing !== "right" && facing !== "front") return;
-  const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+  const st = labSleeveStyle(id);
   const p = pal(st);
   const it = labItem(id);
   const s = stride || 0;
@@ -2010,6 +2091,10 @@ function drawHeroHead(c, id, facing) {
   withScale(c, 0, -26, st.scale, () => {
     if (facing === "right") {
       // profile skull
+      if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawHood) {
+        XscapeWidowArt.drawHood(c, st, "right");
+        return;
+      }
       if (kind === "armadyl") {
         c.fillStyle = p.dark;
         c.beginPath();
@@ -2094,6 +2179,10 @@ function drawHeroHead(c, id, facing) {
     }
 
     // FRONT
+    if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawHood) {
+      XscapeWidowArt.drawHood(c, st, "front");
+      return;
+    }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
       c.beginPath(); c.ellipse(0, -26.2, 10.2, 10.6, 0, 0, Math.PI * 2); c.fill();
@@ -2251,6 +2340,7 @@ function drawLabPlayerFront(ctx, t, opt) {
   drawHeroBoots(ctx, eq.feet, "front", stride);
   drawHeroArms(ctx, eq.hands, "front", stride); // far arm (character's left)
   drawHeroBody(ctx, eq.body, "front");
+  drawHeroShield(ctx, t, eq, "front");
   drawHeroNeck(ctx, eq.neck, "front");
   drawHeroHead(ctx, eq.head, "front");
   drawHeroNearArm(ctx, eq.hands, "front", stride); // right arm first
@@ -2273,6 +2363,7 @@ function drawLabPlayerSide(ctx, t, opt) {
   drawHeroLegs(ctx, eq.legs, "right", stride);
   drawHeroBoots(ctx, eq.feet, "right", stride);
   drawHeroBody(ctx, eq.body, "right");
+  drawHeroShield(ctx, t, eq, "right");
   drawHeroNeck(ctx, eq.neck, "right");
   drawHeroHead(ctx, eq.head, "right");
   drawHeroNearArm(ctx, eq.hands, "right", stride); // near arm first

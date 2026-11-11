@@ -170,14 +170,19 @@
   .sheet-item canvas { width: 72px; height: 72px; background: #140a06; border-radius: 4px; }
   .sheet-item .nm { color: #e8d8a8; }
   .h2-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .widow-stage { background: #080406; }
+  .widow-stage canvas { width: 100%; height: auto; display: block; image-rendering: auto; }
+  .widow-fx { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .widow-fx .preview-cell canvas { position: relative; width: 100%; height: auto; inset: auto; }
 </style>
 </head>
 <body>
 <header>
   <h1>Xscape sprite lab</h1>
-  <div class="sub">Loads <code>sprites.js</code> and <code>lab-gear.js</code> (same drawings the bank, equipment view, and duel use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
+  <div class="sub">Loads <code>sprites.js</code>, <code>lab-gear.js</code>, and <code>widow-sprites.js</code> (same drawings the bank, equipment view, and fights use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
   <nav class="jump">
     <a href="#gear">Gear</a>
+    <a href="#widow">Widow Queen</a>
     <a href="#sprites">Sprites</a>
   </nav>
 </header>
@@ -227,6 +232,7 @@
       <button type="button" data-preset="starter" class="on">Starter</button>
       <button type="button" data-preset="tier2">Tier 2</button>
       <button type="button" data-preset="armadyl">Armadyl</button>
+      <button type="button" data-preset="widow">Widow Weaver</button>
       <button type="button" data-preset="gloamhold">Gloamhold</button>
     </div>
     <label class="cape-toggle"><input type="checkbox" id="show-cape" checked> Show cape (turn off to see the body)</label>
@@ -275,15 +281,67 @@
   </div>
 </section>
 
+<section class="gear-sec" id="widow">
+  <h2>Widow Queen</h2>
+  <p class="lead">Arachne, the Widow Queen, and her Widow Weaver kit. Black silk, a blood-red hourglass, and glowing red eyes. Wear the full set with the <b>Widow Weaver</b> preset in Gear. Tweaks still work on each piece.</p>
+  <div class="gear-card">
+    <h2>The Widow Queen</h2>
+    <div class="preview-wrap widow-stage">
+      <canvas id="widow-queen" width="360" height="280"></canvas>
+    </div>
+  </div>
+  <div class="gear-card">
+    <h2>Minions</h2>
+    <div class="preview-trio">
+      <div class="preview-cell">
+        <div class="preview-frame">
+          <canvas id="widow-baby" width="160" height="160"></canvas>
+        </div>
+        <span>Baby spider</span>
+      </div>
+      <div class="preview-cell">
+        <div class="preview-frame">
+          <canvas id="widow-skel" width="160" height="200"></canvas>
+        </div>
+        <span>Raised skeleton</span>
+      </div>
+      <div class="preview-cell">
+        <div class="preview-frame">
+          <canvas id="widow-skel-walk" width="160" height="200"></canvas>
+        </div>
+        <span>Skeleton walk</span>
+      </div>
+    </div>
+  </div>
+  <div class="gear-card">
+    <h2>Web shot, venom, landing telegraph</h2>
+    <div class="widow-fx">
+      <div class="preview-cell">
+        <canvas id="widow-web" width="120" height="120"></canvas>
+        <span>Web shot</span>
+      </div>
+      <div class="preview-cell">
+        <canvas id="widow-venom" width="120" height="120"></canvas>
+        <span>Venom bolt</span>
+      </div>
+      <div class="preview-cell">
+        <canvas id="widow-tell" width="120" height="120"></canvas>
+        <span>Web telegraph</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <div class="grid" id="grid"></div>
-<script src="partyhat-img.js?v=20-3"></script>
-<script src="whip-img.js?v=20-3"></script>
-<script src="sprites.js?v=20-3"></script>
-<script src="lab-gear.js?v=20-3"></script>
+<script src="partyhat-img.js?v=35-2"></script>
+<script src="whip-img.js?v=35-2"></script>
+<script src="sprites.js?v=35-2"></script>
+<script src="widow-sprites.js?v=35-2"></script>
+<script src="lab-gear.js?v=35-2"></script>
 <script>
 "use strict";
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register("sw.js?v=20-3").catch(function () {});
+  navigator.serviceWorker.register("sw.js?v=35-2").catch(function () {});
 }
 
 // Lab only: no game logic. Each sprite renders into a 1x canvas at CSS-pixel game scale
@@ -352,7 +410,7 @@ function zoom(src, dst) {
 }
 
 /* ---- Gear UI ---- */
-const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Armadyl", gloamhold: "Gloamhold", custom: "Custom" };
+const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Armadyl", widow: "Widow Weaver", gloamhold: "Gloamhold", custom: "Custom" };
 const PREVIEW_VIEWS = [
   { id: "gear-preview-front", facing: "front", walk: false },
   { id: "gear-preview-back", facing: "back", walk: false },
@@ -544,6 +602,99 @@ function iconBg(c, w, h) {
   c.fillRect(0, 0, w, h);
 }
 
+
+function caveBg(c, w, h) {
+  const g = c.createRadialGradient(w * 0.5, h * 0.4, 8, w * 0.5, h * 0.6, Math.max(w, h) * 0.75);
+  g.addColorStop(0, "#2a1014");
+  g.addColorStop(0.45, "#14080c");
+  g.addColorStop(1, "#050203");
+  c.fillStyle = g;
+  c.fillRect(0, 0, w, h);
+  c.strokeStyle = "rgba(180,160,170,0.12)";
+  c.lineWidth = 1;
+  c.beginPath();
+  c.moveTo(w * 0.15, 0); c.lineTo(w * 0.3, h);
+  c.moveTo(w * 0.85, 0); c.lineTo(w * 0.7, h);
+  c.moveTo(0, h * 0.2); c.lineTo(w, h * 0.35);
+  c.stroke();
+}
+
+function paintWidow(t) {
+  const Art = window.XscapeWidowArt;
+  if (!Art) return;
+  const queen = document.getElementById("widow-queen");
+  if (queen) {
+    const c = queen.getContext("2d");
+    caveBg(c, queen.width, queen.height);
+    c.save();
+    c.translate(queen.width / 2, queen.height * 0.50);
+    c.scale(1.55, 1.55);
+    const lunge = Math.max(0, Math.sin(t * 1.15) * 1.4 - 0.6);
+    Art.drawQueen(c, { t: t, lunge: lunge });
+    c.restore();
+  }
+  const baby = document.getElementById("widow-baby");
+  if (baby) {
+    const c = baby.getContext("2d");
+    caveBg(c, baby.width, baby.height);
+    c.save();
+    c.translate(baby.width / 2, baby.height * 0.58);
+    c.scale(2.4, 2.4);
+    Art.drawBaby(c, { t: t });
+    c.restore();
+  }
+  const sk = document.getElementById("widow-skel");
+  if (sk) {
+    const c = sk.getContext("2d");
+    caveBg(c, sk.width, sk.height);
+    c.save();
+    c.translate(sk.width / 2, sk.height * 0.86);
+    c.scale(2.15, 2.15);
+    Art.drawSkeleton(c, { t: t, walk: false });
+    c.restore();
+  }
+  const skw = document.getElementById("widow-skel-walk");
+  if (skw) {
+    const c = skw.getContext("2d");
+    caveBg(c, skw.width, skw.height);
+    c.save();
+    c.translate(skw.width / 2, skw.height * 0.86);
+    c.scale(2.15, 2.15);
+    Art.drawSkeleton(c, { t: t, walk: true, facing: "right" });
+    c.restore();
+  }
+  const web = document.getElementById("widow-web");
+  if (web) {
+    const c = web.getContext("2d");
+    caveBg(c, web.width, web.height);
+    c.save();
+    c.translate(web.width / 2, web.height / 2);
+    c.scale(2.2, 2.2);
+    Art.drawWebShot(c, { t: t });
+    c.restore();
+  }
+  const vn = document.getElementById("widow-venom");
+  if (vn) {
+    const c = vn.getContext("2d");
+    caveBg(c, vn.width, vn.height);
+    c.save();
+    c.translate(vn.width / 2, vn.height / 2);
+    c.scale(2.3, 2.3);
+    Art.drawVenom(c, { t: t });
+    c.restore();
+  }
+  const tell = document.getElementById("widow-tell");
+  if (tell) {
+    const c = tell.getContext("2d");
+    caveBg(c, tell.width, tell.height);
+    c.save();
+    c.translate(tell.width / 2, tell.height / 2);
+    c.scale(1.7, 1.7);
+    Art.drawTelegraph(c, { t: t, size: 36 });
+    c.restore();
+  }
+}
+
 function paintSheet(t) {
   for (const row of sheetCanvases) {
     const c = row.canvas.getContext("2d");
@@ -651,6 +802,7 @@ function frame() {
   zoom(chat.one, chat.four);
   paintPreview(t);
   paintSheet(t);
+  paintWidow(t);
   requestAnimationFrame(frame);
 }
 document.getElementById("scale").addEventListener("change", (e) => { sP = parseFloat(e.target.value) || 0.896; });
