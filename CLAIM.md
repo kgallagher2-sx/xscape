@@ -11,4 +11,3 @@ One line per claim, in this format:
 
 ## Active claims
 
-- `combat.js`, `raid.js`, `colossus.js`, `gorehorn.js`, `knight.js`, `kree.js`, `widow.js` | Boss Mechanics | 2026-11-11 11:29 America/New_York | Convert boss and raid stat blocks to the new NPC shape (numbers identical)
