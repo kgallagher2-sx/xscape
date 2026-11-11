@@ -77,6 +77,28 @@
     return (L.sJ || 1) * 0.72;
   }
 
+
+  function clearFloatMsg() {
+    const el = $("float-msg");
+    if (el) { el.textContent = ""; el.style.opacity = "0"; }
+  }
+  function fitFloatMsg() {
+    const el = $("float-msg");
+    if (!el || !el.textContent) return;
+    el.style.whiteSpace = "nowrap";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+    el.style.maxWidth = "none";
+    el.style.top = "4%";
+    let size = 24;
+    el.style.fontSize = size + "px";
+    const maxW = Math.max(160, (global.cssW || 390) - 16);
+    while (size > 13 && el.scrollWidth > maxW) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+  }
+
   function resetState() {
     const G = g();
     claimTiles();
@@ -134,6 +156,7 @@
     if (typeof global.syncPlayerWorldPos === "function") global.syncPlayerWorldPos(true);
     if (typeof global.updateHud === "function") global.updateHud();
     if (typeof global.updatePrayerButtons === "function") global.updatePrayerButtons();
+    clearFloatMsg();
   }
 
   function hpRatio() {
@@ -330,6 +353,16 @@
     }
   }
 
+  function pruneSkels(force) {
+    const G = g();
+    const list = G.widowSkels || [];
+    G.widowSkels = force ? [] : list.filter(function (m) { return m && m.alive; });
+    if (G.target && G.target.kind === "skel") {
+      const cur = G.widowSkels[G.target.index];
+      if (!cur || !cur.alive) G.target = "widow";
+    }
+  }
+
   function startBabyFlee(m) {
     if (!m || m.fleeing || m.done) return;
     m.fleeing = true;
@@ -377,16 +410,21 @@
     const G = g();
     const p = G.player;
     const cols = (global.TILE && TILE.cols) || 5;
-    // Always exactly two, from the far corners so a 5-tick weapon can shoot both.
+    // Always at most two live skeletons; prune leftovers so raises cannot stack.
+    if (!G.widowSkels) G.widowSkels = [];
+    pruneSkels(false);
     const farRow = (p && p.tileRow >= Math.floor(TILE_ROWS / 2)) ? 0 : (TILE_ROWS - 1);
     const spots = [
       { col: 0, row: farRow },
       { col: cols - 1, row: farRow }
     ];
+    const taken = {};
+    G.widowSkels.forEach(function (m) { taken[m.col + "," + m.row] = 1; });
     const destC = p ? p.tileCol : 2;
     const destR = p ? p.tileRow : 0;
-    for (let i = 0; i < SKEL_COUNT; i++) {
+    for (let i = 0; i < spots.length && G.widowSkels.length < SKEL_COUNT; i++) {
       const e = spots[i];
+      if (taken[e.col + "," + e.row]) continue;
       const pos = (typeof global.tileCenter === "function") ? tileCenter(e.col, e.row) : { x: 0.2, y: 0.8 };
       const steps = Math.max(1, stepsToAdjacent(e.col, e.row, destC, destR));
       const walkCd = Math.max(1, SKEL_MIN_ARRIVE - (steps - 1) * SKEL_WALK_EVERY);
@@ -454,6 +492,7 @@
       m.atkCd = 4;
       bitePlayer(irand(0, SKEL_MAX), "skel");
     }
+    pruneSkels(false);
   }
 
   function bitePlayer(dmg, kind) {
@@ -472,19 +511,33 @@
     if (p.hp <= 0) lose();
   }
 
-  function playerAttackStyle() {
-    const w = (typeof global.itemInSlot === "function") ? itemInSlot("weapon") : null;
-    if (w && (w.magicBase || w.style === "magic" || (w.id && String(w.id).indexOf("widow_weaver_wand") !== -1)
-      || (typeof global.weaponKind === "function" && weaponKind(w.id) === "wand"))) {
-      return "magic";
+  function playerStyle() {
+    const eq = (global.Profile && Profile.equipment) || {};
+    const it = (global.ITEMS || {})[eq.weapon];
+    if (!it) return "ranged";
+    if (it.style) return it.style;
+    if (it.kind === "wand" || it.slot === "wand" || it.magicBase
+        || (it.id && String(it.id).indexOf("widow_weaver_wand") !== -1)
+        || (typeof global.weaponKind === "function" && weaponKind(it.id) === "wand")) {
+      return "mage";
+    }
+    if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear") {
+      return it.kind === "spear" || it.style === "stab" ? "stab" : (it.kind === "axe" || it.kind === "crush" ? "crush" : "slash");
     }
     return "ranged";
+  }
+  function playerAttackStyle() {
+    const style = playerStyle();
+    if (style === "mage" || style === "magic") return "mage";
+    if (style === "ranged") return "ranged";
+    return style === "stab" || style === "crush" || style === "slash" ? style : "slash";
   }
 
   function attackSpeed() {
     const w = (typeof global.itemInSlot === "function") ? itemInSlot("weapon") : null;
     if (w && w.speed) return w.speed;
-    if (playerAttackStyle() === "magic") return 5;
+    const st = playerAttackStyle();
+    if (st === "magic" || st === "mage") return 5;
     return global.PLAYER_ATTACK_TICKS || 4;
   }
 
@@ -520,12 +573,12 @@
     const cssW = global.cssW || 390, cssH = global.cssH || 480;
     G.bolts.push({
       t: 0, dur: (global.BOLT_TRAVEL || 0.16), dmg: dmg, dest: dest,
-      kind: style === "magic" ? "magic" : "bolt",
+      kind: (style === "magic" || style === "mage") ? "magic" : "bolt",
       from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
       to: { x: dest.x, y: dest.y }
     });
     if (audio) {
-      if (style === "magic" && audio.wind) audio.wind();
+      if ((style === "magic" || style === "mage") && audio.wind) audio.wind();
       else if (audio.crossbow) audio.crossbow();
     }
   }
@@ -809,6 +862,8 @@
     if (fm && fm.style.opacity && Number(fm.style.opacity) > 0) {
       const o = Math.max(0, Number(fm.style.opacity) - Math.min(0.05, 1 / 60) * 1.4);
       fm.style.opacity = String(o);
+      if (o > 0) fitFloatMsg();
+      else fm.textContent = "";
     }
     if (G.mode === "playing" && typeof global.updateHud === "function") updateHud();
   }

@@ -57,6 +57,42 @@
     return Math.max(0.7, (L.sJ || 1) * 1.05);
   }
 
+
+  function clearFloatMsg() {
+    const el = $("float-msg");
+    if (el) { el.textContent = ""; el.style.opacity = "0"; }
+  }
+  function fitFloatMsg() {
+    const el = $("float-msg");
+    if (!el || !el.textContent) return;
+    el.style.whiteSpace = "nowrap";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+    el.style.maxWidth = "none";
+    el.style.top = "4%";
+    let size = 24;
+    el.style.fontSize = size + "px";
+    const maxW = Math.max(160, (global.cssW || 390) - 16);
+    while (size > 13 && el.scrollWidth > maxW) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+  }
+  function tickFloatMsg(dt) {
+    const el = $("float-msg");
+    if (!el) return;
+    const o = Number(el.style.opacity);
+    if (!(o > 0)) return;
+    const next = Math.max(0, o - (dt || Math.min(0.05, 1 / 60)) * 1.4);
+    el.style.opacity = String(next);
+    if (next <= 0) el.textContent = "";
+    else fitFloatMsg();
+  }
+  function flashBanner(text, color) {
+    if (typeof global.flashMsg === "function") flashMsg(text, color);
+    fitFloatMsg();
+  }
+
   function resetState() {
     const G = g();
     claimTiles();
@@ -108,7 +144,8 @@
     if (typeof global.PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
     G.damageTaken = 0;
     G.perfectPrayers = 0;
-    G.prayerChecks = 0;
+    G.prayerChecks = 0;    G.knightFrozen = false;
+    clearFloatMsg();
   }
 
   function tileOnCone(col, row, tiles) {
@@ -193,7 +230,7 @@
         atkCd: 3 + (i % 3), fade: 0, dying: 0
       };
     });
-    if (typeof global.flashMsg === "function") flashMsg("Spectral knights!", "#c8b0ff");
+    if (typeof global.flashMsg === "function") flashBanner("Spectral knights!", "#c8b0ff");
   }
 
   function shatterArmor() {
@@ -202,7 +239,7 @@
     G.knight.shattered = true;
     G.knight.phase = "shatter";
     G.knight.recLeft = 2;
-    if (typeof global.flashMsg === "function") flashMsg("The king's armor shatters!", "#ffd080");
+    if (typeof global.flashMsg === "function") flashBanner("The king's armor shatters!", "#ffd080");
     if (audio() && audio().special) audio().special();
   }
 
@@ -319,7 +356,7 @@
     const cssW = (global.canvas && canvas.width) || 390;
     const cssH = (global.canvas && canvas.height) || 844;
     G.bolts.push({
-      t: 0, dur: global.BOLT_TRAVEL || 3,
+      t: 0, dur: global.BOLT_TRAVEL || 0.16,
       dmg: dmg, dest: target,
       from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
       to: { x: target.x, y: target.y },
@@ -434,20 +471,7 @@
       G.player.atkCd = playerSpeed();
     }
 
-    if (typeof global.tickBolts === "function") {
-      /* host uses shared bolt tick in some scenes; knocks handled below if missing */
-    }
-    // Advance bolts locally if the shared loop is Jad-only
-    if (G.bolts && G.bolts.length) {
-      for (let i = G.bolts.length - 1; i >= 0; i--) {
-        const b = G.bolts[i];
-        b.t = (b.t || 0) + 1;
-        if (b.t >= (b.dur || 3)) {
-          applyBoltHit(b);
-          G.bolts.splice(i, 1);
-        }
-      }
-    }
+    // Bolt travel and hits are advanced by drawBolts(dt) in the frame loop.
 
     if (typeof global.updateHud === "function") updateHud();
     if (typeof global.updateDebugCombat === "function") updateDebugCombat();
@@ -518,9 +542,10 @@
       ctx.restore();
     }
 
-    if (typeof global.drawPlayer === "function") drawPlayer(ctx, cssW, cssH, t);
-    if (typeof global.drawBolts === "function") drawBolts(ctx, cssW, cssH);
-    if (typeof global.drawSplats === "function") drawSplats(ctx, cssW, cssH, t);
+    const dt = Math.min(0.05, 1 / 60);
+    if (typeof global.drawPlayer === "function") drawPlayer(t);
+    if (typeof global.drawBolts === "function") drawBolts(dt);
+    if (typeof global.drawSplats === "function") drawSplats(dt);
     // HP bar
     if (G.knight && G.knight.hp > 0) {
       const ratio = G.knight.hp / KNIGHT_HP;
@@ -565,6 +590,9 @@
     ctx.translate(sx, sy);
     draw(ts / 1000, ctx, cssW, cssH);
     ctx.restore();
+    const dt = Math.min(0.05, 1 / 60);
+    tickFloatMsg(dt);
+    if (G.mode === "playing" && typeof global.updateHud === "function") updateHud();
     return true;
   }
 

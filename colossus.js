@@ -72,6 +72,42 @@
     return Math.max(0.7, (L.sJ || 1) * 1.05);
   }
 
+
+  function clearFloatMsg() {
+    const el = $("float-msg");
+    if (el) { el.textContent = ""; el.style.opacity = "0"; }
+  }
+  function fitFloatMsg() {
+    const el = $("float-msg");
+    if (!el || !el.textContent) return;
+    el.style.whiteSpace = "nowrap";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+    el.style.maxWidth = "none";
+    el.style.top = "4%";
+    let size = 24;
+    el.style.fontSize = size + "px";
+    const maxW = Math.max(160, (global.cssW || 390) - 16);
+    while (size > 13 && el.scrollWidth > maxW) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+  }
+  function tickFloatMsg(dt) {
+    const el = $("float-msg");
+    if (!el) return;
+    const o = Number(el.style.opacity);
+    if (!(o > 0)) return;
+    const next = Math.max(0, o - (dt || Math.min(0.05, 1 / 60)) * 1.4);
+    el.style.opacity = String(next);
+    if (next <= 0) el.textContent = "";
+    else fitFloatMsg();
+  }
+  function flashBanner(text, color) {
+    if (typeof global.flashMsg === "function") flashMsg(text, color);
+    fitFloatMsg();
+  }
+
   function resetState() {
     const G = g();
     claimTiles();
@@ -126,7 +162,8 @@
     if (typeof global.PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
     G.damageTaken = 0;
     G.perfectPrayers = 0;
-    G.prayerChecks = 0;
+    G.prayerChecks = 0;    G.colossusFrozen = false;
+    clearFloatMsg();
   }
 
   function launchWave(rows) {
@@ -141,7 +178,7 @@
     G.colossus.telLen = COLOSSUS_TEL;
     G.colossus.waving = true;
     G.colossusWave = { rows: list, tel: COLOSSUS_TEL };
-    if (typeof global.flashMsg === "function") flashMsg("The wave rises! Stand on a rock!", "#80e0e8");
+    if (typeof global.flashMsg === "function") flashBanner("Stand on a rock!", "#80e0e8");
     return list;
   }
 
@@ -173,7 +210,7 @@
     p.destRow = null;
     G.colossusGrab = { ticks: 5, c: p.tileCol, r: p.tileRow, broken: false };
     applyColoHit("melee", { max: GRAB_MAX, kind: "grab" });
-    if (typeof global.flashMsg === "function") flashMsg("Tentacle grab! Tap to break free!", "#e8a0c0");
+    if (typeof global.flashMsg === "function") flashBanner("Grabbed! Tap to break free!", "#e8a0c0");
     return G.colossusGrab;
   }
 
@@ -186,7 +223,7 @@
     G.colossus.phase = "recover";
     G.colossus.recLeft = 2;
     G.colossusGrab = null;
-    if (typeof global.flashMsg === "function") flashMsg("You break free!", "#d0f0e0");
+    if (typeof global.flashMsg === "function") flashBanner("You break free!", "#d0f0e0");
     return true;
   }
 
@@ -208,7 +245,7 @@
       G.colossus.phase = "recover";
       G.colossus.recLeft = 2;
       G.colossusGrab = null;
-      if (typeof global.flashMsg === "function") flashMsg("The tentacle slips!", "#d0f0e0");
+      if (typeof global.flashMsg === "function") flashBanner("The tentacle slips!", "#d0f0e0");
     }
   }
 
@@ -233,20 +270,38 @@
     });
     G.colossus.phase = "eels";
     G.colossus.recLeft = 6;
-    if (typeof global.flashMsg === "function") flashMsg("Eels slither from the depths!", "#80d0a0");
+    if (typeof global.flashMsg === "function") flashBanner("Eels from the depths!", "#80d0a0");
     return G.colossusEels;
+  }
+
+  function endEels(immediate) {
+    const G = g();
+    if (!G) return;
+    (G.colossusEels || []).forEach(function (eel) {
+      if (eel.alive) {
+        eel.alive = false;
+        eel.dying = immediate ? 0 : 3;
+        eel.fade = immediate ? 0 : 1;
+      } else if (immediate) {
+        eel.dying = 0;
+        eel.fade = 0;
+      }
+    });
+    if (immediate) G.colossusEels = [];
+    if (typeof G.target === "number") G.target = "colossus";
   }
 
   function tickEels() {
     const G = g();
     const p = G.player;
+    const active = !!(G.colossus && G.colossus.phase === "eels");
     (G.colossusEels || []).forEach(function (eel) {
       if (!eel.alive) {
         if (eel.dying > 0) eel.dying--;
         if (eel.fade > 0) eel.fade = Math.max(0, eel.fade - 0.25);
         return;
       }
-      if (!p || p.hp <= 0) return;
+      if (!active || !p || p.hp <= 0) return;
       const dc = p.tileCol - eel.c;
       const dr = p.tileRow - eel.r;
       if (dc === 0 && dr === 0) {
@@ -370,7 +425,7 @@
     const cssW = (global.canvas && canvas.width) || 390;
     const cssH = (global.canvas && canvas.height) || 844;
     G.bolts.push({
-      t: 0, dur: global.BOLT_TRAVEL || 3,
+      t: 0, dur: global.BOLT_TRAVEL || 0.16,
       dmg: dmg, dest: target,
       from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
       to: { x: target.x, y: target.y },
@@ -422,6 +477,7 @@
         tickEels();
         k.recLeft--;
         if (k.recLeft <= 0) {
+          endEels(false);
           k.phase = "idle";
         }
       } else if (k.phase === "idle" || (k.phase === "recover" && k.recLeft <= 0)) {
@@ -439,6 +495,8 @@
       }
     }
 
+    if (!(k && k.phase === "eels")) tickEels();
+
     if (!G.colossusGrab && typeof global.processMovement === "function") processMovement();
     if (typeof global.tickTileAttacks === "function") tickTileAttacks();
 
@@ -449,16 +507,7 @@
       G.player.atkCd = playerSpeed();
     }
 
-    if (G.bolts && G.bolts.length) {
-      for (let i = G.bolts.length - 1; i >= 0; i--) {
-        const b = G.bolts[i];
-        b.t = (b.t || 0) + 1;
-        if (b.t >= (b.dur || 3)) {
-          applyBoltHit(b);
-          G.bolts.splice(i, 1);
-        }
-      }
-    }
+    // Bolt travel and hits are advanced by drawBolts(dt) in the frame loop.
 
     if (typeof global.updateHud === "function") updateHud();
     if (typeof global.updateDebugCombat === "function") updateDebugCombat();
@@ -564,9 +613,10 @@
     }
 
     try {
-      if (typeof global.drawPlayer === "function") drawPlayer(ctx, cssW, cssH, t);
-      if (typeof global.drawBolts === "function") drawBolts(ctx, cssW, cssH);
-      if (typeof global.drawSplats === "function") drawSplats(ctx, cssW, cssH, t);
+      const dt = Math.min(0.05, 1 / 60);
+      if (typeof global.drawPlayer === "function") drawPlayer(t);
+      if (typeof global.drawBolts === "function") drawBolts(dt);
+      if (typeof global.drawSplats === "function") drawSplats(dt);
     } catch (e) {}
 
     if (G.colossus && G.colossus.hp > 0) {
@@ -612,6 +662,9 @@
     ctx.translate(sx, sy);
     draw(ts / 1000, ctx, cssW, cssH);
     ctx.restore();
+    const dt = Math.min(0.05, 1 / 60);
+    tickFloatMsg(dt);
+    if (G.mode === "playing" && typeof global.updateHud === "function") updateHud();
     return true;
   }
 
