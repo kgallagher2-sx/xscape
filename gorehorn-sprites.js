@@ -311,9 +311,10 @@
   }
 
   function axeHoldAngle(facing) {
-    // Front/back: modest outward lean, blade clear of the face and the
-    // ±27.5 sprite frame. Side views: haft leans FORWARD so the blade
-    // sits in front of the helm, not over it.
+    // Front/back: modest outward lean, blade clear of the face at idle.
+    // Side views: haft leans FORWARD so the blade sits ahead of the helm,
+    // not over it. On the left, the far (right) hand holds the lower grip
+    // behind the body; the blade peeks forward past the torso.
     if (facing === "front") return -0.36;
     if (facing === "back") return 0.36;
     if (facing === "left") return -0.58;
@@ -335,7 +336,7 @@
     if (hand) c.translate(hand.x, hand.y);
     else if (facing === "front") c.translate(-5.5, -6.5);
     else if (facing === "back") c.translate(5.5, -8.0);
-    else if (facing === "left") c.translate(-6.5, -7.0);
+    else if (facing === "left") c.translate(6.5, -7.0);
     else c.translate(6.5, -7.0);
     c.rotate(axeAttackAngle(facing, shot));
     drawWarAxe(c, facing);

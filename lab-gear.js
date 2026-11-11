@@ -1432,12 +1432,11 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
     // Far = right hand (weapon behind).
     drawProfilePart(ctx, "left", cape);
     sleeve("right");
-    if (twoHand) {
-      weapon();
-    } else {
-      weapon();
-      fist("right");
-    }
+    // Far (right) weapon and far fist behind the body, including the 2h
+    // axe, which must still peek out. The near (left) fist is painted
+    // after the body, over the haft or shield grip.
+    weapon();
+    fist("right");
     drawProfilePart(ctx, "left", legs);
     drawProfilePart(ctx, "left", boots);
     drawProfilePart(ctx, "left", body);
@@ -1449,7 +1448,6 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
       fist("left");
       ring();
     } else {
-      fist("right");
       fist("left");
       ring();
     }
@@ -1894,7 +1892,9 @@ function twoHandPose(facing, opt) {
   if (facing === "front") rest = { x: -5.5, y: -6.5 - lift };
   else if (facing === "back") rest = { x: 5.5, y: -8.0 - lift };
   else if (facing === "right") rest = { x: 6.5, y: -7.0 - lift };
-  else rest = { x: -6.5, y: -7.0 - lift };
+  // Left: the right hand is the far hand. Park the lower grip on the far
+  // side so the axe draws behind the body and peeks, like other far items.
+  else rest = { x: 6.5, y: -7.0 - lift };
   const w = { x: rest.x, y: rest.y };
   if (shot.kind === "axe" && swing) {
     const fwd = facingForward(facing);
