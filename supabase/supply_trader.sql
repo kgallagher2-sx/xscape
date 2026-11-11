@@ -1,3 +1,5 @@
+-- Bank stacking (all item ids, unique cap, buy overflow) lives in bank_stack_all_items.sql
+-- and supersedes the bank parse / buy_supply_item bodies below if they differ.
 -- Supply trader (gold sink): food and potions sold into the 28-slot inventory.
 -- Purchases are cloud-authoritative. Inventory/bank may hold duplicate supply ids.
 
@@ -142,7 +144,7 @@ BEGIN
   END IF;
 
   v_items := game.parse_item_ids(v_payload->'unlockedItems', 200);
-  v_bank := game.parse_stackable_item_ids(v_payload->'bank', 200);
+  v_bank := game.parse_bank_items(v_payload->'bank', 200);
   v_inv := game.parse_stackable_item_ids(v_payload->'inventory', 28);
   v_eq := CASE WHEN jsonb_typeof(v_payload->'equipment') = 'object' THEN v_payload->'equipment' ELSE NULL END;
 

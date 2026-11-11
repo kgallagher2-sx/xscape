@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111033839-f44b970";</script>
+  <script>window.XSCAPE_BUILD = "20261111040706-90efa3d";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -878,6 +878,11 @@
     .osrs-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
     }
+
+    .bank-qty-row { display: flex; gap: 6px; margin: 8px 0 0; width: 100%; }
+    .bank-qty-row .btn, .bank-qty-row .btn.secondary { flex: 1; min-width: 0; margin: 0; height: 36px; font-size: 14px; padding: 0 4px; }
+    .bank-qty-row .btn.on { border-color: #ffe44a; color: #ffe44a; }
+    #hub-bank-meta { font-size: 12px; color: #efe0b0; text-align: center; margin: 6px 0 0; }
     .osrs-slot {
       position: relative;
       min-height: 52px; padding: 4px 3px 3px; margin: 0; min-width: 0;
@@ -1118,7 +1123,7 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 1.5–3M GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. Spend GP in the Shop, or earn more in Gloamhold.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
@@ -1388,7 +1393,15 @@
               <div id="hub-bank-inv" class="osrs-grid"></div>
             </div>
           </div>
-          <p class="lead" style="margin-top:10px">Tap a bank item to withdraw it. Tap an inventory item to deposit it.</p>
+          <p class="lead" style="margin-top:10px" id="hub-bank-meta"></p>
+          <div class="bank-qty-row" id="bank-qty-row" role="group" aria-label="Bank quantity">
+            <button type="button" class="btn secondary on" data-bank-qty="1">1</button>
+            <button type="button" class="btn secondary" data-bank-qty="5">5</button>
+            <button type="button" class="btn secondary" data-bank-qty="10">10</button>
+            <button type="button" class="btn secondary" data-bank-qty="x">X</button>
+            <button type="button" class="btn secondary" data-bank-qty="all">All</button>
+          </div>
+          <p class="lead" style="margin-top:10px">Choose 1, 5, 10, X, or All, then tap a bank item to withdraw or an inventory item to deposit. Everything stacks in the bank (potions stack by dose). Unstackables take one inventory slot each.</p>
         </div>
         <div class="sheet-actions" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn secondary" type="button" data-deposit-all>Deposit inventory</button>
@@ -1529,7 +1542,7 @@
         <p><b>Tornadoes:</b> he marks your tile with a swirling gale. Walk off before it lands — prayer will not save you from this one.</p>
         <p><b>Bodyguards:</b> Wingman Skree (Magic), Flockleader Geerin (Missiles), and Flight Kilisa (Melee). They have little HP. Killing them first makes the fight cleaner; you can ignore them and go straight for Kree'arra if you prefer.</p>
         <p><b>Supplies:</b> bring food and potions from the bank provisioner — there are no free supplies here. Use the quick slots (pencil to edit). Each bite or sip delays your next shot. F / P / R, or the on-screen buttons.</p>
-        <p><b>Loot:</b> every kill pays 1.5–3M pretend GP. Armadyl helmet, chestplate, chainskirt, and the Armadyl crossbow are a <b>1/6</b> unique roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, a random piece still drops (already owned). This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. Armadyl helmet, chestplate, chainskirt, and the Armadyl crossbow are a <b>1/6</b> unique roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
         <div class="tut-actions sheet-actions">
@@ -1562,7 +1575,7 @@
         <p><b>Web shot:</b> about every 20 ticks she fires a web into the ceiling. A shadow marks the landing tile 3 ticks ahead — walk off it. If you are still there when it lands, you are stuck for 4 ticks (you can still eat and pray, but you cannot move or attack). Then 4–6 baby spiders drop and each bite hits 0–8 through prayer.</p>
         <p><b>Below 50%:</b> webs come a little faster (every 16 ticks). Every two or three specials she raises the dead: 2 skeletons of eaten victims crawl in from the far side, walk slowly, and shatter in one hit — a 5-tick weapon has time to shoot both before they arrive, but if one reaches you it hits up to 25 through prayer.</p>
         <p><b>Below 20%:</b> she enrages and drops two webs at once.</p>
-        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Widow Weaver uniques (hood, robe top, robe bottom, wand, and spellbook) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, a random piece still drops (already owned). Uniques go to your bank. Wear them from Equipment. This kit is never sold.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Widow Weaver uniques (hood, robe top, robe bottom, wand, and spellbook) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. Uniques go to your bank. Wear them from Equipment. This kit is never sold.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
         <div class="tut-actions sheet-actions">
@@ -2043,6 +2056,7 @@ function migrateOwned(rawBank, equipment, unlocked) {
 }
 
 const INVENTORY_CAP = 28;
+const BANK_CAP = 200;
 
 function isWorn(id) {
   if (!id) return false;
@@ -2067,10 +2081,42 @@ function itemIsConsumable(id) {
   const it = ITEMS[id];
   return !!(it && (it.consumable || it.kind === "food" || it.kind === "potion"));
 }
+function inventoryCount(id) {
+  if (!id) return 0;
+  let n = 0;
+  const inv = Profile.inventory || [];
+  for (let i = 0; i < inv.length; i++) if (inv[i] === id) n++;
+  return n;
+}
+
+function bankCount(id) {
+  if (!id) return 0;
+  let n = 0;
+  const b = Profile.bank || [];
+  for (let i = 0; i < b.length; i++) if (b[i] === id) n++;
+  return n;
+}
+
+function bankUniqueCount() {
+  const seen = {};
+  let n = 0;
+  const b = Profile.bank || [];
+  for (let i = 0; i < b.length; i++) {
+    const id = b[i];
+    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id]) || seen[id]) continue;
+    seen[id] = true;
+    n++;
+  }
+  return n;
+}
+
+function bankSpace() {
+  return Math.max(0, BANK_CAP - bankUniqueCount());
+}
+
 function addToInventory(id) {
   if (!id || !ITEMS[id]) return false;
   if (!Profile.inventory) Profile.inventory = [];
-  if (!itemIsConsumable(id) && Profile.inventory.indexOf(id) !== -1) return true;
   if (Profile.inventory.length >= INVENTORY_CAP) return false;
   Profile.inventory.push(id);
   return true;
@@ -2087,7 +2133,7 @@ function removeFromInventory(id) {
 function addToBankStore(id) {
   if (!id || !ITEMS[id]) return false;
   if (!Profile.bank) Profile.bank = [];
-  if (!itemIsConsumable(id) && Profile.bank.indexOf(id) !== -1) return true;
+  if (bankCount(id) === 0 && bankUniqueCount() >= BANK_CAP) return false;
   Profile.bank.push(id);
   return true;
 }
@@ -2125,85 +2171,99 @@ function isOwned(id) {
 }
 
 function bankList() {
-  const wornOrInv = {};
-  const eq = Profile.equipment || {};
-  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
-    const id = eq[EQUIP_SLOTS[i]];
-    if (id) wornOrInv[id] = true;
+  const seen = {};
+  const out = [];
+  const b = Profile.bank || [];
+  for (let i = 0; i < b.length; i++) {
+    const id = b[i];
+    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id]) || seen[id]) continue;
+    seen[id] = true;
+    out.push(id);
   }
-  (Profile.inventory || []).forEach((id) => { if (id && !itemIsConsumable(id)) wornOrInv[id] = true; });
-  return (Profile.bank || []).filter((id) => ITEMS[id] && !wornOrInv[id] && !itemIsHidden(ITEMS[id]));
+  return out;
+}
+
+function bankStacks() {
+  return bankList().map((id) => ({ id: id, qty: bankCount(id) }));
 }
 
 function normalizeContainers() {
-  const eq = Profile.equipment || {};
-  const worn = {};
-  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
-    const id = eq[EQUIP_SLOTS[i]];
-    if (id) worn[id] = true;
-  }
-  const invSeen = {};
   const inv = [];
   (Profile.inventory || []).forEach((id) => {
     if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id])) return;
-    if (worn[id] && !itemIsConsumable(id)) return;
-    if (!itemIsConsumable(id)) {
-      if (invSeen[id]) return;
-      invSeen[id] = true;
-    }
     if (inv.length >= INVENTORY_CAP) return;
     inv.push(id);
   });
   Profile.inventory = inv;
-  const bankSeen = {};
-  const bank = [];
+  const counts = {};
+  const order = [];
   (Profile.bank || []).forEach((id) => {
     if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id])) return;
-    if (worn[id] && !itemIsConsumable(id)) return;
-    if (!itemIsConsumable(id)) {
-      if (invSeen[id] || bankSeen[id]) return;
-      bankSeen[id] = true;
+    if (!counts[id]) {
+      counts[id] = 0;
+      order.push(id);
     }
-    bank.push(id);
+    counts[id]++;
   });
+  const bank = [];
+  for (let i = 0; i < order.length; i++) {
+    const id = order[i];
+    for (let n = 0; n < counts[id]; n++) bank.push(id);
+  }
   Profile.bank = bank;
 }
 
 function stowItem(id) {
   if (!id) return false;
-  if (inventoryHas(id) || (Profile.bank || []).indexOf(id) !== -1) return true;
   if (addToInventory(id)) return true;
   return addToBankStore(id);
 }
 
-function depositItem(id, silent) {
-  if (!inventoryHas(id)) return false;
-  removeFromInventory(id);
-  addToBankStore(id);
+function depositItem(id, silent, qty) {
+  const have = inventoryCount(id);
+  if (have < 1) return 0;
+  let want = (qty == null || qty === "all") ? have : Math.floor(Number(qty) || 0);
+  if (want < 1) return 0;
+  want = Math.min(want, have);
+  let n = 0;
+  for (let i = 0; i < want; i++) {
+    if (!addToBankStore(id)) break;
+    removeFromInventory(id);
+    n++;
+  }
   if (!silent) {
     saveProfile();
     refreshGearViews();
     if (window.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
   }
-  return true;
+  return n;
 }
 
-function withdrawItem(id, silent) {
-  if ((Profile.bank || []).indexOf(id) === -1) return false;
-  if (inventorySpace() <= 0) return false;
-  removeFromBankStore(id);
-  addToInventory(id);
+function withdrawItem(id, silent, qty) {
+  const have = bankCount(id);
+  if (have < 1) return 0;
+  const space = inventorySpace();
+  if (space < 1) return 0;
+  let want = (qty == null || qty === "all") ? have : Math.floor(Number(qty) || 0);
+  if (want < 1) return 0;
+  want = Math.min(want, have, space);
+  let n = 0;
+  for (let i = 0; i < want; i++) {
+    if (!addToInventory(id)) break;
+    removeFromBankStore(id);
+    n++;
+  }
   if (!silent) {
     saveProfile();
     refreshGearViews();
     if (window.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
   }
-  return true;
+  return n;
 }
 
 function depositAll() {
   const ids = (Profile.inventory || []).slice();
-  ids.forEach((id) => depositItem(id, true));
+  ids.forEach((id) => depositItem(id, true, 1));
   saveProfile();
   refreshGearViews();
   if (window.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
@@ -3287,19 +3347,23 @@ function migrateLegacyStarter() {
   const ids = starterOwnedIds();
   for (let i = 0; i < ids.length; i++) ownItem(ids[i]);
   if (Array.isArray(Profile.bank)) {
-    const seen = {};
     const next = [];
+    const present = {};
     for (let i = 0; i < Profile.bank.length; i++) {
       let id = Profile.bank[i];
       if (LEGACY_STARTER_MAP[id]) { id = LEGACY_STARTER_MAP[id]; changed = true; }
       const it = ITEMS[id];
       if (it && (it.tier === "legacy" || (it.hidden && it.tier === "armadyl" && !isOwned(id)))) continue;
-      if (!id || seen[id]) continue;
-      seen[id] = true;
+      if (!id) continue;
       next.push(id);
+      present[id] = true;
     }
     for (let i = 0; i < ids.length; i++) {
-      if (!seen[ids[i]]) { next.push(ids[i]); seen[ids[i]] = true; changed = true; }
+      const id = ids[i];
+      if (present[id] || isOwned(id)) continue;
+      next.push(id);
+      present[id] = true;
+      changed = true;
     }
     Profile.bank = next;
   }
@@ -3396,7 +3460,7 @@ function loadProfile() {
       Profile.kreeBestTicks = raw.kreeBestTicks || null;
       Profile.widowKills = Number(raw.widowKills) || 0;
       Profile.widowBestTicks = raw.widowBestTicks || null;
-      Profile.bank = migrateOwned(raw.bank, Profile.equipment, Profile.unlockedItems);
+      Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
       Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
     } else {
       Profile.name = loadName();
@@ -7168,7 +7232,7 @@ window.KellenScape = {
   launchTileAttack, testFireball, queueMoveTo, queueMoveBy, setRunning,
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
-  ownItem, equipItem, unequipSlot, bankList, inventoryList, isOwned, depositItem, withdrawItem, depositAll, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
+  ownItem, equipItem, unequipSlot, bankList, bankStacks, bankCount, inventoryList, inventoryCount, isOwned, depositItem, withdrawItem, depositAll, BANK_CAP, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
   sipRangePot, combatSkillLevel,
   get stats() { return window.PlayerStats; },
   ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape, gloamholdLockReason, tryEnterGloamhold,
@@ -7234,6 +7298,9 @@ window.inventoryList = inventoryList;
 window.depositItem = depositItem;
 window.withdrawItem = withdrawItem;
 window.depositAll = depositAll;
+window.bankCount = bankCount;
+window.bankStacks = bankStacks;
+window.BANK_CAP = BANK_CAP;
 window.normalizeContainers = normalizeContainers;
 window.refreshGearViews = refreshGearViews;
 window.ownsFireCape = ownsFireCape;

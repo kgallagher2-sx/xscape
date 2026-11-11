@@ -524,6 +524,7 @@ BEGIN
 END;
 $$;
 
+-- Kree'arra: 1/6 unique + reroll to an unowned Armadyl piece; set-complete pays 2–4M GP instead of a duplicate. Server rolls; p_item_ids ignored.
 CREATE OR REPLACE FUNCTION game.record_kree_kill(p_ticks integer, p_item_ids text[])
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -533,15 +534,20 @@ AS $$
 DECLARE
   uid uuid := auth.uid();
   r public.profiles%ROWTYPE;
+  st public.player_state%ROWTYPE;
   v_gp bigint;
   v_items text[] := ARRAY[]::text[];
   v_id text;
-  v_allowed text[] := ARRAY[
+  v_bonus bigint := 0;
+  v_roll jsonb;
+  v_owned text[];
+  v_pool text[] := ARRAY[
     'armadyl_helmet', 'armadyl_chestplate', 'armadyl_chainskirt', 'armadyl_crossbow'
   ];
 BEGIN
   PERFORM game.ensure_profile(uid);
   SELECT * INTO r FROM public.profiles WHERE id = uid FOR UPDATE;
+  SELECT * INTO st FROM public.player_state WHERE user_id = uid FOR UPDATE;
   IF r.last_kree_at IS NOT NULL AND r.last_kree_at > now() - interval '20 seconds' THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Too fast', 'profile', game.profile_payload(uid));
   END IF;
@@ -549,14 +555,19 @@ BEGIN
     RETURN jsonb_build_object('ok', false, 'error', 'Invalid time', 'profile', game.profile_payload(uid));
   END IF;
 
-  v_gp := 1500000 + floor(random() * 1500001)::bigint;
-  IF p_item_ids IS NOT NULL THEN
-    FOREACH v_id IN ARRAY p_item_ids LOOP
-      IF v_id = ANY (v_allowed) AND NOT v_id = ANY (v_items) THEN
-        v_items := v_items || v_id;
-      END IF;
-    END LOOP;
+  v_gp := 150000 + floor(random() * 250001)::bigint;
+  v_owned := ARRAY(
+    SELECT DISTINCT unnest(
+      COALESCE(st.unlocked_items, ARRAY[]::text[]) || COALESCE(st.bank, ARRAY[]::text[])
+    )
+  );
+  v_roll := game.roll_unique_or_set_bonus(v_pool, v_owned, 6);
+  v_id := v_roll->>'item';
+  v_bonus := COALESCE((v_roll->>'bonusGp')::bigint, 0);
+  IF v_id IS NOT NULL THEN
+    v_items := ARRAY[v_id];
   END IF;
+  v_gp := v_gp + v_bonus;
 
   UPDATE public.profiles SET
     gp = gp + v_gp,
@@ -579,11 +590,13 @@ BEGIN
   RETURN jsonb_build_object(
     'ok', true,
     'gpAwarded', v_gp,
+    'gpBonus', v_bonus,
     'items', to_jsonb(v_items),
     'profile', game.profile_payload(uid)
   );
 END;
 $$;
+
 
 CREATE OR REPLACE FUNCTION game.record_raid_clear(p_ticks integer, p_item_ids text[])
 RETURNS jsonb

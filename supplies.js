@@ -207,77 +207,76 @@
   function patchContainers() {
     const prevAdd = global.addToInventory;
     global.addToInventory = function (id) {
-      if (!id || !global.ITEMS || !ITEMS[id]) return false;
+      if (!id) return false;
+      id = canonicalSupplyId(id);
+      if (!global.ITEMS || !ITEMS[id]) return false;
       const P = profile();
       if (!P.inventory) P.inventory = [];
-      if (!isSupplyId(id) && P.inventory.indexOf(id) !== -1) return true;
       if (P.inventory.length >= CAP) return false;
       P.inventory.push(id);
       return true;
     };
     const prevBank = global.addToBankStore;
     global.addToBankStore = function (id) {
-      if (!id || !global.ITEMS || !ITEMS[id]) return false;
+      if (!id) return false;
+      id = canonicalSupplyId(id);
+      if (!global.ITEMS || !ITEMS[id]) return false;
       const P = profile();
       if (!P.bank) P.bank = [];
-      if (!isSupplyId(id) && P.bank.indexOf(id) !== -1) return true;
+      const cap = (typeof global.BANK_CAP === "number") ? global.BANK_CAP : 200;
+      let have = 0, unique = 0, seen = {};
+      for (let i = 0; i < P.bank.length; i++) {
+        const b = P.bank[i];
+        if (b === id) have++;
+        if (b && !seen[b]) { seen[b] = true; unique++; }
+      }
+      if (have === 0 && unique >= cap) return false;
       P.bank.push(id);
       return true;
     };
     const prevNorm = global.normalizeContainers;
     global.normalizeContainers = function () {
       const P = profile();
-      const eq = P.equipment || {};
-      const worn = {};
-      const slots = global.EQUIP_SLOTS || [];
-      for (let i = 0; i < slots.length; i++) if (eq[slots[i]]) worn[eq[slots[i]]] = true;
       const inv = [];
-      const invSeen = {};
       (P.inventory || []).forEach(function (raw) {
         const id = canonicalSupplyId(raw);
         if (!id || !ITEMS[id]) return;
         if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
-        if (worn[id] && !isSupplyId(id)) return;
-        if (!isSupplyId(id)) {
-          if (invSeen[id]) return;
-          invSeen[id] = true;
-        }
         if (inv.length >= CAP) return;
         inv.push(id);
       });
       P.inventory = inv;
-      const bank = [];
-      const bankSeen = {};
+      const counts = {};
+      const order = [];
       (P.bank || []).forEach(function (raw) {
         const id = canonicalSupplyId(raw);
         if (!id || !ITEMS[id]) return;
         if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
-        if (worn[id] && !isSupplyId(id)) return;
-        if (!isSupplyId(id)) {
-          if (invSeen[id] || bankSeen[id]) return;
-          bankSeen[id] = true;
-        }
-        bank.push(id);
+        if (!counts[id]) { counts[id] = 0; order.push(id); }
+        counts[id]++;
       });
+      const bank = [];
+      for (let i = 0; i < order.length; i++) {
+        const id = order[i];
+        for (let n = 0; n < counts[id]; n++) bank.push(id);
+      }
       P.bank = bank;
     };
     const prevBankList = global.bankList;
     global.bankList = function () {
       const P = profile();
-      const eq = P.equipment || {};
-      const worn = {};
-      const slots = global.EQUIP_SLOTS || [];
-      for (let i = 0; i < slots.length; i++) if (eq[slots[i]]) worn[eq[slots[i]]] = true;
-      const hiddenGear = {};
-      (P.inventory || []).forEach(function (id) {
-        if (id && !isSupplyId(id)) hiddenGear[id] = true;
-      });
-      return (P.bank || []).filter(function (id) {
-        if (!id || !ITEMS[id]) return false;
-        if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return false;
-        if (!isSupplyId(id) && (worn[id] || hiddenGear[id])) return false;
-        return true;
-      });
+      const seen = {};
+      const out = [];
+      const b = P.bank || [];
+      for (let i = 0; i < b.length; i++) {
+        const id = b[i];
+        if (!id || !ITEMS[id]) continue;
+        if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) continue;
+        if (seen[id]) continue;
+        seen[id] = true;
+        out.push(id);
+      }
+      return out;
     };
     if (prevAdd && prevBank && prevNorm && prevBankList) { /* replaced */ }
   }

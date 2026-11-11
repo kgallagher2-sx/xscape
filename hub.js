@@ -1817,14 +1817,56 @@
     return it && it.name ? it.name : id;
   }
 
+  var bankQtyMode = "1";
+
+  function currentBankQty(maxHave) {
+    var have = Math.max(0, maxHave || 0);
+    if (bankQtyMode === "all") return have;
+    var n = Math.floor(Number(bankQtyMode) || 0);
+    return n < 1 ? 1 : n;
+  }
+
+  function setBankQtyMode(mode) {
+    if (mode === "x") {
+      var raw = (typeof prompt === "function") ? prompt("How many? (1–100000)", "1") : "1";
+      var n = Math.floor(Number(raw) || 0);
+      if (n < 1) return;
+      bankQtyMode = String(Math.min(n, 100000));
+    } else if (mode === "all" || mode === "1" || mode === "5" || mode === "10") {
+      bankQtyMode = mode;
+    } else {
+      var n = Math.floor(Number(mode) || 0);
+      if (n < 1) return;
+      bankQtyMode = String(Math.min(n, 100000));
+    }
+    var row = $("bank-qty-row");
+    if (row) {
+      var buttons = row.querySelectorAll("[data-bank-qty]");
+      for (var i = 0; i < buttons.length; i++) {
+        var b = buttons[i];
+        var k = b.getAttribute("data-bank-qty");
+        var on = (k === bankQtyMode) || (k === "x" && bankQtyMode !== "1" && bankQtyMode !== "5" && bankQtyMode !== "10" && bankQtyMode !== "all");
+        b.classList.toggle("on", on);
+      }
+    }
+  }
+
   function renderBank() {
     var bankEl = $("hub-bank-grid");
     var invEl = $("hub-bank-inv");
+    var countOf = (typeof bankCount === "function")
+      ? bankCount
+      : function (id) {
+          var n = 0, b = (Profile.bank) || [];
+          for (var i = 0; i < b.length; i++) if (b[i] === id) n++;
+          return n;
+        };
     if (bankEl) {
       var bank = (typeof bankList === "function" ? bankList() : ((Profile.bank) || []));
       if (!bank.length) bankEl.innerHTML = '<div class="osrs-slot empty">Empty</div>';
       else bankEl.innerHTML = bank.map(function (id) {
-        return '<button type="button" class="osrs-slot" data-withdraw="' + escapeHtml(id) + '" title="' + escapeHtml(itemLabel(id)) + '"></button>';
+        var qty = countOf(id);
+        return '<button type="button" class="osrs-slot" data-withdraw="' + escapeHtml(id) + '" data-qty="' + qty + '" title="' + escapeHtml(itemLabel(id)) + (qty > 1 ? (" ×" + qty) : "") + '"></button>';
       }).join("");
     }
     if (invEl) {
@@ -1840,9 +1882,13 @@
     }
     if (bankEl && global.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(bankEl);
     var cap = $("hub-bank-cap");
-    if (cap && typeof inventorySpace === "function") {
-      cap.textContent = "Inventory " + (28 - inventorySpace()) + "/28";
-    }
+    var invUsed = (typeof inventorySpace === "function") ? (28 - inventorySpace()) : ((Profile.inventory || []).length);
+    if (cap) cap.textContent = "Inventory " + invUsed + "/28";
+    var meta = $("hub-bank-meta");
+    var unique = (typeof bankUniqueCount === "function") ? bankUniqueCount() : ((typeof bankList === "function" ? bankList() : []).length);
+    var bcap = (typeof BANK_CAP === "number") ? BANK_CAP : 200;
+    if (meta) meta.textContent = "Bank " + unique + "/" + bcap + "  ·  Inventory " + invUsed + "/28";
+    setBankQtyMode(bankQtyMode);
   }
 
   function openBank() {
@@ -2568,15 +2614,30 @@
         var w = e.target.closest("[data-withdraw]");
         var d = e.target.closest("[data-deposit]");
         var all = e.target.closest("[data-deposit-all]");
+        var qtyBtn = e.target.closest("[data-bank-qty]");
+        if (qtyBtn) {
+          setBankQtyMode(qtyBtn.getAttribute("data-bank-qty"));
+          return;
+        }
         if (w) {
           if (typeof withdrawItem === "function") {
-            if (!withdrawItem(w.getAttribute("data-withdraw"))) {
+            var wid = w.getAttribute("data-withdraw");
+            var have = (typeof bankCount === "function") ? bankCount(wid) : 1;
+            var took = withdrawItem(wid, false, currentBankQty(have));
+            if (!took) {
+              if (typeof flashMsg === "function") flashMsg((typeof inventorySpace === "function" && inventorySpace() <= 0) ? "Inventory is full" : "Nothing to withdraw", "#ff8a70");
+            } else if (bankQtyMode !== "all" && took < currentBankQty(have) && typeof inventorySpace === "function" && inventorySpace() <= 0) {
               if (typeof flashMsg === "function") flashMsg("Inventory is full", "#ff8a70");
             }
           }
           renderBank();
         } else if (d) {
-          if (typeof depositItem === "function") depositItem(d.getAttribute("data-deposit"));
+          if (typeof depositItem === "function") {
+            var did = d.getAttribute("data-deposit");
+            var haveInv = (typeof inventoryCount === "function") ? inventoryCount(did) : 1;
+            var put = depositItem(did, false, currentBankQty(haveInv));
+            if (!put && typeof flashMsg === "function") flashMsg("Bank is full", "#ff8a70");
+          }
           renderBank();
         } else if (all) {
           if (typeof depositAll === "function") depositAll();

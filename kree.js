@@ -17,9 +17,11 @@
   const POTS = 2;
   const RANGE_POTS = 1;
   const RANGE_POT_TICKS = 80;
-  const GP_MIN = 1500000;
-  const GP_MAX = 3000000;
+  const GP_MIN = 150000;
+  const GP_MAX = 400000;
   const UNIQUE_RATE = 6;
+  const SET_BONUS_MIN = 2000000;
+  const SET_BONUS_MAX = 4000000;
   const DROP = [
     { id: "armadyl_helmet" },
     { id: "armadyl_chestplate" },
@@ -600,6 +602,8 @@
 
   function rollLoot(force) {
     const items = [];
+    const gp = irand(GP_MIN, GP_MAX);
+    let bonus = 0;
     if (force && force.length) {
       for (let i = 0; i < force.length; i++) items.push(force[i]);
     } else if (Math.random() < 1 / UNIQUE_RATE) {
@@ -607,10 +611,13 @@
       const unowned = pool.filter(function (id) {
         return !(typeof global.isOwned === "function" && isOwned(id));
       });
-      const pick = unowned.length ? unowned : pool;
-      items.push(pick[Math.floor(Math.random() * pick.length)]);
+      if (unowned.length) {
+        items.push(unowned[Math.floor(Math.random() * unowned.length)]);
+      } else {
+        bonus = irand(SET_BONUS_MIN, SET_BONUS_MAX);
+      }
     }
-    return { items: items, gp: irand(GP_MIN, GP_MAX) };
+    return { items: items, gp: gp + bonus, gpBonus: bonus };
   }
 
   function grantLoot(loot) {
@@ -647,9 +654,14 @@
       rows.push(["Perfect prayers", String(result.perfectPrayers || 0)]);
     }
     rows.push(["Kill count", String(kills)]);
-    const gs = (typeof global.gpStyle === "function") ? gpStyle(loot.gp) : { text: String(loot.gp), class: "gp-yellow" };
+    const bonus = (loot && loot.gpBonus) || 0;
+    const killGp = Math.max(0, ((loot && loot.gp) || 0) - bonus);
+    const gs = (typeof global.gpStyle === "function") ? gpStyle(killGp) : { text: String(killGp), class: "gp-yellow" };
     rows.push(["GP earned", "+" + gs.text, gs.class]);
-    if (awarded.length) {
+    if (bonus > 0) {
+      const bs = (typeof global.gpStyle === "function") ? gpStyle(bonus) : { text: String(bonus), class: "gold" };
+      rows.push(["Set complete", bs.text + " GP bonus", "gold"]);
+    } else if (awarded.length) {
       awarded.forEach(function (it) {
         rows.push(["Drop", it.name + (it.already ? " (already owned)" : ""), "gold", it.id]);
       });
@@ -716,7 +728,7 @@
           if (res.profile && typeof cloud.applyProfile === "function") {
             cloud.applyProfile(res.profile, { fromAward: true });
           }
-          finish({ items: items, gp: res.gpAwarded || 0 }, awardedFrom(items, already));
+          finish({ items: items, gp: res.gpAwarded || 0, gpBonus: res.gpBonus || 0 }, awardedFrom(items, already));
         } else if (res && res.error === "offline") {
           const loot = rollLoot(null);
           finish(loot, grantLoot(loot));

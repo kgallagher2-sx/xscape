@@ -112,7 +112,7 @@ Guests do **not** run the full import (that would let a guest stash shop loot an
 
 Private logic lives in the unexposed `game` schema (`SECURITY DEFINER`, fixed `search_path`). `public.*` RPCs are invoker wrappers.
 
-Reward RPCs roll GP with the live caps: Jad 2–3M after the cape (0 on the first cape, 0 for guests), Kree 1.5–3M, Gloamhold 2–8M, shop prices matching the client. Rate limits stop trivial double-claims.
+Reward RPCs roll GP with the live caps: Jad 2–3M after the cape (0 on the first cape, 0 for guests), Kree 150k–400k, Gloamhold 2–8M, shop prices matching the client. A 1/6 unique roll on Kree or the Widow Queen pays a 2–4M GP bonus instead of a duplicate when the set is already complete. Rate limits stop trivial double-claims.
 
 ## Multiplayer: what works now vs next
 
