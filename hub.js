@@ -1938,6 +1938,7 @@
     var kreeBtn = $("btn-boss-kree");
     var widowBtn = $("btn-boss-widow");
     var knightBtn = $("btn-boss-knight");
+    var gorehornBtn = $("btn-boss-gorehorn");
     var note = $("boss-raid-note");
     if (kreeBtn) {
       kreeBtn.classList.toggle("locked", guest);
@@ -1951,13 +1952,17 @@
       knightBtn.classList.toggle("locked", guest);
       knightBtn.disabled = guest;
     }
+    if (gorehornBtn) {
+      gorehornBtn.classList.toggle("locked", guest);
+      gorehornBtn.disabled = guest;
+    }
     if (raidBtn) {
       var locked = guest || reason === "no-cape";
       raidBtn.classList.toggle("locked", locked);
       raidBtn.disabled = locked;
     }
     if (note) {
-      if (guest) note.textContent = "Guests can fight TzTok-Jad in starter gear. Sign in to unlock Kree'arra, the Widow Queen, the Hollow Knight-King, and Gloamhold.";
+      if (guest) note.textContent = "Guests can fight TzTok-Jad in starter gear. Sign in to unlock Kree'arra, the Widow Queen, the Hollow Knight-King, Gorehorn, and Gloamhold.";
       else if (reason === "no-cape") note.textContent = "Requires a Fire cape — defeat TzTok-Jad.";
       else if (reason === "not-equipped") note.textContent = "Equip your Fire cape to enter Gloamhold.";
       else note.textContent = "Solo, or form a group with friends in the bank.";
@@ -1988,6 +1993,13 @@
     if (typeof enterScene === "function") enterScene("knight");
     else if (global.XscapeKnight && XscapeKnight.tryEnter) XscapeKnight.tryEnter();
     else if (global.XscapeKnight && XscapeKnight.startFight) XscapeKnight.startFight({});
+  }
+
+  function startGorehorn() {
+    closeSheet("overlay-boss");
+    if (typeof enterScene === "function") enterScene("gorehorn");
+    else if (global.XscapeGorehorn && XscapeGorehorn.tryEnter) XscapeGorehorn.tryEnter();
+    else if (global.XscapeGorehorn && XscapeGorehorn.startFight) XscapeGorehorn.startFight({});
   }
 
   function chooseGloamhold() {
@@ -2675,6 +2687,7 @@
       if ($("btn-boss-kree")) $("btn-boss-kree").addEventListener("click", startKree);
       if ($("btn-boss-widow")) $("btn-boss-widow").addEventListener("click", startWidow);
       if ($("btn-boss-knight")) $("btn-boss-knight").addEventListener("click", startKnight);
+      if ($("btn-boss-gorehorn")) $("btn-boss-gorehorn").addEventListener("click", startGorehorn);
       if ($("btn-boss-raid")) $("btn-boss-raid").addEventListener("click", chooseGloamhold);
       if ($("btn-boss-solo")) $("btn-boss-solo").addEventListener("click", startGloamSolo);
       if ($("btn-boss-group")) $("btn-boss-group").addEventListener("click", startGloamGroup);

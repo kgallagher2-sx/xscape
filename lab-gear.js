@@ -47,6 +47,11 @@ const LAB_ITEMS = {
   kingsguard_sword:   { id: "kingsguard_sword", name: "Kingsguard sword", slot: "weapon", tier: "kingsguard", kind: "sword" },
   kingsguard_kite:    { id: "kingsguard_kite", name: "Kingsguard kiteshield", slot: "shield", tier: "kingsguard", kind: "kingsguard" },
 
+  gorehorn_helm:      { id: "gorehorn_helm", name: "Gorehorn helm", slot: "head", tier: "gorehorn", kind: "gorehorn" },
+  gorehorn_plate:     { id: "gorehorn_plate", name: "Gorehorn platebody", slot: "body", tier: "gorehorn", kind: "gorehorn" },
+  gorehorn_legs:      { id: "gorehorn_legs", name: "Gorehorn platelegs", slot: "legs", tier: "gorehorn", kind: "gorehorn" },
+  gorehorn_axe:       { id: "gorehorn_axe", name: "Gorehorn war axe", slot: "weapon", tier: "gorehorn", kind: "axe" },
+
   hollowbolt_xbow:    { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", kind: "hollow" },
   hollow_bolts:       { id: "hollow_bolts", name: "Hollow bolts", slot: "ammo", tier: "unique", kind: "hollow" },
   veilhide_body:      { id: "veilhide_body", name: "Veilhide body", slot: "body", tier: "unique", kind: "veilhide" },
@@ -100,10 +105,25 @@ const LAB_LOADOUTS = {
     head: "black_dhide_coif", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
     weapon: "abyssal_whip", body: "kingsguard_plate", shield: "kingsguard_kite",
     legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  gorehorn: {
+    head: "gorehorn_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "gorehorn_axe", body: "gorehorn_plate", shield: null,
+    legs: "gorehorn_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  gorehorn_widow_mix: {
+    head: "gorehorn_helm", cape: null, neck: null, ammo: null,
+    weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
+    legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
+  },
+  gorehorn_knight_mix: {
+    head: "gorehorn_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "kingsguard_sword", body: "gorehorn_plate", shield: "kingsguard_kite",
+    legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
   }
 };
 
-const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "unique", "other"];
+const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "unique", "other"];
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
   tier2: "Tier 2 — black d'hide",
@@ -111,6 +131,7 @@ const LAB_TIER_LABEL = {
   armadyl: "Armadyl — Kree'arra",
   widow: "Widow Weaver — Widow Queen",
   kingsguard: "Kingsguard — Hollow Knight-King",
+  gorehorn: "Gorehorn — the Minotaur",
   unique: "Gloamhold uniques",
   other: "Other (kept if owned)"
 };
@@ -156,6 +177,10 @@ const LAB_DEFAULTS = {
   kingsguard_legs:    { main: "#5a6570", trim: "#d4b24a", scale: 1 },
   kingsguard_sword:   { main: "#9aa4ae", trim: "#d4b24a", scale: 1 },
   kingsguard_kite:    { main: "#5a6570", trim: "#d4b24a", scale: 1 },
+  gorehorn_helm:      { main: "#8a5a28", trim: "#8a1020", scale: 1 },
+  gorehorn_plate:     { main: "#8a5a28", trim: "#8a1020", scale: 1 },
+  gorehorn_legs:      { main: "#8a5a28", trim: "#8a1020", scale: 1 },
+  gorehorn_axe:       { main: "#c48a40", trim: "#8a1020", scale: 1 },
 
   hollowbolt_xbow:    { main: "#3a3048", trim: "#c8b890", scale: 1 },
   hollow_bolts:       { main: "#c8c0e0", trim: "#3a3048", scale: 1 },
@@ -337,6 +362,9 @@ function drawLabLegs(c, id) {
     } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawLegs) {
       XscapeKnightArt.drawLegs(c, "back");
       return;
+    } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawLegs) {
+      XscapeGorehornArt.drawLegs(c, "back");
+      return;
     }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
@@ -462,6 +490,9 @@ function drawLabBody(c, id) {
     } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawPlate) {
       XscapeKnightArt.drawPlate(c, "back");
       return;
+    } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawPlate) {
+      XscapeGorehornArt.drawPlate(c, "back");
+      return;
     }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
@@ -554,6 +585,9 @@ function drawLabHead(c, id) {
       return;
     } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawHelm) {
       XscapeKnightArt.drawHelm(c, "back");
+      return;
+    } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawHelm) {
+      XscapeGorehornArt.drawHelm(c, "back");
       return;
     }
     if (kind === "armadyl") {
@@ -1275,6 +1309,10 @@ function drawLabItemIcon(c, id, t) {
     XscapeKnightArt.drawItemIcon(c, id, 44, 44);
     c.restore();
     return;
+  } else if ((kind === "gorehorn" || kind === "axe") && window.XscapeGorehornArt && XscapeGorehornArt.drawItemIcon && String(id).indexOf("gorehorn_") === 0) {
+    XscapeGorehornArt.drawItemIcon(c, id, 44, 44);
+    c.restore();
+    return;
   }
   if (slot === "ammo") {
     drawBoltBundle(c, st, kind);
@@ -1854,6 +1892,9 @@ function drawHeroLegs(c, id, facing, stride) {
     } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawLegs) {
       XscapeKnightArt.drawLegs(c, facing === "right" ? "right" : "front");
       return;
+    } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawLegs) {
+      XscapeGorehornArt.drawLegs(c, facing === "right" ? "right" : "front");
+      return;
     }
     if (facing === "right") {
       const far = -s * 0.7, near = s * 0.7;
@@ -1937,6 +1978,9 @@ function drawHeroBody(c, id, facing) {
       } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawPlate) {
         XscapeKnightArt.drawPlate(c, "right");
         return;
+      } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawPlate) {
+        XscapeGorehornArt.drawPlate(c, "right");
+        return;
       }
       c.fillStyle = p.dark;
       c.beginPath();
@@ -1977,6 +2021,9 @@ function drawHeroBody(c, id, facing) {
       return;
     } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawPlate) {
       XscapeKnightArt.drawPlate(c, "front");
+      return;
+    } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawPlate) {
+      XscapeGorehornArt.drawPlate(c, "front");
       return;
     }
     if (kind === "armadyl") {
@@ -2192,6 +2239,9 @@ function drawHeroHead(c, id, facing) {
       } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawHelm) {
         XscapeKnightArt.drawHelm(c, "right");
         return;
+      } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawHelm) {
+        XscapeGorehornArt.drawHelm(c, "right");
+        return;
       }
       if (kind === "armadyl") {
         c.fillStyle = p.dark;
@@ -2282,6 +2332,9 @@ function drawHeroHead(c, id, facing) {
       return;
     } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawHelm) {
       XscapeKnightArt.drawHelm(c, "front");
+      return;
+    } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawHelm) {
+      XscapeGorehornArt.drawHelm(c, "front");
       return;
     }
     if (kind === "armadyl") {

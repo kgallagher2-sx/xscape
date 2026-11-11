@@ -464,6 +464,11 @@
       ended = true;
       XscapeKnightArt.drawItemIcon(ctx, id, w, h);
     }
+    else if (String(id).indexOf("gorehorn_") === 0 && global.XscapeGorehornArt && XscapeGorehornArt.drawItemIcon) {
+      ctx.restore();
+      ended = true;
+      XscapeGorehornArt.drawItemIcon(ctx, id, w, h);
+    }
     else if (id === "veilhide_body" || id === "veilhide-body") drawBody(ctx, pal.veil);
     else if (id === "veilhide_chaps" || id === "veilhide-chaps") drawChaps(ctx, pal.veil);
     else if (id === "veilhide_vambs" || id === "veilhide-vambs") drawVambs(ctx, pal.veil);

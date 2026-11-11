@@ -145,3 +145,6 @@ A “Saved to cloud” line appears on the hub when a named character is signed 
 
 ## Hollow Knight-King
 `record_knight_kill(p_ticks)` awards 150k–400k GP per kill (same band as Kree/Widow). A 1/6 unique roll picks an unowned Kingsguard piece (`kingsguard_helm`, `kingsguard_plate`, `kingsguard_legs`, `kingsguard_sword`, `kingsguard_kite`); if the set is already complete, the unique roll pays a 2–4M GP bonus instead of a duplicate. 20-second rate limit; `p_ticks` must be null or >= 20. Profile fields: `knightKills`, `knightBestTicks`.
+
+## Gorehorn, the Minotaur
+`record_gorehorn_kill(p_ticks)` awards 150k–400k GP per kill (same band as Kree/Widow/Knight-King). A 1/6 unique roll picks an unowned Gorehorn piece (`gorehorn_helm`, `gorehorn_plate`, `gorehorn_legs`, `gorehorn_axe`); if the set is already complete, the unique roll pays a 2–4M GP bonus instead of a duplicate. 20-second rate limit; `p_ticks` must be null or >= 20. Profile fields: `gorehornKills`, `gorehornBestTicks`. Wearing the full set (including the 7-tick two-handed war axe) makes player melee damage rise as Hitpoints fall, like Dharok's.
