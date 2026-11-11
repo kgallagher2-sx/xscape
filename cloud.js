@@ -224,6 +224,106 @@
     return { kills: kills, bestTicks: bestTicks, bestScore: bestScore };
   }
 
+  /* Mid-tier alcove ids. Client saves must not introduce these; the
+     claim_alcove_mid RPC is the only grant path. Dose or hyphen/underscore
+     variants of these bases are treated the same. */
+  var ALCOVE_MID_IDS = ["tempered-xbow", "duskhide-body", "duskhide-chaps", "duskhide-vambs"];
+
+  function alcoveMidBase(id) {
+    if (!id || typeof id !== "string") return null;
+    var normalized = id.replace(/_/g, "-");
+    for (var i = 0; i < ALCOVE_MID_IDS.length; i++) {
+      var base = ALCOVE_MID_IDS[i];
+      if (normalized === base) return base;
+      if (normalized.indexOf(base + "-") === 0) return base;
+    }
+    return null;
+  }
+  function isAlcoveMidId(id) { return !!alcoveMidBase(id); }
+
+  function collectProfileItemIds(p) {
+    var ids = [];
+    function add(id) { if (id && typeof id === "string") ids.push(id); }
+    if (!p) return ids;
+    if (Array.isArray(p.unlockedItems)) p.unlockedItems.forEach(add);
+    if (Array.isArray(p.bank)) p.bank.forEach(add);
+    if (Array.isArray(p.inventory)) p.inventory.forEach(add);
+    if (p.equipment && typeof p.equipment === "object") {
+      Object.keys(p.equipment).forEach(function (k) { add(p.equipment[k]); });
+    }
+    return ids;
+  }
+
+  function cloudOwnedAlcoveMidIds(profile) {
+    var allow = {};
+    collectProfileItemIds(profile).forEach(function (id) {
+      if (isAlcoveMidId(id)) allow[id] = true;
+    });
+    return allow;
+  }
+
+  function filterAlcoveMidsFromList(list, allowed) {
+    if (!Array.isArray(list)) return list;
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var id = list[i];
+      if (isAlcoveMidId(id) && !allowed[id]) continue;
+      out.push(id);
+    }
+    return out;
+  }
+
+  function filterAlcoveMidsFromEquipment(eq, allowed) {
+    if (!eq || typeof eq !== "object") return eq;
+    var out = {};
+    Object.keys(eq).forEach(function (slot) {
+      var id = eq[slot];
+      out[slot] = (isAlcoveMidId(id) && !allowed[id]) ? null : id;
+    });
+    return out;
+  }
+
+  /* Strip mid-tier ids that are not already on the last loaded cloud
+     profile so a client-only unlock cannot be written via save_player_state. */
+  function filterAlcoveMidsFromPayload(payload, profile) {
+    if (!payload || typeof payload !== "object") return payload;
+    var allowed = cloudOwnedAlcoveMidIds(profile !== undefined ? profile : cloudProfile);
+    var out = {};
+    Object.keys(payload).forEach(function (k) { out[k] = payload[k]; });
+    if (out.unlockedItems) out.unlockedItems = filterAlcoveMidsFromList(out.unlockedItems, allowed);
+    if (out.bank) out.bank = filterAlcoveMidsFromList(out.bank, allowed);
+    if (out.inventory) out.inventory = filterAlcoveMidsFromList(out.inventory, allowed);
+    if (out.equipment) out.equipment = filterAlcoveMidsFromEquipment(out.equipment, allowed);
+    return out;
+  }
+
+  /* After a successful claim_alcove_mid, remember granted mids on the
+     in-memory cloud profile so a later save does not drop them. */
+  function rememberCloudAlcoveMids(p) {
+    if (!p) return;
+    if (!cloudProfile) cloudProfile = {};
+    function mergeList(key) {
+      var have = Array.isArray(cloudProfile[key]) ? cloudProfile[key].slice() : [];
+      var incoming = Array.isArray(p[key]) ? p[key] : [];
+      for (var i = 0; i < incoming.length; i++) {
+        var id = incoming[i];
+        if (!isAlcoveMidId(id)) continue;
+        if (have.indexOf(id) === -1) have.push(id);
+      }
+      if (have.length) cloudProfile[key] = have;
+    }
+    mergeList("unlockedItems");
+    mergeList("bank");
+    mergeList("inventory");
+    if (p.equipment && typeof p.equipment === "object") {
+      if (!cloudProfile.equipment || typeof cloudProfile.equipment !== "object") cloudProfile.equipment = {};
+      Object.keys(p.equipment).forEach(function (slot) {
+        var id = p.equipment[slot];
+        if (isAlcoveMidId(id)) cloudProfile.equipment[slot] = id;
+      });
+    }
+  }
+
   function localPayload() {
     var P = global.Profile || {};
     var js = localJadStats();
@@ -243,7 +343,7 @@
     var raw = {};
     try { raw = JSON.parse(localStorage.getItem("kellenscape-profile") || "null") || {}; } catch (e) { raw = {}; }
     var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
-    return {
+    return filterAlcoveMidsFromPayload({
       name: P.name || raw.name || "",
       gp: funds ? funds.gp : Math.max(P.gp || 0, Number(raw.gp) || 0),
       hasFireCape: !!(P.hasFireCape || raw.hasFireCape),
@@ -266,7 +366,7 @@
       jadBestTicks: P.jadBestTicks || raw.jadBestTicks || js.bestTicks,
       jadBestScore: P.jadBestScore || raw.jadBestScore || js.bestScore,
       settings: settings
-    };
+    }, cloudProfile);
   }
 
   function applyCloudProfile(p, opts) {
@@ -2183,7 +2283,7 @@
     }
     var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
     var res = await rpc("save_player_state", {
-      p_payload: {
+      p_payload: filterAlcoveMidsFromPayload({
         levels: P.levels || {},
         equipment: P.equipment || {},
         unlockedItems: P.unlockedItems || [],
@@ -2191,7 +2291,7 @@
         inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : (P.inventory || []),
         settings: settings,
         revision: saveRevision
-      }
+      }, cloudProfile)
     });
     if (res && res.stale && res.profile) {
       applyCloudProfile(res.profile, { fromCloudLoad: true });
@@ -2378,6 +2478,15 @@
     startParty: function (id) { return rpc("start_party", { p_party: id }); },
     setPartyReady: function (id, ready) { return rpc("set_party_ready", { p_party: id, p_ready: !!ready }); },
     myParty: function () { return rpc("my_party", {}); },
+    claimAlcoveMid: function (runId, room, nonce) {
+      return rpc("claim_alcove_mid", { p_run: runId || null, p_room: room || null, p_nonce: nonce || null }).then(function (res) {
+        if (res && res.profile) rememberCloudAlcoveMids(res.profile);
+        else if (res && res.items) rememberCloudAlcoveMids({ unlockedItems: res.items, bank: res.items });
+        return res;
+      });
+    },
+    filterAlcoveMidsFromPayload: filterAlcoveMidsFromPayload,
+    ALCOVE_MID_IDS: ALCOVE_MID_IDS,
     recordRaidClear: function (ticks, score, nonce) {
       return rpc("record_raid_clear", {
         p_ticks: ticks || 0,
