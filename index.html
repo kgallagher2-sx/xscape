@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111201023-a1e7196";</script>
+  <script>window.XSCAPE_BUILD = "20261111202010-adb2216";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2832,7 +2832,7 @@ function testFireball(opts) {
   if (G.mode !== "playing") {
     try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
     try { localStorage.setItem(STORAGE.intro, "1"); } catch (e) {}
-    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (!Profile.name) { Profile.name = "Guest"; saveProfile(); }
     if (typeof window.Xscape !== "undefined" && window.Xscape.startFight) window.Xscape.startFight();
     else if (typeof startPlaying === "function") startPlaying();
   }
@@ -7293,7 +7293,7 @@ function applyTestQuery() {
   try {
     if (!test) return;
     try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
-    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (!Profile.name) { Profile.name = "Guest"; saveProfile(); }
     if (test === "hub" || test === "bank" || test === "hubchat") {
       if (test === "hubchat") {
         try {
@@ -7878,7 +7878,7 @@ if (audio.ctx && audio.ctx.state === "running") audio._onCtxRunning();
 window.KellenScape = {
   startFight() {
     try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
-    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (!Profile.name) { Profile.name = "Guest"; saveProfile(); }
     beginFight();
     if (!$("overlay-tut").classList.contains("hidden")) startPlaying();
   },
@@ -7913,14 +7913,14 @@ window.KellenScape = {
   },
   playIntro() {
     try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
-    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (!Profile.name) { Profile.name = "Guest"; saveProfile(); }
     hideAllOverlays();
     resetFight();
     startIntro({ force: true });
   },
   playFirstKill() {
     try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
-    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (!Profile.name) { Profile.name = "Guest"; saveProfile(); }
     hideAllOverlays();
     resetFight();
     G.elapsedMs = 78000; G.ticks = 130; G.perfectPrayers = 12; G.damageTaken = 36;

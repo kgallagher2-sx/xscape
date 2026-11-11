@@ -1610,7 +1610,15 @@
       var btn = document.querySelector('#hub-dock [data-dock="' + act + '"]');
       if (!btn) return null;
       var r = btn.getBoundingClientRect();
-      return { x: r.left - appRect.left + r.width / 2, y: r.top - appRect.top - 2 };
+      // Sit the arrow on the button itself so it cannot graze the public-chat field above the dock.
+      var y = r.top - appRect.top + Math.min(22, Math.max(14, r.height * 0.45));
+      var log = $("hub-chat-log");
+      if (log && !log.classList.contains("hidden")) {
+        var lb = log.getBoundingClientRect();
+        var clearOfChat = (lb.bottom - appRect.top) + 22;
+        if (y < clearOfChat) y = clearOfChat;
+      }
+      return { x: r.left - appRect.left + r.width / 2, y: y };
     }
     return null;
   }
@@ -1635,10 +1643,34 @@
     var W = (app && app.clientWidth) || 390;
     var H = (app && app.clientHeight) || 844;
     var x = Math.max(16, Math.min(W - 16, pt.x));
-    var y = Math.max(28, Math.min(H - 80, pt.y));
+    var isDock = !!(step.target && String(step.target).indexOf("dock:") === 0);
+    var maxY = isDock ? (H - 2) : (H - 80);
+    var y = Math.max(28, Math.min(maxY, pt.y));
     el.style.left = Math.round(x) + "px";
     el.style.top = Math.round(y) + "px";
     el.classList.remove("hidden");
+    // Dock arrows are placed in viewport space so a parent offset cannot pull them
+    // up into the public-chat field (QA: the tip must sit on the Online button).
+    if (isDock) {
+      var act = String(step.target).slice(5);
+      var btn = document.querySelector('#hub-dock [data-dock="' + act + '"]');
+      var log = $("hub-chat-log");
+      if (btn) {
+        var r = btn.getBoundingClientRect();
+        var tipX = r.left + r.width / 2;
+        var tipY = r.top + Math.min(22, Math.max(16, r.height * 0.5));
+        if (log && !log.classList.contains("hidden")) {
+          var clearY = log.getBoundingClientRect().bottom + 24;
+          if (tipY < clearY) tipY = clearY;
+        }
+        if (tipY > r.bottom - 2) tipY = r.bottom - 2;
+        var box = el.getBoundingClientRect();
+        var curTipX = box.left + box.width / 2;
+        var curTipY = box.bottom;
+        el.style.left = Math.round(x + (tipX - curTipX)) + "px";
+        el.style.top = Math.round(y + (tipY - curTipY)) + "px";
+      }
+    }
   }
 
   function setTourSkipVisible(on) {
