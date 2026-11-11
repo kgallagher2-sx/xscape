@@ -469,7 +469,20 @@
       ended = true;
       XscapeGorehornArt.drawItemIcon(ctx, id, w, h);
     }
-    else if ((id === "kraken_helm" || id === "coral_plate" || id === "coral_legs" || id === "tentacle_whip" || id === "trident_spear") && global.XscapeColossusArt && XscapeColossusArt.drawItemIcon) {
+    else if (id === "abyssal_whip" || id === "tentacle_whip") {
+      // Same held/icon art for both; tentacle_whip keeps its own id/name/stats.
+      ctx.restore();
+      ended = true;
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      var isc = Math.min(w, h) / 44;
+      ctx.scale(isc, isc);
+      ctx.translate(-4, -10);
+      ctx.rotate(0.55);
+      if (typeof global.drawAbyssalWhip === "function") global.drawAbyssalWhip(ctx, (opts && opts.t) || 0, { scale: 1.1 });
+      ctx.restore();
+    }
+    else if ((id === "kraken_helm" || id === "coral_plate" || id === "coral_legs" || id === "trident_spear") && global.XscapeColossusArt && XscapeColossusArt.drawItemIcon) {
       ctx.restore();
       ended = true;
       XscapeColossusArt.drawItemIcon(ctx, id, w, h);

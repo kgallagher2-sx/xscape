@@ -130,9 +130,10 @@
       c.fillStyle = pal.bronze; c.fillRect(-12, -14, 10, 28); c.fillRect(2, -14, 10, 28);
       c.fillStyle = pal.blood; c.fillRect(-12, 0, 10, 3); c.fillRect(2, 0, 10, 3);
     } else if (id === "gorehorn_axe") {
-      c.translate(1, 2);
+      // Shift and scale so the single-bit head stays inside the 44px cell.
+      c.translate(1, 7);
       c.rotate(-0.55);
-      c.scale(1.15, 1.15);
+      c.scale(0.82, 0.82);
       drawWarAxe(c, "icon");
     }
     c.restore();
@@ -175,9 +176,10 @@
     c.restore();
   }
   /* War axe in local space: lower grip at (0,0), haft along -Y, head at the top.
-     Front/back/icon: double-bit steel head, blades in ±X.
-     Side views: large forward crescent + smaller rear bit, blade toward +X;
-     the caller flips/rotates so +X is the direction the character faces. */
+     Single-bit only — one crescent, no rear bit — so the head never covers
+     the wearer's face. dir = 1 draws the blade toward +X, -1 toward -X.
+     Front: blade on the outer (screen-left) side. Back: outer (screen-right).
+     Side views: blade toward the facing direction. Icon: blade on +X. */
   function drawHaft(c) {
     // Wooden pole, butt cap below the lower hand, eye at y≈-24.
     const g = c.createLinearGradient(-1.6, 0, 1.6, 0);
@@ -279,8 +281,8 @@
     c.restore();
   }
 
-  function drawAxeHeadFront(c) {
-    // Socket / eye around the top of the haft
+  function drawAxeHead(c, dir, scale) {
+    // Single-bit head: bronze socket on the haft, one big steel crescent.
     c.fillStyle = pal.bronzeDk;
     c.fillRect(-2.5, -27.2, 5.0, 9.4);
     c.fillStyle = pal.bronze;
@@ -289,42 +291,27 @@
     c.fillRect(-2.1, -26.6, 4.2, 1.3);
     c.fillStyle = pal.blood;
     c.fillRect(-2.1, -20.2, 4.2, 1.0);
-    // pins
     c.fillStyle = pal.steelDk;
     ellipse(c, 0, -24.8, 0.7, 0.7);
     ellipse(c, 0, -20.6, 0.7, 0.7);
-    drawCrescent(c, -1, 1, -22.4, true);
-    drawCrescent(c,  1, 1, -22.4, true);
-  }
-
-  function drawAxeHeadSide(c, dir) {
-    // dir: 1 = blade toward +X (character's front when facing right, after rotation)
-    c.fillStyle = pal.bronzeDk;
-    c.fillRect(-2.4, -27.4, 4.8, 9.8);
-    c.fillStyle = pal.bronze;
-    c.fillRect(-2.0, -26.8, 4.0, 8.6);
-    c.fillStyle = pal.bronzeLt;
-    c.fillRect(-2.0, -26.8, 4.0, 1.3);
-    c.fillStyle = pal.steelDk;
-    ellipse(c, 0, -24.8, 0.7, 0.7);
-    ellipse(c, 0, -20.6, 0.7, 0.7);
-    // Smaller rear bit, larger forward bit so it reads as a double-bit that "points" forward.
-    drawCrescent(c, -dir, 0.72, -22.6, false);
-    drawCrescent(c,  dir, 1.18, -22.2, true);
+    drawCrescent(c, dir, scale || 1.18, -22.2, true);
   }
 
   function drawWarAxe(c, view) {
     drawHaft(c);
-    if (view === "right") drawAxeHeadSide(c, 1);
-    else if (view === "left") drawAxeHeadSide(c, -1);
-    else drawAxeHeadFront(c);
+    // Blade on the outer side (away from the face) in front/back;
+    // forward in side views; +X for the inventory icon.
+    if (view === "front") drawAxeHead(c, -1, 1.18);
+    else if (view === "back") drawAxeHead(c, 1, 1.18);
+    else if (view === "left") drawAxeHead(c, -1, 1.22);
+    else drawAxeHead(c, 1, 1.22); // right + icon
   }
 
   function axeHoldAngle(facing) {
-    if (facing === "front") return -0.4;
-    if (facing === "back") return 0.4;
+    if (facing === "front") return -0.48;
+    if (facing === "back") return 0.48;
     if (facing === "left") return 0.35;
-    return -0.35; // right: blade up and forward
+    return -0.35; // right: haft tips slightly back, blade on +X faces forward
   }
 
   function drawAxeHeld(c, t, facing, hand) {

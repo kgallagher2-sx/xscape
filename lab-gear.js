@@ -1458,7 +1458,7 @@ function drawLabItemIcon(c, id, t) {
     XscapeKnightArt.drawItemIcon(c, id, 44, 44);
     c.restore();
     return;
-  } else if ((kind === "colossus" || kind === "whip" || kind === "spear") && window.XscapeColossusArt && XscapeColossusArt.drawItemIcon && (id === "kraken_helm" || id === "coral_plate" || id === "coral_legs" || id === "tentacle_whip" || id === "trident_spear")) {
+  } else if ((kind === "colossus" || kind === "spear") && window.XscapeColossusArt && XscapeColossusArt.drawItemIcon && (id === "kraken_helm" || id === "coral_plate" || id === "coral_legs" || id === "trident_spear")) {
     XscapeColossusArt.drawItemIcon(c, id, 48, 48);
     return;
   } else if ((kind === "gorehorn" || kind === "axe") && window.XscapeGorehornArt && XscapeGorehornArt.drawItemIcon && String(id).indexOf("gorehorn_") === 0) {
@@ -1653,12 +1653,15 @@ function heroHands(facing, opt) {
     right = { x:  11.6, y: -12.4 };
     left  = { x: -12.0, y: -10.6 };
   } else if (facing === "right") {
-    right = { x:  9.6, y: -9.8 - s * 0.15 }; // near, toward the front
-    left  = { x: -8.0, y: -4.0 + s * 0.20 }; // far, toward the back, at the hip
+    // Near hand at the front of the torso; far hand hangs under the
+    // far shoulder, slightly forward of the body center line, so a
+    // far-side weapon still peeks out above/forward of the body.
+    right = { x:  7.6, y: -9.8 - s * 0.15 }; // near, toward the front
+    left  = { x: -1.6, y: -6.0 + s * 0.20 }; // far, centered, slight back so shield peeks
   } else {
-    // left profile: near = character's left (front of screen), far = right (back)
-    right = { x:  8.0, y: -9.8 - s * 0.15 }; // far, toward the back
-    left  = { x: -6.4, y: -5.0 + s * 0.20 }; // near, tucked at the front hip
+    // left profile: near = character's left (front of screen), far = right
+    right = { x:  1.6, y: -9.8 - s * 0.15 }; // far, centered, slight back; blade still peeks
+    left  = { x: -7.6, y: -5.0 + s * 0.20 }; // near, at the front hip
   }
   return {
     right: { x: right.x, y: right.y - lift },
@@ -1679,12 +1682,12 @@ function twoHandPose(facing, opt) {
   }
   const dist = 10.2;
   if (facing === "front") {
-    const w = { x: -5.5, y: -6.5 - lift };
-    return { weapon: w, right: w, left: along(w, -0.4, dist) };
+    const w = { x: -6.2, y: -6.5 - lift };
+    return { weapon: w, right: w, left: along(w, -0.48, dist) };
   }
   if (facing === "back") {
-    const w = { x: 5.5, y: -8.0 - lift };
-    return { weapon: w, right: w, left: along(w, 0.4, dist) };
+    const w = { x: 6.2, y: -8.0 - lift };
+    return { weapon: w, right: w, left: along(w, 0.48, dist) };
   }
   if (facing === "right") {
     const w = { x: 7.0, y: -7.0 - lift };
@@ -1771,8 +1774,8 @@ function drawHeroWhip(c, t, st, facing, hand) {
   c.save();
   if (hand) c.translate(hand.x, hand.y);
   else if (facing === "front") c.translate(-12.4, -9.6);
-  else if (facing === "right") c.translate(9.6, -9.8);
-  else if (facing === "left") c.translate(8.0, -9.8);
+  else if (facing === "right") c.translate(7.6, -9.8);
+  else if (facing === "left") c.translate(1.6, -9.8);
   else c.translate(11.6, -12.4);
   if (facing === "front") {
     // Character's right hand = screen-left. Mirror the hang so the lash falls
@@ -1782,7 +1785,10 @@ function drawHeroWhip(c, t, st, facing, hand) {
   } else if (facing === "right") {
     c.rotate(0.95 + sway);
   } else if (facing === "left") {
-    c.rotate(-0.95 - sway);
+    // Mirror the right-facing hang so the lash drops down and forward
+    // (screen-left) now that the far hand sits on the body center line.
+    c.scale(-1, 1);
+    c.rotate(0.95 + sway);
   } else {
     c.rotate(0.35 + sway);
   }
@@ -1805,8 +1811,8 @@ function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase, hand) {
   c.save();
   if (hand) c.translate(hand.x, hand.y);
   else if (facing === "front") c.translate(-12.4, -9.6 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
-  else if (facing === "right") c.translate(9.6, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
-  else if (facing === "left") c.translate(8.0, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
+  else if (facing === "right") c.translate(7.6, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
+  else if (facing === "left") c.translate(1.6, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
   else {
     const bowX = typeof PLAYER_BOW_X === "number" ? PLAYER_BOW_X : 13.4;
     const bowY = typeof PLAYER_BOW_Y === "number" ? PLAYER_BOW_Y : -21.5;
@@ -1869,8 +1875,8 @@ function drawHeroWeapon(c, t, eq, opt, facing, hand) {
   const two = isTwoHandedWeapon(eq && eq.weapon);
   const pos = hand || (two ? twoHandPose(facing, opt).weapon : heroHands(facing, opt).right);
   if (kind === "whip") {
-    if (eq.weapon === "tentacle_whip" && window.XscapeColossusArt && XscapeColossusArt.drawWhipHeld) XscapeColossusArt.drawWhipHeld(c, t, facing, pos);
-    else drawHeroWhip(c, t, labStyle(eq.weapon), facing, pos);
+    // Tentacle whip keeps its own id/name/stats but uses the abyssal whip sprite.
+    drawHeroWhip(c, t, labStyle("abyssal_whip"), facing, pos);
   }
   else if (kind === "wand") {
     if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
