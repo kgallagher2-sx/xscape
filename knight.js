@@ -230,6 +230,7 @@
         atkCd: 3 + (i % 3), fade: 0, dying: 0
       };
     });
+    G.target = "knight";
     if (typeof global.flashMsg === "function") flashBanner("Spectral knights!", "#c8b0ff");
   }
 
@@ -295,7 +296,10 @@
           const pos = addPos(add);
           spawnSplat(pos.x, pos.y - 0.06, dmg, dmg > 0 ? "red" : "blue");
         }
-        if (add.hp <= 0) { add.alive = false; add.dying = 3; add.fade = 1; }
+        if (add.hp <= 0) {
+          add.alive = false; add.dying = 3; add.fade = 1;
+          if (G.target === idx) G.target = "knight";
+        }
       }
       return true;
     }
@@ -607,12 +611,16 @@
       const dx = x - pos.x * cssW, dy = y - pos.y * cssH;
       if (dx * dx + dy * dy < 28 * 28) {
         G.target = i;
+        if (typeof global.addClickMark === "function") addClickMark(x, y, "npc");
         return true;
       }
     }
     G.target = "knight";
-    if (typeof global.tryMoveToPx === "function") tryMoveToPx(x, y, cssW, cssH);
-    else if (typeof global.clickMove === "function") clickMove(x, y, cssW, cssH);
+    if (typeof global.tileAt === "function" && typeof global.queueMoveTo === "function") {
+      const tile = tileAt(x / cssW, y / cssH);
+      if (tile) queueMoveTo(tile.col, tile.row);
+    }
+    if (typeof global.addClickMark === "function") addClickMark(x, y, "ground");
     return true;
   }
 
@@ -622,17 +630,20 @@
     return unlocked.concat(bank);
   }
 
-  function rollLoot(forceItem) {
+  function rollLoot(force) {
     const items = [];
-    if (forceItem) items.push(forceItem);
-    else if (Math.random() < 1 / UNIQUE_DENOM) {
+    if (force && force.length) {
+      for (let i = 0; i < force.length; i++) items.push(force[i]);
+    } else if (typeof force === "string") {
+      items.push(force);
+    } else if (Math.random() < 1 / UNIQUE_DENOM) {
       const have = ownedIds();
       const unowned = DROP.filter(function (d) { return have.indexOf(d.id) < 0; });
       if (unowned.length) items.push(unowned[irand(0, unowned.length - 1)].id);
     }
     const gp = GP_MIN + irand(0, GP_MAX - GP_MIN);
     let gpBonus = 0;
-    if (!forceItem && items.length === 0) {
+    if (!force && items.length === 0) {
       // offline set-complete path only when unique would have hit and all owned — skip; server is authoritative
     }
     return { items: items, gp: gp, gpBonus: gpBonus };
@@ -724,12 +735,14 @@
       damageTaken: G.damageTaken,
       perfectPrayers: G.perfectPrayers
     };
+    const force = G._forceKnightLoot || null;
+    G._forceKnightLoot = null;
     const already = ((global.Profile && Profile.unlockedItems) || []).slice();
     const cloud = global.XscapeCloud;
     const finish = function (loot, awarded) {
       showLoot(loot, awarded, result);
     };
-    if (cloud && typeof cloud.rpc === "function") {
+    if (!force && cloud && typeof cloud.rpc === "function") {
       Promise.resolve(cloud.rpc("record_knight_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
         if (res && res.ok) {
           const items = Array.isArray(res.items) ? res.items : [];
@@ -750,7 +763,7 @@
       });
       return;
     }
-    const loot = rollLoot(null);
+    const loot = rollLoot(force);
     finish(loot, grantLoot(loot));
     if (audio() && audio().stopAmbient) audio().stopAmbient();
   }
@@ -808,6 +821,11 @@
     if (audio() && audio().unlock) audio().unlock();
     if (audio() && audio().startAmbient && !audio().muted) audio().startAmbient("kree");
     if (typeof global.updateHud === "function") updateHud();
+    if (opts.loot) {
+      G._forceKnightLoot = opts.loot === true ? DROP.map(function (d) { return d.id; }) : opts.loot;
+      if (G.knight) G.knight.hp = 0;
+      win();
+    }
   }
 
   function tryEnter(opts) {
@@ -942,6 +960,7 @@
     freeze: function (on) { const G = g(); if (G) G.knightFrozen = !!on; return !!(G && G.knightFrozen); },
     killAdds: function () {
       (g().knightAdds || []).forEach(function (a) { a.alive = false; a.hp = 0; a.dying = 3; a.fade = 1; });
+      if (g()) g().target = "knight";
     },
     rollLoot: rollLoot,
     lose: lose,

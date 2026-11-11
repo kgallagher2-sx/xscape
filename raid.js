@@ -264,15 +264,30 @@
     if (style === "stab" || style === "crush" || style === "slash") return style;
     return "slash";
   }
-  function rollPlayerHit(rng, mon, loadout, potOn) {
+  function wearingGorehornSetFrom(eq) {
+    eq = fighterGear(eq);
+    return eq.head === "gorehorn_helm" && eq.body === "gorehorn_plate" && eq.legs === "gorehorn_legs" && eq.weapon === "gorehorn_axe";
+  }
+  function gorehornSetMultiplierFrom(eq, hp) {
+    if (!wearingGorehornSetFrom(eq)) return 1;
+    const maxHp = global.PLAYER_MAX_HP || PLAYER_MAX_HP || 99;
+    const cur = (hp != null) ? hp : maxHp;
+    // OSRS Dharok: roughly 1 + (max - current) / 100. Same formula as gorehorn.js.
+    return 1 + Math.max(0, (maxHp - cur) / 100);
+  }
+  function meleeSetMaxHitFrom(max, eq, hp) {
+    return Math.max(0, Math.floor(max * gorehornSetMultiplierFrom(eq, hp)));
+  }
+  function rollPlayerHit(rng, mon, loadout, potOn, hp) {
     const eq = fighterGear(loadout);
     const vsStyle = vsStyleOf(playerStyleFrom(eq));
+    const hitHp = (hp != null) ? hp : (loadout && loadout.hp != null ? loadout.hp : null);
     if (typeof global.combatVsMonster === "function" && mon && mon.id) {
       const vs = global.combatVsMonster(mon.id, vsStyle, { equipment: eq });
       const ch = vs.chance || 0;
       let max = vs.maxHit || 0;
-      if (typeof global.meleeSetMaxHit === "function" && vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
-        max = global.meleeSetMaxHit(max);
+      if (vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
+        max = meleeSetMaxHitFrom(max, eq, hitHp);
       }
       const hit = rng() < ch;
       const dmg = hit ? irand(rng, 0, max) : 0;
@@ -544,6 +559,15 @@
     var off = (i - Math.floor(((n || 1) - 1) / 2));
     return clamp(mid + off, 0, COLS - 1);
   }
+  function starterLoadout() {
+    if (typeof global.cloneLoadout === "function") {
+      try {
+        var copy = global.cloneLoadout("starter");
+        if (copy) return copy;
+      } catch (e) {}
+    }
+    return deep(STARTER_LOADOUT);
+  }
   function initGroupState(st, opts) {
     opts = opts || {};
     var g = opts.group || {};
@@ -557,7 +581,7 @@
       var id = m.userId || m.user_id || m.id;
       if (!id || seen[id]) continue;
       seen[id] = true;
-      var f = bindFighterInv(freshPlayer(st.player.loadout), emptyInv());
+      var f = bindFighterInv(freshPlayer(starterLoadout()), emptyInv());
       f.id = id;
       f.username = m.username || m.name || "Adventurer";
       f.col = f.prevCol = spawnOffset(st.fighters.length, Math.max(members.length, 2));
@@ -1240,7 +1264,7 @@
     st.player.atkCd = playerSpeedFrom(eq);
     if (isMagic) sfx(st, "wind");
     else if (!isMelee) sfx(st, "crossbow");
-    const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0);
+    const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0, st.player.hp);
     if (!isMelee) {
       st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt" });
     }
@@ -2438,6 +2462,30 @@
     return { mode: st.mode, survived: st.mode === "win", ticks: st.ticks, seconds: Math.round(st.ticks * 0.6), damageTaken: st.damageTaken, dmgBy: st.dmgBy || {}, hp: st.player.hp, prayer: st.player.prayerPts, room: st.room, loot: st.loot, bossHp: st.boss ? st.boss.hp : 0, inv: deep(st.inv) };
   }
 
+  function checkFighterSetBonuses() {
+    const starter = starterLoadout();
+    const gore = {
+      head: "gorehorn_helm", body: "gorehorn_plate",
+      legs: "gorehorn_legs", weapon: "gorehorn_axe"
+    };
+    const starterAt1 = gorehornSetMultiplierFrom(starter, 1);
+    const goreAt1 = gorehornSetMultiplierFrom(gore, 1);
+    const goreAt99 = gorehornSetMultiplierFrom(gore, 99);
+    const starterMax = meleeSetMaxHitFrom(100, starter, 1);
+    const goreMax = meleeSetMaxHitFrom(100, gore, 1);
+    const ok = starterAt1 === 1 && goreAt99 === 1 && goreAt1 > starterAt1 && goreMax > starterMax;
+    const result = {
+      ok: ok,
+      starterAt1: starterAt1,
+      gorehornAt1: goreAt1,
+      gorehornAt99: goreAt99,
+      starterMaxHitFrom100: starterMax,
+      gorehornMaxHitFrom100: goreMax
+    };
+    if (!ok) throw new Error("raid set-bonus check failed: " + JSON.stringify(result));
+    return result;
+  }
+
   function getState() {
     if (!R) return null;
     return {
@@ -2588,6 +2636,10 @@
     },
     retryRoom: function () { if (R) restoreSnapshot(R); },
     simulate: simulate,
+    starterLoadout: starterLoadout,
+    gorehornSetMultiplierFrom: gorehornSetMultiplierFrom,
+    meleeSetMaxHitFrom: meleeSetMaxHitFrom,
+    checkFighterSetBonuses: checkFighterSetBonuses,
     perfectPolicy: perfectPolicy,
     loadProfile: loadRaidProfile,
     saveProfile: saveRaidProfile,
@@ -2812,7 +2864,7 @@
     if (!packed || !packed.id) return;
     var f = fighterById(st, packed.id);
     if (!f) {
-      f = bindFighterInv(freshPlayer(st.player && st.player.loadout), defaultInv());
+      f = bindFighterInv(freshPlayer(starterLoadout()), defaultInv());
       f.id = packed.id;
       st.fighters = st.fighters || [];
       st.fighters.push(f);
