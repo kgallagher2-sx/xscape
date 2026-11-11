@@ -11,4 +11,5 @@ One line per claim, in this format:
 
 ## Active claims
 
-(none)
+- `index.html`, `cloud.js` | Gameboy | 2026-11-11 11:05 America/New_York | HUD spell chip/selector, persist autocast, stack runes in inventory
+- `colossus.js`, `gorehorn.js`, `knight.js`, `kree.js`, `widow.js`, `raid.js` | Boss Mechanics | 2026-11-11 11:08 America/New_York | Hook spellbook API into boss/raid attacks; set Morvane HP to 720
