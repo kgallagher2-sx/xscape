@@ -200,7 +200,17 @@
           '</div>' +
         '</div>' +
       '</div>' +
-      '<button type="button" id="btn-duel-forfeit" class="hidden">Forfeit</button>';
+      '<button type="button" id="btn-duel-forfeit" class="hidden">Forfeit</button>' +
+      '<div class="overlay hidden" id="overlay-duel-invite">' +
+        '<div class="gear-card sheet-card duel-invite-card">' +
+          '<h2>Duel challenge</h2>' +
+          '<p class="duel-note" id="duel-invite-text">A player wishes to duel you.</p>' +
+          '<div class="sheet-actions" id="duel-invite-actions">' +
+            '<button class="btn" type="button" id="btn-duel-invite-accept">Accept</button>' +
+            '<button class="btn secondary" type="button" id="btn-duel-invite-decline">Decline</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     var app = $("app") || document.body;
     var wrap = document.createElement("div");
     wrap.innerHTML = html;
@@ -209,6 +219,56 @@
     tap($("btn-confirm-x"), function () { declineConfirm(); });
     tap($("btn-duel-result-ok"), closeResult);
     tap($("btn-duel-forfeit"), function () { claimForfeit(false); });
+    tap($("btn-duel-invite-accept"), acceptIncoming);
+    tap($("btn-duel-invite-decline"), declineIncoming);
+  }
+
+  function showInvite(ch) {
+    ensureOverlays();
+    if (!ch) return;
+    state.incoming = ch;
+    var who = ch.fromName || ch.from_name || "A player";
+    var txt = $("duel-invite-text");
+    var stake = ch.fromStakeGp || ch.stakeGp || ch.stake || 0;
+    var items = ch.fromItems || ch.items || [];
+    var extra = "";
+    if (stake) extra += " They staked " + fmtGp(stake) + ".";
+    if (items && items.length) extra += " They also staked items.";
+    if (txt) txt.textContent = who + " wishes to duel you." + extra;
+    showOverlay("overlay-duel-invite");
+    if (global.XscapeHub && typeof XscapeHub.appendDuelWish === "function") {
+      XscapeHub.appendDuelWish(who, ch.id);
+    }
+    flash(who + " wishes to duel you.", "#ffe44a");
+  }
+  function hideInvite() {
+    hideOverlay("overlay-duel-invite");
+    state.incoming = null;
+  }
+  function acceptIncoming() {
+    var ch = state.incoming || findIncoming();
+    hideInvite();
+    if (ch) respondTo(ch);
+  }
+  function declineIncoming() {
+    var ch = state.incoming || findIncoming();
+    hideInvite();
+    if (!ch) return;
+    state.challenge = ch;
+    declinePending();
+  }
+  function findIncoming() {
+    var me = uid();
+    var list = (state._challenges || []);
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c && c.status === "pending" && c.toId === me && c.fromId !== me) return c;
+    }
+    return null;
+  }
+  function fmtGp(n) {
+    if (typeof global.fmtGp === "function") return global.fmtGp(n) + " GP";
+    return String(n) + " GP";
   }
 
   function showOverlay(id) {
@@ -520,8 +580,25 @@
   async function acceptConfirm() {
     state.iConfirmed = true;
     renderConfirm();
-    sendFightMsg("duel-confirm", { uid: uid(), challengeId: state.challenge && state.challenge.id });
-    if (state.theyConfirmed) await maybeEscrow();
+    var payload = { uid: uid(), challengeId: state.challenge && state.challenge.id };
+    sendFightMsg("duel-confirm", payload);
+    if (state.theyConfirmed) {
+      await maybeEscrow();
+      return;
+    }
+    // Retry in case the peer's hub/fight channel wasn't subscribed yet.
+    if (state._confirmRetry) clearInterval(state._confirmRetry);
+    var tries = 0;
+    state._confirmRetry = setInterval(function () {
+      tries++;
+      if (state.phase === "fight" || state.theyConfirmed || tries >= 10) {
+        clearInterval(state._confirmRetry);
+        state._confirmRetry = 0;
+        if (state.theyConfirmed && state.phase !== "fight") maybeEscrow();
+        return;
+      }
+      sendFightMsg("duel-confirm", payload);
+    }, 400);
   }
 
   async function maybeEscrow() {
@@ -550,6 +627,19 @@
     state._challenges = list || [];
     if (!list) return;
     var me = uid();
+    var incoming = null;
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c && c.status === "pending" && c.toId === me && c.fromId !== me) { incoming = c; break; }
+    }
+    if (incoming && state.phase !== "fight" && state.phase !== "confirm" && state.mode !== "respond") {
+      var same = state.incoming && state.incoming.id === incoming.id;
+      var inviteEl = $("overlay-duel-invite");
+      var inviteOpen = inviteEl && !inviteEl.classList.contains("hidden");
+      if (!same || !inviteOpen) showInvite(incoming);
+    } else if (!incoming) {
+      hideInvite();
+    }
     var ch = state.challenge;
     if (ch && ch.id) {
       for (var i = 0; i < list.length; i++) {
@@ -574,8 +664,16 @@
       if (ch.id) joinDuelChannel(ch.id);
       renderConfirm();
     }
-    if (state.phase !== "fight" && ch && ch.status === "fighting" && ch.startedAt) {
-      beginFight(ch);
+    var fighting = null;
+    for (var j = 0; j < list.length; j++) {
+      var fch = list[j];
+      if (fch && fch.status === "fighting" && fch.startedAt && (fch.fromId === me || fch.toId === me)) {
+        fighting = fch;
+        break;
+      }
+    }
+    if (state.phase !== "fight" && (fighting || (ch && ch.status === "fighting" && ch.startedAt))) {
+      beginFight(fighting || ch);
       return;
     }
     if (state.phase === "fight" && ch && ch.status === "completed") {
@@ -1155,6 +1253,15 @@
     var c = cloud();
     if (c && c.on) { /* no-op */ }
     state.ready = true;
+    if (state._chalPoll) clearInterval(state._chalPoll);
+    state._chalPoll = setInterval(function () {
+      if (state.phase === "fight") return;
+      if (!inArena() && state.phase !== "waiting" && state.phase !== "confirm" && state.phase !== "offer") return;
+      var cl = cloud();
+      if (cl && typeof cl.refreshChallenges === "function") {
+        try { cl.refreshChallenges(); } catch (e) {}
+      }
+    }, 1000);
   }
 
   var api = {
@@ -1168,6 +1275,9 @@
     setPrayer: setPrayer,
     offerTo: offerTo,
     respondTo: respondTo,
+    acceptIncoming: acceptIncoming,
+    declineIncoming: declineIncoming,
+    acceptConfirm: acceptConfirm,
     onChallenges: onChallenges,
     onConfirmMsg: onConfirmMsg,
     onOppInput: onOppInput

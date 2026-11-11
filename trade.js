@@ -186,6 +186,39 @@
     return btn;
   }
 
+  function bindSlotTap(el, onTap, onHold) {
+    if (!el) return;
+    el.style.touchAction = "manipulation";
+    var sx = 0, sy = 0, moved = false;
+    el.addEventListener("pointerdown", function (e) {
+      if (e.button != null && e.button !== 0) return;
+      sx = e.clientX; sy = e.clientY; moved = false; el._held = false;
+      if (el._hold) clearTimeout(el._hold);
+      if (onHold) {
+        el._hold = setTimeout(function () {
+          el._held = true;
+          onHold();
+        }, 450);
+      }
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (Math.abs((e.clientX || 0) - sx) > 12 || Math.abs((e.clientY || 0) - sy) > 12) {
+        moved = true;
+        if (el._hold) { clearTimeout(el._hold); el._hold = 0; }
+      }
+    });
+    function clearHold() { if (el._hold) { clearTimeout(el._hold); el._hold = 0; } }
+    el.addEventListener("pointerup", function (e) {
+      clearHold();
+      if (el._held) { el._held = false; return; }
+      if (moved) return;
+      if (e && e.preventDefault) e.preventDefault();
+      onTap();
+    });
+    el.addEventListener("pointercancel", clearHold);
+    el.addEventListener("pointerleave", clearHold);
+  }
+
   function fillGrid(el, items, opts) {
     opts = opts || {};
     if (!el) return;
@@ -200,8 +233,8 @@
     }
     rows.forEach(function (row) {
       var b = slotButton({ id: row.id, qty: row.qty, flash: flashKey("item", row.id) || flashKey("remove", row.id) });
-      if (opts.onItem) {
-        b.addEventListener("click", function (e) { e.preventDefault(); if (!opts.readonly) opts.onItem(row.id, row.qty); });
+      if (opts.onItem && !opts.readonly) {
+        bindSlotTap(b, function () { opts.onItem(row.id, row.qty); });
       }
       el.appendChild(b);
     });
@@ -253,18 +286,38 @@
     var ov = $("overlay-trade");
     if (!ov) return;
     var t = state.trade;
-    if (!t || t.status === "cancelled" || t.status === "completed" || t.status === "requested") {
+    if (!t || t.status === "cancelled" || t.status === "completed") {
+      ov.classList.add("hidden");
+      return;
+    }
+    var meInitiator = !!(t.initiatorId && t.initiatorId === uid());
+    if (t.status === "requested" && !meInitiator) {
       ov.classList.add("hidden");
       return;
     }
     ov.classList.remove("hidden");
+    var waiting = t.status === "requested" && meInitiator;
+    var confirm = t.status === "confirm";
+    var screenWait = $("trade-screen-wait");
     var screen1 = $("trade-screen-1");
     var screen2 = $("trade-screen-2");
-    var confirm = t.status === "confirm";
-    if (screen1) screen1.classList.toggle("hidden", confirm);
-    if (screen2) screen2.classList.toggle("hidden", !confirm);
+    var scroll = $("trade-scroll");
+    var acts1 = $("trade-actions");
+    var acts2 = $("trade-actions-2");
+    if (screenWait) screenWait.classList.toggle("hidden", !waiting);
+    if (scroll) scroll.classList.toggle("hidden", waiting);
+    if (screen1) screen1.classList.toggle("hidden", confirm || waiting);
+    if (screen2) screen2.classList.toggle("hidden", !confirm || waiting);
+    if (acts1) acts1.classList.toggle("hidden", confirm);
+    if (acts2) acts2.classList.toggle("hidden", !confirm);
+    var acc1 = $("btn-trade-accept-1");
+    if (acc1) acc1.classList.toggle("hidden", waiting);
     var title = $("trade-title");
-    if (title) title.textContent = "Trading with " + ((t.them && t.them.name) || "Adventurer");
+    var themName = (t.them && t.them.name) || "Adventurer";
+    if (title) title.textContent = waiting ? ("Trade request") : ("Trading with " + themName);
+    var waitNote = $("trade-wait-note");
+    if (waitNote) waitNote.textContent = "Waiting for " + themName + " to accept your trade request.";
+    if (waiting) return;
 
     var space = $("trade-their-space");
     if (space) space.textContent = "Other player has " + ((t.them && t.them.invSpace) != null ? t.them.invSpace : 0) + " free inventory slots.";
@@ -285,26 +338,16 @@
       var rows = stacked(invItems);
       rows.forEach(function (row) {
         var b = slotButton({ id: row.id, qty: row.qty });
-        b.addEventListener("pointerdown", function (e) {
-          if (e.button != null && e.button !== 0) return;
-          b._t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
-          b._hold = setTimeout(function () {
-            b._held = true;
-            showQtyMenu(b, [
-              { key: "1", label: "Offer 1" },
-              { key: "5", label: "Offer 5" },
-              { key: "10", label: "Offer 10" },
-              { key: "all", label: "Offer All" },
-              { key: "x", label: "Offer X" }
-            ], function (k) { offerFromInv(row.id, k, row.qty); });
-          }, 450);
-        });
-        b.addEventListener("pointerup", function () { if (b._hold) clearTimeout(b._hold); });
-        b.addEventListener("pointerleave", function () { if (b._hold) clearTimeout(b._hold); });
-        b.addEventListener("click", function (e) {
-          e.preventDefault();
-          if (b._held) { b._held = false; return; }
+        bindSlotTap(b, function () {
           offerFromInv(row.id, "1", row.qty);
+        }, function () {
+          showQtyMenu(b, [
+            { key: "1", label: "Offer 1" },
+            { key: "5", label: "Offer 5" },
+            { key: "10", label: "Offer 10" },
+            { key: "all", label: "Offer All" },
+            { key: "x", label: "Offer X" }
+          ], function (k) { offerFromInv(row.id, k, row.qty); });
         });
         invEl.appendChild(b);
       });
@@ -312,6 +355,10 @@
     }
     var invTitle = $("trade-inv-title");
     if (invTitle) invTitle.textContent = "Your inventory  " + myInventory().length + "/28";
+    var invHint = $("trade-inv-hint");
+    if (invHint) {
+      invHint.textContent = myInventory().length ? "Tap an item or Offer gold to add it. Long-press for a quantity." : "Your inventory is empty — withdraw items from the bank to offer them, or offer gold.";
+    }
 
     var gpLab = $("trade-your-gp");
     if (gpLab) {
@@ -408,12 +455,19 @@
     who = (t.them && t.them.id === t.initiatorId) ? t.them.name : ((t.them && t.them.name) || "A player");
     if (global.XscapeHub && typeof XscapeHub.appendTradeWish === "function") {
       XscapeHub.appendTradeWish(who, t.id);
-    } else if (typeof global.flashMsg === "function") {
-      flashMsg(who + " wishes to trade with you.", "#ffe44a");
     }
+    flashMsg(who + " wishes to trade with you.", "#ffe44a");
+    var pop = $("overlay-trade-wish");
+    var txt = $("trade-wish-text");
+    if (txt) txt.textContent = who + " wishes to trade with you.";
+    if (pop) pop.classList.remove("hidden");
   }
 
-  function hideWish() { state.pendingWish = null; }
+  function hideWish() {
+    state.pendingWish = null;
+    var pop = $("overlay-trade-wish");
+    if (pop) pop.classList.add("hidden");
+  }
 
   async function requestTrade(otherId, otherName) {
     if (!canTradeNow()) { flashMsg("Sign in to trade.", "#ffe9a0"); return; }
@@ -590,6 +644,11 @@
       console.warn("trade realtime", e);
     }
     refreshMine();
+    if (state.pollTimer) clearInterval(state.pollTimer);
+    state.pollTimer = setInterval(function () {
+      var live = state.trade && state.trade.status && state.trade.status !== "completed" && state.trade.status !== "cancelled";
+      if (live || inBankHub()) refreshMine();
+    }, 800);
   }
 
   function detach() {
@@ -600,6 +659,7 @@
     }
     state.channel = null;
     state.attachedUid = null;
+    if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = 0; }
   }
 
   function bindUi() {
@@ -607,7 +667,17 @@
       var el = $(id);
       if (!el || el._tradeBound) return;
       el._tradeBound = true;
-      el.addEventListener("click", function (e) { e.preventDefault(); fn(); });
+      var go = function (e) {
+        if (e) e.preventDefault();
+        var now = Date.now();
+        if (el._tradeTapAt && now - el._tradeTapAt < 350) return;
+        el._tradeTapAt = now;
+        fn();
+      };
+      el.addEventListener("click", go);
+      el.addEventListener("pointerup", function (e) {
+        if (e.pointerType === "touch" || e.pointerType === "pen") go(e);
+      });
     }
     bind("btn-trade-accept-1", accept);
     bind("btn-trade-decline-1", function () { decline("declined"); });
@@ -615,6 +685,11 @@
     bind("btn-trade-decline-2", function () { decline("declined"); });
     bind("btn-trade-gold", function () { offerGoldMenu($("btn-trade-gold")); });
     bind("btn-trade-x", function () { decline("declined"); });
+    bind("btn-trade-wish-accept", function () {
+      var t = state.pendingWish || state.trade;
+      if (t && t.id) acceptRequest(t.id);
+    });
+    bind("btn-trade-wish-decline", function () { decline("declined"); });
     var ov = $("overlay-trade");
     if (ov && !ov._tradeBound) {
       ov._tradeBound = true;

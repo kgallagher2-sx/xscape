@@ -735,12 +735,29 @@
     st.messages.push({ t: st.ticks, text: text });
     if (host && host.flashMsg) host.flashMsg(text, color || "#ffe44a");
   }
-  function splat(st, col, row, value, color) {
+  function splat(st, col, row, value, color, opts) {
     let kind = color;
     if (color === "green" || color === "#80ff80" || color === "#2a8a2a") kind = "green";
     else if (!(value > 0)) kind = "blue";
     else kind = "red";
-    st.splats.push({ col: col, row: row, value: value, color: kind, t: 0 });
+    opts = opts || {};
+    var rec = {
+      col: col, row: row, value: value, color: kind, t: 0,
+      anchor: opts.anchor || "tile",
+      target: opts.target || null,
+      targetId: opts.targetId || null,
+      ownerId: (st.player && st.player.id) || null,
+      id: (st._hitSeq = (st._hitSeq || 0) + 1),
+      tick: st.ticks || 0
+    };
+    st.splats.push(rec);
+    st._hits = st._hits || [];
+    st._hits.push({
+      id: rec.id, tick: rec.tick, col: rec.col, row: rec.row, value: rec.value,
+      color: rec.color, anchor: rec.anchor, target: rec.target, targetId: rec.targetId,
+      ownerId: rec.ownerId
+    });
+    if (st._hits.length > 32) st._hits = st._hits.slice(-32);
   }
   function hurtPlayer(st, dmg, reason) {
     if (st.god || dmg <= 0 || st.mode !== "playing") return;
@@ -1188,18 +1205,20 @@
     applyPlayerDamage(st, t, roll);
   }
   function applyPlayerDamage(st, t, roll) {
+    var isBoss = !!(t && (t.type === "boss" || (t.ref && (t.ref.kind === "morvane" || t.ref.kind === "warden"))));
+    var splatOpts = { anchor: isBoss ? "boss" : "tile", target: isBoss ? "boss" : (t && t.type) || "add", targetId: t && t.ref && t.ref.id };
     if (roll.dmg > 0) {
       if (st.player) st.player.damageDealt = (st.player.damageDealt || 0) + roll.dmg;
       t.ref.hp = Math.max(0, t.ref.hp - roll.dmg);
       t.ref.hurt = 3;
-      splat(st, t.ref.col != null ? t.ref.col : 2, t.ref.row != null ? t.ref.row : 0, roll.dmg, "#ffe44a");
+      splat(st, t.ref.col != null ? t.ref.col : 2, t.ref.row != null ? t.ref.row : 0, roll.dmg, "#ffe44a", splatOpts);
       if (t.ref.hp <= 0) {
         if (t.type === "add") flash(st, "Shade fades", "#c0a0ff");
         else if (t.ref.kind === "warden") { flash(st, "The Pale Warden falls", "#ffe44a"); st.roomState.cleared = true; st.marks = st.marks.filter(function (m) { return m.kind === "exit" || m.kind === "sigil"; }); setTimeoutExit(st); }
         else if (t.ref.kind === "morvane") { flash(st, "Morvane is unmade", "#ffe44a"); advanceRoom(st); }
       }
     } else {
-      splat(st, t.ref.col != null ? t.ref.col : 2, t.ref.row != null ? t.ref.row : 0, 0, "#aaaaaa");
+      splat(st, t.ref.col != null ? t.ref.col : 2, t.ref.row != null ? t.ref.row : 0, 0, "#aaaaaa", splatOpts);
     }
   }
   function setTimeoutExit(st) { st.roomState.exitIn = 2; }
@@ -1345,7 +1364,7 @@
         if (st.boss && st.boss.hp > 0 && a.kind === "shade") {
           const heal = 8;
           st.boss.hp = Math.min(st.boss.hpMax, st.boss.hp + heal);
-          splat(st, st.boss.col, st.boss.row, heal, "#80ff80");
+          splat(st, st.boss.col, st.boss.row, heal, "#80ff80", { anchor: "boss", target: "boss" });
           flash(st, "The shade feeds him", "#ff8a70");
         } else if (dist <= 1) {
           hurtPlayer(st, 24, "A shade explodes.");
@@ -1957,8 +1976,32 @@
     return clamp((now() - (st.lastTickMs || now())) / TICK_MS, 0, 0.999);
   }
 
-  function draw(st, ctx, W, H, t) {
+  function bossSplatPos(st, W, H) {
+    const cx = W * 0.5, cy = H * 0.28;
+    const scale = clamp(Math.min(W, H) / 390, 0.7, 1.25);
+    const HEADER_BOTTOM = 58;
+    if (!st || !st.boss) return { x: cx, y: cy };
+    if (st.boss.kind === "morvane") {
+      const s = scale * 0.95;
+      const plateY = -128;
+      let by = cy;
+      const plateTop = by + plateY * s;
+      if (plateTop < HEADER_BOTTOM) by += (HEADER_BOTTOM - plateTop);
+      return { x: cx, y: by - 8 };
+    }
+    if (st.boss.kind === "warden") {
+      const s = scale * 1.05;
+      const plateY = -80;
+      let by = cy + 8;
+      const plateTop = by + plateY * s;
+      if (plateTop < HEADER_BOTTOM) by += (HEADER_BOTTOM - plateTop);
+      return { x: cx, y: by - 4 };
+    }
+    return tilePos(st.boss.col != null ? st.boss.col : 2, st.boss.row != null ? st.boss.row : 0, W, H);
+  }
+  function draw(st, ctx, W, H, t, dt) {
     if (!ctx) return;
+    if (!(dt > 0)) dt = 1 / 60;
     const room = st.room === "loot" ? "loot" : st.room === "throne" ? "throne" : st.room === "corridor" ? "corridor" : st.room === "court" ? "court" : st.room && st.room.indexOf("chest") === 0 ? (st.room === "chest3" ? "corridor" : "gate") : "gate";
     if (typeof drawGloamholdBg === "function") drawGloamholdBg(ctx, W, H, t, room);
     else { ctx.fillStyle = "#100818"; ctx.fillRect(0, 0, W, H); }
@@ -2024,12 +2067,16 @@
     drawBolts(st, ctx, W, H, 1 / 60);
     for (let i = 0; i < st.splats.length; i++) {
       const s = st.splats[i];
-      const p = tilePos(s.col, s.row, W, H);
-      const k = clamp(s.t / 0.8, 0, 1);
+      const onBoss = s.anchor === "boss" || (st.boss && (st.boss.kind === "morvane" || st.boss.kind === "warden") && s.col === st.boss.col && s.row === st.boss.row && s.anchor !== "tile-forced");
+      const p = onBoss ? bossSplatPos(st, W, H) : tilePos(s.col, s.row, W, H);
+      const life = 0.85;
+      const k = clamp(s.t / life, 0, 1);
       const fill = (s.color === "green") ? "#2a8a2a" : (s.value <= 0 || s.color === "blue") ? "#3a6adf" : "#c02820";
+      const scale = onBoss ? 1.25 : 1;
       ctx.save();
       ctx.globalAlpha = 1 - k;
-      ctx.translate(p.x, p.y - 28 - s.t * 20);
+      ctx.translate(p.x, p.y - (onBoss ? 36 : 28) - s.t * 36);
+      ctx.scale(scale, scale);
       ctx.fillStyle = fill;
       ctx.beginPath();
       ctx.ellipse(0, 0, 16, 13, 0, 0, Math.PI * 2);
@@ -2043,9 +2090,9 @@
       ctx.textBaseline = "middle";
       ctx.fillText(String(s.value), 0, 1);
       ctx.restore();
-      s.t += 0.016;
+      s.t += dt;
     }
-    st.splats = st.splats.filter(function (s) { return s.t < 0.8; });
+    st.splats = st.splats.filter(function (s) { return s.t < 0.85; });
     if (st.float && st.float.t > 0) {
       if (host && host.flashMsg) { /* HUD handles it */ }
       st.float.t -= 0.016;
@@ -2225,7 +2272,7 @@
     else if (host && host.getContext) {
       const ctx = host.getContext();
       const W = host.width || 390, H = host.height || 500;
-      if (ctx && R) draw(R, ctx, W, H, ts / 1000);
+      if (ctx && R) draw(R, ctx, W, H, ts / 1000, dt);
     }
     if (host && host.updateHud && R) host.updateHud(R);
   }
@@ -2796,7 +2843,8 @@
       float: st.float,
       loot: st.loot,
       deathReason: st.deathReason || null,
-      fighters: allFighters(st).map(packFighter)
+      fighters: allFighters(st).map(packFighter),
+      hits: st._hits || []
     };
     try { cloud.broadcast("raid-state", payload); } catch (e) {}
     st.group.lastStateTick = st.ticks;
@@ -2830,6 +2878,22 @@
     if (payload.fighters && payload.fighters.length) {
       for (var i = 0; i < payload.fighters.length; i++) applyPackedFighter(R, payload.fighters[i]);
       restoreLocalFighter(R);
+    }
+    if (payload.hits && payload.hits.length) {
+      R._seenHits = R._seenHits || {};
+      for (var h = 0; h < payload.hits.length; h++) {
+        var hit = payload.hits[h];
+        if (!hit || hit.id == null) continue;
+        var hid = String(hit.id) + ":" + String(hit.tick != null ? hit.tick : "");
+        if (R._seenHits[hid]) continue;
+        R._seenHits[hid] = true;
+        R.splats = R.splats || [];
+        R.splats.push({
+          col: hit.col, row: hit.row, value: hit.value, color: hit.color,
+          t: 0, anchor: hit.anchor || "tile", target: hit.target, targetId: hit.targetId,
+          ownerId: hit.ownerId, id: hit.id
+        });
+      }
     }
     if (payload.mode && payload.mode !== R.mode) {
       if (payload.mode === "win") {
@@ -3018,7 +3082,7 @@
     if (ctx) {
       if (dpr) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
-      draw(R, ctx, W, H, ts / 1000);
+      draw(R, ctx, W, H, ts / 1000, dt);
       if (typeof global.drawClickMarks === "function") drawClickMarks(dt);
     }
     hostUpdateHud(R);

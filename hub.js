@@ -93,6 +93,29 @@
       state.destRow = null;
       state.moving = false;
     }
+    updateArenaHint();
+  }
+
+  function updateArenaHint() {
+    var el = $("duel-arena-hint");
+    if (!el) {
+      var hub = $("overlay-hub") || $("app");
+      if (hub) {
+        el = document.createElement("div");
+        el.id = "duel-arena-hint";
+        el.textContent = "Long-press a player to challenge";
+        hub.appendChild(el);
+      }
+    }
+    if (!el) return;
+    var stake = $("overlay-stake");
+    var conf = $("overlay-stake-confirm");
+    var inv = $("overlay-duel-invite");
+    var blocked = (stake && !stake.classList.contains("hidden")) ||
+      (conf && !conf.classList.contains("hidden")) ||
+      (inv && !inv.classList.contains("hidden"));
+    var inWorld = $("overlay-hub") && $("overlay-hub").classList.contains("is-world");
+    el.classList.toggle("hidden", !(state.area === "arena" && inWorld && !blocked));
   }
 
   function bankPortal() {
@@ -1517,6 +1540,10 @@
           return '<div class="chat-line chat-trade-wish" data-trade-id="' + escapeHtml(row.tradeId || "") + '">' +
             escapeHtml(row.text) + "</div>";
         }
+        if (row.kind === "duel_wish") {
+          return '<div class="chat-line chat-duel-wish" data-duel-id="' + escapeHtml(row.challengeId || "") + '">' +
+            escapeHtml(row.text) + "</div>";
+        }
         return '<div class="chat-line"><span class="nm">' + escapeHtml(row.name) + ":</span> " +
           escapeHtml(row.text) + "</div>";
       }).join("");
@@ -1531,6 +1558,13 @@
         if (id && global.XscapeTrade && XscapeTrade.acceptRequest) XscapeTrade.acceptRequest(id);
       });
     });
+    el.querySelectorAll(".chat-duel-wish").forEach(function (line) {
+      line.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (global.XscapeDuel && XscapeDuel.acceptIncoming) XscapeDuel.acceptIncoming();
+      });
+    });
   }
 
   function appendTradeWish(name, tradeId) {
@@ -1543,6 +1577,22 @@
       text: who + " wishes to trade with you.",
       kind: "trade_wish",
       tradeId: tradeId,
+      t: Date.now()
+    });
+    if (state.chatLog.length > CHAT_LOG_MAX) state.chatLog = state.chatLog.slice(-CHAT_LOG_MAX);
+    renderChatLog();
+  }
+
+  function appendDuelWish(name, challengeId) {
+    setChatOpen(true);
+    if (!state.chatLog) state.chatLog = [];
+    state.chatLog = state.chatLog.filter(function (row) { return row.kind !== "duel_wish" || row.challengeId !== challengeId; });
+    var who = name || "A player";
+    state.chatLog.push({
+      name: who,
+      text: who + " wishes to duel you.",
+      kind: "duel_wish",
+      challengeId: challengeId,
       t: Date.now()
     });
     if (state.chatLog.length > CHAT_LOG_MAX) state.chatLog = state.chatLog.slice(-CHAT_LOG_MAX);
@@ -1916,23 +1966,38 @@
       body.innerHTML = '<p class="lead">Sign in to form a group for Gloamhold.</p>';
       return;
     }
-    body.innerHTML = '<p class="lead">Gather a party in the bank. Share the join code, or invite someone who is here. The leader starts the raid when everyone is ready.</p>' +
-      '<div class="tweak-actions" style="margin:8px 0;display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button type="button" class="btn" id="btn-party-create">Create party</button>' +
-      '<input id="party-code-in" maxlength="8" placeholder="Join code" style="flex:1;min-height:44px;font-size:16px;background:#1a100a;color:#f0e0b0;border:1px solid #5a3a18;border-radius:8px;padding:0 8px">' +
-      '<button type="button" class="btn secondary" id="btn-party-join">Join</button></div>' +
-      '<div id="party-status" class="lead"></div>' +
-      '<div id="party-members"></div>' +
-      '<div class="sheet-actions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button type="button" class="btn secondary" id="btn-party-ready">Ready</button>' +
-      '<button type="button" class="btn" id="btn-party-start">Start raid</button>' +
-      '<button type="button" class="btn secondary" id="btn-party-leave">Leave</button></div>';
-    $("btn-party-create").addEventListener("click", function () { createParty(); });
-    $("btn-party-join").addEventListener("click", function () { joinParty(($("party-code-in").value || "").trim()); });
-    $("btn-party-ready").addEventListener("click", function () { setReady(); });
-    $("btn-party-start").addEventListener("click", function () { startPartyRaid(); });
-    $("btn-party-leave").addEventListener("click", function () { leaveParty(); });
+    body.innerHTML = '<p class="party-lead">Gather a party in the bank. Share the join code, or long-press a player and invite them. The leader starts the raid when everyone is ready.</p>' +
+      '<div id="party-lobby">' +
+        '<div class="party-create-row"><button type="button" class="btn" id="btn-party-create">Create party</button></div>' +
+        '<div class="party-join-row">' +
+          '<input id="party-code-in" class="party-code-in" maxlength="8" placeholder="Join code" autocomplete="off" spellcheck="false">' +
+          '<button type="button" class="btn secondary" id="btn-party-join">Join</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="party-active" class="hidden"></div>' +
+      '<div id="party-status" class="party-empty"></div>' +
+      '<div id="party-members" class="party-members"></div>';
+    var card = body.closest(".sheet-card");
+    var footer = $("party-footer");
+    if (!footer && card) {
+      footer = card.querySelector(".sheet-actions") || document.createElement("div");
+      footer.className = "sheet-actions";
+      footer.id = "party-footer";
+      if (!footer.parentNode) card.appendChild(footer);
+    }
+    bindPartyChrome();
     refreshParty();
+  }
+
+  function bindPartyChrome() {
+    function on(id, fn) {
+      var el = $(id);
+      if (!el || el._partyBound) return;
+      el._partyBound = true;
+      el.addEventListener("click", function (e) { e.preventDefault(); fn(); });
+    }
+    on("btn-party-create", function () { createParty(); });
+    on("btn-party-join", function () { joinParty(($("party-code-in").value || "").trim()); });
   }
 
   var partyState = null;
@@ -1968,28 +2033,55 @@
     partyState = (res && (res.party || res)) || partyState;
     var status = $("party-status");
     var members = $("party-members");
-    if (!partyState || !partyState.id) {
-      if (status) status.textContent = "You are not in a party yet.";
+    var lobby = $("party-lobby");
+    var active = $("party-active");
+    var footer = $("party-footer");
+    var inParty = !!(partyState && partyState.id);
+    if (lobby) lobby.classList.toggle("hidden", inParty);
+    if (!inParty) {
+      if (active) { active.classList.add("hidden"); active.innerHTML = ""; }
+      if (status) { status.className = "party-empty"; status.textContent = "You are not in a party yet."; }
       if (members) members.innerHTML = "";
+      if (footer) footer.innerHTML = '<button class="btn secondary" type="button" data-close="party">CLOSE</button>';
       return;
     }
     var code = partyState.code || partyState.joinCode || partyState.join_code || "";
-    if (status) {
-      var raidName = partyState.raidId === "gloamhold" || !partyState.raidId ? "Gloamhold" : (partyState.raid || partyState.raidId);
-      status.textContent = "Join code: " + (code || "—") + "  ·  " + raidName +
-        (partyState.status ? "  ·  " + partyState.status : "");
+    var raidName = partyState.raidId === "gloamhold" || !partyState.raidId ? "Gloamhold" : (partyState.raid || partyState.raidId);
+    if (active) {
+      active.classList.remove("hidden");
+      active.innerHTML = '<div class="party-code-box"><span class="lbl">JOIN CODE</span><span class="code">' +
+        escapeHtml(code || "—") + '</span><span class="meta">' + escapeHtml(raidName) +
+        (partyState.status ? " · " + escapeHtml(partyState.status) : "") + "</span></div>";
     }
+    if (status) status.textContent = "";
     var list = partyState.members || partyState.party_members || [];
     var leaderId = partyState.leaderId || partyState.leader_id;
+    var myId = (global.XscapeCloud && XscapeCloud.userId && XscapeCloud.userId()) || null;
+    var amLeader = !!(myId && leaderId && String(myId) === String(leaderId));
     if (members) {
-      if (!list.length) members.innerHTML = "<p class='lead'>Waiting for friends…</p>";
+      if (!list.length) members.innerHTML = "<p class='party-empty'>Waiting for friends…</p>";
       else members.innerHTML = list.map(function (m) {
         var mid = m.userId || m.user_id || m.id;
         var nm = m.username || m.name || "Adventurer";
-        var rd = m.ready ? " · ready" : "";
-        var lead = (mid && leaderId && String(mid) === String(leaderId)) || m.role === "leader" || m.isLeader ? " (leader)" : "";
-        return '<div class="cloud-row"><span>' + escapeHtml(nm) + lead + rd + "</span></div>";
+        var isLead = (mid && leaderId && String(mid) === String(leaderId)) || m.role === "leader" || m.isLeader;
+        var cls = "party-member" + (m.ready ? " ready" : "");
+        return '<div class="' + cls + '"><span>' + escapeHtml(nm) +
+          (isLead ? ' <span class="tag">leader</span>' : "") + "</span>" +
+          (m.ready ? '<span class="rdy">READY</span>' : '<span class="tag">not ready</span>') + "</div>";
       }).join("");
+    }
+    if (footer) {
+      footer.innerHTML =
+        '<button type="button" class="btn secondary" id="btn-party-ready">Ready</button>' +
+        (amLeader ? '<button type="button" class="btn" id="btn-party-start">Start raid</button>' : "") +
+        '<button type="button" class="btn secondary" id="btn-party-leave">Leave</button>' +
+        '<button type="button" class="btn secondary" data-close="party">CLOSE</button>';
+      var ready = $("btn-party-ready");
+      if (ready) ready.addEventListener("click", function (e) { e.preventDefault(); setReady(); });
+      var start = $("btn-party-start");
+      if (start) start.addEventListener("click", function (e) { e.preventDefault(); startPartyRaid(); });
+      var leave = $("btn-party-leave");
+      if (leave) leave.addEventListener("click", function (e) { e.preventDefault(); leaveParty(); });
     }
   }
 
@@ -2205,6 +2297,7 @@
     if (typeof drawClickMarks === "function") drawClickMarks(dt);
     paintGearCharacter(ts);
     refreshGpChip();
+    updateArenaHint();
     if (typeof floatT !== "undefined" && floatT > 0) {
       floatT -= dt;
       var fm = $("float-msg");
@@ -2455,11 +2548,10 @@
       var el = $(id);
       if (!el || el._hubBound) return;
       el._hubBound = true;
-      el.querySelectorAll("[data-close]").forEach(function (b) {
-        b.addEventListener("click", function () { fn(); });
-      });
       el.addEventListener("click", function (e) {
-        if (e.target === el) fn();
+        if (e.target === el) { fn(); return; }
+        var btn = e.target && e.target.closest && e.target.closest("[data-close]");
+        if (btn && el.contains(btn)) { e.preventDefault(); fn(); }
       });
     }
     bindClose("overlay-bank", function () { closeSheet("overlay-bank"); });
@@ -2610,6 +2702,8 @@
     onHubChat: onHubChat,
     sendHubChat: sendHubChat,
     appendTradeWish: appendTradeWish,
+    appendDuelWish: appendDuelWish,
+    updateArenaHint: updateArenaHint,
     openChat: openChat,
     openChatHistory: openChatHistory,
     closeChatHistory: closeChatHistory,

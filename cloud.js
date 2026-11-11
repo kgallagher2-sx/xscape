@@ -2383,6 +2383,7 @@
     },
     refundDuel: function (id) { return rpc("refund_duel", { p_id: id }); },
     challengeUser: challengeUser,
+    refreshChallenges: refreshChallenges,
     getChallenges: function () { return challenges; },
     applyProfile: applyCloudProfile
   };

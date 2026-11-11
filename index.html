@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111030345-0748fe1";</script>
+  <script>window.XSCAPE_BUILD = "20261111033839-f44b970";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -708,13 +708,29 @@
     .chat-history-text { color: #f5f0d8; font-size: 13px; margin-top: 4px; word-wrap: break-word; }
     .chat-history-empty { color: #8a7a58; text-align: center; padding: 16px 8px; font-size: 13px; }
 
-    #overlay-trade { z-index: 100; background: #140c08; padding: 10px 8px; }
-    #overlay-trade-history { z-index: 100; }
-    #trade-screen-1.hidden, #trade-screen-2.hidden { display: none !important; }
-    #overlay-trade .sheet-card, #overlay-trade-history .sheet-card {
+    #overlay-trade { z-index: 120; background: #140c08; padding: 10px 8px; }
+    #overlay-trade-history, #overlay-trade-wish, #overlay-duel-invite { z-index: 130; }
+    #trade-screen-1.hidden, #trade-screen-2.hidden, #trade-screen-wait.hidden,
+    #trade-actions.hidden, #trade-actions-2.hidden,
+    #overlay-trade .hidden, #overlay-party .hidden, #duel-arena-hint.hidden { display: none !important; }
+    #overlay-trade .sheet-card, #overlay-trade-history .sheet-card,
+    #overlay-trade-wish .sheet-card, #overlay-duel-invite .sheet-card {
       width: 100%; max-width: 360px; max-height: calc(var(--app-height) - 20px);
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden;
       background: linear-gradient(#3a2c1c, #1a120a);
       border: 3px solid #c9a24a;
+    }
+    #overlay-trade-wish .sheet-card, #overlay-duel-invite .sheet-card {
+      max-width: 320px; padding: 16px 14px 12px;
+    }
+    #overlay-trade-wish .sheet-actions, #overlay-duel-invite .sheet-actions,
+    #trade-actions, #trade-actions-2 {
+      display: flex; gap: 8px; justify-content: center; flex: 0 0 auto;
+      position: static; margin-top: 8px; padding: 8px 0 max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    #overlay-trade-wish .btn, #overlay-duel-invite .btn,
+    #trade-actions .btn, #trade-actions-2 .btn {
+      flex: 1 1 0; min-width: 0; margin: 0; height: 44px; font-size: 16px; letter-spacing: 0.5px;
     }
     #overlay-trade h2 { font-size: 16px; margin: 0 0 6px; color: #ffe44a; }
     #overlay-trade h3 { font-size: 12px; margin: 8px 0 4px; color: #c9a24a; letter-spacing: 0; }
@@ -757,8 +773,71 @@
     .chat-trade-wish .nm { display: none; }
     #hub-chat-bar #btn-trade-history { min-width: 0; padding: 0 8px; font-size: 12px; letter-spacing: 0; }
     #hub-chat-bar #btn-trade-history.hidden { display: none !important; }
-    #trade-actions { display: flex; gap: 8px; justify-content: center; }
-    #trade-actions .btn { flex: 1; }
+    #overlay-trade .trade-gp-line {
+      display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+    }
+    #overlay-trade #btn-trade-gold { min-width: 0; flex: 0 0 auto; height: 36px; padding: 0 12px; font-size: 13px; margin: 0; }
+    #trade-inv-hint, .trade-wait-note { font-size: 12px; color: #efe0b0; text-align: center; margin: 4px 8px 8px; line-height: 1.35; }
+    #trade-inv-hint:empty { display: none; }
+    #trade-screen-wait { padding: 16px 8px 8px; text-align: center; }
+    #overlay-trade .osrs-slot, #overlay-trade .trade-slot { touch-action: manipulation; }
+    #overlay-trade .osrs-slot canvas, #overlay-trade .trade-slot canvas { pointer-events: none; }
+    #duel-arena-hint {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      top: calc(var(--hud-top) + 46px);
+      bottom: auto;
+      z-index: 9; pointer-events: none;
+      padding: 5px 12px; border-radius: 4px;
+      background: rgba(16, 10, 6, 0.82);
+      border: 2px solid #c9a24a; color: #ffe44a;
+      font: 700 12px "Trebuchet MS", sans-serif;
+      letter-spacing: 0.2px; text-align: center; white-space: nowrap;
+      text-shadow: 0 1px 0 #000;
+    }
+    #duel-arena-hint.hidden { display: none; }
+    .chat-duel-wish { color: #00ffff !important; text-decoration: underline; cursor: pointer; font-weight: 700; }
+
+    /* Group raid join — compact OSRS sheet on 390px phones */
+    #overlay-party { z-index: 120; }
+    #overlay-party .sheet-card { width: 100%; max-width: 360px; }
+    #overlay-party .party-lead { margin: 0 0 10px; font-size: 13px; color: #efe0b0; line-height: 1.35; text-align: left; }
+    #overlay-party .party-join-row, #overlay-party .party-create-row {
+      display: flex; flex-direction: column; gap: 8px; margin: 0 0 10px;
+    }
+    #overlay-party .party-join-row { flex-direction: row; align-items: stretch; gap: 6px; }
+    #overlay-party .party-code-in {
+      flex: 1 1 auto; min-width: 0; min-height: 42px; font-size: 16px;
+      background: #1a100a; color: #f0e0b0; border: 2px solid #6a5428;
+      border-radius: 4px; padding: 0 10px; font-family: "Trebuchet MS", sans-serif;
+    }
+    #overlay-party .party-code-box {
+      margin: 0 0 10px; padding: 8px 10px; text-align: center;
+      background: linear-gradient(#2a1c10, #1a1008);
+      border: 2px solid #c9a24a; border-radius: 4px;
+    }
+    #overlay-party .party-code-box .lbl { display: block; font-size: 11px; color: #c9a24a; letter-spacing: 0.6px; }
+    #overlay-party .party-code-box .code { display: block; font: 700 22px "Trebuchet MS", sans-serif; color: #ffe44a; letter-spacing: 2px; }
+    #overlay-party .party-code-box .meta { display: block; margin-top: 2px; font-size: 11px; color: #b8a070; }
+    #overlay-party .party-members { display: flex; flex-direction: column; gap: 6px; margin: 0 0 4px; }
+    #overlay-party .party-member {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 7px 8px; background: linear-gradient(#3a2a18, #22180e);
+      border: 2px solid #6a5428; border-radius: 4px; color: #efe0b0; font-size: 13px;
+    }
+    #overlay-party .party-member .tag { color: #c9a24a; font-size: 11px; }
+    #overlay-party .party-member.ready { border-color: #7CFF6B; }
+    #overlay-party .party-member .rdy { color: #7CFF6B; font-weight: 700; font-size: 11px; }
+    #overlay-party .party-empty { margin: 0; font-size: 12px; color: #b8a070; text-align: center; }
+    #overlay-party .sheet-actions, #party-footer {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: stretch;
+      flex: 0 0 auto; position: static; padding: 8px 0 max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    #overlay-party .btn, #overlay-party .party-btn {
+      flex: 1 1 calc(50% - 8px); min-width: 0; margin: 0; height: 42px; min-height: 42px;
+      font-size: 14px; letter-spacing: 0.4px; padding: 0 8px;
+    }
+    #overlay-party #btn-party-start, #overlay-party .party-create-row .btn { flex: 1 1 100%; width: 100%; }
+
     #overlay-trade.accepted-you #btn-trade-accept-1,
     #overlay-trade.accepted-you #btn-trade-accept-2 { filter: brightness(1.25); box-shadow: 0 0 0 2px #7CFF6B; }
 
@@ -1231,6 +1310,9 @@
       <div class="gear-card sheet-card">
         <button class="overlay-x" id="btn-trade-x" type="button" aria-label="Decline">×</button>
         <h2 id="trade-title">Trade</h2>
+        <div id="trade-screen-wait" class="hidden">
+          <p class="trade-wait-note" id="trade-wait-note">Waiting for the other player to accept your trade request.</p>
+        </div>
         <div class="sheet-scroll" id="trade-scroll">
           <div id="trade-screen-1">
             <h3>Their offer</h3>
@@ -1239,16 +1321,13 @@
             <div id="trade-your-offer" class="osrs-grid"></div>
             <div class="trade-space" id="trade-their-space"></div>
             <h3 id="trade-inv-title">Your inventory</h3>
+            <p class="trade-inv-hint" id="trade-inv-hint"></p>
             <div id="trade-inv-grid" class="osrs-grid"></div>
             <div class="trade-gp-line">
               <span id="trade-your-gp">Your coins: 0</span>
               <button type="button" class="btn secondary" id="btn-trade-gold">Offer gold</button>
             </div>
             <div class="trade-status" id="trade-status-1"></div>
-            <div class="sheet-actions" id="trade-actions">
-              <button type="button" class="btn" id="btn-trade-accept-1">Accept</button>
-              <button type="button" class="btn secondary" id="btn-trade-decline-1">Decline</button>
-            </div>
           </div>
           <div id="trade-screen-2" class="hidden">
             <h3>You are about to give</h3>
@@ -1258,13 +1337,28 @@
             <div id="trade-recv-grid" class="osrs-grid"></div>
             <div class="trade-val" id="trade-recv-val"></div>
             <div class="trade-status" id="trade-status-2"></div>
-            <div class="sheet-actions" id="trade-actions-2" style="display:flex;gap:8px;justify-content:center">
-              <button type="button" class="btn" id="btn-trade-accept-2">Accept</button>
-              <button type="button" class="btn secondary" id="btn-trade-decline-2">Decline</button>
-            </div>
           </div>
         </div>
+        <div class="sheet-actions" id="trade-actions">
+          <button type="button" class="btn" id="btn-trade-accept-1">Accept</button>
+          <button type="button" class="btn secondary" id="btn-trade-decline-1">Decline</button>
+        </div>
+        <div class="sheet-actions hidden" id="trade-actions-2">
+          <button type="button" class="btn" id="btn-trade-accept-2">Accept</button>
+          <button type="button" class="btn secondary" id="btn-trade-decline-2">Decline</button>
+        </div>
         <div id="trade-qty-menu" class="hidden" role="menu"></div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-trade-wish">
+      <div class="gear-card sheet-card trade-wish-card">
+        <h2>Trade request</h2>
+        <p class="duel-note" id="trade-wish-text">A player wishes to trade with you.</p>
+        <div class="sheet-actions trade-wish-actions">
+          <button type="button" class="btn" id="btn-trade-wish-accept">Accept</button>
+          <button type="button" class="btn secondary" id="btn-trade-wish-decline">Decline</button>
+        </div>
       </div>
     </div>
 
@@ -1466,7 +1560,7 @@
         <p><b>Melee:</b> when you stand next to her, her front legs lunge (up to 30). Protect from Melee blocks it.</p>
         <p><b>Magic:</b> from range she spits a venom bolt (up to 28). Protect from Magic blocks the hit. About 1 in 4 successful hits poisons you (starts at 6, then ticks down the usual way). Prayer does not block the poison itself — sip an antipoison or wait it out.</p>
         <p><b>Web shot:</b> about every 20 ticks she fires a web into the ceiling. A shadow marks the landing tile 3 ticks ahead — walk off it. If you are still there when it lands, you are stuck for 4 ticks (you can still eat and pray, but you cannot move or attack). Then 4–6 baby spiders drop and each bite hits 0–8 through prayer.</p>
-        <p><b>Below 50%:</b> webs come a little faster (every 16 ticks). Every two or three specials she raises the dead: 2–4 skeletons of eaten victims crawl in from the edges, walk slowly, and shatter in one hit — but if one reaches you it hits up to 25 through prayer.</p>
+        <p><b>Below 50%:</b> webs come a little faster (every 16 ticks). Every two or three specials she raises the dead: 2 skeletons of eaten victims crawl in from the far side, walk slowly, and shatter in one hit — a 5-tick weapon has time to shoot both before they arrive, but if one reaches you it hits up to 25 through prayer.</p>
         <p><b>Below 20%:</b> she enrages and drops two webs at once.</p>
         <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Widow Weaver uniques (hood, robe top, robe bottom, wand, and spellbook) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, a random piece still drops (already owned). Uniques go to your bank. Wear them from Equipment. This kit is never sold.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>

@@ -10,6 +10,9 @@
   const BABY_MAX = 8;
   const BABY_HP = 8;
   const SKEL_MAX = 25;
+  const SKEL_COUNT = 2;
+  const SKEL_WALK_EVERY = 3;
+  const SKEL_MIN_ARRIVE = 14; // two shots at a 5-tick weapon, with slack for walk timing
   const WEB_EVERY = 20;
   const WEB_EVERY_50 = 16;
   const WEB_DELAY = 3;
@@ -315,8 +318,28 @@
     spawnBabies();
   }
 
+  function pruneBabies(force) {
+    const G = g();
+    const list = G.widowBabies || [];
+    G.widowBabies = force ? [] : list.filter(function (m) { return m && m.alive && !m.done; });
+    if (G.target && G.target.kind === "baby") {
+      const cur = G.widowBabies[G.target.index];
+      if (!cur || !cur.alive || cur.fleeing) G.target = "widow";
+    }
+  }
+
+  function startBabyFlee(m) {
+    if (!m || m.fleeing || m.done) return;
+    m.fleeing = true;
+    m.fleeTicks = 2;
+    m.fade = 1;
+    m.atkCd = 99;
+  }
+
   function spawnBabies() {
     const G = g();
+    // A new web wave must not stack on leftovers from the last one.
+    pruneBabies(true);
     const p = G.player;
     const n = irand(4, 6);
     const cols = (global.TILE && TILE.cols) || 5;
@@ -326,33 +349,48 @@
       let r = p ? clamp(p.tileRow + irand(-2, 2), 0, TILE_ROWS - 1) : irand(0, 2);
       const pos = (typeof global.tileCenter === "function") ? tileCenter(c, r) : { x: 0.5, y: 0.8 };
       G.widowBabies.push({
-        col: c, row: r, hp: BABY_HP, maxHp: BABY_HP, atkCd: 2 + i,
-        x: pos.x, y: pos.y, hurt: 0, alive: true
+        col: c, row: r, hp: BABY_HP, maxHp: BABY_HP, atkCd: 1 + (i % 2),
+        x: pos.x, y: pos.y, hurt: 0, alive: true,
+        bitten: false, fleeing: false, fleeTicks: 0, fade: 1, done: false
       });
     }
     if (typeof global.flashMsg === "function") flashMsg("Baby spiders drop!", "#ff8a90");
   }
 
+  function stepsToAdjacent(fromC, fromR, toC, toR) {
+    let c = fromC, r = fromR, n = 0;
+    for (let i = 0; i < 24; i++) {
+      if (Math.max(Math.abs(c - toC), Math.abs(r - toR)) <= 1) return n;
+      const dc = toC - c, dr = toR - r;
+      if (dc === 0 && dr === 0) return n;
+      if (Math.abs(dc) >= Math.abs(dr) && dc !== 0) c += dc > 0 ? 1 : -1;
+      else if (dr !== 0) r += dr > 0 ? 1 : -1;
+      else return n;
+      n++;
+    }
+    return n;
+  }
+
   function raiseDead() {
     const G = g();
-    const n = irand(2, 4);
+    const p = G.player;
     const cols = (global.TILE && TILE.cols) || 5;
-    const edges = [];
-    for (let c = 0; c < cols; c++) {
-      edges.push({ col: c, row: 0 });
-      edges.push({ col: c, row: TILE_ROWS - 1 });
-    }
-    for (let r = 1; r < TILE_ROWS - 1; r++) {
-      edges.push({ col: 0, row: r });
-      edges.push({ col: cols - 1, row: r });
-    }
-    for (let i = 0; i < n && edges.length; i++) {
-      const idx = irand(0, edges.length - 1);
-      const e = edges.splice(idx, 1)[0];
+    // Always exactly two, from the far corners so a 5-tick weapon can shoot both.
+    const farRow = (p && p.tileRow >= Math.floor(TILE_ROWS / 2)) ? 0 : (TILE_ROWS - 1);
+    const spots = [
+      { col: 0, row: farRow },
+      { col: cols - 1, row: farRow }
+    ];
+    const destC = p ? p.tileCol : 2;
+    const destR = p ? p.tileRow : 0;
+    for (let i = 0; i < SKEL_COUNT; i++) {
+      const e = spots[i];
       const pos = (typeof global.tileCenter === "function") ? tileCenter(e.col, e.row) : { x: 0.2, y: 0.8 };
+      const steps = Math.max(1, stepsToAdjacent(e.col, e.row, destC, destR));
+      const walkCd = Math.max(1, SKEL_MIN_ARRIVE - (steps - 1) * SKEL_WALK_EVERY);
       G.widowSkels.push({
-        col: e.col, row: e.row, hp: 1, maxHp: 1, walkCd: 1, atkCd: 0,
-        x: pos.x, y: pos.y, hurt: 0, alive: true, facing: "right"
+        col: e.col, row: e.row, hp: 1, maxHp: 1, walkCd: walkCd, atkCd: 1,
+        x: pos.x, y: pos.y, hurt: 0, alive: true, facing: e.col < destC ? "right" : "left"
       });
     }
     if (typeof global.flashMsg === "function") flashMsg("The dead rise!", "#c8b8c0");
@@ -379,22 +417,34 @@
     const babies = G.widowBabies || [];
     for (let i = 0; i < babies.length; i++) {
       const m = babies[i];
-      if (!m.alive) continue;
+      if (!m.alive || m.done) continue;
       if (m.hurt > 0) m.hurt -= 0.15;
+      if (m.fleeing) {
+        const awayC = m.col + (m.col >= (p.tileCol || 0) ? 1 : -1);
+        const awayR = m.row + (m.row >= (p.tileRow || 0) ? -1 : 1);
+        stepToward(m, awayC, awayR, 1);
+        m.fleeTicks = (m.fleeTicks || 0) - 1;
+        m.fade = Math.max(0, m.fleeTicks / 2);
+        if (m.fleeTicks <= 0) { m.alive = false; m.done = true; m.fade = 0; }
+        continue;
+      }
       stepToward(m, p.tileCol, p.tileRow, 1);
       const adj = Math.max(Math.abs(m.col - p.tileCol), Math.abs(m.row - p.tileRow)) <= 1;
       if (!adj) continue;
+      if (m.bitten) { startBabyFlee(m); continue; }
       m.atkCd--;
       if (m.atkCd > 0) continue;
-      m.atkCd = 3;
       bitePlayer(irand(0, BABY_MAX), "baby");
+      m.bitten = true;
+      startBabyFlee(m);
     }
+    pruneBabies(false);
     const skels = G.widowSkels || [];
     for (let i = 0; i < skels.length; i++) {
       const m = skels[i];
       if (!m.alive) continue;
       if (m.hurt > 0) m.hurt -= 0.15;
-      stepToward(m, p.tileCol, p.tileRow, 2);
+      stepToward(m, p.tileCol, p.tileRow, SKEL_WALK_EVERY);
       const adj = Math.max(Math.abs(m.col - p.tileCol), Math.abs(m.row - p.tileRow)) <= 1;
       if (!adj) continue;
       m.atkCd--;
@@ -439,7 +489,7 @@
   function currentTarget() {
     const G = g();
     if (G.target && typeof G.target === "object") {
-      if (G.target.kind === "baby" && G.widowBabies[G.target.index] && G.widowBabies[G.target.index].alive) {
+      if (G.target.kind === "baby" && G.widowBabies[G.target.index] && G.widowBabies[G.target.index].alive && !G.widowBabies[G.target.index].fleeing) {
         const m = G.widowBabies[G.target.index];
         return { kind: "baby", index: G.target.index, x: m.x, y: m.y, monId: "widow-baby" };
       }
@@ -494,7 +544,7 @@
       m.hp -= dmg;
       m.hurt = 0.2;
       if (typeof global.spawnSplat === "function") spawnSplat(m.x, m.y - 0.02, dmg, dmg > 0 ? "red" : "blue");
-      if (m.hp <= 0) { m.alive = false; m.hp = 0; G.target = "widow"; }
+      if (m.hp <= 0) { m.hp = 0; startBabyFlee(m); if (G.target && G.target.kind === "baby") G.target = "widow"; }
       return true;
     }
     if (target.kind === "skel" && G.widowSkels && G.widowSkels[target.index]) {
@@ -660,11 +710,15 @@
     const babies = G.widowBabies || [];
     for (let i = 0; i < babies.length; i++) {
       const m = babies[i];
-      if (!m.alive) continue;
+      if (!m.alive || m.done) continue;
+      const fade = (m.fade == null) ? 1 : m.fade;
+      if (fade <= 0) continue;
       ctx.save();
+      ctx.globalAlpha = fade;
       ctx.translate(m.x * cssW, m.y * cssH);
-      ctx.scale(sc * 0.85, sc * 0.85);
-      if (Art && Art.drawBaby) Art.drawBaby(ctx, { t: t + i });
+      const scurry = m.fleeing ? 0.75 + fade * 0.25 : 1;
+      ctx.scale(sc * 0.85 * scurry, sc * 0.85 * scurry);
+      if (Art && Art.drawBaby) Art.drawBaby(ctx, { t: t + i, fleeing: !!m.fleeing });
       ctx.restore();
       if (G.target && G.target.kind === "baby" && G.target.index === i && typeof global.drawOsrsCross === "function") {
         drawOsrsCross(ctx, m.x * cssW, m.y * cssH, "#ff1a1a", 0.7, 0, 0.85);
@@ -766,7 +820,7 @@
     const babies = G.widowBabies || [];
     for (let i = 0; i < babies.length; i++) {
       const m = babies[i];
-      if (!m.alive) continue;
+      if (!m.alive || m.fleeing || m.done) continue;
       const dx = (nx - m.x) * cssW, dy = (ny - m.y) * cssH;
       if (dx * dx + dy * dy <= (22 * sc) * (22 * sc)) {
         G.target = { kind: "baby", index: i };
