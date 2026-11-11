@@ -380,7 +380,8 @@
       from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
       to: { x: target.x, y: target.y },
       style: style,
-      kind: isMagic ? "magic" : "bolt"
+      kind: isMagic ? "magic" : "bolt",
+      spellId: isMagic ? spellId : undefined
     });
     if (isMagic && audio() && audio().wind) audio().wind();
     else if (audio() && audio().crossbow) audio().crossbow();
@@ -697,6 +698,21 @@
     return String(n);
   }
 
+
+  function stackLootItems(ids) {
+    const counts = {};
+    const order = [];
+    (ids || []).forEach(function (id) {
+      if (!id) return;
+      if (!counts[id]) { counts[id] = 0; order.push(id); }
+      counts[id]++;
+    });
+    return order.map(function (id) {
+      const name = (global.ITEMS && ITEMS[id] && ITEMS[id].name) || id;
+      const qty = counts[id];
+      return { id: id, name: name, qty: qty, label: qty > 1 ? (name + " ×" + qty) : name };
+    });
+  }
   function showLoot(loot, awarded, result) {
     const el = $("overlay-knight-loot");
     const stats = $("knight-loot-stats");
@@ -721,15 +737,14 @@
         p.textContent = "Drop  Supplies only";
         itemsEl.appendChild(p);
       } else {
-        ids.forEach(function (id) {
-          const it = (global.ITEMS || {})[id] || { name: id };
+        stackLootItems(ids).forEach(function (it) {
           const row = document.createElement("div");
           row.className = "loot-item";
           const slot = document.createElement("div");
           slot.className = "slot";
-          if (global.XscapeIcons && XscapeIcons.fillSlot) XscapeIcons.fillSlot(slot, id);
+          if (global.XscapeIcons && XscapeIcons.fillSlot) XscapeIcons.fillSlot(slot, it.id);
           const lab = document.createElement("div");
-          lab.textContent = it.name || id;
+          lab.textContent = it.label;
           row.appendChild(slot);
           row.appendChild(lab);
           itemsEl.appendChild(row);

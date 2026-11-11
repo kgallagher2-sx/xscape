@@ -1706,7 +1706,7 @@
     else if (!isMelee) sfx(st, "crossbow");
     const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0, st.player.hp, spellId);
     if (!isMelee) {
-      st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt" });
+      st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt", spellId: isMagic ? spellId : undefined });
     }
     applyPlayerDamage(st, t, roll);
   }
@@ -2800,11 +2800,24 @@
       const u = clamp(b.t / b.dur, 0, 1);
       const a = tilePos(b.fromC, b.fromR, W, H);
       const z = tilePos(b.toC, b.toR, W, H);
-      const x = lerp(a.x, z.x, u);
-      const y = lerp(a.y - 24, z.y - 40, u);
-      ctx.fillStyle = (b.kind === "magic") ? "#ff8a90" : "#e8d080";
-      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+      var muzzle = (typeof global.combatRaidMuzzleOffset === "function")
+        ? global.combatRaidMuzzleOffset()
+        : { x: 0, y: -24 };
+      const x = lerp(a.x + (muzzle.x || 0), z.x, u);
+      const y = lerp(a.y + (muzzle.y != null ? muzzle.y : -24), z.y - 40, u);
+      const spellId = b.spellId || b.spell;
+      const Magic = global.XscapeMagicArt;
+      const useSpell = b.kind === "magic" && Magic && Magic.drawBoltInWorld && spellId && spellId !== "venom";
+      if (useSpell) {
+        const ang = Math.atan2((z.y - 40) - (a.y + (muzzle.y != null ? muzzle.y : -24)), z.x - (a.x + (muzzle.x || 0)));
+        Magic.drawBoltInWorld(ctx, b, x, y, ang, u, false);
+        if (u >= 1) Magic.drawBoltInWorld(ctx, b, x, y, ang, 1, true);
+      } else {
+        ctx.fillStyle = (b.kind === "magic") ? "#ff8a90" : "#e8d080";
+        ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+      }
     }
+    if (global.XscapeMagicArt && XscapeMagicArt.drawImpacts) XscapeMagicArt.drawImpacts(ctx, dt);
     st.bolts = st.bolts.filter(function (b) { return b.t < b.dur; });
   }
 
@@ -3890,6 +3903,21 @@
       fm.style.opacity = String(Math.max(0, Math.min(1, R.float.t * 1.4)));
     }
   }
+
+  function stackLootItems(ids) {
+    const counts = {};
+    const order = [];
+    (ids || []).forEach(function (id) {
+      if (!id) return;
+      if (!counts[id]) { counts[id] = 0; order.push(id); }
+      counts[id]++;
+    });
+    return order.map(function (id) {
+      const name = (global.ITEMS && ITEMS[id] && ITEMS[id].name) || id;
+      const qty = counts[id];
+      return { id: id, name: name, qty: qty, label: qty > 1 ? (name + " ×" + qty) : name };
+    });
+  }
   function showRaidResult(kind, result) {
     hideRaidResultOverlays();
     const win = document.getElementById("overlay-win");
@@ -3918,10 +3946,10 @@
           } else bits.push(lootLabel(id));
         });
       } else if (!(loot.died || loot.halfGp) && loot.uniqueHit !== true) bits.push("No rare this time");
-      commons.forEach(function (id) {
+      stackLootItems(commons).forEach(function (it) {
         if (global.XscapeIcons) {
-          bits.push('<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + id + '"></canvas><span>' + lootLabel(id) + "</span></span>");
-        } else bits.push(lootLabel(id));
+          bits.push('<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + it.id + '"></canvas><span>' + it.label + "</span></span>");
+        } else bits.push(it.label);
       });
       lootTxt = bits.join("<br>") || "—";
     }

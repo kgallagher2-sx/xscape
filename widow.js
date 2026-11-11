@@ -588,6 +588,7 @@
     G.bolts.push({
       t: 0, dur: (global.BOLT_TRAVEL || 0.16), dmg: dmg, dest: dest,
       kind: (style === "magic" || style === "mage") ? "magic" : "bolt",
+      spellId: (style === "magic" || style === "mage") ? spellId : undefined,
       from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
       to: { x: dest.x, y: dest.y }
     });
@@ -983,6 +984,21 @@
     return awarded;
   }
 
+
+  function stackLootItems(ids) {
+    const counts = {};
+    const order = [];
+    (ids || []).forEach(function (id) {
+      if (!id) return;
+      if (!counts[id]) { counts[id] = 0; order.push(id); }
+      counts[id]++;
+    });
+    return order.map(function (id) {
+      const name = (global.ITEMS && ITEMS[id] && ITEMS[id].name) || id;
+      const qty = counts[id];
+      return { id: id, name: name, qty: qty, label: qty > 1 ? (name + " ×" + qty) : name };
+    });
+  }
   function showLoot(loot, awarded, result) {
     const ov = $("overlay-widow-loot");
     if (!ov) return;
@@ -1004,10 +1020,32 @@
     if (bonus > 0) {
       const bs = (typeof global.gpStyle === "function") ? gpStyle(bonus) : { text: String(bonus), class: "gold" };
       rows.push(["Set complete", bs.text + " GP bonus", "gold"]);
-    } else if (awarded.length) {
-      awarded.forEach(function (it) {
-        rows.push(["Drop", it.name + (it.already ? " (already owned)" : ""), "gold", it.id]);
+    } else if ((awarded && awarded.length) || (loot && loot.items && loot.items.length)) {
+      const seen = {};
+      (awarded || []).forEach(function (it) {
+        if (!it || !it.id) return;
+        if (!seen[it.id]) seen[it.id] = { id: it.id, name: it.name, already: !!it.already, qty: 0 };
+        seen[it.id].qty++;
+        if (it.already) seen[it.id].already = true;
       });
+      const awardedIds = {};
+      Object.keys(seen).forEach(function (id) { awardedIds[id] = true; });
+      const extra = [];
+      ((loot && loot.items) || []).forEach(function (id) {
+        if (!id || awardedIds[id]) return;
+        extra.push(id);
+      });
+      const shown = [];
+      Object.keys(seen).forEach(function (id) {
+        const it = seen[id];
+        const label = it.name + (it.qty > 1 ? (" ×" + it.qty) : "") + (it.already ? " (already owned)" : "");
+        shown.push(["Drop", label, "gold", it.id]);
+      });
+      stackLootItems(extra).forEach(function (it) {
+        shown.push(["Drop", it.label, "", it.id]);
+      });
+      if (!shown.length) rows.push(["Drop", "Supplies only", ""]);
+      else shown.forEach(function (r) { rows.push(r); });
     } else {
       rows.push(["Drop", "Supplies only", ""]);
     }

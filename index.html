@@ -4655,6 +4655,7 @@ function playerAttack() {
     G.bolts.push({
       t: 0, dur: BOLT_TRAVEL, dmg, dest,
       kind: isMagic ? "magic" : "bolt",
+      spellId: isMagic ? spellId : undefined,
       from: (function () {
         const tip = playerBowTip();
         return { x: G.player.x + (tip.x * L.sP) / cssW, y: G.player.y + (tip.y * L.sP) / cssH };
