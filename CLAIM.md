@@ -11,3 +11,5 @@ One line per claim, in this format:
 
 ## Active claims
 
+- raid.js | Boss Mechanics | 2026-11-11 16:38 UTC | Replay gpAwarded 0 + originalGpAwarded; investigate score 0; revert unapproved Shade defence change
+
