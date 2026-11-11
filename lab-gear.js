@@ -51,6 +51,11 @@ const LAB_ITEMS = {
   gorehorn_plate:     { id: "gorehorn_plate", name: "Gorehorn platebody", slot: "body", tier: "gorehorn", kind: "gorehorn" },
   gorehorn_legs:      { id: "gorehorn_legs", name: "Gorehorn platelegs", slot: "legs", tier: "gorehorn", kind: "gorehorn" },
   gorehorn_axe:       { id: "gorehorn_axe", name: "Gorehorn war axe", slot: "weapon", tier: "gorehorn", kind: "axe" },
+  kraken_helm:        { id: "kraken_helm", name: "Kraken helm", slot: "head", tier: "colossus", kind: "colossus" },
+  coral_plate:        { id: "coral_plate", name: "Coral platebody", slot: "body", tier: "colossus", kind: "colossus" },
+  coral_legs:         { id: "coral_legs", name: "Coral platelegs", slot: "legs", tier: "colossus", kind: "colossus" },
+  tentacle_whip:      { id: "tentacle_whip", name: "Tentacle whip", slot: "weapon", tier: "colossus", kind: "whip" },
+  trident_spear:      { id: "trident_spear", name: "Trident spear", slot: "weapon", tier: "colossus", kind: "spear" },
 
   hollowbolt_xbow:    { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", kind: "hollow" },
   hollow_bolts:       { id: "hollow_bolts", name: "Hollow bolts", slot: "ammo", tier: "unique", kind: "hollow" },
@@ -120,10 +125,40 @@ const LAB_LOADOUTS = {
     head: "gorehorn_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
     weapon: "kingsguard_sword", body: "gorehorn_plate", shield: "kingsguard_kite",
     legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  colossus: {
+    head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "tentacle_whip", body: "coral_plate", shield: null,
+    legs: "coral_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  colossus_spear: {
+    head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "trident_spear", body: "coral_plate", shield: null,
+    legs: "coral_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  colossus_widow_mix: {
+    head: "kraken_helm", cape: null, neck: null, ammo: null,
+    weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
+    legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
+  },
+  colossus_knight_mix: {
+    head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "tentacle_whip", body: "coral_plate", shield: "kingsguard_kite",
+    legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  colossus_gorehorn_mix: {
+    head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "gorehorn_axe", body: "coral_plate", shield: null,
+    legs: "gorehorn_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  mixed_three: {
+    head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "tentacle_whip", body: "gorehorn_plate", shield: "kingsguard_kite",
+    legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
   }
 };
 
-const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "unique", "other"];
+const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "colossus", "unique", "other"];
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
   tier2: "Tier 2 — black d'hide",
@@ -132,6 +167,7 @@ const LAB_TIER_LABEL = {
   widow: "Widow Weaver — Widow Queen",
   kingsguard: "Kingsguard — Hollow Knight-King",
   gorehorn: "Gorehorn — the Minotaur",
+  colossus: "Colossus — the Drowned Colossus",
   unique: "Gloamhold uniques",
   other: "Other (kept if owned)"
 };
@@ -181,6 +217,11 @@ const LAB_DEFAULTS = {
   gorehorn_plate:     { main: "#8a5a28", trim: "#8a1020", scale: 1 },
   gorehorn_legs:      { main: "#8a5a28", trim: "#8a1020", scale: 1 },
   gorehorn_axe:       { main: "#c48a40", trim: "#8a1020", scale: 1 },
+  kraken_helm:        { main: "#1a6a68", trim: "#40f0e0", scale: 1 },
+  coral_plate:        { main: "#1a6a68", trim: "#c06070", scale: 1 },
+  coral_legs:         { main: "#1a6a68", trim: "#c06070", scale: 1 },
+  tentacle_whip:      { main: "#1a6a68", trim: "#d8a0a8", scale: 1 },
+  trident_spear:      { main: "#b08a48", trim: "#3aa898", scale: 1 },
 
   hollowbolt_xbow:    { main: "#3a3048", trim: "#c8b890", scale: 1 },
   hollow_bolts:       { main: "#c8c0e0", trim: "#3a3048", scale: 1 },
@@ -365,6 +406,9 @@ function drawLabLegs(c, id) {
     } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawLegs) {
       XscapeGorehornArt.drawLegs(c, "back");
       return;
+    } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawLegs) {
+      XscapeColossusArt.drawLegs(c, "back");
+      return;
     }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
@@ -493,6 +537,9 @@ function drawLabBody(c, id) {
     } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawPlate) {
       XscapeGorehornArt.drawPlate(c, "back");
       return;
+    } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
+      XscapeColossusArt.drawPlate(c, "back");
+      return;
     }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
@@ -588,6 +635,9 @@ function drawLabHead(c, id) {
       return;
     } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawHelm) {
       XscapeGorehornArt.drawHelm(c, "back");
+      return;
+    } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
+      XscapeColossusArt.drawHelm(c, "back");
       return;
     }
     if (kind === "armadyl") {
@@ -1309,6 +1359,9 @@ function drawLabItemIcon(c, id, t) {
     XscapeKnightArt.drawItemIcon(c, id, 44, 44);
     c.restore();
     return;
+  } else if ((kind === "colossus" || kind === "whip" || kind === "spear") && window.XscapeColossusArt && XscapeColossusArt.drawItemIcon && (id === "kraken_helm" || id === "coral_plate" || id === "coral_legs" || id === "tentacle_whip" || id === "trident_spear")) {
+    XscapeColossusArt.drawItemIcon(c, id, 48, 48);
+    return;
   } else if ((kind === "gorehorn" || kind === "axe") && window.XscapeGorehornArt && XscapeGorehornArt.drawItemIcon && String(id).indexOf("gorehorn_") === 0) {
     XscapeGorehornArt.drawItemIcon(c, id, 44, 44);
     c.restore();
@@ -1564,7 +1617,10 @@ function drawHeroShield(c, t, eq, facing, opt) {
 function drawHeroWeapon(c, t, eq, opt, facing) {
   const kind = weaponKind(eq && eq.weapon);
   if (!kind) return;
-  if (kind === "whip") drawHeroWhip(c, t, labStyle(eq.weapon), facing);
+  if (kind === "whip") {
+    if (eq.weapon === "tentacle_whip" && window.XscapeColossusArt && XscapeColossusArt.drawWhipHeld) XscapeColossusArt.drawWhipHeld(c, t, facing);
+    else drawHeroWhip(c, t, labStyle(eq.weapon), facing);
+  }
   else if (kind === "wand") {
     if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
       XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t, false, opt && opt.shot);
@@ -1895,6 +1951,9 @@ function drawHeroLegs(c, id, facing, stride) {
     } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawLegs) {
       XscapeGorehornArt.drawLegs(c, facing === "right" ? "right" : "front");
       return;
+    } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawLegs) {
+      XscapeColossusArt.drawLegs(c, facing === "right" ? "right" : "front");
+      return;
     }
     if (facing === "right") {
       const far = -s * 0.7, near = s * 0.7;
@@ -1981,6 +2040,9 @@ function drawHeroBody(c, id, facing) {
       } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawPlate) {
         XscapeGorehornArt.drawPlate(c, "right");
         return;
+      } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
+        XscapeColossusArt.drawPlate(c, "right");
+        return;
       }
       c.fillStyle = p.dark;
       c.beginPath();
@@ -2024,6 +2086,9 @@ function drawHeroBody(c, id, facing) {
       return;
     } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawPlate) {
       XscapeGorehornArt.drawPlate(c, "front");
+      return;
+    } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
+      XscapeColossusArt.drawPlate(c, "front");
       return;
     }
     if (kind === "armadyl") {
@@ -2242,6 +2307,9 @@ function drawHeroHead(c, id, facing) {
       } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawHelm) {
         XscapeGorehornArt.drawHelm(c, "right");
         return;
+      } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
+        XscapeColossusArt.drawHelm(c, "right");
+        return;
       }
       if (kind === "armadyl") {
         c.fillStyle = p.dark;
@@ -2335,6 +2403,9 @@ function drawHeroHead(c, id, facing) {
       return;
     } else if (kind === "gorehorn" && window.XscapeGorehornArt && XscapeGorehornArt.drawHelm) {
       XscapeGorehornArt.drawHelm(c, "front");
+      return;
+    } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
+      XscapeColossusArt.drawHelm(c, "front");
       return;
     }
     if (kind === "armadyl") {

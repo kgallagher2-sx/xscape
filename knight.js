@@ -755,7 +755,7 @@
     const help = $("btn-knight-help");
     if (help) help.classList.toggle("visible", !!on);
     if (typeof global.updateConsumableChrome === "function") updateConsumableChrome();
-    ["btn-widow-help", "btn-kree-help"].forEach(function (id) {
+    ["btn-widow-help", "btn-kree-help", "btn-gorehorn-help", "btn-colossus-help"].forEach(function (id) {
       const el = $(id);
       if (el && on) el.classList.remove("visible");
     });

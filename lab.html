@@ -181,12 +181,13 @@
 <body>
 <header>
   <h1>Xscape sprite lab</h1>
-  <div class="sub">Loads <code>sprites.js</code>, <code>lab-gear.js</code>, <code>widow-sprites.js</code>, <code>knight-sprites.js</code>, and <code>gorehorn-sprites.js</code> (same drawings the bank, equipment view, and fights use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
+  <div class="sub">Loads <code>sprites.js</code>, <code>lab-gear.js</code>, <code>widow-sprites.js</code>, <code>knight-sprites.js</code>, and <code>gorehorn-sprites.js</code>, and <code>colossus-sprites.js</code> (same drawings the bank, equipment view, and fights use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
   <nav class="jump">
     <a href="#gear">Gear</a>
     <a href="#widow">Widow Queen</a>
     <a href="#knight">Hollow Knight-King</a>
     <a href="#gorehorn">Gorehorn</a>
+    <a href="#colossus">Drowned Colossus</a>
     <a href="#sprites">Sprites</a>
   </nav>
 </header>
@@ -243,6 +244,12 @@
       <button type="button" data-preset="gorehorn">Gorehorn</button>
       <button type="button" data-preset="gorehorn_widow_mix">Gorehorn helm + Widow</button>
       <button type="button" data-preset="gorehorn_knight_mix">Gorehorn + Kingsguard</button>
+      <button type="button" data-preset="colossus">Colossus (whip)</button>
+      <button type="button" data-preset="colossus_spear">Colossus (trident)</button>
+      <button type="button" data-preset="colossus_widow_mix">Kraken helm + Widow</button>
+      <button type="button" data-preset="colossus_knight_mix">Colossus + Kingsguard</button>
+      <button type="button" data-preset="colossus_gorehorn_mix">Colossus + Gorehorn</button>
+      <button type="button" data-preset="mixed_three">All three sets</button>
       <button type="button" data-preset="gloamhold">Gloamhold</button>
     </div>
     <label class="cape-toggle"><input type="checkbox" id="show-cape" checked> Show cape (turn off to see the body)</label>
@@ -394,12 +401,28 @@
   </div>
 </section>
 
+<section class="gear-sec" id="colossus">
+  <h2>The Drowned Colossus</h2>
+  <div class="sub">Flooded-pit kraken, row-wide waves, tentacle grab, and eels. Attack-focused coral armor, a 4-tick tentacle whip, and a melee-stab trident spear. Mix presets combine the kraken helm with Widow robes, Kingsguard, Gorehorn, and a full three-set mix (kraken helm, Gorehorn plate, Kingsguard legs, tentacle whip, kite).</div>
+  <div class="preview-wrap" style="background:#061820">
+    <canvas id="colossus-boss" width="360" height="280"></canvas>
+  </div>
+  <div class="widow-fx">
+    <div class="preview-cell"><canvas id="colossus-wave" width="160" height="200"></canvas><span>Waving</span></div>
+    <div class="preview-cell"><canvas id="colossus-grab" width="160" height="200"></canvas><span>Grabbing</span></div>
+    <div class="preview-cell"><canvas id="colossus-eel" width="120" height="120"></canvas><span>Eel</span></div>
+    <div class="preview-cell"><canvas id="colossus-rock" width="120" height="120"></canvas><span>Stand rock</span></div>
+  </div>
+</section>
+
+
 <script src="partyhat-img.js?v=35-5"></script>
 <script src="whip-img.js?v=35-5"></script>
 <script src="sprites.js?v=35-5"></script>
 <script src="widow-sprites.js?v=35-5"></script>
 <script src="knight-sprites.js?v=37"></script>
 <script src="gorehorn-sprites.js?v=37"></script>
+<script src="colossus-sprites.js?v=37"></script>
 <script src="lab-gear.js?v=37"></script>
 <script>
 "use strict";
@@ -974,6 +997,33 @@ requestAnimationFrame(frame);
     const ch = document.getElementById("gorehorn-charge");
     if (ch) { const c = ch.getContext("2d"); c.clearRect(0,0,ch.width,ch.height); c.save(); c.translate(ch.width/2,ch.height/2); c.scale(4,4); Art.drawChargeGlow(c); c.restore(); }
     fit("gorehorn-rock", (c) => Art.drawRock(c));
+  }
+  paint();
+  setInterval(paint, 600);
+})();
+</script>
+
+<script>
+(function paintColossusLab(){
+  function paint(){
+    const Art = window.XscapeColossusArt;
+    if (!Art) return;
+    function fit(id, fn){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const c = el.getContext("2d");
+      c.clearRect(0,0,el.width,el.height);
+      c.save();
+      c.translate(el.width/2, el.height*0.62);
+      c.scale(3.2, 3.2);
+      fn(c);
+      c.restore();
+    }
+    fit("colossus-boss", (c) => Art.drawColossus(c, 0, {}));
+    fit("colossus-wave", (c) => Art.drawColossus(c, 0, { waving:true }));
+    fit("colossus-grab", (c) => Art.drawColossus(c, 0, { grabbing:true }));
+    fit("colossus-eel", (c) => Art.drawEel(c, 0, {}));
+    fit("colossus-rock", (c) => Art.drawStandRock(c));
   }
   paint();
   setInterval(paint, 600);

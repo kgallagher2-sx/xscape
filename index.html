@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111043124-cac33e8";</script>
+  <script>window.XSCAPE_BUILD = "20261111044139-8744280";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -319,7 +319,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-knight-tut, #overlay-knight-loot, #overlay-gorehorn-tut, #overlay-gorehorn-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-knight-tut, #overlay-knight-loot, #overlay-gorehorn-tut, #overlay-gorehorn-loot, #overlay-colossus-tut, #overlay-colossus-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -488,12 +488,12 @@
       font-family: inherit; padding: 0;
     }
     #btn-raid-help.visible { display: inline-flex; align-items: center; justify-content: center; }
-    #btn-kree-help, #btn-widow-help, #btn-knight-help, #btn-gorehorn-help {
+    #btn-kree-help, #btn-widow-help, #btn-knight-help, #btn-gorehorn-help, #btn-colossus-help {
       display: none; width: 28px; height: 28px; border-radius: 50%;
       background: #2a2430; border: 1px solid #c9a24a; color: #ffe44a;
       font-weight: 700; font-size: 16px; cursor: pointer;
     }
-    #btn-kree-help.visible, #btn-widow-help.visible, #btn-knight-help.visible, #btn-gorehorn-help.visible { display: inline-flex; align-items: center; justify-content: center; }
+    #btn-kree-help.visible, #btn-widow-help.visible, #btn-knight-help.visible, #btn-gorehorn-help.visible, #btn-colossus-help.visible { display: inline-flex; align-items: center; justify-content: center; }
     .sheet-card,
     .tut-card.brief-card,
     #overlay-tut .tut-card,
@@ -622,7 +622,7 @@
     #app.hub-world #quick-bar,
     #app.hub-world #top-hud { display: none; }
     #app.hub-world #btn-raid-help,
-    #app.hub-world #btn-kree-help, #app.hub-world #btn-widow-help, #app.hub-world #btn-knight-help, #app.hub-world #btn-gorehorn-help { display: none; }
+    #app.hub-world #btn-kree-help, #app.hub-world #btn-widow-help, #app.hub-world #btn-knight-help, #app.hub-world #btn-gorehorn-help, #app.hub-world #btn-colossus-help { display: none; }
     #app.hub-world #osrs-chat { bottom: calc(52px + var(--hud-bottom)); }
     #overlay-hub.is-world {
       background: transparent; pointer-events: none;
@@ -944,7 +944,7 @@
     #app.fight-world.hub-world #prayers,
     #app.fight-world.hub-world #top-hud { display: revert !important; }
     #app.fight-world.hub-world #btn-raid-help,
-    #app.fight-world.hub-world #btn-kree-help, #app.fight-world.hub-world #btn-widow-help, #app.fight-world.hub-world #btn-knight-help, #app.fight-world.hub-world #btn-gorehorn-help { display: revert !important; }
+    #app.fight-world.hub-world #btn-kree-help, #app.fight-world.hub-world #btn-widow-help, #app.fight-world.hub-world #btn-knight-help, #app.fight-world.hub-world #btn-gorehorn-help, #app.fight-world.hub-world #btn-colossus-help { display: revert !important; }
 
     #app.duel-world #overlay-hub,
     #app.duel-world #mid,
@@ -953,7 +953,7 @@
     #app.duel-world #top-hud { display: none; }
     #app.duel-world #prayers { display: flex; }
     #app.duel-world #btn-raid-help,
-    #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help, #app.duel-world #btn-knight-help, #app.duel-world #btn-gorehorn-help { display: none; }
+    #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help, #app.duel-world #btn-knight-help, #app.duel-world #btn-gorehorn-help, #app.duel-world #btn-colossus-help { display: none; }
     #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-stake .sheet-card,
     #overlay-stake-confirm .sheet-card,
@@ -995,7 +995,7 @@
     #btn-duel-forfeit.hidden { display: none; }
     #stake-actions .btn, #confirm-actions .btn { margin: 0 4px 0 0; }
 
-    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help, #app.duel-world #btn-knight-help, #app.duel-world #btn-gorehorn-help { display: none; }
+    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help, #app.duel-world #btn-knight-help, #app.duel-world #btn-gorehorn-help, #app.duel-world #btn-colossus-help { display: none; }
 
     @media (max-height: 750px) {
       .pray-btn { height: 82px; }
@@ -1046,6 +1046,7 @@
       <button id="btn-widow-help" type="button" aria-label="Widow Queen instructions">?</button>
       <button id="btn-knight-help" type="button" aria-label="Hollow Knight-King instructions">?</button>
       <button id="btn-gorehorn-help" type="button" aria-label="Gorehorn instructions">?</button>
+      <button id="btn-colossus-help" type="button" aria-label="Colossus instructions">?</button>
     </div>
     <div id="mid">
       <div class="bars">
@@ -1125,7 +1126,7 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. The Hollow Knight-King drops the Kingsguard tank set and 150k–400k GP. Gorehorn drops a Dharok-style bronze-and-blood set with a slow two-handed war axe and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. The Hollow Knight-King drops the Kingsguard tank set and 150k–400k GP. Gorehorn drops a Dharok-style bronze-and-blood set with a slow two-handed war axe and 150k–400k GP. The Drowned Colossus drops attack-focused coral armor, a tentacle whip, and a trident spear (melee stab) and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
@@ -1431,7 +1432,7 @@
         <button class="overlay-x" data-close="boss" type="button" aria-label="Close">×</button>
         <h2>Kael the Warden</h2>
         <div class="sheet-scroll">
-          <p class="lead">Choose a fight. Jad, Kree'arra, and the Widow Queen are solo. Gloamhold can be solo or a group.</p>
+          <p class="lead">Choose a fight. Jad, Kree'arra, the Widow Queen, the Hollow Knight-King, Gorehorn, and the Drowned Colossus are solo. Gloamhold can be solo or a group.</p>
           <div class="boss-choice">
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-jad">TzTok-Jad<span class="sub">Arcade Fight Caves · Wave 63</span></button>
@@ -1448,6 +1449,8 @@
               <button class="mode-info" type="button" id="btn-info-boss-knight" aria-label="Hollow Knight-King guide">i</button>
               <button class="btn mode-btn" type="button" id="btn-boss-gorehorn">Gorehorn, the Minotaur<span class="sub">The Stone Labyrinth</span><span class="hint">Recommended: melee or ranged</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-gorehorn" aria-label="Gorehorn guide">i</button>
+              <button class="btn mode-btn" type="button" id="btn-boss-colossus">The Drowned Colossus<span class="sub">The Flooded Pit</span><span class="hint">Recommended: melee or ranged</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-colossus" aria-label="Drowned Colossus guide">i</button>
             </div>
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-raid">Gloamhold<span class="sub">The Unsleeping · Raid</span></button>
@@ -1666,6 +1669,36 @@
       <button class="btn secondary" id="btn-gorehorn-title" type="button">Title screen</button>
     </div>
 
+    <div class="overlay hidden" id="overlay-colossus-tut">
+      <div class="tut-card brief-card sheet-card">
+        <button class="overlay-x" id="btn-colossus-tut-x" type="button" aria-label="Close">×</button>
+        <h2>The Drowned Colossus</h2>
+        <div class="tut-scroll sheet-scroll">
+        <p>In a flooded pit, the <b>Drowned Colossus</b> lashes the water into killing waves. It is a solo fight — about level 520, with 600 Hitpoints. Bring food and potions from the bank provisioner; there are no free supplies here.</p>
+        <p><b>Move and attack.</b> The pit is a 5×5 grid with raised rocks you can stand on. Tap the Colossus to set your target. Tap a floor tile to walk. Keyboard A/D/W/S or arrows also work. Melee and ranged both hit it.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Protect from Melee blocks its lashes, a wave if you miss the rock, a tentacle grab, and the eels.</p>
+        <p><b>Waves:</b> a whole row lights up with foam, then the water sweeps it (up to 30). Stand on a rock in that row (or leave the row) to stay dry.</p>
+        <p><b>Tentacle grab:</b> a tentacle pins you in place and hits you. Tap the screen to break free, or it slips after a few ticks.</p>
+        <p><b>Eels:</b> two eels slither out of the depths and bite (up to 12). You can target and kill them.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Colossus uniques (kraken helm, coral platebody, coral platelegs, a 4-tick tentacle whip, and a trident spear used as melee stab — not magic) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. The armor is attacker-focused: high accuracy, lighter defence. Uniques go to your bank. This kit is never sold.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
+        </div>
+        <div class="tut-actions sheet-actions">
+          <button class="btn" id="btn-colossus-tut-ok" type="button">GOT IT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-colossus-loot">
+      <div class="share-card" id="colossus-loot-card">
+        <div class="win-title" id="colossus-loot-title">COLOSSUS DEFEATED</div>
+        <div class="result-grid" id="colossus-loot-stats"></div>
+        <div id="colossus-loot-items"></div>
+      </div>
+      <button class="btn" id="btn-colossus-again" type="button">FIGHT AGAIN</button>
+      <button class="btn secondary" id="btn-colossus-title" type="button">Title screen</button>
+    </div>
+
     <div class="overlay hidden" id="overlay-win">
       <div class="share-card" id="share-card">
         <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
@@ -1716,6 +1749,7 @@
 <script src="widow-sprites.js"></script>
 <script src="knight-sprites.js"></script>
 <script src="gorehorn-sprites.js"></script>
+<script src="colossus-sprites.js"></script>
 <script src="lab-gear.js"></script>
 <script src="kree-sprites.js"></script>
 <script src="stats.js"></script>
@@ -1792,7 +1826,8 @@ const STORAGE = {
   kreeBrief: "kellenscape-kree-brief-seen",
   widowBrief: "kellenscape-widow-brief-seen",
   knightBrief: "kellenscape-knight-brief-seen",
-  gorehornBrief: "kellenscape-gorehorn-brief-seen"
+  gorehornBrief: "kellenscape-gorehorn-brief-seen",
+  colossusBrief: "kellenscape-colossus-brief-seen"
 };
 
 function computeScore(result) {
@@ -1954,6 +1989,12 @@ const ITEMS = {
   gorehorn_legs:      { id: "gorehorn_legs", name: "Gorehorn platelegs", slot: "legs", tier: "gorehorn", kind: "gorehorn", bonuses: b({ dstab: 62, dslash: 60, dcrush: 58, dmagic: -4, drange: 60, str: 0 }) },
   gorehorn_axe:       { id: "gorehorn_axe", name: "Gorehorn war axe", slot: "weapon", tier: "gorehorn", kind: "axe", twohand: true, speed: 7, style: "crush", bonuses: b({ astab: -4, aslash: 70, acrush: 95, str: 105 }) },
 
+  kraken_helm:        { id: "kraken_helm", name: "Kraken helm", slot: "head", tier: "colossus", kind: "colossus", bonuses: b({ astab: 8, aslash: 8, acrush: 8, dstab: 18, dslash: 20, dcrush: 18, dmagic: -1, drange: 16, str: 2 }) },
+  coral_plate:        { id: "coral_plate", name: "Coral platebody", slot: "body", tier: "colossus", kind: "colossus", bonuses: b({ astab: 12, aslash: 12, acrush: 12, dstab: 42, dslash: 40, dcrush: 38, dmagic: -4, drange: 32, str: 4 }) },
+  coral_legs:         { id: "coral_legs", name: "Coral platelegs", slot: "legs", tier: "colossus", kind: "colossus", bonuses: b({ astab: 8, aslash: 8, acrush: 8, dstab: 30, dslash: 28, dcrush: 26, dmagic: -3, drange: 22, str: 2 }) },
+  tentacle_whip:      { id: "tentacle_whip", name: "Tentacle whip", slot: "weapon", tier: "colossus", kind: "whip", twohand: false, speed: 4, style: "slash", bonuses: b({ astab: 0, aslash: 90, acrush: 0, str: 86 }) },
+  trident_spear:      { id: "trident_spear", name: "Trident spear", slot: "weapon", tier: "colossus", kind: "spear", twohand: false, speed: 5, style: "stab", bonuses: b({ astab: 85, aslash: 40, acrush: 40, str: 78 }) },
+
 
 
   /* The only blue partyhat in the game. Granted server-side; never sold or dropped. Not stakeable. */
@@ -2010,6 +2051,11 @@ const LOADOUTS = {
     weapon: "gorehorn_axe", body: "gorehorn_plate", shield: null,
     legs: "gorehorn_legs", hands: null, feet: "black_dhide_boots", ring: null
   },
+  colossus: {
+    head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "tentacle_whip", body: "coral_plate", shield: null,
+    legs: "coral_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
   gloamhold: {
     head: "black_dhide_coif", cape: "gloamheart_cape", neck: "unsleeping_stole", ammo: "hollow_bolts",
     weapon: "hollowbolt_xbow", body: "veilhide_body", shield: null,
@@ -2038,7 +2084,7 @@ function itemIsHidden(it) {
   if (it.tier === "legacy") return true;
   // Armadyl / Widow Weaver are earned from bosses and should show in the bank once owned.
   // The Shop is a fixed list, so these are never sold.
-  if (it.tier === "armadyl" || it.tier === "widow" || it.tier === "kingsguard" || it.tier === "gorehorn") return false;
+  if (it.tier === "armadyl" || it.tier === "widow" || it.tier === "kingsguard" || it.tier === "gorehorn" || it.tier === "colossus") return false;
   return !!it.hidden;
 }
 
@@ -2533,6 +2579,13 @@ const MONSTERS = {
     maxHit: { melee: 30, mage: 1, ranged: 1 },
     bonuses: b({ astab: 20, aslash: 40, acrush: 90 }),
     defBonuses: b({ dmagic: 20, drange: 60, dstab: 160, dslash: 150, dcrush: 180 })
+  },
+  "drowned-colossus": {
+    id: "drowned-colossus", name: "The Drowned Colossus",
+    combat: 520, hitpoints: 600, attack: 220, strength: 200, defence: 160, magic: 40, ranged: 20, speed: 5,
+    maxHit: { melee: 30, mage: 1, ranged: 1 },
+    bonuses: b({ astab: 40, aslash: 70, acrush: 50 }),
+    defBonuses: b({ dmagic: 40, drange: 50, dstab: 120, dslash: 110, dcrush: 130 })
   }
 };
 
@@ -3028,6 +3081,9 @@ function drawArenaTiles(t) {
       } else if (G.scene === "gorehorn") {
         ctx.fillStyle = stand ? "#4a3a28" : "#2a2418";
         ctx.strokeStyle = "#8a7a60";
+      } else if (G.scene === "colossus") {
+        ctx.fillStyle = stand ? "#245048" : "#123038";
+        ctx.strokeStyle = "#5aa8a0";
       } else {
         ctx.fillStyle = stand ? "#5a3c24" : "#3a2618";
         ctx.strokeStyle = "#c4a06a";
@@ -3114,7 +3170,7 @@ function setPlayingChrome(on) {
 }
 
 function updateConsumableChrome() {
-  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "widow" || G.scene === "knight" || G.scene === "gorehorn" || G.scene === "raid");
+  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "widow" || G.scene === "knight" || G.scene === "gorehorn" || G.scene === "colossus" || G.scene === "raid");
   const rangeBtn = $("btn-range-pot");
   const brewBtn = $("btn-brew");
   if (rangeBtn) rangeBtn.classList.toggle("hidden", !playing);
@@ -3164,6 +3220,7 @@ function gearTierClass(tier) {
   if (tier === "widow") return "widow";
   if (tier === "kingsguard") return "kingsguard";
   if (tier === "gorehorn") return "gorehorn";
+  if (tier === "colossus") return "colossus";
   if (tier === "tier2" || tier === "upgrade") return "tier2";
   if (tier === "mid") return "mid";
   if (tier === "starter" || tier === "tier1") return "tier1";
@@ -3576,7 +3633,7 @@ function updateRaidLock() {
   }
 }
 
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0, widowKills: 0, knightKills: 0, gorehornKills: 0 };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0, widowKills: 0, knightKills: 0, gorehornKills: 0, colossusKills: 0 };
 
 function loadProfile() {
   try {
@@ -3598,6 +3655,8 @@ function loadProfile() {
       if (raw.knightBestTicks != null) Profile.knightBestTicks = raw.knightBestTicks;
       Profile.gorehornKills = Number(raw.gorehornKills) || 0;
       if (raw.gorehornBestTicks != null) Profile.gorehornBestTicks = raw.gorehornBestTicks;
+      Profile.colossusKills = Number(raw.colossusKills) || 0;
+      if (raw.colossusBestTicks != null) Profile.colossusBestTicks = raw.colossusBestTicks;
       Profile.widowBestTicks = raw.widowBestTicks || null;
       Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
       Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
@@ -3627,6 +3686,7 @@ function loadProfile() {
   if (!Profile.widowKills) Profile.widowKills = Profile.widowKills || 0;
   if (!Profile.knightKills) Profile.knightKills = Profile.knightKills || 0;
   if (!Profile.gorehornKills) Profile.gorehornKills = Profile.gorehornKills || 0;
+  if (!Profile.colossusKills) Profile.colossusKills = Profile.colossusKills || 0;
   migrateLegacyStarter();
   maybeGrantLegacyFireCape();
   if (!Array.isArray(Profile.inventory)) Profile.inventory = [];
@@ -3658,6 +3718,8 @@ function saveProfile() {
       knightBestTicks: Profile.knightBestTicks || null,
       gorehornKills: Profile.gorehornKills || 0,
       gorehornBestTicks: Profile.gorehornBestTicks || null,
+      colossusKills: Profile.colossusKills || 0,
+      colossusBestTicks: Profile.colossusBestTicks || null,
       widowBestTicks: Profile.widowBestTicks || null
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
@@ -4670,6 +4732,7 @@ function applyBoltHit(target, dmg) {
   if (window.XscapeWidow && XscapeWidow.applyBoltHit && XscapeWidow.applyBoltHit(target, dmg)) return;
   if (window.XscapeKnight && XscapeKnight.applyBoltHit && XscapeKnight.applyBoltHit(target, dmg)) return;
   if (window.XscapeGorehorn && XscapeGorehorn.applyBoltHit && XscapeGorehorn.applyBoltHit(target, dmg)) return;
+  if (window.XscapeColossus && XscapeColossus.applyBoltHit && XscapeColossus.applyBoltHit(target, dmg)) return;
   if (target.kind === "jad" && G.jad && G.jad.hp > 0) {
     G.jad.hp = clamp(G.jad.hp - dmg, 0, JAD_MAX_HP);
     G.jad.hurt = 0.2;
@@ -4775,6 +4838,7 @@ function gameTick() {
   if (G.scene === "widow" && window.XscapeWidow) { window.XscapeWidow.hostTick(); return; }
   if (G.scene === "knight" && window.XscapeKnight) { window.XscapeKnight.hostTick(); return; }
   if (G.scene === "gorehorn" && window.XscapeGorehorn) { window.XscapeGorehorn.hostTick(); return; }
+  if (G.scene === "colossus" && window.XscapeColossus) { window.XscapeColossus.hostTick(); return; }
   if (G.mode !== "playing") return;
   G.ticks++;
 
@@ -5095,6 +5159,7 @@ function endLose() {
   if (G.scene === "widow" && window.XscapeWidow && XscapeWidow.lose) { XscapeWidow.lose(); return; }
   if (G.scene === "knight" && window.XscapeKnight && XscapeKnight.lose) { XscapeKnight.lose(); return; }
   if (G.scene === "gorehorn" && window.XscapeGorehorn && XscapeGorehorn.lose) { XscapeGorehorn.lose(); return; }
+  if (G.scene === "colossus" && window.XscapeColossus && XscapeColossus.lose) { XscapeColossus.lose(); return; }
   setPlayingChrome(false);
   G.mode = "lose";
   G.player.hp = 0;
@@ -6011,6 +6076,10 @@ function frame(ts) {
     window.XscapeGorehorn.hostFrame(ts, ctx, cssW, cssH, dpr);
     return;
   }
+  if (G.scene === "colossus" && window.XscapeColossus) {
+    window.XscapeColossus.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
 
   if (G.mode === "playing") {
     G.elapsedMs = ts - G.startMs;
@@ -6119,6 +6188,9 @@ window.addEventListener("keydown", (e) => {
   if (G.scene === "gorehorn" && window.XscapeGorehorn) {
     if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
   }
+  if (G.scene === "colossus" && window.XscapeColossus) {
+    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
+  }
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
   if (e.key === "3") setPrayer("melee");
@@ -6182,6 +6254,12 @@ canvas.addEventListener("pointerdown", (e) => {
     audio.unlock();
     const pt = eventToArena(e);
     window.XscapeGorehorn.clickPx(pt.x, pt.y, cssW, cssH);
+    return;
+  }
+  if (G.scene === "colossus" && window.XscapeColossus) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeColossus.clickPx(pt.x, pt.y, cssW, cssH);
     return;
   }
   if (G.mode === "intro") {
@@ -6328,7 +6406,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gorehorn-tut","overlay-gorehorn-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gorehorn-tut","overlay-gorehorn-loot","overlay-colossus-tut","overlay-colossus-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -6438,6 +6516,7 @@ function showTitle() {
   G._retryWidow = false;
   G._retryKnight = false;
   G._retryGorehorn = false;
+  G._retryColossus = false;
   if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
   // Test modes skip the sign-in screen so ?test= URLs still jump into a fight.
   if (typeof testFlag === "function" && testFlag()) {
@@ -7019,6 +7098,10 @@ function applyTestQuery() {
     window.XscapeGorehorn.startFight({ fromQuery: true, skipBrief: true, loot: test === "gorehorn-loot" });
     return;
   }
+  if ((test === "colossus" || test === "colossus-loot") && window.XscapeColossus) {
+    window.XscapeColossus.startFight({ fromQuery: true, skipBrief: true, loot: test === "colossus-loot" });
+    return;
+  }
   if (test === "intro") {
     resetFight();
     startIntro({ force: true });
@@ -7394,6 +7477,59 @@ window.markGorehornBriefSeen = markGorehornBriefSeen;
 window.closeGorehornBriefing = closeGorehornBriefing;
 window.closeGorehornLoot = closeGorehornLoot;
 
+
+function colossusBriefSeen() {
+  try { return localStorage.getItem(STORAGE.colossusBrief) === "1"; } catch (e) { return false; }
+}
+function markColossusBriefSeen() {
+  try { localStorage.setItem(STORAGE.colossusBrief, "1"); } catch (e) {}
+}
+let colossusBriefReturn = { start: false, opts: null, fromHub: false };
+function showColossusBriefing(opts) {
+  opts = opts || {};
+  colossusBriefReturn = { start: !!opts.start, opts: opts.startOpts || null, fromHub: !!opts.fromHub };
+  audio.unlock();
+  hideAllOverlays();
+  $("overlay-colossus-tut").classList.remove("hidden");
+  if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
+}
+function closeColossusBriefing(opts) {
+  const el = $("overlay-colossus-tut");
+  if (!el || el.classList.contains("hidden")) return;
+  markColossusBriefSeen();
+  el.classList.add("hidden");
+  const cancel = !!(opts && opts.cancel);
+  if (!cancel && colossusBriefReturn.start) {
+    const startOpts = Object.assign({}, colossusBriefReturn.opts || {}, { skipBrief: true });
+    colossusBriefReturn = { start: false, opts: null };
+    if (window.XscapeColossus && XscapeColossus.startFight) XscapeColossus.startFight(startOpts);
+    return;
+  }
+  colossusBriefReturn = { start: false, opts: null };
+  if (G.scene === "colossus" && G.mode === "playing") return;
+  swallowNextTaps();
+  showTitle();
+}
+function closeColossusLoot() {
+  const el = $("overlay-colossus-loot");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  swallowNextTaps();
+  showTitle();
+}
+if ($("btn-info-boss-colossus")) bindTap($("btn-info-boss-colossus"), (e) => { if (e && e.stopPropagation) e.stopPropagation(); showColossusBriefing({ fromHub: true }); });
+if ($("btn-colossus-tut-ok")) bindTap($("btn-colossus-tut-ok"), () => { audio.unlock(); closeColossusBriefing(); });
+if ($("btn-colossus-tut-x")) bindTap($("btn-colossus-tut-x"), () => { audio.unlock(); closeColossusBriefing({ cancel: true }); });
+if ($("overlay-colossus-tut")) bindBackdropClose($("overlay-colossus-tut"), () => { audio.unlock(); closeColossusBriefing({ cancel: true }); });
+if ($("btn-colossus-help")) bindTap($("btn-colossus-help"), () => { showColossusBriefing({ fromHub: false }); });
+if ($("btn-colossus-again")) bindTap($("btn-colossus-again"), () => { audio.unlock(); if (window.XscapeColossus) XscapeColossus.startFight({ skipBrief: true }); });
+if ($("btn-colossus-title")) bindTap($("btn-colossus-title"), () => { audio.unlock(); closeColossusLoot(); });
+window.showColossusBriefing = showColossusBriefing;
+window.colossusBriefSeen = colossusBriefSeen;
+window.markColossusBriefSeen = markColossusBriefSeen;
+window.closeColossusBriefing = closeColossusBriefing;
+window.closeColossusLoot = closeColossusLoot;
+
 function closeHowToPlay() {
   const el = $("overlay-tut");
   if (!el || el.classList.contains("hidden")) return;
@@ -7423,6 +7559,8 @@ function dismissTopOverlay() {
   if (overlayIsOpen("overlay-knight-loot")) { audio.unlock(); closeKnightLoot(); return true; }
   if (overlayIsOpen("overlay-gorehorn-tut")) { audio.unlock(); closeGorehornBriefing({ cancel: true }); return true; }
   if (overlayIsOpen("overlay-gorehorn-loot")) { audio.unlock(); closeGorehornLoot(); return true; }
+  if (overlayIsOpen("overlay-colossus-tut")) { audio.unlock(); closeColossusBriefing({ cancel: true }); return true; }
+  if (overlayIsOpen("overlay-colossus-loot")) { audio.unlock(); closeColossusLoot(); return true; }
   return false;
 }
 bindTap($("btn-tut-ok"), closeHowToPlay);
@@ -7434,6 +7572,7 @@ $("btn-again-win").addEventListener("click", () => {
   if ((G.scene === "widow" || G._retryWidow) && window.XscapeWidow) { XscapeWidow.startFight({ skipBrief: true }); return; }
   if ((G.scene === "knight" || G._retryKnight) && window.XscapeKnight) { XscapeKnight.startFight({ skipBrief: true }); return; }
   if ((G.scene === "gorehorn" || G._retryGorehorn) && window.XscapeGorehorn) { XscapeGorehorn.startFight({ skipBrief: true }); return; }
+  if ((G.scene === "colossus" || G._retryColossus) && window.XscapeColossus) { XscapeColossus.startFight({ skipBrief: true }); return; }
   startPlaying();
 });
 $("btn-again-lose").addEventListener("click", () => {
@@ -7442,6 +7581,7 @@ $("btn-again-lose").addEventListener("click", () => {
   if ((G.scene === "widow" || G._retryWidow) && window.XscapeWidow) { XscapeWidow.startFight({ skipBrief: true }); return; }
   if ((G.scene === "knight" || G._retryKnight) && window.XscapeKnight) { XscapeKnight.startFight({ skipBrief: true }); return; }
   if ((G.scene === "gorehorn" || G._retryGorehorn) && window.XscapeGorehorn) { XscapeGorehorn.startFight({ skipBrief: true }); return; }
+  if ((G.scene === "colossus" || G._retryColossus) && window.XscapeColossus) { XscapeColossus.startFight({ skipBrief: true }); return; }
   startPlaying();
 });
 $("btn-title-win").addEventListener("click", () => { showTitle(); });
@@ -7617,6 +7757,7 @@ window.tryEnterGloamhold = tryEnterGloamhold;
 <script src="widow.js"></script>
 <script src="knight.js"></script>
 <script src="gorehorn.js"></script>
+<script src="colossus.js"></script>
 <script src="hub.js"></script>
 <script src="duel.js"></script>
 <script>
@@ -7644,6 +7785,11 @@ if (window.XscapeGorehorn) {
   if (window.Xscape) window.Xscape.gorehorn = XscapeGorehorn;
   if (window.KellenScape) window.KellenScape.gorehorn = XscapeGorehorn;
 }
+if (window.XscapeColossus) {
+  XscapeColossus.install();
+  if (window.Xscape) window.Xscape.colossus = XscapeColossus;
+  if (window.KellenScape) window.KellenScape.colossus = XscapeColossus;
+}
 if (window.XscapeHub) {
   XscapeHub.install();
   if (window.Xscape) window.Xscape.hub = XscapeHub;
@@ -7662,6 +7808,7 @@ if ($("btn-kree-help")) $("top-hud").appendChild($("btn-kree-help"));
 if ($("btn-widow-help")) $("top-hud").appendChild($("btn-widow-help"));
 if ($("btn-knight-help")) $("top-hud").appendChild($("btn-knight-help"));
 if ($("btn-gorehorn-help")) $("top-hud").appendChild($("btn-gorehorn-help"));
+if ($("btn-colossus-help")) $("top-hud").appendChild($("btn-colossus-help"));
 resize();
 showTitle();
 refreshTitleBest();

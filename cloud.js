@@ -129,6 +129,7 @@
       (p.widowKills || 0) > 0 ||
       (p.knightKills || 0) > 0 ||
       (p.gorehornKills || 0) > 0 ||
+      (p.colossusKills || 0) > 0 ||
       (p.raidCompletions || 0) > 0 || (p.jadKills || 0) > 0 || p.seenFirstKill));
   }
 
@@ -137,7 +138,8 @@
     return !!(p && (p.migratedAt || (p.gp || 0) > 0 || p.hasFireCape ||
       (p.jadKills || 0) > 0 || (p.kreeKills || 0) > 0 || (p.widowKills || 0) > 0 ||
       (p.knightKills || 0) > 0 ||
-      (p.gorehornKills || 0) > 0 || (p.raidCompletions || 0) > 0));
+      (p.gorehornKills || 0) > 0 ||
+      (p.colossusKills || 0) > 0 || (p.raidCompletions || 0) > 0));
   }
 
   function markLocalMigrated() {
@@ -249,6 +251,7 @@
       widowKills: P.widowKills || Number(raw.widowKills) || 0,
       knightKills: P.knightKills || Number(raw.knightKills) || 0,
       gorehornKills: P.gorehornKills || Number(raw.gorehornKills) || 0,
+      colossusKills: P.colossusKills || Number(raw.colossusKills) || 0,
       widowBestTicks: P.widowBestTicks || raw.widowBestTicks || null,
       jadKills: P.jadKills || Number(raw.jadKills) || js.kills || 0,
       jadBestTicks: P.jadBestTicks || raw.jadBestTicks || js.bestTicks,
@@ -311,6 +314,8 @@
     if (p.knightBestTicks != null) P.knightBestTicks = p.knightBestTicks;
     if (typeof p.gorehornKills === "number") P.gorehornKills = p.gorehornKills;
     if (p.gorehornBestTicks != null) P.gorehornBestTicks = p.gorehornBestTicks;
+    if (typeof p.colossusKills === "number") P.colossusKills = p.colossusKills;
+    if (p.colossusBestTicks != null) P.colossusBestTicks = p.colossusBestTicks;
     if (p.widowBestTicks != null) P.widowBestTicks = p.widowBestTicks;
     if (typeof p.jadKills === "number") P.jadKills = p.jadKills;
     if (p.jadBestTicks != null) P.jadBestTicks = p.jadBestTicks;
