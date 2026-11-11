@@ -104,14 +104,14 @@ function stabAnimAt(shotT, attackTicks) {
     const t = ph.u * 1.25; // ticks since hit
     z.guard = 1;
     z.snap = t < 0.45 ? 1 : 0;
-    if (t < 0.28) {
-      const u = _animSmooth(t / 0.28);
+    if (t < 0.12) {
+      const u = _animSmooth(t / 0.12);
       z.thrust = -0.75 + 1.75 * u; // -0.75 → 1
       z.pull = 0.75 * (1 - u);
-    } else if (t < 0.55) {
+    } else if (t < 0.50) {
       z.thrust = 1;
     } else {
-      const u = _animSmooth((t - 0.55) / 0.70);
+      const u = _animSmooth((t - 0.50) / 0.75);
       z.thrust = 1 - u;
       z.guard = 1 - u * 0.85;
     }
@@ -169,18 +169,18 @@ function whipAnimAt(shotT, attackTicks) {
   } else if (ph.phase === "after") {
     const t = ph.u * 1.15;
     z.snap = t < 0.4 ? 1 : 0;
-    if (t < 0.22) {
-      const u = _animSmooth(t / 0.22);
+    if (t < 0.12) {
+      const u = _animSmooth(t / 0.12);
       z.pull = 1 - u;
       z.lunge = 0.12 + 0.88 * u;
       z.lash = u;
       z.lean = -0.15 + 0.85 * u;
-    } else if (t < 0.40) {
+    } else if (t < 0.38) {
       z.lunge = 1;
       z.lash = 1;
       z.lean = 0.7;
     } else {
-      const u = _animSmooth((t - 0.40) / 0.75);
+      const u = _animSmooth((t - 0.38) / 0.77);
       z.lunge = 1 - u;
       z.lash = 1 - u;
       z.lean = 0.7 * (1 - u);

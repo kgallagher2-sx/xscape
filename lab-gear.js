@@ -1699,9 +1699,14 @@ function heroHands(facing, opt) {
     const lash = shot.lash || 0;
     const guard = shot.guard || 0;
     // Weapon hand: pull back on windup, extend toward the target on the strike.
-    const ext = (kind === "whip") ? (lash * 8.5 - pull * 5) : (thrust * 11);
+    // As the strike extends, slide the hand inward onto the body center line so
+    // the poke / lash travels straight at the target instead of off the right shoulder.
+    const reach = Math.max(0, Math.min(1, (kind === "whip") ? lash : thrust));
+    const ext = (kind === "whip") ? (lash * 9.0 - pull * 5) : (thrust * 11);
+    const inward = reach * reach;
+    right.x *= (1 - inward * 0.92);
     right.x += fwd.x * ext;
-    right.y += fwd.y * ext - (kind === "whip" ? 2 * lash : 1.5 * Math.abs(thrust));
+    right.y += fwd.y * ext;
     // Shield / off-hand stays up in the left hand during a sword stab.
     if (kind === "sword") {
       left.y -= 5.5 * guard;
@@ -1822,32 +1827,31 @@ function drawProfilePart(c, facing, fn) {
 }
 
 function drawHeroWhip(c, t, st, facing, hand, shot) {
-  const sway = Math.sin((t || 0) * 3.2) * 0.08;
   const lash = (shot && shot.lash) || 0;
   const pull = (shot && shot.pull) || 0;
+  const reach = Math.max(0, Math.min(1, lash));
+  // Kill idle sway once the lash starts so the tip stays on the aim line.
+  const sway = (reach > 0.05) ? 0 : Math.sin((t || 0) * 3.2) * 0.08;
   c.save();
   if (hand) c.translate(hand.x, hand.y);
   else if (facing === "front") c.translate(-12.4, -9.6);
   else if (facing === "right") c.translate(7.6, -9.8);
   else if (facing === "left") c.translate(1.6, -9.8);
   else c.translate(11.6, -12.4);
-  if (facing === "front") {
-    // Character's right hand = screen-left. Mirror the hang so the lash falls
-    // outward (further left), not across the torso.
-    c.scale(-1, 1);
-    c.rotate(0.35 + sway - 0.85 * lash + 0.2 * pull);
-  } else if (facing === "right") {
-    c.rotate(0.95 + sway - 1.05 * lash + 0.25 * pull);
-  } else if (facing === "left") {
-    // Mirror the right-facing hang so the lash drops down and forward
-    // (screen-left) now that the far hand sits on the body center line.
-    c.scale(-1, 1);
-    c.rotate(0.95 + sway - 1.05 * lash + 0.25 * pull);
-  } else {
-    c.rotate(0.35 + sway - 0.85 * lash + 0.2 * pull);
-  }
-  if (lash > 0) c.scale(1, 1 + 0.48 * lash);
-  if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: (st && st.scale) || 1 });
+  // Rest hangs beside the hip; at full lash the tip is aimed along facingForward.
+  // Aim angles were fitted so the tip sits on the target line (whip-art curve compensated).
+  let flip = false, restRot, aimRot;
+  if (facing === "front") { flip = true; restRot = 0.35; aimRot = 0.377; }
+  else if (facing === "right") { restRot = 0.95; aimRot = -1.194; }
+  else if (facing === "left") { flip = true; restRot = 0.95; aimRot = -1.194; }
+  else { restRot = 0.35; aimRot = -2.765 + Math.PI * 2; } // back: swing up through the right, end straight up
+  restRot += 0.25 * pull;
+  const mix = reach >= 0.45 ? 1 : Math.pow(Math.max(0, reach) / 0.45, 0.7);
+  const rot = restRot * (1 - mix) + aimRot * mix + sway;
+  if (flip) c.scale(-1, 1);
+  c.rotate(rot);
+  if (reach > 0) c.scale(1, 1 + 0.55 * reach);
+  if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: (st && st.scale) || 1, walk: false });
   else {
     c.strokeStyle = (st && st.main) || "#1a0c10";
     c.lineWidth = 2.4;

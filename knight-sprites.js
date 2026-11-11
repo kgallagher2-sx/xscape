@@ -301,13 +301,18 @@
     const thrust = (shot && shot.thrust) || 0;
     const pull = (shot && shot.pull) || 0;
     // Rest: blade up-forward. Pull: more vertical / cocked back.
-    // Thrust: flatten toward the target so the stab reads clearly.
-    let ang;
-    if (facing === "front") ang = -0.55 - 0.50 * Math.max(0, thrust) + 0.22 * pull;
-    else if (facing === "back") ang = 0.55 + 0.50 * Math.max(0, thrust) - 0.22 * pull;
-    else if (facing === "left") ang = -0.55 - 0.62 * Math.max(0, thrust) + 0.28 * pull;
-    else ang = 0.55 + 0.62 * Math.max(0, thrust) - 0.28 * pull;
-    c.rotate(ang);
+    // Thrust: aim the point straight along facingForward (back = up the
+    // screen on the center line, sides = horizontally forward, front = down
+    // toward the camera) so the stab does not veer off the right shoulder.
+    const rest = (facing === "front" || facing === "left") ? -0.55 : 0.55;
+    const aim = (facing === "front") ? -Math.PI
+      : (facing === "back") ? 0
+      : (facing === "left") ? -Math.PI / 2
+      : Math.PI / 2;
+    const reach = Math.max(0, Math.min(1, thrust));
+    const cocked = rest * (1 - 0.4 * pull);
+    const mix = reach <= 0 ? 0 : Math.min(1, Math.pow(reach, 0.3) * 1.15);
+    c.rotate(cocked + (aim - cocked) * mix);
     // Local drawing has the grip around y=8; put that at the hand.
     c.translate(0, -8);
     c.fillStyle = pal.steelLt;
