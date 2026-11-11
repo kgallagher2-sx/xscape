@@ -742,7 +742,7 @@
       showBoothCtx(hold.col, hold.px, hold.py);
     } else if (hold.kind === "npc") {
       state.hold = null;
-      examineNpc(hold.npc);
+      showCtx(hold.npc, hold.px, hold.py);
     } else if (hold.kind === "player") {
       state.hold = null;
       showPlayerCtx(hold.player, hold.px, hold.py);
@@ -1128,7 +1128,6 @@
     var tagY = y - spriteScale(lay) * 40;
     var bubble = bubbleFor(speakerId);
     if (bubble) drawOverhead(ctx, x, tagY, bubble);
-    else drawNameTag(ctx, x, tagY, name);
   }
 
   function robeNpc(ctx, x, y, lay, opt) {
@@ -1229,7 +1228,6 @@
     var look = npcLook(npc);
     if (look.crate) drawCrate(ctx, p.x, p.y, spriteScale(lay));
     robeNpc(ctx, p.x, p.y, lay, look);
-    drawNameTag(ctx, p.x, p.y - spriteScale(lay) * 42, npc.title || npc.name);
   }
 
   /* Front-view NPC chathead (head + shoulders) for the OSRS dialogue box. */
@@ -1302,6 +1300,24 @@
     if (el) el.classList.add("hidden");
   }
 
+  function placeCtxMenu(el, px, py) {
+    if (!el) return;
+    el.classList.remove("hidden");
+    var app = $("app");
+    var W = (app && app.clientWidth) || (state.layout && state.layout.cssW) || 390;
+    var H = (app && app.clientHeight) || (state.layout && state.layout.cssH) || 844;
+    var w = el.offsetWidth || 180;
+    var h = el.offsetHeight || 160;
+    var x = (px != null ? Number(px) : 0) + 10;
+    var y = (py != null ? Number(py) : 0) - 8;
+    if (x + w > W - 8) x = W - w - 8;
+    if (y + h > H - 8) y = H - h - 8;
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    el.style.left = Math.round(x) + "px";
+    el.style.top = Math.round(y) + "px";
+  }
+
   function playerAt(col, row) {
     var others = othersInBank() || [];
     for (var i = 0; i < others.length; i++) {
@@ -1324,13 +1340,9 @@
       (canInvite ? '<button type="button" data-act="invite">Invite to party</button>' : "") +
       '<button type="button" data-act="examine">Examine</button>' +
       '<button type="button" data-act="cancel">Cancel</button>';
-    el.classList.remove("hidden");
     var lay = state.layout || layout(cssWSafe(), cssHSafe());
     var pos = tilePx(p.col, p.row, lay);
-    var x = Math.max(8, Math.min((lay.cssW || 390) - 180, (px != null ? px : pos.x) + 10));
-    var y = Math.max(8, Math.min((lay.cssH || 700) - 140, (py != null ? py : pos.y) - 20));
-    el.style.left = x + "px";
-    el.style.top = y + "px";
+    placeCtxMenu(el, px != null ? px : pos.x, py != null ? py : pos.y);
     el.querySelectorAll("[data-act]").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.preventDefault();
@@ -1359,13 +1371,9 @@
     el.innerHTML = '<div class="ctx-title">' + escapeHtml(npc.name) + "</div>" +
       '<button type="button" data-act="talk">Talk-to</button>' +
       '<button type="button" data-act="examine">Examine</button>';
-    el.classList.remove("hidden");
     var lay = state.layout || layout(cssWSafe(), cssHSafe());
     var p = tilePx(npc.col, npc.row, lay);
-    var x = Math.max(8, Math.min((lay.cssW || 390) - 180, p.x + 10));
-    var y = Math.max(8, Math.min((lay.cssH || 700) - 140, p.y - 20));
-    el.style.left = x + "px";
-    el.style.top = y + "px";
+    placeCtxMenu(el, px != null ? px : p.x, py != null ? py : p.y);
     el.querySelectorAll("[data-act]").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.preventDefault();

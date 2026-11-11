@@ -1186,13 +1186,7 @@
   }
 
   function drawBar(ctx, x, y, name, hp, maxHp, pray, maxPray, prayer, isMe) {
-    ctx.font = "bold 12px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#000";
-    ctx.fillStyle = isMe ? "#ffff00" : "#ffe9a0";
-    ctx.strokeText(name || "Adventurer", x, y - 16);
-    ctx.fillText(name || "Adventurer", x, y - 16);
     var w = 86, h = 8;
     ctx.fillStyle = "#2a1408";
     ctx.fillRect(x - w / 2, y - 10, w, h);

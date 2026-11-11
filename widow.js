@@ -219,7 +219,6 @@
       if (typeof global.spawnSplat === "function") spawnSplat(p.x, p.y - 0.1, 0, "blue");
       G.perfectPrayers++;
       if (audio && audio.block) audio.block();
-      if (typeof global.flashMsg === "function") flashMsg("PROTECTED", "#7ad8ff");
       return;
     }
     const vs = (typeof global.monsterVsPlayer === "function")
@@ -629,7 +628,6 @@
         m.alive = false;
         m.hurt = 0.2;
         if (typeof global.spawnSplat === "function") spawnSplat(m.x, m.y - 0.04, dmg, "red");
-        if (typeof global.flashMsg === "function") flashMsg("Shattered!", "#e8d8c0");
         G.target = "widow";
       } else if (typeof global.spawnSplat === "function") {
         spawnSplat(m.x, m.y - 0.04, 0, "blue");
@@ -912,7 +910,6 @@
       const dx = (nx - m.x) * cssW, dy = (ny - m.y) * cssH;
       if (dx * dx + dy * dy <= (22 * sc) * (22 * sc)) {
         G.target = { kind: "baby", index: i };
-        if (typeof global.flashMsg === "function") flashMsg("Attacking a baby spider", "#7dff7d");
         hit = true;
         break;
       }
@@ -925,7 +922,6 @@
         const dx = (nx - m.x) * cssW, dy = (ny - m.y) * cssH;
         if (dx * dx + dy * dy <= (24 * sc) * (24 * sc)) {
           G.target = { kind: "skel", index: i };
-          if (typeof global.flashMsg === "function") flashMsg("Attacking a skeleton", "#e8d8c0");
           hit = true;
           break;
         }
@@ -936,7 +932,6 @@
       const rx = 70 * sc, ry = 78 * sc;
       if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
         G.target = "widow";
-        if (typeof global.flashMsg === "function") flashMsg("Attacking the Widow Queen", "#ffe44a");
         hit = true;
       }
     }

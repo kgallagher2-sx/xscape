@@ -2562,7 +2562,7 @@
     if (st.mode !== "playing") return;
     if (!inBounds(col, row)) return;
     const add = st.adds.find(function (a) { return a.hp > 0 && a.col === col && a.row === row; });
-    if (add) { st.target = { kind: "add", id: add.id }; flash(st, "Attacking a shade", "#ff9a4a"); return; }
+    if (add) { st.target = { kind: "add", id: add.id }; return; }
     st.player.path = pathTo(st, col, row);
     sendRaidInput(st, { destCol: col, destRow: row, target: st.target });
   }
@@ -2852,18 +2852,6 @@
     } else if (pray) {
       ctx.fillStyle = pray === "mage" ? "#5ac0ff" : pray === "range" ? "#e8d44a" : "#ff7050";
       ctx.beginPath(); ctx.arc(0, -58, 6, 0, Math.PI * 2); ctx.fill();
-    }
-    if (p.username) {
-      ctx.save();
-      ctx.font = "bold 9px Trebuchet MS, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "rgba(0,0,0,0.75)";
-      ctx.fillStyle = isSelf ? "#ffe44a" : "#e8d0a0";
-      ctx.strokeText(p.username, 0, 6);
-      ctx.fillText(p.username, 0, 6);
-      ctx.restore();
     }
     ctx.restore();
   }

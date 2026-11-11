@@ -349,20 +349,17 @@
         if (!m || !m.alive || m.fleeing || m.done) return;
         addNorm(m.x, m.y, m.col, m.row, 22 * sc, function () {
           G.target = { kind: "baby", index: i };
-          flash("Attacking a baby spider", "#7dff7d");
         }, "widow-baby");
       });
       (G.widowSkels || []).forEach(function (m, i) {
         if (!m || !m.alive) return;
         addNorm(m.x, m.y, m.col, m.row, 24 * sc, function () {
           G.target = { kind: "skel", index: i };
-          flash("Attacking a skeleton", "#e8d8c0");
         }, "widow-skel");
       });
       if (G.widow && G.widow.hp > 0) {
         addNorm(G.widow.x, G.widow.y, 2, 3, Math.max(70, 78) * sc, function () {
           G.target = "widow";
-          flash("Attacking the Widow Queen", "#ffe44a");
         }, "widow");
       }
     } else if (G.scene === "kree") {
@@ -371,13 +368,11 @@
         if (!m || !m.alive) return;
         addNorm(m.x, m.y, m.col, m.row, 26 * ksc, function () {
           G.target = i;
-          flash("Attacking " + (m.name || "a minion"), "#7dff7d");
         }, "kree-minion");
       });
       if (G.kree && G.kree.hp > 0) {
         addNorm(G.kree.x, G.kree.y, null, null, Math.max(64, 80) * ksc, function () {
           G.target = "kree";
-          flash("Attacking Vaelkor the Stormwing", "#ffe44a");
         }, "kree");
       }
     } else if (G.scene === "knight") {
@@ -386,7 +381,6 @@
         var pos = (typeof global.tileCenter === "function") ? global.tileCenter(add.c, add.r) : { x: add.x, y: add.y };
         addNorm(pos.x, pos.y, add.c, add.r, 28, function () {
           G.target = i;
-          flash("Attacking a knight", "#e8d8c0");
         }, "knight-add");
       });
       if (G.knight && G.knight.hp > 0) {
@@ -394,7 +388,6 @@
         var ksc2 = scaleOr((global.L && global.L.sJ) ? global.L.sJ * 1.05 : 0, 1);
         addNorm(kc.x, kc.y, 2, 3, 80 * ksc2, function () {
           G.target = "knight";
-          flash("Attacking the Hollow Knight-King", "#ffe44a");
         }, "knight");
       }
     } else if (G.scene === "gorehorn") {
@@ -404,14 +397,12 @@
         var gp = (typeof global.tileCenter === "function") ? global.tileCenter(add.c, add.r) : { x: add.x, y: add.y };
         addNorm(gp.x, gp.y, add.c, add.r, 28 * gsc, function () {
           G.target = i;
-          flash("Attacking a construct", "#e8d8c0");
         }, "gorehorn-add");
       });
       if (G.gorehorn && G.gorehorn.hp > 0) {
         var bc = (typeof global.tileCenter === "function") ? global.tileCenter(2, 3) : { x: 0.5, y: 0.36 };
         addNorm(bc.x, bc.y, 2, 3, 80 * gsc, function () {
           G.target = "gorehorn";
-          flash("Attacking Gorehorn", "#ffe44a");
         }, "gorehorn");
       }
     } else if (G.scene === "colossus") {
@@ -421,14 +412,12 @@
         var ep = (typeof global.tileCenter === "function") ? global.tileCenter(eel.c, eel.r) : { x: eel.x, y: eel.y };
         addNorm(ep.x, ep.y, eel.c, eel.r, 28 * csc, function () {
           G.target = i;
-          flash("Attacking an eel", "#d0f0e0");
         }, "colossus-eel");
       });
       if (G.colossus && G.colossus.hp > 0) {
         var cc = (typeof global.tileCenter === "function") ? global.tileCenter(2, 3) : { x: 0.5, y: 0.36 };
         addNorm(cc.x, cc.y, 2, 3, 80 * csc, function () {
           G.target = "colossus";
-          flash("Attacking the Drowned Colossus", "#ffe44a");
         }, "colossus");
       }
     } else if (G.scene === "raid") {
@@ -448,7 +437,6 @@
               } else {
                 st.target = { kind: "add", id: a.id };
               }
-              flash("Attacking a shade", "#ff9a4a");
             }
           });
         });
@@ -463,7 +451,6 @@
             label: "raid-boss",
             select: function () {
               st.target = { kind: "boss" };
-              flash("Attacking " + ((st.boss && (st.boss.name || st.boss.kind)) || "the boss"), "#ffe44a");
             }
           });
         }
@@ -476,14 +463,12 @@
         addNorm(h.x, h.y, null, null, 22 * sH, function () {
           G.target = i;
           h.aggro = true;
-          flash("Pulling healer", "#7dff7d");
           if (global.audio && global.audio.healer) global.audio.healer();
         }, "healer");
       });
       if (G.jad && G.jad.hp > 0) {
         addNorm(G.jad.x, G.jad.y, null, null, Math.max(58, 80) * sJ, function () {
           G.target = "jad";
-          flash("Attacking Magmor", "#ffe44a");
         }, "jad");
       }
     }

@@ -656,7 +656,6 @@
       const dx = (nx - pos.x) * cssW, dy = (ny - pos.y) * cssH;
       if (dx * dx + dy * dy <= (28 * sc) * (28 * sc)) {
         G.target = i;
-        if (typeof global.flashMsg === "function") flashBanner("Attacking a construct", "#e8d8c0");
         hit = true;
         break;
       }
@@ -667,7 +666,6 @@
       const rx = 64 * sc, ry = 80 * sc;
       if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
         G.target = "gorehorn";
-        if (typeof global.flashMsg === "function") flashBanner("Attacking Gorehorn", "#ffe44a");
         hit = true;
       }
     }

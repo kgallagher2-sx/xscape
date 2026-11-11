@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111175948-09a476e";</script>
+  <script>window.XSCAPE_BUILD = "20261111185105-8d56f00";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -998,6 +998,61 @@
       background: #2a1810; color: #f0e0b0; font: 700 12px/1 "Trebuchet MS", sans-serif; cursor: pointer;
     }
     #gear-facing button.on { background: #5a3a10; border-color: #ffcf3a; color: #ffe44a; }
+    /* Compact equipment: worn + full 28-slot inventory must fit on phone portrait without scrolling. */
+    #overlay-gear .gear-card { padding: 8px 10px 8px; }
+    #overlay-gear .gear-card h2 { font-size: 22px; margin: 0 0 4px; }
+    #overlay-gear .gear-scroll { overflow-y: auto; }
+    #overlay-gear .gear-top {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 8px;
+      align-items: start; margin: 0 0 4px;
+    }
+    #overlay-gear .gear-char { margin: 0; gap: 4px; }
+    #overlay-gear #gear-char { width: clamp(72px, 22vw, 108px); max-width: 108px; }
+    #overlay-gear #gear-facing { max-width: none; gap: 3px; }
+    #overlay-gear #gear-facing button { min-height: 24px; border-radius: 5px; font-size: 10px; padding: 0 2px; }
+    #overlay-gear .gear-worn-col .gear-sec { margin: 0 0 3px; font-size: 11px; }
+    #overlay-gear #gear-worn {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: 0;
+    }
+    #overlay-gear #gear-worn .slot-btn {
+      padding: 2px 4px; gap: 4px; font-size: 10px;
+      grid-template-columns: 32px 22px minmax(0, 1fr) auto;
+    }
+    #overlay-gear #gear-worn .slot-btn .k { font-size: 9px; }
+    #overlay-gear #gear-worn .slot-btn .tier { font-size: 8px; margin-top: 0; }
+    #overlay-gear #gear-worn .slot-btn .act { font-size: 8px; }
+    #overlay-gear #gear-worn .slot-btn canvas.osrs-slot-icon { width: 22px; height: 22px; flex: 0 0 22px; }
+    #overlay-gear #gear-bonuses { margin: 2px 0 4px; font-size: 10px; gap: 2px 8px; }
+    #overlay-gear .gear-sec { margin: 4px 0 3px; font-size: 11px; }
+    #overlay-gear #gear-inventory.osrs-grid { gap: 3px; }
+    #overlay-gear #gear-inventory .osrs-slot { min-height: 38px; padding: 2px; }
+    #overlay-gear #gear-inventory .osrs-slot canvas.osrs-slot-icon { width: 28px; height: 28px; }
+    #overlay-gear .gear-foot { font-size: 9px; margin-top: 4px; line-height: 1.25; }
+    #overlay-gear .gear-actions { margin-top: 6px; padding-top: 6px; }
+    #overlay-gear .gear-card {
+      max-height: calc(var(--app-height) - 16px);
+    }
+    @media (max-height: 720px) {
+      #overlay-gear .gear-card { padding: 6px 8px 6px; }
+      #overlay-gear .gear-card h2 { font-size: 18px; margin: 0 0 2px; }
+      #overlay-gear #gear-char { width: clamp(64px, 18vw, 88px); max-width: 88px; }
+      #overlay-gear #gear-facing button { min-height: 20px; font-size: 9px; }
+      #overlay-gear #gear-worn { gap: 2px; }
+      #overlay-gear #gear-worn .slot-btn {
+        padding: 1px 3px; gap: 3px; font-size: 9px;
+        grid-template-columns: 28px 18px minmax(0, 1fr) auto;
+      }
+      #overlay-gear #gear-worn .slot-btn .k { font-size: 8px; }
+      #overlay-gear #gear-worn .slot-btn .tier { font-size: 7px; }
+      #overlay-gear #gear-worn .slot-btn .act { font-size: 7px; }
+      #overlay-gear #gear-worn .slot-btn canvas.osrs-slot-icon { width: 18px; height: 18px; flex: 0 0 18px; }
+      #overlay-gear #gear-bonuses { margin: 1px 0 2px; font-size: 9px; gap: 1px 6px; }
+      #overlay-gear #gear-inventory.osrs-grid { gap: 2px; }
+      #overlay-gear #gear-inventory .osrs-slot { min-height: 26px; padding: 1px; }
+      #overlay-gear #gear-inventory .osrs-slot canvas.osrs-slot-icon { width: 20px; height: 20px; }
+      #overlay-gear .gear-foot { font-size: 8px; margin-top: 2px; line-height: 1.2; }
+      #overlay-gear .gear-actions { margin-top: 4px; padding-top: 4px; }
+    }
     .boss-row { display: flex; gap: 8px; align-items: stretch; width: 100%; }
     .boss-row .btn { flex: 1; margin: 0; }
     #boss-raid-step { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
@@ -1292,6 +1347,7 @@
         <button class="overlay-x" id="btn-gear-x" type="button" aria-label="Close">×</button>
         <h2>Equipment</h2>
         <div class="sheet-scroll gear-scroll" id="gear-scroll">
+        <div class="gear-top">
         <div class="gear-char">
           <canvas id="gear-char" width="182" height="284" aria-label="View character"></canvas>
           <div id="gear-facing">
@@ -1301,9 +1357,12 @@
             <button type="button" data-facing="right">Right</button>
           </div>
         </div>
-        <div id="gear-bonuses"></div>
+        <div class="gear-worn-col">
         <div class="gear-sec">Worn</div>
         <div id="gear-worn"></div>
+        </div>
+        </div>
+        <div id="gear-bonuses"></div>
         <div class="gear-sec">Inventory</div>
         <div id="gear-inventory" class="osrs-grid"></div>
         <div class="gear-foot">Tap an inventory item to wear it. Tap a worn item to unequip it into your inventory. Your bank is only at a bank booth or banker — it is not listed here. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
@@ -2710,7 +2769,6 @@ function resolveTileAttack(h) {
   const c = tileCenter(h.col, h.row);
   if (!onTile) {
     if (typeof h.onMiss === "function") h.onMiss(h);
-    flashMsg("Dodged!", "#7dff7d");
     burst(c.x * cssW, c.y * cssH, "#ffaa44", 8);
     return;
   }
@@ -4648,7 +4706,6 @@ function applyJadHit(protectedOk, style) {
     spawnSplat(G.player.x, G.player.y - 0.1, 0, "blue");
     G.perfectPrayers++;
     audio.block();
-    flashMsg("PROTECTED", "#7ad8ff");
   } else {
     const dmg = rollJadDamage(style);
     G.player.hp = clamp(G.player.hp - dmg, 0, PLAYER_MAX_HP);
@@ -5051,6 +5108,8 @@ function placeFloatBanner() {
 }
 
 function flashMsg(text, color) {
+  if ((typeof itemInspectHold !== "undefined" && itemInspectHold) ||
+      (typeof itemInspectConsumed === "function" && itemInspectConsumed())) return;
   floatText = text; floatColor = color || "#ffe44a"; floatT = 0.9;
   const el = $("float-msg");
   el.textContent = text;
@@ -5481,10 +5540,6 @@ function drawHealers(t) {
     ctx.fillRect(-12, 16, 24, 4);
     ctx.fillStyle = "#40c040";
     ctx.fillRect(-12, 16, 24 * clamp(h.hp / HEALER_HP, 0, 1), 4);
-    ctx.fillStyle = "#f0e0a0";
-    ctx.font = "bold 8px Trebuchet MS, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(h.aggro ? "pulled" : "healer", 0, 28);
     ctx.restore();
   }
 }
@@ -6314,7 +6369,6 @@ canvas.addEventListener("pointerdown", (e) => {
     if (dx * dx + dy * dy <= r * r) {
       G.target = i;
       h.aggro = true;
-      flashMsg("Pulling healer", "#7dff7d");
       audio.healer();
       hitNpc = true;
       break;
@@ -6325,7 +6379,6 @@ canvas.addEventListener("pointerdown", (e) => {
     const rx = 58 * L.sJ, ry = 80 * L.sJ;
     if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
       G.target = "jad";
-      flashMsg("Attacking Magmor", "#ffe44a");
       hitNpc = true;
     }
   }
@@ -7910,6 +7963,7 @@ const ITEM_INSPECT_SKIP = "#overlay-trade, #overlay-trade-history, #overlay-stak
 let itemInspectOpen = false;
 let itemInspectLockUntil = 0;
 let itemInspectGesture = false;
+let itemInspectHold = false;
 
 function itemInspectConsumed() {
   return !!(itemInspectOpen || itemInspectGesture || Date.now() < itemInspectLockUntil);
@@ -8051,8 +8105,12 @@ function showItemInspect(id, anchor) {
   el.classList.add("open");
   itemInspectOpen = true;
   itemInspectGesture = true;
+  itemInspectHold = false;
   itemInspectLockUntil = Date.now() + 500;
   placeItemInspect(anchor);
+  const fm = $("float-msg");
+  if (fm) { fm.textContent = ""; fm.style.opacity = "0"; }
+  if (typeof floatT !== "undefined") floatT = 0;
   return true;
 }
 
@@ -8060,7 +8118,10 @@ function bindItemInspect(root) {
   if (!root || root._iconExamine) return;
   root._iconExamine = true;
   let timer = null, startX = 0, startY = 0, fired = false, target = null;
-  function clearTimer() { if (timer) { clearTimeout(timer); timer = null; } }
+  function clearTimer(keepHold) {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (!keepHold && !fired && !itemInspectOpen) itemInspectHold = false;
+  }
   function skip(el) {
     return !!(el && el.closest && el.closest(ITEM_INSPECT_SKIP));
   }
@@ -8078,11 +8139,13 @@ function bindItemInspect(root) {
     const id = inspectItemIdFromEl(el);
     if (!id) return;
     fired = false; target = el; itemInspectGesture = false;
+    itemInspectHold = true;
     startX = e.clientX; startY = e.clientY;
-    clearTimer();
+    clearTimer(true);
     timer = setTimeout(function () {
       timer = null;
       if (showItemInspect(id, el)) fired = true;
+      else itemInspectHold = false;
     }, ITEM_INSPECT_HOLD_MS);
   }, true);
   root.addEventListener("pointermove", function (e) {
@@ -8141,6 +8204,9 @@ window.installItemInspect = installItemInspect;
 window.gearTierLabel = gearTierLabel;
 </script>
 <script src="item-icons.js"></script>
+<script>
+if (window.XscapeIcons) XscapeIcons.bindExamine = function () {};
+</script>
 <script src="supplies.js"></script>
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>

@@ -196,7 +196,6 @@
       if (typeof global.spawnSplat === "function") spawnSplat(p.x, p.y - 0.1, 0, "blue");
       G.perfectPrayers++;
       if (audio && audio.block) audio.block();
-      if (typeof global.flashMsg === "function") flashMsg("PROTECTED", "#7ad8ff");
       return;
     }
     const monId = "kree-arra";
@@ -229,7 +228,6 @@
     p.tileCol = dest;
     p.destCol = null;
     if (typeof global.syncPlayerWorldPos === "function") syncPlayerWorldPos(true);
-    if (typeof global.flashMsg === "function") flashMsg("Knocked back!", "#ffc070");
   }
 
   function maybeTornado() {
@@ -410,7 +408,6 @@
       if (m.hp <= 0) {
         m.alive = false;
         m.hp = 0;
-        if (typeof global.flashMsg === "function") flashMsg(m.name + " down", "#7dff7d");
         G.target = "kree";
       }
       return true;
@@ -655,7 +652,6 @@
         const r = 26 * sc;
         if (dx * dx + dy * dy <= r * r) {
           G.target = i;
-          if (typeof global.flashMsg === "function") flashMsg("Attacking " + m.name, "#7dff7d");
           hit = true;
           break;
         }
@@ -666,7 +662,6 @@
       const rx = 64 * sc, ry = 80 * sc;
       if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
         G.target = "kree";
-        if (typeof global.flashMsg === "function") flashMsg("Attacking Vaelkor the Stormwing", "#ffe44a");
         hit = true;
       }
     }
