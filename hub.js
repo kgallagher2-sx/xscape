@@ -54,7 +54,7 @@
       examine: "The Warden of this bank. He can send you to a fight when you are ready.",
       talk: [
         { name: "Kael the Warden", text: "Welcome to the West Bank, adventurer. I am Kael the Warden." },
-        { name: "Kael the Warden", text: "When you are ready, I can send you to TzTok-Jad, to Kree'arra, or into Gloamhold." }
+        { name: "Kael the Warden", text: "When you are ready, I can send you to Magmor, the Molten Titan, to Vaelkor the Stormwing, or into Gloamhold." }
       ],
       after: "boss"
     },
@@ -68,7 +68,7 @@
     { id: "oswin", name: "Oswin the Provisioner", title: "Oswin", kind: "supplier", col: 8, row: 5, facing: "left",
       examine: "He sells food and potions for adventurers who must bring their own supplies.",
       talk: [
-        { name: "Oswin the Provisioner", text: "Jad feeds you for free. Everyone else pays. I've fish, crabs, and potions — fair prices." },
+        { name: "Oswin the Provisioner", text: "Magmor feeds you for free. Everyone else pays. I've fish, crabs, and potions — fair prices." },
         { name: "Oswin the Provisioner", text: "Watch your pack, though. Twenty-eight slots, and a full bag means no sale." }
       ],
       after: "supplies"
@@ -1967,8 +1967,8 @@
       raidBtn.disabled = locked;
     }
     if (note) {
-      if (guest) note.textContent = "Guests can fight TzTok-Jad in starter gear. Sign in to unlock Kree'arra, the Widow Queen, the Hollow Knight-King, Gorehorn, the Drowned Colossus, and Gloamhold.";
-      else if (reason === "no-cape") note.textContent = "Requires a Fire cape — defeat TzTok-Jad.";
+      if (guest) note.textContent = "Guests can fight Magmor, the Molten Titan in starter gear. Sign in to unlock Vaelkor the Stormwing, the Widow Queen, the Hollow Knight-King, Gorehorn, the Drowned Colossus, and Gloamhold.";
+      else if (reason === "no-cape") note.textContent = "Requires a Fire cape — defeat Magmor, the Molten Titan.";
       else if (reason === "not-equipped") note.textContent = "Equip your Fire cape to enter Gloamhold.";
       else note.textContent = "Solo, or form a group with friends in the bank.";
     }
@@ -2017,7 +2017,7 @@
   function chooseGloamhold() {
     var reason = typeof gloamholdLockReason === "function" ? gloamholdLockReason() : "ok";
     if (reason === "no-cape") {
-      if (typeof flashMsg === "function") flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+      if (typeof flashMsg === "function") flashMsg("Requires a Fire cape — defeat Magmor, the Molten Titan", "#ff8a70");
       return;
     }
     if (reason === "not-equipped") {

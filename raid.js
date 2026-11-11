@@ -1980,7 +1980,7 @@
         if (r && r.hp != null) p.hp = r.hp;
       }
       st.brewCd = CONSUME_CD; sfx(st, "sip");
-      flash(st, "Saradomin brew", "#e8e0b0");
+      flash(st, "Gloam brew", "#e8e0b0");
       return true;
     }
     if (fam === "ranging_potion") {
@@ -2772,7 +2772,7 @@
       b.disabled = reason === "no-cape";
       b.setAttribute("aria-disabled", reason === "no-cape" ? "true" : "false");
       if (reason === "no-cape") {
-        b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>';
+        b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat Magmor, the Molten Titan</span>';
       } else if (reason === "not-equipped") {
         b.innerHTML = 'Gloamhold<span class="coming">Equip your Fire cape to enter</span>';
       } else {
@@ -2808,7 +2808,7 @@
             return;
           }
           if (reason !== "ok") {
-            if (typeof global.flashMsg === "function") global.flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+            if (typeof global.flashMsg === "function") global.flashMsg("Requires a Fire cape — defeat Magmor, the Molten Titan", "#ff8a70");
             return;
           }
           if (typeof global.enterScene === "function" && global.Scenes && global.Scenes.raid) {
@@ -3347,7 +3347,7 @@
           if (typeof global.flashMsg === "function") global.flashMsg("Equip your Fire cape to enter", "#ffd84a");
           if (typeof global.openEquipmentView === "function") global.openEquipmentView();
         } else if (typeof global.flashMsg === "function") {
-          global.flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+          global.flashMsg("Requires a Fire cape — defeat Magmor, the Molten Titan", "#ff8a70");
         }
         return;
       }

@@ -699,7 +699,7 @@
     var dev = isDevLogin();
     box.innerHTML =
       '<p class="tagline" id="cloud-auth-tag" style="margin:0 0 2px">Sign in to play</p>' +
-      '<p id="cloud-auth-note">Guests can fight TzTok-Jad in starter gear. Sign in to save your adventurer and unlock everything else.</p>' +
+      '<p id="cloud-auth-note">Guests can fight Magmor, the Molten Titan in starter gear. Sign in to save your adventurer and unlock everything else.</p>' +
       providerButton("google", "Google") +
       providerButton("discord", "Discord") +
       providerButton("github", "GitHub") +
@@ -784,8 +784,8 @@
         : "Sign in to play";
       if (note2) {
         note2.textContent = legacy
-          ? "Sign in so this phone's save follows you. Continue as guest keeps everything you already have — you will not be limited to Jad."
-          : "Guests can fight TzTok-Jad in starter gear. Sign in to save your adventurer and unlock the Shop, better gear, Kree'arra, Gloamhold, and the lobby.";
+          ? "Sign in so this phone's save follows you. Continue as guest keeps everything you already have — you will not be limited to Magmor."
+          : "Guests can fight Magmor, the Molten Titan in starter gear. Sign in to save your adventurer and unlock the Shop, better gear, Vaelkor the Stormwing, Gloamhold, and the lobby.";
         note2.style.display = "";
       }
     }
@@ -861,7 +861,7 @@
     wrap.innerHTML = '<div class="card">' +
       '<button type="button" class="overlay-x" id="cloud-prompt-x" aria-label="Close">×</button>' +
       '<h2 id="cloud-prompt-title">Sign in to save your progress</h2>' +
-      '<p id="cloud-prompt-body">Guests can fight TzTok-Jad in starter gear. Sign in to unlock the Shop, better gear, Kree\'arra, Gloamhold, and the online lobby. Your guest Fire cape and kills carry over.</p>' +
+      '<p id="cloud-prompt-body">Guests can fight Magmor, the Molten Titan in starter gear. Sign in to unlock the Shop, better gear, Vaelkor the Stormwing, Gloamhold, and the online lobby. Your guest Fire cape and kills carry over.</p>' +
       '<div class="cloud-btns" id="cloud-prompt-btns"></div>' +
       '<button type="button" class="cloud-link" id="cloud-prompt-close">Not now</button>' +
       "</div>";
@@ -910,7 +910,7 @@
   }
 
   function defaultGuestBody() {
-    return "Guests can fight TzTok-Jad in starter kit only. Sign in with Google, Discord, or GitHub to unlock the Shop, better gear, Kree'arra, Gloamhold, and the online lobby. Your Fire cape and Jad kills stay on this character.";
+    return "Guests can fight Magmor, the Molten Titan in starter kit only. Sign in with Google, Discord, or GitHub to unlock the Shop, better gear, Vaelkor the Stormwing, Gloamhold, and the online lobby. Your Fire cape and Magmor kills stay on this character.";
   }
 
   function hideSignInPrompt() {
@@ -1009,7 +1009,7 @@
       } else if (session && isPermanentUser()) {
         who.innerHTML = 'Signed in<span class="sub">Pick a name to save</span>';
       } else if (guest || offlineGuest) {
-        who.innerHTML = 'Guest<span class="sub">Starter gear · Jad only</span>';
+        who.innerHTML = 'Guest<span class="sub">Starter gear · Magmor only</span>';
       } else if (localName) {
         who.textContent = localName;
       } else {
@@ -1075,8 +1075,8 @@
   function areaLabel(scene) {
     if (scene === "arena") return "Duel Arena";
     if (scene === "duel") return "Dueling";
-    if (scene === "jad") return "Jad";
-    if (scene === "kree") return "Kree'arra";
+    if (scene === "jad") return "Magmor";
+    if (scene === "kree") return "Vaelkor the Stormwing";
     if (scene === "raid") return "Gloamhold";
     if (scene === "bank") return "Bank";
     return "Online";
@@ -1241,7 +1241,7 @@
     board.innerHTML = rows.map(function (r, i) {
       var you = uid && r.id === uid ? " (you)" : "";
       return '<div class="cloud-row"><span>' + (i + 1) + ". " + escapeHtml(r.username) + you +
-        "</span><span>Jad " + (r.jad_kills || 0) + " kc · " + fmtTicks(r.jad_best_ticks) + "</span></div>";
+        "</span><span>Magmor " + (r.jad_kills || 0) + " kc · " + fmtTicks(r.jad_best_ticks) + "</span></div>";
     }).join("");
   }
 
@@ -1915,7 +1915,7 @@
     if (typeof global.tryEnterGloamhold === "function" && !global.tryEnterGloamhold._cloud) {
       var rawRaid = global.tryEnterGloamhold;
       global.tryEnterGloamhold = function () {
-        if (requireSignIn("Sign in to enter Gloamhold. Guests can only fight TzTok-Jad in starter gear.")) return false;
+        if (requireSignIn("Sign in to enter Gloamhold. Guests can only fight Magmor, the Molten Titan in starter gear.")) return false;
         return rawRaid.apply(this, arguments);
       };
       global.tryEnterGloamhold._cloud = true;
@@ -1925,8 +1925,8 @@
       global.enterScene = function (id) {
         if ((id === "kree" || id === "raid") && requireSignIn(
           id === "kree"
-            ? "Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear."
-            : "Sign in to enter Gloamhold. Guests can only fight TzTok-Jad in starter gear."
+            ? "Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear."
+            : "Sign in to enter Gloamhold. Guests can only fight Magmor, the Molten Titan in starter gear."
         )) return;
         return rawEnter.apply(this, arguments);
       };
@@ -1963,7 +1963,7 @@
           setTimeout(function () {
             showSignInPrompt({
               title: "Fire cape obtained!",
-              body: "Your Fire cape and Jad kill are saved on this guest character. Sign in (or link Google, Discord, or GitHub) to wear the cape, spend GP, and unlock Kree'arra, Gloamhold, and the lobby."
+              body: "Your Fire cape and Magmor kill are saved on this guest character. Sign in (or link Google, Discord, or GitHub) to wear the cape, spend GP, and unlock Vaelkor the Stormwing, Gloamhold, and the lobby."
             });
           }, 600);
         }
@@ -1981,7 +1981,7 @@
     if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
       var rawTry = api.tryEnter;
       api.tryEnter = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return false;
+        if (!isTestMode() && requireSignIn("Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.")) return false;
         return rawTry.apply(this, arguments);
       };
       api.tryEnter._cloud = true;
@@ -1989,7 +1989,7 @@
     if (typeof api.startFight === "function" && !api.startFight._cloud) {
       var rawStart = api.startFight;
       api.startFight = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return;
+        if (!isTestMode() && requireSignIn("Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.")) return;
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
@@ -2002,7 +2002,7 @@
     if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
       var rawTry = api.tryEnter;
       api.tryEnter = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return false;
+        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.")) return false;
         return rawTry.apply(this, arguments);
       };
       api.tryEnter._cloud = true;
@@ -2010,7 +2010,7 @@
     if (typeof api.startFight === "function" && !api.startFight._cloud) {
       var rawStart = api.startFight;
       api.startFight = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return;
+        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.")) return;
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
@@ -2259,7 +2259,7 @@
     if (page === "raid" && isRestrictedGuest()) {
       showSignInPrompt({
         title: "Sign in to save your progress",
-        body: "Gloamhold is for signed-in adventurers. Guests can only fight TzTok-Jad."
+        body: "Gloamhold is for signed-in adventurers. Guests can only fight Magmor, the Molten Titan."
       });
     }
     if (typeof global.supabase === "undefined" || typeof global.supabase.createClient !== "function") {

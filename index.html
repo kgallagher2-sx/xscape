@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111083818-e243b2a";</script>
+  <script>window.XSCAPE_BUILD = "20261111083912-8790ce2";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1043,7 +1043,7 @@
         <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
       </div>
       <button id="btn-raid-help" type="button" aria-label="Gloamhold instructions">?</button>
-      <button id="btn-kree-help" type="button" aria-label="Kree'arra instructions">?</button>
+      <button id="btn-kree-help" type="button" aria-label="Vaelkor the Stormwing instructions">?</button>
       <button id="btn-widow-help" type="button" aria-label="Widow Queen instructions">?</button>
       <button id="btn-knight-help" type="button" aria-label="Hollow Knight-King instructions">?</button>
       <button id="btn-gorehorn-help" type="button" aria-label="Gorehorn instructions">?</button>
@@ -1127,24 +1127,24 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. The Hollow Knight-King drops the Kingsguard tank set and 150k–400k GP. Gorehorn drops a Dharok-style bronze-and-blood set with a slow two-handed war axe and 150k–400k GP. The Drowned Colossus drops attack-focused coral armor, a tentacle whip, and a trident spear (melee stab) and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Magmor kill grants a Fire cape (no GP). Later Magmor kills pay 2–3M GP. Vaelkor the Stormwing drops Stormwing gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. The Hollow Knight-King drops the Kingsguard tank set and 150k–400k GP. Gorehorn drops a blood-tempered bronze set with a slow two-handed war axe, hitting harder as your Hitpoints fall, and 150k–400k GP. The Drowned Colossus drops attack-focused coral armor, a tentacle whip, and a trident spear (melee stab) and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
         <div class="mode-row">
           <button class="btn mode-btn" id="btn-mode-jad" type="button">
-            TzTok-Jad
-            <span class="sub">Arcade Fight Caves · Wave 63</span>
+            Magmor, the Molten Titan
+            <span class="sub">the Molten Caves</span>
           </button>
-          <button class="mode-info" id="btn-info-jad" type="button" aria-label="TzTok-Jad guide">i</button>
+          <button class="mode-info" id="btn-info-jad" type="button" aria-label="Magmor, the Molten Titan guide">i</button>
         </div>
         <div class="mode-row">
           <button class="btn mode-btn" id="btn-mode-kree" type="button">
-            Kree'arra
-            <span class="sub">Armadyl's Eyrie · God Wars</span>
+            Vaelkor the Stormwing
+            <span class="sub">the Stormwing Eyrie · the Sky Citadel</span>
             <span class="hint">Recommended: Tier 2 gear</span>
           </button>
-          <button class="mode-info" id="btn-info-kree" type="button" aria-label="Kree'arra guide">i</button>
+          <button class="mode-info" id="btn-info-kree" type="button" aria-label="Vaelkor the Stormwing guide">i</button>
         </div>
         <div class="mode-row">
           <button class="btn mode-btn" id="btn-mode-widow" type="button">
@@ -1157,7 +1157,7 @@
         <div class="mode-row">
           <button class="btn mode-btn locked" id="btn-mode-raid" type="button" disabled aria-disabled="true">
             Gloamhold
-            <span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>
+            <span class="coming">Requires a Fire cape — defeat Magmor, the Molten Titan</span>
           </button>
           <button class="mode-info" id="btn-info-raid" type="button" aria-label="Gloamhold guide">i</button>
         </div>
@@ -1177,14 +1177,14 @@
     <div class="overlay hidden" id="overlay-tut">
       <div class="tut-card sheet-card">
         <button class="overlay-x" id="btn-tut-x" type="button" aria-label="Close">×</button>
-        <h2>Watch Jad</h2>
+        <h2>Watch Magmor</h2>
         <div class="sheet-scroll" id="tut-scroll">
-        <p>Watch Jad's <b>body</b> — and listen. Switch your protection prayer <b>before</b> he hits.</p>
+        <p>Watch Magmor's <b>body</b> — and listen. Switch your protection prayer <b>before</b> he hits.</p>
         <p><b>Magic:</b> he rears up on his hind legs and lifts his arms. You'll hear a whooshy, fiery wind-up. Protect from Magic.</p>
         <p><b>Missiles:</b> he slams down and stomps the ground. You'll hear a heavy low thud. Protect from Missiles.</p>
         <p><b>Melee:</b> he lunges forward with his claws. Protect from Melee.</p>
-        <p>Your crossbow fires on its own. At half health, healers appear — <b>tap them</b> to pull them off Jad.</p>
-        <p>You can <b>tap a floor tile</b> to step left or right (or use A/D on a keyboard). A yellow X marks your destination. Later bosses will throw fireballs onto your square — walk off before they land. Jad does not use those attacks.</p>
+        <p>Your crossbow fires on its own. At half health, healers appear — <b>tap them</b> to pull them off Magmor.</p>
+        <p>You can <b>tap a floor tile</b> to step left or right (or use A/D on a keyboard). A yellow X marks your destination. Later bosses will throw fireballs onto your square — walk off before they land. Magmor does not use those attacks.</p>
         <p>Eat sharks (heal 20) and sip prayer potions if you slip — each one lands on the next tick and delays your next shot, so eat back up above 70 after a hit. Prayer switching is free.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">Keys 1 / 2 / 3 · F food · P potion</p>
         </div>
@@ -1200,13 +1200,13 @@
         <button class="overlay-x" id="btn-help-x" type="button" aria-label="Close">×</button>
         <h2>How to play</h2>
         <div class="sheet-scroll" id="help-scroll">
-        <p>Xscape is a portrait, tick-based fight game in the style of Old School RuneScape. Each fight has its own <b>i</b> button with a full guide — this page covers the shared controls.</p>
+        <p>Xscape is a portrait, tick-based fight game in the style of a classic tick-based bossing game. Each fight has its own <b>i</b> button with a full guide — this page covers the shared controls.</p>
         <p><b>Move:</b> tap a floor tile to walk (one tile per tick, two if Run is on). A yellow X marks your destination. Keyboard A/D or arrow keys also work.</p>
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the on-screen buttons. Listen for the tell.</p>
         <p><b>Magic (1)</b> · <b>Missiles (2)</b> · <b>Melee (3)</b></p>
         <p><b>Supplies:</b> sharks heal 20 (F). Prayer pots restore 31 prayer (P). Range pots boost your ranged for a while (R). Each bite or sip delays your next shot. On-screen buttons work too.</p>
         <p>The title screen is now the <b>West Bank</b>. Tap tiles to walk, talk to a banker to use your bank, Veldan for the Shop, and <b>Kael the Warden</b> to start a fight. Wear gear from your inventory. Nothing real is ever charged.</p>
-        <p>Your account is shown as a chip on the title screen — it reads your adventurer name, or <b>Guest</b>. Use <b>Sign out</b> there if you want to switch accounts. Guests can fight TzTok-Jad in starter gear; sign in to unlock the rest and keep your progress.</p>
+        <p>Your account is shown as a chip on the title screen — it reads your adventurer name, or <b>Guest</b>. Use <b>Sign out</b> there if you want to switch accounts. Guests can fight Magmor, the Molten Titan in starter gear; sign in to unlock the rest and keep your progress.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         <button type="button" id="help-build" class="build-tag" aria-label="Check for update">v</button>
         </div>
@@ -1250,7 +1250,7 @@
         <div id="shop-gp" class="gp-line">GP: <span id="shop-gp-amt" class="gp-amt gp-yellow">0</span></div>
         <div class="sheet-scroll" id="shop-scroll">
           <div id="shop-list"></div>
-          <div class="shop-foot">First Jad kill grants a Fire cape and no GP. Later Jad kills pay 2–3M pretend GP. Gloamhold payouts are unchanged. Nothing real is ever charged.</div>
+          <div class="shop-foot">First Magmor kill grants a Fire cape and no GP. Later Magmor kills pay 2–3M pretend GP. Gloamhold payouts are unchanged. Nothing real is ever charged.</div>
         </div>
         <div class="sheet-actions">
           <button class="btn" id="btn-shop-close" type="button">CLOSE</button>
@@ -1273,7 +1273,7 @@
         </div>
         <div class="sheet-scroll" id="supply-shop-scroll">
           <div id="supply-shop-list"></div>
-          <div class="shop-foot">Food and potions for Kree'arra, Gloamhold, and any fight that is not TzTok-Jad. Jad still issues free supplies. Nothing real is ever charged.</div>
+          <div class="shop-foot">Food and potions for Vaelkor the Stormwing, Gloamhold, and any fight that is not Magmor, the Molten Titan. Magmor still issues free supplies. Nothing real is ever charged.</div>
         </div>
         <div class="sheet-actions">
           <button class="btn" id="btn-supply-shop-close" type="button">CLOSE</button>
@@ -1433,15 +1433,15 @@
         <button class="overlay-x" data-close="boss" type="button" aria-label="Close">×</button>
         <h2>Kael the Warden</h2>
         <div class="sheet-scroll">
-          <p class="lead">Choose a fight. Jad, Kree'arra, the Widow Queen, the Hollow Knight-King, Gorehorn, and the Drowned Colossus are solo. Gloamhold can be solo or a group.</p>
+          <p class="lead">Choose a fight. Magmor, Vaelkor the Stormwing, the Widow Queen, the Hollow Knight-King, Gorehorn, and the Drowned Colossus are solo. Gloamhold can be solo or a group.</p>
           <div class="boss-choice">
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-jad">TzTok-Jad<span class="sub">Arcade Fight Caves · Wave 63</span></button>
-              <button class="mode-info" type="button" id="btn-info-boss-jad" aria-label="TzTok-Jad guide">i</button>
+              <button class="btn mode-btn" type="button" id="btn-boss-jad">Magmor, the Molten Titan<span class="sub">the Molten Caves</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-jad" aria-label="Magmor, the Molten Titan guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-kree">Kree'arra<span class="sub">Armadyl's Eyrie · God Wars</span><span class="hint">Recommended: Tier 2 gear</span></button>
-              <button class="mode-info" type="button" id="btn-info-boss-kree" aria-label="Kree'arra guide">i</button>
+              <button class="btn mode-btn" type="button" id="btn-boss-kree">Vaelkor the Stormwing<span class="sub">the Stormwing Eyrie · the Sky Citadel</span><span class="hint">Recommended: Tier 2 gear</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-kree" aria-label="Vaelkor the Stormwing guide">i</button>
             </div>
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span><span class="hint">Recommended: magic gear</span></button>
@@ -1547,18 +1547,18 @@
     <div class="overlay hidden" id="overlay-kree-tut">
       <div class="tut-card brief-card sheet-card">
         <button class="overlay-x" id="btn-kree-tut-x" type="button" aria-label="Close">×</button>
-        <h2>Kree'arra</h2>
+        <h2>Vaelkor the Stormwing</h2>
         <div class="tut-scroll sheet-scroll">
-        <p>High in <b>Armadyl's Eyrie</b>, the aviansie general <b>Kree'arra</b> guards the Armadyl God Wars. Entry is open to any adventurer. <b>Tier 2 gear is recommended</b> — starter kit can get a kill, but it is slow and a missed prayer is deadly.</p>
-        <p><b>He flies.</b> Only ranged or magic can hit him. Your crossbow is fine. Tap Kree'arra or a bodyguard to set your target (a red X). Tap a floor tile to move (yellow X). Keyboard A/D or arrows also work.</p>
+        <p>High in <b>the Stormwing Eyrie</b>, the stormwing general <b>Vaelkor the Stormwing</b> guards the Sky Citadel. Entry is open to any adventurer. <b>Tier 2 gear is recommended</b> — starter kit can get a kill, but it is slow and a missed prayer is deadly.</p>
+        <p><b>He flies.</b> Only ranged or magic can hit him. Your crossbow is fine. Tap Vaelkor the Stormwing or a bodyguard to set your target (a red X). Tap a floor tile to move (yellow X). Keyboard A/D or arrows also work.</p>
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Listen for the tell.</p>
         <p><b>Missiles (2):</b> feathers and a tearing wind. This is his main attack and hits very hard (up to 71). Protect from Missiles blocks it.</p>
         <p><b>Magic (1):</b> a blue wind blast that <b>punches through Protect from Missiles</b>. You must flick to Protect from Magic or you will take it.</p>
         <p><b>Melee (3):</b> if you stand close (the middle tiles) he may dive, hit you, and <b>knock you back one tile</b>. Protect from Melee.</p>
         <p><b>Tornadoes:</b> he marks your tile with a swirling gale. Walk off before it lands — prayer will not save you from this one.</p>
-        <p><b>Bodyguards:</b> Wingman Skree (Magic), Flockleader Geerin (Missiles), and Flight Kilisa (Melee). They have little HP. Killing them first makes the fight cleaner; you can ignore them and go straight for Kree'arra if you prefer.</p>
+        <p><b>Bodyguards:</b> Rask (Magic), Veyra (Missiles), and Korrin (Melee). They have little HP. Killing them first makes the fight cleaner; you can ignore them and go straight for Vaelkor the Stormwing if you prefer.</p>
         <p><b>Supplies:</b> bring food and potions from the bank provisioner — there are no free supplies here. Use the quick slots (pencil to edit). Each bite or sip delays your next shot. F / P / R, or the on-screen buttons.</p>
-        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. Armadyl helmet, chestplate, chainskirt, and the Armadyl crossbow are a <b>1/6</b> unique roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. Stormwing helm, chestplate, chainskirt, and the Stormwing crossbow are a <b>1/6</b> unique roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
         <div class="tut-actions sheet-actions">
@@ -1570,7 +1570,7 @@
     <div class="overlay hidden" id="overlay-kree-loot">
       <div class="share-card" id="kree-loot-card">
         <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
-        <div class="win-title" id="kree-loot-title">KREE'ARRA DEFEATED</div>
+        <div class="win-title" id="kree-loot-title">VAELKOR THE STORMWING DEFEATED</div>
         <div class="result-grid" id="kree-loot-stats"></div>
         <div class="share-hint">Screenshot this card and share your drop</div>
       </div>
@@ -1587,7 +1587,7 @@
         <p><b>Move and attack.</b> The cave is a 5×5 grid. Tap the Queen, a baby spider, or a skeleton to set your target (a red X). Tap a floor tile to walk (yellow X). Keyboard A/D/W/S or arrows also work. Magic and ranged both hit her. The Widow Weaver wand and spellbook are built for this fight.</p>
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Listen for the tell.</p>
         <p><b>Melee:</b> when you stand next to her, her front legs lunge (up to 30). Protect from Melee blocks it.</p>
-        <p><b>Magic:</b> from range she spits a venom bolt (up to 28). Protect from Magic blocks the hit. About 1 in 4 successful hits poisons you (starts at 6, then ticks down the usual way). Prayer does not block the poison itself — sip an antipoison or wait it out.</p>
+        <p><b>Magic:</b> from range she spits a venom bolt (up to 28). Protect from Magic blocks the hit. About 1 in 4 successful hits poisons you (starts at 6, then ticks down the usual way). Prayer does not block the poison itself — sip an Antipoison or wait it out. Antipoison also grants 90 seconds of immunity.</p>
         <p><b>Web shot:</b> about every 20 ticks she fires a web into the ceiling. A shadow marks the landing tile 3 ticks ahead — walk off it. If you are still there when it lands, you are stuck for 4 ticks (you can still eat and pray, but you cannot move or attack). Then 4–6 baby spiders drop and each bite hits 0–8 through prayer.</p>
         <p><b>Below 50%:</b> webs come a little faster (every 16 ticks). Every two or three specials she raises the dead: 2 skeletons of eaten victims crawl in from the far side, walk slowly, and shatter in one hit — a 5-tick weapon has time to shoot both before they arrive, but if one reaches you it hits up to 25 through prayer.</p>
         <p><b>Below 20%:</b> she enrages and drops two webs at once.</p>
@@ -1655,7 +1655,7 @@
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Protect from Melee blocks his horn and his charge if you are still on the line.</p>
         <p><b>Charge:</b> a whole column lights up, then he thunders down it (up to 30). Step sideways off the marks to dodge. If the charge misses you, he slams into the far wall, is stunned for several ticks, and takes 50% more damage.</p>
         <p><b>Stomp:</b> he slams the floor and 4 tiles are marked. Rocks fall after 3 ticks (up to 25). Walk off the marks. Protect from Melee also blocks a rock that lands on you.</p>
-        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The four Gorehorn uniques (horned helm, platebody, platelegs, and a massive two-handed war axe) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. The axe is slow (7 ticks) with a huge max hit. Wearing the full set makes your melee damage rise as your Hitpoints fall, like Dharok's. Uniques go to your bank. This kit is never sold.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The four Gorehorn uniques (horned helm, platebody, platelegs, and a massive two-handed war axe) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. The axe is slow (7 ticks) with a huge max hit. Wearing the full set makes your melee damage rise as your Hitpoints fall. Uniques go to your bank. This kit is never sold.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
         <div class="tut-actions sheet-actions">
@@ -1763,14 +1763,14 @@
 <script>
 
 /* ============================================================
-   Xscape — TzTok-Jad arcade fight
+   Xscape — Magmor, the Molten Titan arcade fight
    TUNING KNOBS (easy to tweak)
    ============================================================ */
 const TICK_MS = 600;
 let PLAYER_MAX_HP = 99;
 let PLAYER_MAX_PRAYER = 99;
 const JAD_MAX_HP = 360;
-const JAD_MAX_HIT = 97;          // OSRS TzTok-Jad max hit
+const JAD_MAX_HIT = 97;          // OSRS Magmor, the Molten Titan max hit
 const JAD_ACCURACY = 0.92;       // chance an unprotected attack deals damage
 const JAD_HIT_BIAS = 3;          // take the max of this many uniform 0..97 rolls (bias toward 40+ hits)
 const HEALER_MAX_HIT = 14;       // pulled healers melee the player for small hits
@@ -1787,7 +1787,7 @@ const RANGE_POT_COUNT = 1;
 const SHARK_ATTACK_DELAY_TICKS = 3; // eating delays the next crossbow shot
 const POT_ATTACK_DELAY_TICKS = 0;   // OSRS: potions and brews do not delay the attack timer
 const CONSUME_COOLDOWN_TICKS = 3;   // one eat / one sip per 3 ticks (separate timers)
-const JAD_ATTACK_SPEED_TICKS = 8;   // OSRS TzTok-Jad attack speed
+const JAD_ATTACK_SPEED_TICKS = 8;   // OSRS Magmor, the Molten Titan attack speed
 const HEALER_COUNT = 4;
 const HEALER_HP = 32;
 const HEALER_HEAL = 5;
@@ -1939,7 +1939,7 @@ function b(partial) { return Object.assign(emptyBonuses(), partial); }
   Item table. Tiers:
     1 starter  — green d'hide + rune crossbow + mithril bolts (always owned)
     2          — black d'hide + rune bolts + amulet of glory (Shop, pretend GP)
-    armadyl    — Kree'arra drop only; never sold in the Shop
+    armadyl    — Vaelkor the Stormwing drop only; never sold in the Shop
     widow      — Widow Queen drop only; never sold in the Shop
     unique     — Gloamhold vault uniques (tier 4)
   Attack/defence bonuses follow public OSRS figures. Mithril bolt ranged
@@ -1972,11 +1972,11 @@ const ITEMS = {
   snakeskin_boots:    { id: "snakeskin_boots", name: "Snakeskin boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
   archers_ring:       { id: "archers_ring", name: "Archers ring", slot: "ring", tier: "tier2", bonuses: b({ arange: 8 }) },
 
-  /* Kree'arra drop only — never listed in the Shop. */
-  armadyl_helmet:     { id: "armadyl_helmet", name: "Armadyl helmet", slot: "head", tier: "armadyl", bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
-  armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
-  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
-  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
+  /* Vaelkor the Stormwing drop only — never listed in the Shop. */
+  armadyl_helmet:     { id: "armadyl_helmet", name: "Stormwing helm", slot: "head", tier: "armadyl", bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
+  armadyl_chestplate: { id: "armadyl_chestplate", name: "Stormwing chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
+  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Stormwing chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
+  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Stormwing crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
 
   /* Widow Queen drop only — never listed in the Shop. Not unique:true (that flag blocks trading). */
   widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow", bonuses: b({ amagic: 10, mdmg: 2, dmagic: 10 }) },
@@ -2497,14 +2497,14 @@ function equipLoadout(name) {
 }
 
 /* ---------- Monsters ----------
-   Jad defence is arcade-tuned (OSRS TzTok-Jad is defence 480 with 0 style
+   Jad defence is arcade-tuned (OSRS Magmor, the Molten Titan is defence 480 with 0 style
    bonuses, which would make a bronze crossbow nearly useless). Attack levels
    and the 97 max hit follow public OSRS figures so an un-prayed hit is still
    deadly. Healer numbers keep the existing arcade feel. */
 const MONSTERS = {
   "tztok-jad": {
     id: "tztok-jad",
-    name: "TzTok-Jad",
+    name: "Magmor, the Molten Titan",
     hitpoints: 360,
     attack: 750,
     strength: 240,
@@ -2519,7 +2519,7 @@ const MONSTERS = {
   },
   healer: {
     id: "healer",
-    name: "Yt-HurKot",
+    name: "Emberling",
     hitpoints: 32,
     attack: 190,
     strength: 70,
@@ -2533,7 +2533,7 @@ const MONSTERS = {
   },
   "kree-arra": {
     id: "kree-arra",
-    name: "Kree'arra",
+    name: "Vaelkor the Stormwing",
     hitpoints: 255,
     attack: 300,
     strength: 200,
@@ -2548,19 +2548,19 @@ const MONSTERS = {
     attackSpeed: 5
   },
   "wingman-skree": {
-    id: "wingman-skree", name: "Wingman Skree",
+    id: "wingman-skree", name: "Rask",
     hitpoints: 28, attack: 80, strength: 50, defence: 40, magic: 120, ranged: 20,
     flying: true, bonuses: b({ amagic: 30 }), defBonuses: b({ drange: 10 }),
     maxHit: { mage: 8 }, attackSpeed: 7
   },
   "flockleader-geerin": {
-    id: "flockleader-geerin", name: "Flockleader Geerin",
+    id: "flockleader-geerin", name: "Veyra",
     hitpoints: 28, attack: 80, strength: 50, defence: 40, magic: 20, ranged: 120,
     flying: true, bonuses: b({ arange: 30 }), defBonuses: b({ drange: 10 }),
     maxHit: { ranged: 12 }, attackSpeed: 7
   },
   "flight-kilisa": {
-    id: "flight-kilisa", name: "Flight Kilisa",
+    id: "flight-kilisa", name: "Korrin",
     hitpoints: 28, attack: 120, strength: 80, defence: 40, magic: 20, ranged: 20,
     flying: true, bonuses: b({ str: 20 }), defBonuses: b({ drange: 10 }),
     maxHit: { melee: 10 }, attackSpeed: 7
@@ -3236,14 +3236,14 @@ function debugCombatMonsterId() {
   return "tztok-jad";
 }
 function debugCombatShortName(mon) {
-  if (!mon) return "Jad";
-  if (mon.id === "tztok-jad") return "Jad";
-  if (mon.id === "kree-arra") return "Kree";
+  if (!mon) return "Magmor";
+  if (mon.id === "tztok-jad") return "Magmor";
+  if (mon.id === "kree-arra") return "Vaelkor";
   if (mon.id === "widow-queen") return "Widow Queen";
   if (mon.id === "hollow-knight-king") return "Knight-King";
   if (mon.id === "gorehorn-the-minotaur") return "Gorehorn";
   if (mon.id === "drowned-colossus") return "Colossus";
-  return mon.name || mon.id || "Jad";
+  return mon.name || mon.id || "Magmor";
 }
 function debugCombatStyleLabel(style) {
   if (style === "mage" || style === "magic") return "magic";
@@ -3325,10 +3325,10 @@ function gearTierLabel(it) {
   if (!it) return "";
   const t = it.tier;
   if (t === "unique") return "Tier 4 · Gloamhold unique";
-  if (t === "jad") return "TzTok-Jad";
+  if (t === "jad") return "Magmor, the Molten Titan";
   if (t === "tier2" || t === "upgrade") return "Tier 2";
   if (t === "mid") return "Gloamhold mid";
-  if (t === "armadyl") return "Tier 3 · Armadyl";
+  if (t === "armadyl") return "Tier 3 · Stormwing";
   if (t === "widow") return "Widow Queen · Widow Weaver";
   if (t === "kingsguard") return "Hollow Knight-King · Kingsguard";
   if (t === "gorehorn") return "Gorehorn · Minotaur";
@@ -3357,7 +3357,7 @@ function renderEquipmentOverlay() {
         "<span>Ranged atk <b>+" + pb.arange + "</b></span>" +
         "<span>Ranged str <b>+" + pb.rstr + "</b></span>" +
         "<span>Def (range) <b>+" + pb.drange + "</b></span>" +
-        "<span>vs Jad <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
+        "<span>vs Magmor <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
     }
   }
   if (worn) {
@@ -3706,7 +3706,7 @@ function tryEnterGloamhold() {
     if (typeof openEquipmentView === "function") openEquipmentView();
     return false;
   }
-  if (typeof flashMsg === "function") flashMsg("Requires a Fire cape — defeat TzTok-Jad", "#ff8a70");
+  if (typeof flashMsg === "function") flashMsg("Requires a Fire cape — defeat Magmor, the Molten Titan", "#ff8a70");
   return false;
 }
 
@@ -3722,7 +3722,7 @@ function updateRaidLock() {
   // Keep owned-but-not-worn clickable (opens Equipment); aria must match.
   b.setAttribute("aria-disabled", reason === "no-cape" ? "true" : "false");
   if (reason === "no-cape") {
-    b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat TzTok-Jad</span>';
+    b.innerHTML = 'Gloamhold<span class="coming">Requires a Fire cape — defeat Magmor, the Molten Titan</span>';
   } else if (reason === "not-equipped") {
     b.innerHTML = 'Gloamhold<span class="coming">Equip your Fire cape to enter</span>';
   } else {
@@ -5239,7 +5239,7 @@ function fillResultGrid(el, result, score, survived) {
   const best = loadBest();
   const rows = [
     ["Adventurer", result.name],
-    ["Boss", result.bossName || "TzTok-Jad"],
+    ["Boss", result.bossName || "Magmor, the Molten Titan"],
     ["Time", fmtTime(result.killTimeSeconds) + "  (" + result.killTimeSeconds + "s · " + result.killTimeTicks + " ticks)"],
     ["Damage taken", String(result.damageTaken)],
     ["Perfect prayers", String(result.perfectPrayers)]
@@ -5553,12 +5553,12 @@ function drawJad(t) {
     ctx.fillStyle = "#ffe9a0";
     ctx.font = "bold 10px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("TzTok-Jad  " + j.hp + "/" + JAD_MAX_HP, 0, barY + 9);
+    ctx.fillText("Magmor, the Molten Titan  " + j.hp + "/" + JAD_MAX_HP, 0, barY + 9);
   } else if (showPlate) {
     ctx.fillStyle = "#ffe44a";
     ctx.font = "bold 11px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("TzTok-Jad", 0, -110 * L.sJ);
+    ctx.fillText("Magmor, the Molten Titan", 0, -110 * L.sJ);
   }
   ctx.restore();
   if (j.hurt > 0) j.hurt -= 0.016;
@@ -6046,7 +6046,7 @@ function drawWaveFlash(dt) {
   ctx.fillText("WAVE 63", cssW / 2, waveY);
   ctx.font = "bold 13px Trebuchet MS, sans-serif";
   ctx.fillStyle = "#f0d080";
-  ctx.fillText("TzTok-Jad has appeared", cssW / 2, waveY + (cssH < 400 ? 18 : 22));
+  ctx.fillText("Magmor, the Molten Titan has appeared", cssW / 2, waveY + (cssH < 400 ? 18 : 22));
   ctx.restore();
 }
 
@@ -6429,7 +6429,7 @@ canvas.addEventListener("pointerdown", (e) => {
     const rx = 58 * L.sJ, ry = 80 * L.sJ;
     if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
       G.target = "jad";
-      flashMsg("Attacking Jad", "#ffe44a");
+      flashMsg("Attacking Magmor", "#ffe44a");
       hitNpc = true;
     }
   }
@@ -6585,7 +6585,7 @@ function hideAllOverlays() {
   ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gorehorn-tut","overlay-gorehorn-loot","overlay-colossus-tut","overlay-colossus-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
-    // over Kree'arra / Jad / Gloamhold.
+    // over Vaelkor the Stormwing / Jad / Gloamhold.
     if (id === "overlay-hub" && inHubScene()) return;
     const el = $(id);
     if (el) el.classList.add("hidden");
@@ -6950,7 +6950,7 @@ function startFirstKill(opts) {
 }
 
 const FK_DIALOG = [
-  { name: "Fast Kill77", text: "GZ! Not bad for a first Jad." },
+  { name: "Fast Kill77", text: "GZ! Not bad for a first Magmor." },
   { name: "Fast Kill77", text: "Here, you earned this." },
   { item: true, text: "Fast Kill77 hands you a Fire cape." }
 ];
@@ -7067,11 +7067,11 @@ function updateIntro(dt) {
   // Chat
   if (t >= 5.25 && t < 6.35 && !cs.chat1) {
     cs.chat1 = true;
-    showChat("", "TzTok-Jad has appeared!");
+    showChat("", "Magmor, the Molten Titan has appeared!");
   }
   if (t >= 6.35 && !cs.chat2) {
     cs.chat2 = true;
-    showChat("", "JalYt, the sacred lava has sent its champion.");
+    showChat("", "The sacred lava has sent its champion.");
   }
   spawnCsBubbles(dt, t > 1.8 ? 1.2 : 0.4);
   if (t >= 7.4) { markIntroSeen(); beginCombat(); }

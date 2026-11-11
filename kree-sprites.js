@@ -1,4 +1,4 @@
-/* Xscape — original Kree'arra and aviansie art (programmer-drawn, not a rip).
+/* Xscape — original Vaelkor the Stormwing and aviansie art (programmer-drawn, not a rip).
    Blue / white / gold Armadyl colours. Pure canvas, no game state. */
 "use strict";
 
@@ -430,6 +430,6 @@ function drawKreeHpBar(c, x, y, frac, name, w) {
   c.font = "bold 11px Trebuchet MS, sans-serif";
   c.textAlign = "center";
   c.textBaseline = "bottom";
-  c.fillText(name || "Kree'arra", w / 2, -4);
+  c.fillText(name || "Vaelkor the Stormwing", w / 2, -4);
   c.restore();
 }

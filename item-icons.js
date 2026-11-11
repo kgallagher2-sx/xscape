@@ -83,7 +83,7 @@
   const POTION_COLORS = {
     super_attack: "#4a8a3a", super_strength: "#8a3030", super_defence: "#3a5aaa",
     ranging_potion: "#2e8a4a", magic_potion: "#5a3a8a", prayer_potion: "#3a7a9a",
-    super_restore: "#8a4aaa", saradomin_brew: "#d8c878"
+    super_restore: "#8a4aaa", saradomin_brew: "#d8c878", antipoison: "#3a8a50"
   };
 
   function drawPotion(ctx, fam, dose, w, h) {

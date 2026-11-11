@@ -118,7 +118,7 @@
     }
     return snapshot();
   }
-  // OSRS Saradomin brew: + (15% HP + 2) and can overheal; Defence +20%+2 of current;
+  // OSRS Gloam brew: + (15% HP + 2) and can overheal; Defence +20%+2 of current;
   // Attack/Strength/Ranged/Magic −10%−2 of current.
   function applyBrew() {
     const hpBase = skill("hitpoints").base || 99;
@@ -136,7 +136,24 @@
     return { hp: hp, heal: heal };
   }
 
+  const ANTIPOISON_TICKS = 150; // 90 seconds at 0.6s ticks
+  function applyAntipoison() {
+    const G = global.G;
+    const pl = G && G.player;
+    if (!pl) return false;
+    pl.poison = 0;
+    pl.poisonCd = 0;
+    pl.antipoisonLeft = ANTIPOISON_TICKS;
+    return true;
+  }
+  function tickAntipoison() {
+    const G = global.G;
+    const pl = G && G.player;
+    if (pl && pl.antipoisonLeft > 0) pl.antipoisonLeft--;
+  }
+
   function tick() {
+    tickAntipoison();
     state.decayTick++;
     if (state.decayTick < DECAY_TICKS) return false;
     state.decayTick = 0;
@@ -379,6 +396,7 @@
     applyMagicPotion: applyMagicPotion,
     applySuperRestore: applySuperRestore,
     applyBrew: applyBrew,
+    applyAntipoison: applyAntipoison,
     restoreAmount: restoreAmount,
     needsRestore: needsRestore,
     drawSkillIcon: drawSkillIcon,

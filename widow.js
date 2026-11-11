@@ -112,7 +112,7 @@
       x: 0.5, y: 0.86, gp: (global.Profile && Profile.gp) || 0,
       tileCol: mid, tileRow: 0, prevCol: mid, prevRow: 0,
       destCol: null, destRow: null, movedThisTick: false,
-      stuckTicks: 0, poison: 0, poisonCd: 0
+      stuckTicks: 0, poison: 0, poisonCd: 0, antipoisonLeft: 0
     };
     G.widow = {
       hp: WIDOW_HP, maxHp: WIDOW_HP, phase: "idle", style: null,
@@ -248,6 +248,10 @@
     const G = g();
     const p = G.player;
     if (!p || G.widowGod) return;
+    if ((p.antipoisonLeft || 0) > 0) {
+      if (typeof global.flashMsg === "function") flashMsg("The antipoison protects you", "#a0e878");
+      return;
+    }
     p.poison = POISON_START;
     p.poisonCd = POISON_EVERY;
     if (typeof global.flashMsg === "function") flashMsg("Poisoned!", "#7dff7d");

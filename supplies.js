@@ -17,7 +17,8 @@
     magic_potion: 15000,
     prayer_potion: 82000,
     super_restore: 100000,
-    saradomin_brew: 90000
+    saradomin_brew: 90000,
+    antipoison: 40000
   };
 
   const SHOP_ROWS = [
@@ -31,7 +32,8 @@
     { id: "magic_potion", name: "Magic potion", kind: "potion", desc: "Magic +4." },
     { id: "prayer_potion", name: "Prayer potion", kind: "potion", desc: "Restores 7 + 25% of base Prayer." },
     { id: "super_restore", name: "Super restore", kind: "potion", desc: "Restores stats and prayer (8 + 25%)." },
-    { id: "saradomin_brew", name: "Saradomin brew", kind: "potion", desc: "Heals 16, boosts Defence, drains other combat stats." }
+    { id: "saradomin_brew", name: "Gloam brew", kind: "potion", desc: "Heals 16, boosts Defence, drains other combat stats." },
+    { id: "antipoison", name: "Antipoison", kind: "potion", desc: "Cures poison and grants 90 seconds of immunity." }
   ];
 
   const POTION_FAMILIES = {
@@ -41,7 +43,8 @@
     ranging_potion: { name: "Ranging potion", skill: "ranged", color: "#2a6a38" },
     magic_potion: { name: "Magic potion", skill: "magic", color: "#3a6aaa" },
     super_restore: { name: "Super restore", skill: "restore", color: "#8a50a0" },
-    saradomin_brew: { name: "Saradomin brew", skill: "brew", color: "#c8c0a0" },
+    saradomin_brew: { name: "Gloam brew", skill: "brew", color: "#c8c0a0" },
+    antipoison: { name: "Antipoison", skill: "antipoison", color: "#3a8a50" },
     prayer_potion: { name: "Prayer potion", skill: "prayer", color: "#3a6a8a" }
   };
 
@@ -64,7 +67,7 @@
   function clamp(n, a, b) { return n < a ? a : n > b ? b : n; }
   function profile() { return global.Profile || (global.Profile = { inventory: [] }); }
 
-  const POTION_IDS = "super_attack|super_strength|super_defence|ranging_potion|magic_potion|super_restore|saradomin_brew|prayer_potion";
+  const POTION_IDS = "super_attack|super_strength|super_defence|ranging_potion|magic_potion|super_restore|saradomin_brew|prayer_potion|antipoison";
   const POTION_ID_RE = new RegExp("^(" + POTION_IDS + ")(?:_([1-4]))?$");
 
   function isSupplyId(id) {
@@ -513,7 +516,20 @@
       }
       G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
       if (global.audio && audio.sip) audio.sip();
-      if (typeof global.flashMsg === "function") flashMsg("Saradomin brew", "#e8e0b0");
+      if (typeof global.flashMsg === "function") flashMsg("Gloam brew", "#e8e0b0");
+      return true;
+    }
+    if (fam === "antipoison") {
+      const p = (global.G && G.player) || null;
+      if (p) {
+        p.poison = 0;
+        p.poisonCd = 0;
+        p.antipoisonLeft = 150; // 90s at 0.6s ticks
+      }
+      if (PS && PS.applyAntipoison) PS.applyAntipoison();
+      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      if (global.audio && audio.sip) audio.sip();
+      if (typeof global.flashMsg === "function") flashMsg("Antipoison", "#7dff7d");
       return true;
     }
     if (fam === "ranging_potion") {
@@ -699,7 +715,7 @@
       return p ? p.name : slot.id;
     }
     if (isFood(slot.id)) return slot.id === "dark_crab" ? "Dark crab" : slot.id.charAt(0).toUpperCase() + slot.id.slice(1);
-    const short = { super_attack: "Attack", super_strength: "Strength", super_defence: "Defence", ranging_potion: "Ranging", magic_potion: "Magic", super_restore: "Restore", saradomin_brew: "Brew", prayer_potion: "Prayer" };
+    const short = { super_attack: "Attack", super_strength: "Strength", super_defence: "Defence", ranging_potion: "Ranging", magic_potion: "Magic", super_restore: "Restore", saradomin_brew: "Brew", antipoison: "Antipoison", prayer_potion: "Prayer" };
     return short[slot.id] || (POTION_FAMILIES[slot.id] || { name: slot.id }).name;
   }
 
@@ -863,7 +879,7 @@
       if (!fams.length) html += '<div class="quick-pick-empty">No food or potions in your inventory.</div>';
       fams.forEach(function (fam) {
         const n = isFood(fam) ? countFamily(fam) : totalDoses(fam);
-        const extra = isJad() && JAD_KIT[fam] != null ? " (Jad kit " + jadCount(fam) + ")" : "";
+        const extra = isJad() && JAD_KIT[fam] != null ? " (Magmor kit " + jadCount(fam) + ")" : "";
         html += '<button type="button" class="quick-pick" data-type="item" data-id="' + fam + '">' +
           '<canvas width="40" height="40" data-icon="' + fam + '"></canvas>' +
           '<span>' + labelFor({ type: "item", id: fam }) + " ×" + n + extra + "</span></button>";
@@ -872,7 +888,7 @@
         ["shark", "prayer_potion", "ranging_potion"].forEach(function (fam) {
           if (fams.indexOf(fam) >= 0) return;
           html += '<button type="button" class="quick-pick" data-type="item" data-id="' + fam + '">' +
-            labelFor({ type: "item", id: fam }) + " (Jad kit)</button>";
+            labelFor({ type: "item", id: fam }) + " (Magmor kit)</button>";
         });
       }
       body.innerHTML = html;

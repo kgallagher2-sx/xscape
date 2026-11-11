@@ -30,10 +30,10 @@ const LAB_ITEMS = {
 
   fire_cape:          { id: "fire_cape", name: "Fire cape", slot: "cape", tier: "jad", kind: "fire" },
 
-  armadyl_helmet:     { id: "armadyl_helmet", name: "Armadyl helmet", slot: "head", tier: "armadyl", kind: "armadyl" },
-  armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", kind: "armadyl" },
-  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", kind: "armadyl" },
-  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", kind: "armadyl" },
+  armadyl_helmet:     { id: "armadyl_helmet", name: "Stormwing helm", slot: "head", tier: "armadyl", kind: "armadyl" },
+  armadyl_chestplate: { id: "armadyl_chestplate", name: "Stormwing chestplate", slot: "body", tier: "armadyl", kind: "armadyl" },
+  armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Stormwing chainskirt", slot: "legs", tier: "armadyl", kind: "armadyl" },
+  armadyl_crossbow:   { id: "armadyl_crossbow", name: "Stormwing crossbow", slot: "weapon", tier: "armadyl", kind: "armadyl" },
 
   widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow" },
   widow_weaver_top:    { id: "widow_weaver_top", name: "Widow Weaver robe top", slot: "body", tier: "widow", kind: "widow" },
@@ -162,8 +162,8 @@ const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsgua
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
   tier2: "Tier 2 — black d'hide",
-  jad: "Jad",
-  armadyl: "Armadyl — Kree'arra",
+  jad: "Magmor",
+  armadyl: "Stormwing — Vaelkor",
   widow: "Widow Weaver — Widow Queen",
   kingsguard: "Kingsguard — Hollow Knight-King",
   gorehorn: "Gorehorn — the Minotaur",

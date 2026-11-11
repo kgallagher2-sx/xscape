@@ -1,4 +1,4 @@
-/* Xscape — Kree'arra (Armadyl's Eyrie). Uses host tiles, prayers, supplies, combat math. */
+/* Xscape — Vaelkor the Stormwing (the Stormwing Eyrie). Uses host tiles, prayers, supplies, combat math. */
 (function (global) {
   "use strict";
 
@@ -29,9 +29,9 @@
     { id: "armadyl_crossbow" }
   ];
   const MINIONS = [
-    { id: "wingman-skree", kind: "skree", name: "Wingman Skree", style: "mage", maxHit: 8 },
-    { id: "flockleader-geerin", kind: "geerin", name: "Flockleader Geerin", style: "range", maxHit: 12 },
-    { id: "flight-kilisa", kind: "kilisa", name: "Flight Kilisa", style: "melee", maxHit: 10 }
+    { id: "wingman-skree", kind: "skree", name: "Rask", style: "mage", maxHit: 8 },
+    { id: "flockleader-geerin", kind: "geerin", name: "Veyra", style: "range", maxHit: 12 },
+    { id: "flight-kilisa", kind: "kilisa", name: "Korrin", style: "melee", maxHit: 10 }
   ];
 
   let hostAcc = 0;
@@ -545,7 +545,7 @@
       }
       ctx.restore();
       if (G.kree.hp > 0 && typeof global.drawKreeHpBar === "function") {
-        drawKreeHpBar(ctx, G.kree.x * cssW, G.kree.y * cssH - 92 * sc, G.kree.hp / G.kree.maxHp, "Kree'arra", 132);
+        drawKreeHpBar(ctx, G.kree.x * cssW, G.kree.y * cssH - 92 * sc, G.kree.hp / G.kree.maxHp, "Vaelkor the Stormwing", 132);
       }
       if (G.target === "kree" && G.kree.hp > 0 && typeof global.drawOsrsCross === "function") {
         drawOsrsCross(ctx, G.kree.x * cssW, G.kree.y * cssH, "#ff1a1a", 1.2, 0, 0.8);
@@ -635,7 +635,7 @@
       const rx = 64 * sc, ry = 80 * sc;
       if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
         G.target = "kree";
-        if (typeof global.flashMsg === "function") flashMsg("Attacking Kree'arra", "#ffe44a");
+        if (typeof global.flashMsg === "function") flashMsg("Attacking Vaelkor the Stormwing", "#ffe44a");
         hit = true;
       }
     }
@@ -690,7 +690,7 @@
     const ov = $("overlay-kree-loot");
     if (!ov) return;
     const title = $("kree-loot-title");
-    if (title) title.textContent = "KREE'ARRA DEFEATED";
+    if (title) title.textContent = "VAELKOR THE STORMWING DEFEATED";
     const grid = $("kree-loot-stats");
     const kills = (global.Profile && Profile.kreeKills) || 1;
     const rows = [];
@@ -752,7 +752,7 @@
     G.mode = "win";
     const result = {
       name: (global.Profile && Profile.name) || "Adventurer",
-      bossName: "Kree'arra",
+      bossName: "Vaelkor the Stormwing",
       killTimeSeconds: Math.round((G.elapsedMs / 1000) * 10) / 10,
       killTimeTicks: G.ticks,
       damageTaken: G.damageTaken,
@@ -800,7 +800,7 @@
     if (G.player) G.player.hp = 0;
     const result = {
       name: (global.Profile && Profile.name) || "Adventurer",
-      bossName: "Kree'arra",
+      bossName: "Vaelkor the Stormwing",
       bossId: "kree-arra",
       killTimeSeconds: Math.round((G.elapsedMs / 1000) * 10) / 10,
       killTimeTicks: G.ticks,
