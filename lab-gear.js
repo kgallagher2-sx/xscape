@@ -268,22 +268,22 @@ const LAB_DEFAULTS = {
   unsleeping_stole:   { main: "#1a1028", trim: "#e8e0c8", scale: 1 },
   gloamheart_cape:    { main: "#14081e", trim: "#e8c878", scale: 1 },
 
-  eclipse_coif:            { main: "#2a1c28", trim: "#e0b050", scale: 1 },
-  eclipse_body:            { main: "#2a1c28", trim: "#e0b050", scale: 1 },
-  eclipse_chaps:           { main: "#241820", trim: "#e0b050", scale: 1 },
-  eclipse_longbow:         { main: "#3a2418", trim: "#e0b050", scale: 1 },
-  eclipse_pendant:         { main: "#2a1c28", trim: "#e0b050", scale: 1 },
-  eclipse_band:            { main: "#d4b03a", trim: "#2a1c28", scale: 1 },
-  unsleeping_hood:         { main: "#181428", trim: "#c8d4f0", scale: 1 },
-  unsleeping_robe_top:     { main: "#181428", trim: "#c8d4f0", scale: 1 },
-  unsleeping_robe_bottom:  { main: "#141020", trim: "#c8d4f0", scale: 1 },
-  nightfall_staff:         { main: "#2a2438", trim: "#c8d4f0", scale: 1 },
-  unsleeping_charm:        { main: "#181428", trim: "#c8d4f0", scale: 1 },
-  dreamless_ring:          { main: "#8a90b0", trim: "#c8d4f0", scale: 1 },
-  hollowplate_helm:        { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
-  hollowplate_body:        { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
-  hollowplate_legs:        { main: "#323844", trim: "#c8d0d8", scale: 1 },
-  hollow_halberd:          { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
+  eclipse_coif:            { main: "#221018", trim: "#f0c45a", scale: 1 },
+  eclipse_body:            { main: "#221018", trim: "#f0c45a", scale: 1 },
+  eclipse_chaps:           { main: "#1c1016", trim: "#f0c45a", scale: 1 },
+  eclipse_longbow:         { main: "#2a1810", trim: "#f0c45a", scale: 1 },
+  eclipse_pendant:         { main: "#221018", trim: "#f0c45a", scale: 1 },
+  eclipse_band:            { main: "#f0c45a", trim: "#14080c", scale: 1 },
+  unsleeping_hood:         { main: "#160c24", trim: "#d4ccf8", scale: 1 },
+  unsleeping_robe_top:     { main: "#160c24", trim: "#d4ccf8", scale: 1 },
+  unsleeping_robe_bottom:  { main: "#10081c", trim: "#d4ccf8", scale: 1 },
+  nightfall_staff:         { main: "#201830", trim: "#d4ccf8", scale: 1 },
+  unsleeping_charm:        { main: "#160c24", trim: "#d4ccf8", scale: 1 },
+  dreamless_ring:          { main: "#8a80c0", trim: "#d4ccf8", scale: 1 },
+  hollowplate_helm:        { main: "#2e3640", trim: "#d0d8e0", scale: 1 },
+  hollowplate_body:        { main: "#2e3640", trim: "#d0d8e0", scale: 1 },
+  hollowplate_legs:        { main: "#262c36", trim: "#d0d8e0", scale: 1 },
+  hollow_halberd:          { main: "#2e3640", trim: "#d0d8e0", scale: 1 },
   hollow_torque:           { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
   hollow_signet:           { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
 
@@ -1350,8 +1350,14 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
   const stride = walkAmount(opt, t) * walkMul;
   const bob = Math.abs(walkAmount(opt, t)) * ((facing === "front" || facing === "back") ? 1.3 : 1.4);
   const packed = Object.assign({}, opt, { equipment: eq, shot: shot, _stride: stride });
-  const twoHand = isTwoHandedWeapon(eq.weapon);
-  const hands = twoHand ? twoHandPose(facing, packed) : heroHands(facing, packed);
+  const kWep = weaponKind(eq.weapon);
+  let t3p = null;
+  if (window.XscapeGloamT3Art && XscapeGloamT3Art.t3WeaponPose) {
+    t3p = XscapeGloamT3Art.t3WeaponPose(facing, packed, kWep || (shot && shot.kind));
+  }
+  const blockOff = blocksOffhand(eq.weapon);
+  const twoHand = t3p ? !!t3p.twoHand : isTwoHandedWeapon(eq.weapon);
+  const hands = t3p || (twoHand ? twoHandPose(facing, packed) : heroHands(facing, packed));
   const widowRobes = !!(labItem(eq.legs) && (labItem(eq.legs).kind === "widow" || labItem(eq.legs).kind === "vestments"));
 
   ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -1383,7 +1389,7 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
   function sleeve(side) { drawHeroArmSleeve(ctx, eq.hands, facing, side, packed, hands); }
   function fist(side) { drawHeroHandOnly(ctx, side, hands); }
   function weapon() { drawHeroWeapon(ctx, t, eq, packed, facing, twoHand ? hands.weapon : hands.right); }
-  function shield() { if (!twoHand) drawHeroShield(ctx, t, eq, facing, packed, hands.left); }
+  function shield() { if (!blockOff) drawHeroShield(ctx, t, eq, facing, packed, hands.left); }
   function ring() { drawHeroRing(ctx, eq.ring, facing, hands); }
 
   if (facing === "front") {
@@ -1813,14 +1819,43 @@ function weaponKind(id) {
    shield/book. Front: right hand is on the viewer's left. Back: right
    hand is on the viewer's right. Side views: the near/far hands swap
    with facing, and the far item is drawn behind the body.
-   Two-handed weapons (Gorehorn war axe) are gripped by both hands and
-   never show an off-hand. */
-function isTwoHandedWeapon(id) {
+
+   blocksOffhand and usesTwoHandGrip are separate flags.
+   - blocksOffhand: the weapon occupies the shield slot (ITEMS/LAB twohand
+     flag, or axe / longbow / staff / halberd). A 2h staff still uses a
+     one-hand pose; the flag only empties the off-hand.
+   - usesTwoHandGrip: both hands actually hold the haft. Gorehorn axe is
+     always a two-hand grip. Hollow halberd is one-handed at idle/walk and
+     two-handed only during windup/strike/follow. Staff is never a two-hand
+     grip. Longbow is held in the right hand; the left only comes in to
+     draw. isTwoHandedWeapon stays the always-grip test (axe) so existing
+     Gorehorn art is unchanged. */
+function blocksOffhand(id) {
   if (!id) return false;
   const it = labItem(id) || (typeof ITEMS !== "undefined" && ITEMS[id]) || null;
   if (it && it.twohand) return true;
   const k = weaponKind(id);
-  return k === "axe" || k === "longbow" || k === "staff" || k === "halberd";
+  return k === "axe" || k === "longbow" || k === "staff" || k === "halberd"
+    || k === "halberd_thrust" || k === "halberd_chop";
+}
+
+function usesTwoHandGrip(id, shot) {
+  if (!id) return false;
+  const k = weaponKind(id);
+  if (k === "axe") return true;
+  if (k === "halberd" || k === "halberd_thrust" || k === "halberd_chop") {
+    const ph = shot && shot.phase;
+    if (ph === "windup" || ph === "after") return true;
+    if (shot && ((Math.abs(shot.thrust || 0) > 0.02) || (shot.pull || 0) > 0.02 || (Math.abs(shot.swing || 0) > 0.02))) return true;
+    return false;
+  }
+  return false;
+}
+
+function isTwoHandedWeapon(id) {
+  // Always-on two-hand GRIP. Off-hand blocking is blocksOffhand().
+  if (!id) return false;
+  return weaponKind(id) === "axe";
 }
 
 function facingForward(facing) {
@@ -1987,9 +2022,13 @@ function drawHeroArmSleeve(c, id, facing, side, opt, hands) {
     let toward = 0.35, fromSh = 0.65, towardY = 0.45, fromShY = 0.55;
     const wid = opt && opt.equipment && opt.equipment.weapon;
     const wk = wid ? weaponKind(wid) : "";
-    // T3 two-handers have no gloves; pull the empty sleeve to the haft so
-    // the off-arm does not read as hanging free. Gorehorn (axe) stays put.
-    if (wk === "halberd" || wk === "staff" || wk === "longbow") {
+    const shot = opt && opt.shot;
+    const onWeapon = (side === "right" && (wk === "halberd" || wk === "staff" || wk === "longbow"))
+      || (side === "left" && wk === "halberd" && typeof usesTwoHandGrip === "function" && usesTwoHandGrip(wid, shot))
+      || (side === "left" && wk === "longbow" && shot && (shot.draw || 0) > 0.08);
+    // Lean the sleeve to the weapon only when that hand is on it. Gorehorn
+    // (axe) keeps the original 0.35 lean so existing art stays identical.
+    if (onWeapon) {
       toward = 0.72; fromSh = 0.28; towardY = 0.70; fromShY = 0.30;
     }
     sx = sh.x * fromSh + hands[side].x * toward;
@@ -2148,7 +2187,7 @@ function drawSpineGrip(c, facing, opt) {
 function drawHeroShield(c, t, eq, facing, opt, hand) {
   const id = eq && eq.shield;
   if (!id) return;
-  if (isTwoHandedWeapon(eq && eq.weapon)) return;
+  if (blocksOffhand(eq && eq.weapon)) return;
   const it = labItem(id);
   const pos = hand || heroHands(facing, opt).left;
   if (it && it.kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBookHeld) {
@@ -2161,7 +2200,7 @@ function drawHeroShield(c, t, eq, facing, opt, hand) {
 function drawHeroWeapon(c, t, eq, opt, facing, hand) {
   const kind = weaponKind(eq && eq.weapon);
   if (!kind) return;
-  const two = isTwoHandedWeapon(eq && eq.weapon);
+  const two = usesTwoHandGrip(eq && eq.weapon, opt && opt.shot);
   const pos = hand || (two ? twoHandPose(facing, opt).weapon : heroHands(facing, opt).right);
   if (kind === "whip") {
     // Tentacle whip keeps its own id/name/stats but uses the abyssal whip sprite.
@@ -3303,6 +3342,8 @@ window.drawPlayerFacing = drawPlayerFacing;
 window.resolveFacing = resolveFacing;
 window.heroHands = heroHands;
 window.isTwoHandedWeapon = isTwoHandedWeapon;
+window.blocksOffhand = blocksOffhand;
+window.usesTwoHandGrip = usesTwoHandGrip;
 window.twoHandPose = twoHandPose;
 window.drawLabItemIcon = drawLabItemIcon;
 window.labStyle = labStyle;

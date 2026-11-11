@@ -26,17 +26,48 @@
     return "#" + c(r) + c(g) + c(b);
   }
 
+  const SET = {
+    eclipse: {
+      main: "#221018", light: "#4a2e3c", mid: "#2e1c26", dark: "#10080e",
+      ink: "#3a2408", trim: "#f0c45a", trimLt: "#ffe9a8",
+      glow: "rgba(240,196,90,0.42)", glowHard: "#ffe9a8", voidC: "#0a0608", corona: "#f8d878"
+    },
+    vestments: {
+      main: "#160c24", light: "#3a2860", mid: "#24183c", dark: "#0a0614",
+      ink: "#1a1430", trim: "#d4ccf8", trimLt: "#f4f0ff",
+      glow: "rgba(168,120,255,0.48)", glowHard: "#c8a8ff", star: "#efe8ff", moon: "#c8d4f0", violet: "#6a38b8"
+    },
+    hollowplate: {
+      main: "#2e3640", light: "#8a94a0", mid: "#4a5460", dark: "#14181e",
+      ink: "#0c1014", trim: "#d0d8e0", trimLt: "#f0f4f8",
+      glow: "rgba(120,220,230,0.48)", glowHard: "#b8f0f8", core: "#4ec8d8", voidC: "#061018", crack: "#7ee8f0"
+    }
+  };
+
+  function palFor(set, st) {
+    const b = SET[set] || SET.eclipse;
+    st = st || {};
+    const main = st.main || b.main;
+    const trim = st.trim || b.trim;
+    return Object.assign({}, b, {
+      main: main,
+      light: shade(main, 0.30),
+      mid: shade(main, 0.10),
+      dark: shade(main, -0.32),
+      ink: b.ink,
+      trim: trim,
+      trimLt: shade(trim, 0.35)
+    });
+  }
+
   function palFrom(st) {
     st = st || {};
-    return {
-      main: st.main || "#2a1c28",
-      light: shade(st.main || "#2a1c28", 0.28),
-      mid: shade(st.main || "#2a1c28", 0.08),
-      dark: shade(st.main || "#2a1c28", -0.28),
-      ink: shade(st.trim || "#e0b050", -0.45),
-      trim: st.trim || "#e0b050",
-      trimLt: shade(st.trim || "#e0b050", 0.35)
-    };
+    const m = (st.main || "").toLowerCase();
+    const t = (st.trim || "").toLowerCase();
+    if (t.indexOf("f0c") === 1 || t.indexOf("e0b") === 1 || m.indexOf("221018") !== -1 || m.indexOf("2a1c28") !== -1) return palFor("eclipse", st);
+    if (t.indexOf("d4cc") === 1 || t.indexOf("c8d4") === 1 || m.indexOf("160c24") !== -1 || m.indexOf("181428") !== -1) return palFor("vestments", st);
+    if (t.indexOf("d0d8") === 1 || t.indexOf("c8d0") === 1 || m.indexOf("2e3640") !== -1 || m.indexOf("3a4450") !== -1) return palFor("hollowplate", st);
+    return palFor("eclipse", st);
   }
 
   function skinPal() {
@@ -49,916 +80,13 @@
     return { x: origin.x + dist * Math.sin(ang), y: origin.y - dist * Math.cos(ang) };
   }
 
-  /* ---------- worn: Eclipse hide ---------- */
-
-  function eclipseEmblem(c, p, x, y, r) {
-    c.fillStyle = p.ink;
-    c.beginPath(); c.arc(x, y, r + 0.7, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.trim;
+  function glow(c, x, y, r, color, a) {
+    c.save();
+    c.fillStyle = color;
+    c.globalAlpha = (a == null) ? 0.4 : a;
     c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.dark;
-    c.beginPath(); c.arc(x + r * 0.28, y - r * 0.08, r * 0.72, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.trimLt;
-    c.globalAlpha = 0.7;
-    c.beginPath(); c.arc(x - r * 0.45, y - r * 0.2, r * 0.22, 0, Math.PI * 2); c.fill();
-    c.globalAlpha = 1;
-  }
-
-  function drawEclipseCoif(c, st, facing) {
-    const p = palFrom(st);
-    const sk = skinPal();
-    if (facing === "back") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.arc(0, -26, 9.4, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.arc(0, -26.4, 8.2, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.mid;
-      c.beginPath();
-      c.moveTo(-7.2, -22); c.lineTo(7.2, -22); c.lineTo(5.6, -15.8); c.lineTo(-5.6, -15.8);
-      c.closePath(); c.fill();
-      c.strokeStyle = p.trim; c.lineWidth = 0.85;
-      c.beginPath(); c.arc(0, -26.6, 7.2, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
-      eclipseEmblem(c, p, 0, -28.6, 1.7);
-      return;
-    }
-    if (facing === "right") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.ellipse(0.6, -25.8, 8.8, 9.4, 0.04, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.ellipse(0.8, -26.2, 7.6, 8.2, 0.04, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.skin;
-      c.beginPath(); c.ellipse(4.2, -25.0, 4.4, 5.2, 0.1, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.dark;
-      c.beginPath(); c.ellipse(6.2, -26.0, 0.7, 0.9, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.skin;
-      c.beginPath(); c.moveTo(8.0, -24.2); c.lineTo(10.0, -23.0); c.lineTo(7.8, -22.2); c.closePath(); c.fill();
-      c.fillStyle = p.mid;
-      c.beginPath();
-      c.moveTo(-4, -20.8); c.lineTo(5.4, -20.4); c.lineTo(4.2, -16.2); c.lineTo(-3.2, -16.6);
-      c.closePath(); c.fill();
-      c.strokeStyle = p.trim; c.lineWidth = 0.8;
-      c.beginPath(); c.arc(0.4, -27.4, 6.6, Math.PI * 1.05, Math.PI * 1.85); c.stroke();
-      eclipseEmblem(c, p, -1.2, -30.4, 1.35);
-      return;
-    }
-    // front
-    c.fillStyle = p.dark;
-    c.beginPath(); c.arc(0, -26.2, 9.3, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath(); c.arc(0, -26.6, 8.1, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.light;
-    c.beginPath(); c.ellipse(-3.2, -29.2, 2.6, 1.6, -0.4, 0, Math.PI * 2); c.fill();
-    c.fillStyle = sk.skin;
-    c.beginPath(); c.ellipse(0, -24.6, 5.0, 5.4, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = sk.dark;
-    c.beginPath(); c.arc(-2.0, -25.4, 0.7, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(2.0, -25.4, 0.7, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.mid;
-    c.beginPath();
-    c.moveTo(-7.2, -21.2); c.lineTo(7.2, -21.2); c.lineTo(5.6, -16.0); c.lineTo(-5.6, -16.0);
-    c.closePath(); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.9;
-    c.beginPath(); c.arc(0, -26.8, 7.0, Math.PI * 1.05, -0.05); c.stroke();
-    eclipseEmblem(c, p, 0, -31.0, 1.55);
-  }
-
-  function drawEclipseBody(c, st, facing) {
-    const p = palFrom(st);
-    if (facing === "back" || facing === "right") {
-      const right = facing === "right";
-      c.fillStyle = p.dark;
-      c.beginPath();
-      if (right) {
-        c.moveTo(-6.5, -21.2); c.lineTo(8.4, -21.2);
-        c.quadraticCurveTo(10.2, -10, 7.6, -1.2); c.lineTo(-5.8, -1.2);
-        c.quadraticCurveTo(-7.6, -10, -6.5, -21.2);
-      } else {
-        c.moveTo(-11.8, -21.4); c.quadraticCurveTo(0, -23.2, 11.8, -21.4);
-        c.quadraticCurveTo(13.2, -10, 11.2, -1.2);
-        c.quadraticCurveTo(0, 0.8, -11.2, -1.2);
-        c.quadraticCurveTo(-13.2, -10, -11.8, -21.4);
-      }
-      c.closePath(); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath();
-      if (right) {
-        c.moveTo(-5.4, -20.4); c.lineTo(7.4, -20.4);
-        c.quadraticCurveTo(8.8, -10, 6.6, -2); c.lineTo(-4.8, -2);
-        c.quadraticCurveTo(-6.4, -10, -5.4, -20.4);
-      } else {
-        c.moveTo(-10.6, -20.4); c.quadraticCurveTo(0, -22, 10.6, -20.4);
-        c.quadraticCurveTo(11.8, -10, 10.2, -2.0);
-        c.quadraticCurveTo(0, -0.4, -10.2, -2.0);
-        c.quadraticCurveTo(-11.8, -10, -10.6, -20.4);
-      }
-      c.closePath(); c.fill();
-      c.strokeStyle = p.trim; c.lineWidth = 0.85; c.globalAlpha = 0.85;
-      if (right) {
-        c.beginPath(); c.moveTo(6.8, -18); c.quadraticCurveTo(10.2, -10, 6.2, -4); c.stroke();
-        c.globalAlpha = 1;
-        eclipseEmblem(c, p, 2.4, -12.5, 2.0);
-      } else {
-        c.beginPath(); c.moveTo(-6, -19.4); c.quadraticCurveTo(0, -8, 6, -19.4); c.stroke();
-        c.globalAlpha = 1;
-        eclipseEmblem(c, p, 0, -13.2, 2.15);
-      }
-      return;
-    }
-    // front — fuller hide than green/black, corona emblem
-    c.fillStyle = p.dark;
-    c.beginPath();
-    c.moveTo(-12.0, -21.4); c.quadraticCurveTo(0, -23.4, 12.0, -21.4);
-    c.quadraticCurveTo(13.4, -10, 11.4, -1.2);
-    c.quadraticCurveTo(0, 0.8, -11.4, -1.2);
-    c.quadraticCurveTo(-13.4, -10, -12.0, -21.4);
-    c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(-10.8, -20.4); c.quadraticCurveTo(0, -22.2, 10.8, -20.4);
-    c.quadraticCurveTo(12.0, -10, 10.2, -2.0);
-    c.quadraticCurveTo(0, -0.4, -10.2, -2.0);
-    c.quadraticCurveTo(-12.0, -10, -10.8, -20.4);
-    c.closePath(); c.fill();
-    c.fillStyle = p.light;
-    c.beginPath(); c.ellipse(-3.6, -17.2, 3.4, 2.2, -0.4, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 1; c.globalAlpha = 0.9;
-    c.beginPath(); c.moveTo(-10.4, -20.0); c.lineTo(10.4, -20.0); c.stroke();
-    c.beginPath(); c.moveTo(-6.2, -19.2); c.quadraticCurveTo(0, -7.5, 6.2, -19.2); c.stroke();
-    c.globalAlpha = 1;
-    eclipseEmblem(c, p, 0, -12.6, 2.35);
-  }
-
-  function drawEclipseChaps(c, st, facing, stride) {
-    const p = palFrom(st);
-    const s = stride || 0;
-    if (facing === "back" || facing === "right") {
-      const right = facing === "right";
-      if (right) {
-        const far = -s * 0.7, near = s * 0.7;
-        c.fillStyle = p.dark; c.fillRect(-3.2, -2 + far, 6.2, 12);
-        c.fillStyle = p.main; c.fillRect(-2.5, -1 + far, 5, 10.4);
-        c.fillStyle = p.dark; c.fillRect(-3.6, -2 + near, 7, 12.2);
-        c.fillStyle = p.main; c.fillRect(-2.8, -1 + near, 5.6, 10.6);
-        c.fillStyle = p.trim; c.fillRect(-4.0, -2.2, 8.4, 1.15);
-        return;
-      }
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.moveTo(-8.6, -2); c.quadraticCurveTo(-9.6, 5, -8.8, 11.4); c.lineTo(-2, 11.4); c.lineTo(-2, -2);
-      c.closePath(); c.fill();
-      c.beginPath();
-      c.moveTo(8.6, -2); c.quadraticCurveTo(9.6, 5, 8.8, 11.4); c.lineTo(2, 11.4); c.lineTo(2, -2);
-      c.closePath(); c.fill();
-      c.fillStyle = p.main;
-      c.fillRect(-7.8, -1.4, 5.6, 11.2);
-      c.fillRect(2.2, -1.4, 5.6, 11.2);
-      c.fillStyle = p.trim; c.fillRect(-8.6, -2.2, 17.2, 1.2);
-      return;
-    }
-    function leg(x, dy) {
-      c.save(); c.translate(0, dy || 0);
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.moveTo(x - 0.4, -2); c.quadraticCurveTo(x - 1.3, 5, x - 0.2, 11.2);
-      c.lineTo(x + 6.8, 11.2); c.lineTo(x + 6.8, -2); c.closePath(); c.fill();
-      c.fillStyle = p.main; c.fillRect(x + 0.4, -1.2, 5.6, 11);
-      c.fillStyle = p.light; c.fillRect(x + 0.4, -1.2, 1.5, 8);
-      c.restore();
-    }
-    c.fillStyle = p.trim; c.fillRect(-8.8, -2.4, 17.6, 1.25);
-    leg(-8.4, s * 0.12);
-    leg(1.8, -s * 0.12);
-  }
-
-  /* ---------- worn: Unsleeping vestments ---------- */
-
-  function moonMark(c, x, y, r, trim, dark) {
-    c.fillStyle = trim;
-    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
-    c.fillStyle = dark;
-    c.beginPath(); c.arc(x + r * 0.32, y - r * 0.1, r * 0.72, 0, Math.PI * 2); c.fill();
-  }
-
-  function drawVestmentsHood(c, st, facing) {
-    const p = palFrom(st);
-    const sk = skinPal();
-    if (facing === "back") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.ellipse(0, -27.2, 10.2, 10.6, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.ellipse(0, -27.0, 9.0, 9.4, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.mid;
-      c.beginPath();
-      c.moveTo(-8, -21); c.quadraticCurveTo(0, -18, 8, -21);
-      c.lineTo(6.4, -15.2); c.lineTo(-6.4, -15.2); c.closePath(); c.fill();
-      c.strokeStyle = p.trim; c.lineWidth = 0.8;
-      c.beginPath(); c.arc(0, -28, 7.6, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
-      moonMark(c, 0, -30.8, 1.7, p.trim, p.dark);
-      return;
-    }
-    if (facing === "right") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.ellipse(0.2, -27.0, 9.6, 10.4, 0.05, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.ellipse(0.4, -27.2, 8.4, 9.2, 0.05, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.skin;
-      c.beginPath(); c.ellipse(4.0, -25.2, 4.6, 5.4, 0.1, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.dark;
-      c.beginPath(); c.ellipse(6.2, -26.0, 0.7, 0.9, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.skin;
-      c.beginPath(); c.moveTo(8.0, -24.2); c.lineTo(10.0, -23.0); c.lineTo(7.8, -22.2); c.closePath(); c.fill();
-      c.fillStyle = p.mid;
-      c.beginPath();
-      c.moveTo(-5, -20.4); c.lineTo(5.6, -20.0); c.lineTo(4.4, -15.4); c.lineTo(-4.2, -15.8);
-      c.closePath(); c.fill();
-      c.strokeStyle = p.trim; c.lineWidth = 0.75;
-      c.beginPath(); c.arc(0, -28.4, 7.2, Math.PI * 1.05, Math.PI * 1.8); c.stroke();
-      moonMark(c, -1.6, -31.4, 1.4, p.trim, p.dark);
-      return;
-    }
-    // front — deep hood, face visible in a tall opening, moon on the brow (not a stole / not widow red)
-    c.fillStyle = p.dark;
-    c.beginPath(); c.ellipse(0, -27.2, 10.0, 10.8, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath(); c.ellipse(0, -27.4, 8.8, 9.6, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.light;
-    c.beginPath(); c.ellipse(-3.6, -30.4, 2.8, 1.6, -0.4, 0, Math.PI * 2); c.fill();
-    c.fillStyle = sk.skin;
-    c.beginPath(); c.ellipse(0, -24.8, 5.2, 5.8, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = sk.dark;
-    c.beginPath(); c.arc(-2.0, -25.6, 0.7, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(2.0, -25.6, 0.7, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.mid;
-    c.beginPath();
-    c.moveTo(-7.6, -20.6); c.quadraticCurveTo(0, -18.4, 7.6, -20.6);
-    c.lineTo(6.0, -15.2); c.lineTo(-6.0, -15.2); c.closePath(); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.9;
-    c.beginPath(); c.arc(0, -27.6, 7.4, Math.PI * 1.08, -0.08); c.stroke();
-    moonMark(c, 0, -32.2, 1.65, p.trim, p.dark);
-  }
-
-  function drawVestmentsTop(c, st, facing) {
-    const p = palFrom(st);
-    if (facing === "right") {
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.moveTo(-6.8, -21.4); c.lineTo(8.6, -21.4);
-      c.quadraticCurveTo(11.0, -9, 8.2, 0.4); c.lineTo(-6.2, 0.4);
-      c.quadraticCurveTo(-8.0, -9, -6.8, -21.4);
-      c.closePath(); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath();
-      c.moveTo(-5.6, -20.6); c.lineTo(7.6, -20.6);
-      c.quadraticCurveTo(9.6, -9, 7.2, -0.4); c.lineTo(-5.2, -0.4);
-      c.quadraticCurveTo(-6.8, -9, -5.6, -20.6);
-      c.closePath(); c.fill();
-      c.fillStyle = p.trim; c.globalAlpha = 0.7;
-      c.fillRect(1.6, -19.4, 1.1, 16.4);
-      c.globalAlpha = 1;
-      return;
-    }
-    const back = facing === "back";
-    c.fillStyle = p.dark;
-    c.beginPath();
-    c.moveTo(-12.4, -21.6); c.quadraticCurveTo(0, -23.6, 12.4, -21.6);
-    c.quadraticCurveTo(14.0, -9, 12.0, 0.6);
-    c.quadraticCurveTo(0, 2.0, -12.0, 0.6);
-    c.quadraticCurveTo(-14.0, -9, -12.4, -21.6);
-    c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(-11.2, -20.6); c.quadraticCurveTo(0, -22.4, 11.2, -20.6);
-    c.quadraticCurveTo(12.6, -9, 10.8, -0.2);
-    c.quadraticCurveTo(0, 1.2, -10.8, -0.2);
-    c.quadraticCurveTo(-12.6, -9, -11.2, -20.6);
-    c.closePath(); c.fill();
-    c.fillStyle = p.light;
-    c.beginPath(); c.ellipse(-3.8, -16.8, 3.2, 2.0, -0.35, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.mid;
-    c.beginPath();
-    c.moveTo(-3.2, -20.2); c.lineTo(3.2, -20.2); c.lineTo(2.4, -0.6); c.lineTo(-2.4, -0.6);
-    c.closePath(); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.85;
-    c.beginPath(); c.moveTo(0, -20.0); c.lineTo(0, -1.0); c.stroke();
-    if (!back) moonMark(c, 0, -12.4, 2.1, p.trim, p.dark);
-    else moonMark(c, 0, -14.0, 1.7, p.trim, p.dark);
-  }
-
-  function drawVestmentsBottom(c, st, facing, stride) {
-    const p = palFrom(st);
-    const s = stride || 0;
-    if (facing === "right") {
-      const far = -s * 0.55, near = s * 0.55;
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.moveTo(-4.2, -2.2 + far); c.lineTo(4.4, -2.2 + far);
-      c.quadraticCurveTo(6.4, 6 + far, 5.2, 12.4 + far); c.lineTo(-4.6, 12.4 + far);
-      c.closePath(); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath();
-      c.moveTo(-3.4, -1.4 + near); c.lineTo(5.0, -1.4 + near);
-      c.quadraticCurveTo(6.8, 6 + near, 5.6, 12.6 + near); c.lineTo(-3.8, 12.6 + near);
-      c.closePath(); c.fill();
-      c.strokeStyle = p.trim; c.lineWidth = 0.7; c.globalAlpha = 0.7;
-      c.beginPath(); c.moveTo(-2.4, 10.8 + near); c.lineTo(4.8, 10.8 + near); c.stroke();
-      c.globalAlpha = 1;
-      return;
-    }
-    // front / back: a longer robe skirt than hide chaps, split slightly at the hem
-    c.fillStyle = p.dark;
-    c.beginPath();
-    c.moveTo(-9.4, -2.4); c.lineTo(9.4, -2.4);
-    c.quadraticCurveTo(11.6, 6, 9.8, 12.6);
-    c.lineTo(1.2, 12.6); c.lineTo(0, 9.4); c.lineTo(-1.2, 12.6);
-    c.lineTo(-9.8, 12.6);
-    c.quadraticCurveTo(-11.6, 6, -9.4, -2.4);
-    c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(-8.4, -1.6); c.lineTo(8.4, -1.6);
-    c.quadraticCurveTo(10.2, 6, 8.6, 11.8);
-    c.lineTo(1.3, 11.8); c.lineTo(0, 8.8); c.lineTo(-1.3, 11.8);
-    c.lineTo(-8.6, 11.8);
-    c.quadraticCurveTo(-10.2, 6, -8.4, -1.6);
-    c.closePath(); c.fill();
-    c.fillStyle = p.trim; c.fillRect(-8.6, -2.3, 17.2, 1.15);
-    c.strokeStyle = p.trim; c.lineWidth = 0.7; c.globalAlpha = 0.65;
-    c.beginPath(); c.moveTo(0, -1.2); c.lineTo(0, 8.4); c.stroke();
-    c.globalAlpha = 1;
-  }
-
-  /* ---------- worn: Hollowplate ---------- */
-
-  function hollowSeam(c, p, x1, y1, x2, y2) {
-    c.strokeStyle = p.trim; c.lineWidth = 0.7; c.globalAlpha = 0.85;
-    c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
-    c.globalAlpha = 1;
-  }
-
-  function drawHollowplateHelm(c, st, facing) {
-    const p = palFrom(st);
-    const sk = skinPal();
-    if (facing === "back") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.arc(0, -26.2, 9.6, Math.PI, 0); c.lineTo(9.2, -16.4); c.lineTo(-9.2, -16.4); c.closePath(); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.arc(0, -26.4, 8.4, Math.PI, 0); c.lineTo(8.0, -16.8); c.lineTo(-8.0, -16.8); c.closePath(); c.fill();
-      hollowSeam(c, p, -6.4, -22, 6.4, -22);
-      c.fillStyle = p.trim;
-      c.fillRect(-8.2, -17.6, 16.4, 1.1);
-      return;
-    }
-    if (facing === "right") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.ellipse(0.5, -26.0, 8.8, 9.6, 0.04, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.ellipse(0.7, -26.3, 7.6, 8.4, 0.04, 0, Math.PI * 2); c.fill();
-      // visor slit — pale hollow glow, face may show through
-      c.fillStyle = "#0a0c10";
-      c.beginPath(); c.ellipse(4.6, -25.4, 3.6, 2.2, 0.1, 0, Math.PI * 2); c.fill();
-      c.fillStyle = sk.skin;
-      c.beginPath(); c.ellipse(5.0, -25.4, 2.4, 1.5, 0.1, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.trimLt; c.globalAlpha = 0.55;
-      c.fillRect(2.2, -26.2, 5.6, 0.7);
-      c.globalAlpha = 1;
-      c.fillStyle = p.mid;
-      c.beginPath();
-      c.moveTo(-4.2, -19.6); c.lineTo(6.0, -19.2); c.lineTo(5.0, -16.0); c.lineTo(-3.4, -16.4);
-      c.closePath(); c.fill();
-      c.fillStyle = p.trim; c.fillRect(-3.6, -17.2, 9.2, 0.9);
-      return;
-    }
-    // front — enclosed bowl, visor slit with a faint hollow glow, face through the opening
-    c.fillStyle = p.dark;
-    c.beginPath(); c.arc(0, -26.2, 9.5, Math.PI * 1.02, -0.02); c.lineTo(8.8, -16.2); c.lineTo(-8.8, -16.2); c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath(); c.arc(0, -26.5, 8.3, Math.PI * 1.02, -0.02); c.lineTo(7.6, -16.6); c.lineTo(-7.6, -16.6); c.closePath(); c.fill();
-    c.fillStyle = p.light;
-    c.beginPath(); c.ellipse(-3.0, -29.4, 2.6, 1.5, -0.4, 0, Math.PI * 2); c.fill();
-    // visor hole
-    c.save();
-    c.beginPath(); c.rect(-5.4, -27.0, 10.8, 3.4);
-    c.clip();
-    c.fillStyle = "#0a0c10";
-    c.fillRect(-5.4, -27.0, 10.8, 3.4);
-    c.fillStyle = sk.skin;
-    c.beginPath(); c.ellipse(0, -24.6, 5.0, 5.2, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = sk.dark;
-    c.beginPath(); c.arc(-2.0, -25.6, 0.7, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(2.0, -25.6, 0.7, 0, Math.PI * 2); c.fill();
-    c.restore();
-    c.strokeStyle = p.trim; c.lineWidth = 0.85;
-    c.strokeRect(-5.4, -27.0, 10.8, 3.4);
-    c.fillStyle = p.trimLt; c.globalAlpha = 0.45;
-    c.fillRect(-5.2, -26.8, 10.4, 0.7);
-    c.globalAlpha = 1;
-    c.fillStyle = p.trim; c.fillRect(-7.8, -17.4, 15.6, 1.15);
-    hollowSeam(c, p, 0, -23.2, 0, -17.6);
-  }
-
-  function drawHollowplateBody(c, st, facing) {
-    const p = palFrom(st);
-    if (facing === "right") {
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.moveTo(-6.8, -21.6); c.lineTo(9.0, -21.6);
-      c.quadraticCurveTo(11.0, -10, 8.2, -0.6); c.lineTo(-6.0, -0.6);
-      c.quadraticCurveTo(-8.0, -10, -6.8, -21.6);
-      c.closePath(); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath();
-      c.moveTo(-5.6, -20.8); c.lineTo(8.0, -20.8);
-      c.quadraticCurveTo(9.6, -10, 7.2, -1.4); c.lineTo(-5.0, -1.4);
-      c.quadraticCurveTo(-6.8, -10, -5.6, -20.8);
-      c.closePath(); c.fill();
-      hollowSeam(c, p, -4.6, -14, 6.8, -14);
-      hollowSeam(c, p, -4.2, -8, 6.4, -8);
-      c.fillStyle = p.trim; c.fillRect(-1.0, -20.4, 1.4, 16.6);
-      return;
-    }
-    c.fillStyle = p.dark;
-    c.beginPath();
-    c.moveTo(-13.0, -21.8); c.lineTo(13.0, -21.8);
-    c.quadraticCurveTo(14.6, -10, 12.2, -0.6);
-    c.lineTo(-12.2, -0.6);
-    c.quadraticCurveTo(-14.6, -10, -13.0, -21.8);
-    c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(-11.8, -20.8); c.lineTo(11.8, -20.8);
-    c.quadraticCurveTo(13.2, -10, 11.0, -1.4);
-    c.lineTo(-11.0, -1.4);
-    c.quadraticCurveTo(-13.2, -10, -11.8, -20.8);
-    c.closePath(); c.fill();
-    c.fillStyle = p.light;
-    c.beginPath(); c.moveTo(-4.2, -20.2); c.lineTo(4.2, -20.2); c.lineTo(2.4, -6); c.lineTo(-2.4, -6); c.closePath(); c.fill();
-    hollowSeam(c, p, -10.4, -15.2, 10.4, -15.2);
-    hollowSeam(c, p, -10.0, -9.2, 10.0, -9.2);
-    c.fillStyle = p.trim; c.fillRect(-11.6, -20.8, 23.2, 1.3);
-    c.fillRect(-1.05, -20.2, 2.1, 16.4);
-    // hollow void disc
-    c.fillStyle = p.ink;
-    c.beginPath(); c.arc(0, -12.6, 2.6, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.9;
-    c.beginPath(); c.arc(0, -12.6, 2.6, 0, Math.PI * 2); c.stroke();
-    c.fillStyle = p.trimLt; c.globalAlpha = 0.4;
-    c.beginPath(); c.arc(-0.6, -13.2, 0.7, 0, Math.PI * 2); c.fill();
-    c.globalAlpha = 1;
-  }
-
-  function drawHollowplateLegs(c, st, facing, stride) {
-    const p = palFrom(st);
-    const s = stride || 0;
-    if (facing === "right") {
-      const far = -s * 0.7, near = s * 0.7;
-      c.fillStyle = p.dark; c.fillRect(-3.4, -2.2 + far, 6.6, 12.4);
-      c.fillStyle = p.main; c.fillRect(-2.6, -1.4 + far, 5.2, 10.8);
-      c.fillStyle = p.dark; c.fillRect(-3.8, -2.2 + near, 7.2, 12.6);
-      c.fillStyle = p.main; c.fillRect(-3.0, -1.4 + near, 5.8, 11.0);
-      hollowSeam(c, p, -2.6, 2.2 + near, 2.4, 2.2 + near);
-      c.fillStyle = p.trim; c.fillRect(-4.2, -2.3, 8.8, 1.15);
-      return;
-    }
-    function leg(x, dy) {
-      c.save(); c.translate(0, dy || 0);
-      c.fillStyle = p.dark; c.fillRect(x - 0.4, -2.2, 7.6, 12.6);
-      c.fillStyle = p.main; c.fillRect(x + 0.3, -1.4, 6.2, 11.0);
-      c.fillStyle = p.light; c.fillRect(x + 0.3, -1.4, 1.5, 11.0);
-      hollowSeam(c, p, x + 0.6, 1.6, x + 6.0, 1.6);
-      hollowSeam(c, p, x + 0.6, 5.4, x + 6.0, 5.4);
-      c.restore();
-    }
-    c.fillStyle = p.trim; c.fillRect(-8.8, -2.5, 17.6, 1.25);
-    leg(-8.4, s * 0.12);
-    leg(1.6, -s * 0.12);
-  }
-
-  /* ---------- jewelry (worn, subtle) ---------- */
-
-  function drawEclipsePendantWorn(c, st, facing) {
-    const p = palFrom(st);
-    if (facing === "back") {
-      c.strokeStyle = p.trim; c.lineWidth = 1.15;
-      c.beginPath(); c.arc(0, -21.2, 5.2, Math.PI * 0.15, Math.PI * 0.85); c.stroke();
-      return;
-    }
-    if (facing === "right") {
-      c.strokeStyle = p.trim; c.lineWidth = 1.2;
-      c.beginPath(); c.arc(1.6, -20, 5.2, 0.15, 1.2); c.stroke();
-      eclipseEmblem(c, p, 5.2, -14.8, 1.7);
-      return;
-    }
-    c.strokeStyle = p.trim; c.lineWidth = 1.3;
-    c.beginPath(); c.arc(0, -22, 6.0, 0.2, Math.PI - 0.2); c.stroke();
-    eclipseEmblem(c, p, 0, -13.6, 2.15);
-  }
-
-  function drawUnsleepingCharmWorn(c, st, facing) {
-    // Small hanging moon-charm. Must not read as the stole (a cloth panel with a lidless eye).
-    const p = palFrom(st);
-    if (facing === "back") {
-      c.strokeStyle = p.trim; c.lineWidth = 1.15;
-      c.beginPath(); c.arc(0, -21.2, 5.0, Math.PI * 0.18, Math.PI * 0.82); c.stroke();
-      return;
-    }
-    if (facing === "right") {
-      c.strokeStyle = p.trim; c.lineWidth = 1.15;
-      c.beginPath(); c.arc(1.6, -20, 5.0, 0.15, 1.15); c.stroke();
-      moonMark(c, 5.0, -15.0, 1.7, p.trim, p.dark);
-      return;
-    }
-    c.strokeStyle = p.trim; c.lineWidth = 1.25;
-    c.beginPath(); c.arc(0, -22, 5.8, 0.22, Math.PI - 0.22); c.stroke();
-    // teardrop charm, moon inside
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(0, -10.2); c.quadraticCurveTo(3.4, -14.2, 0, -17.6); c.quadraticCurveTo(-3.4, -14.2, 0, -10.2);
-    c.closePath(); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.7;
-    c.stroke();
-    moonMark(c, 0, -14.4, 1.45, p.trim, p.dark);
-  }
-
-  function drawHollowTorqueWorn(c, st, facing) {
-    // Open metal neck-ring, close to the throat — not a hanging pendant.
-    const p = palFrom(st);
-    if (facing === "back") {
-      c.strokeStyle = p.ink; c.lineWidth = 2.2;
-      c.beginPath(); c.arc(0, -22.4, 5.6, Math.PI * 0.12, Math.PI * 0.88); c.stroke();
-      c.strokeStyle = p.trim; c.lineWidth = 1.15;
-      c.beginPath(); c.arc(0, -22.4, 5.6, Math.PI * 0.12, Math.PI * 0.88); c.stroke();
-      return;
-    }
-    if (facing === "right") {
-      c.strokeStyle = p.ink; c.lineWidth = 2.2;
-      c.beginPath(); c.arc(1.2, -21.4, 5.2, 0.05, 1.25); c.stroke();
-      c.strokeStyle = p.trim; c.lineWidth = 1.15;
-      c.beginPath(); c.arc(1.2, -21.4, 5.2, 0.05, 1.25); c.stroke();
-      c.fillStyle = p.trim; c.beginPath(); c.arc(5.6, -17.8, 1.15, 0, Math.PI * 2); c.fill();
-      return;
-    }
-    c.strokeStyle = p.ink; c.lineWidth = 2.4;
-    c.beginPath(); c.arc(0, -22.6, 6.0, 0.18, Math.PI - 0.18); c.stroke();
-    c.strokeStyle = p.trim; c.lineWidth = 1.2;
-    c.beginPath(); c.arc(0, -22.6, 6.0, 0.18, Math.PI - 0.18); c.stroke();
-    c.fillStyle = p.trim;
-    c.beginPath(); c.arc(-5.4, -20.6, 1.2, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(5.4, -20.6, 1.2, 0, Math.PI * 2); c.fill();
-  }
-
-  function drawT3Ring(c, st, facing, hands, kind) {
-    // Thin band on the finger — never a disc that swallows the left fist.
-    // On 2h weapons the off-hand must still read as a hand on the haft.
-    const p = palFrom(st);
-    const h = (hands && hands.left) || { x: 12, y: -9 };
-    c.save();
-    c.translate(h.x + 0.55, h.y + 1.2);
-    c.strokeStyle = p.ink; c.lineWidth = 0.7;
-    c.beginPath(); c.arc(0, 0, 1.15, 0, Math.PI * 2); c.stroke();
-    c.strokeStyle = p.trim; c.lineWidth = 0.5;
-    c.beginPath(); c.arc(0, 0, 1.15, 0, Math.PI * 2); c.stroke();
-    if (kind === "eclipse_band") {
-      eclipseEmblem(c, p, 0, -0.15, 0.5);
-    } else if (kind === "hollow_signet") {
-      c.fillStyle = p.trim;
-      c.fillRect(-0.5, -0.7, 1.0, 0.65);
-      c.fillStyle = p.dark;
-      c.fillRect(-0.28, -0.55, 0.56, 0.35);
-    } else {
-      c.fillStyle = p.trim;
-      c.beginPath(); c.arc(0, -0.15, 0.45, 0, Math.PI * 2); c.fill();
-    }
     c.restore();
   }
-
-  /* ---------- 2h poses ---------- */
-
-  function longbowPose(facing, opt) {
-    const shot = (opt && opt.shot) || {};
-    const draw = shot.draw || 0;
-    const recoil = shot.recoil || 0;
-    // Left hand stays on the riser; right hand drops to the string as the bow draws.
-    // Front: hold the bow off to the character's right (viewer's left) so idle keeps the face clear.
-    let riser, string;
-    if (facing === "front") {
-      riser = { x: -8.2, y: -10.2 };
-      string = { x: -16.8 - draw * 6.0 + recoil * 1.4, y: -10.6 - draw * 0.8 };
-    } else if (facing === "back") {
-      riser = { x: 8.2, y: -11.4 };
-      string = { x: 16.8 + draw * 6.0 - recoil * 1.4, y: -11.8 - draw * 0.8 };
-    } else if (facing === "right") {
-      riser = { x: 7.2, y: -10.4 };
-      string = { x: 2.0 - draw * 6.5 + recoil * 1.4, y: -11.0 - draw * 0.6 };
-    } else {
-      // left: riser in the near (left) hand so the bow peeks; far right hand draws
-      riser = { x: -7.0, y: -9.6 };
-      string = { x: -1.2 + draw * 6.5 - recoil * 1.4, y: -10.4 - draw * 0.6 };
-    }
-    // Idle rest: bow-hand (left) slightly above the riser emblem, main hand
-    // (right) below it, so both fists read on the bow. During the draw the
-    // right hand moves to the string.
-    const upper = { x: riser.x, y: riser.y - 3.4 };
-    const lower = { x: riser.x, y: riser.y + 5.4 };
-    return { weapon: riser, left: upper, right: (draw > 0.08 ? string : lower) };
-  }
-
-  function staffPose(facing, opt) {
-    const shot = (opt && opt.shot) || {};
-    const raise = shot.raise || 0;
-    const lift = raise * 11.5;
-    let rest;
-    if (facing === "front") rest = { x: -6.0, y: -7.2 - lift };
-    else if (facing === "back") rest = { x: 6.0, y: -8.4 - lift };
-    else if (facing === "right") rest = { x: 6.4, y: -7.2 - lift };
-    else rest = { x: -4.2, y: -5.8 - lift }; // left: far fist peeks at the front of the torso
-    const ang = staffHoldAngle(facing, shot);
-    // Gorehorn reference: off-hand (left) sits on the shaft above the main
-    // hand, farther along the haft on a left profile so it grips the peek.
-    const dist = (facing === "left") ? 11.5 : 8.6;
-    return { weapon: rest, right: rest, left: along(rest, ang, dist) };
-  }
-
-  function staffHoldAngle(facing, shot) {
-    const raise = (shot && shot.raise) || 0;
-    if (facing === "front") return -0.22 - raise * 0.08;
-    if (facing === "back") return 0.22 + raise * 0.08;
-    if (facing === "right") return 0.28 - raise * 0.05;
-    return -0.62 + raise * 0.05; // left: canted forward, head clear of the hood
-  }
-
-  function halberdPose(facing, opt) {
-    const shot = (opt && opt.shot) || {};
-    const kind = shot.kind || "halberd_thrust";
-    const thrust = shot.thrust || 0;
-    const swing = shot.swing || 0;
-    const pull = shot.pull || 0;
-    const fwd = (typeof global.facingForward === "function")
-      ? global.facingForward(facing)
-      : (facing === "right" ? { x: 1, y: 0 } : facing === "left" ? { x: -1, y: 0 } : facing === "back" ? { x: 0, y: -1 } : { x: 0, y: 1 });
-    let rest;
-    if (facing === "front") rest = { x: -5.8, y: -6.8 };
-    else if (facing === "back") rest = { x: 5.8, y: -8.0 };
-    else if (facing === "right") rest = { x: 6.4, y: -7.0 };
-    else rest = { x: -3.6, y: -5.0 }; // left: far fist peeks at the chest; head stays clear of the helm
-    const w = { x: rest.x, y: rest.y };
-    const reach = Math.max(0, Math.min(1, thrust));
-    if (kind === "halberd_chop" && swing) {
-      if (swing > 0) {
-        // Cock the head up, hands high. Stay on the weapon side of the body.
-        if (facing === "front") { w.x -= 2.0 * swing; w.y -= 12.0 * swing; }
-        else if (facing === "back") { w.x += 2.0 * swing; w.y -= 12.0 * swing; }
-        else if (facing === "right") { w.x -= 1.5 * swing; w.y -= 11.0 * swing; }
-        else { w.x += 1.5 * swing; w.y -= 11.0 * swing; }
-      } else {
-        const u = -swing;
-        // Cut down-forward: lower the grip, keep the tip on the weapon side.
-        if (facing === "front") { w.x -= 3.0 * u; w.y += 8.5 * u; }
-        else if (facing === "back") { w.x += 3.0 * u; w.y += 8.5 * u; }
-        else if (facing === "right") { w.x += 3.2 * u; w.y += 8.5 * u; }
-        else { w.x -= 3.2 * u; w.y += 8.5 * u; }
-      }
-    } else {
-      // Thrust / idle. Side pokes stay at chest-to-waist height (no dive at
-      // the floor) and stay canted so a long shaft fits in ±42.
-      if (facing === "front") {
-        w.x -= 2.2 * pull + 1.2 * reach;
-        w.y += 1.4 * pull + 4.0 * reach;
-      } else if (facing === "back") {
-        w.x += 2.2 * pull + 1.2 * reach;
-        w.y += 1.4 * pull + 4.0 * reach;
-      } else if (facing === "right") {
-        w.x += -2.0 * pull + 1.6 * reach;
-        w.y += -0.6 * pull + 0.6 * reach;
-      } else {
-        w.x += 2.0 * pull - 1.6 * reach;
-        w.y += -0.6 * pull + 0.6 * reach;
-      }
-    }
-    const ang = halberdHoldAngle(facing, shot);
-    const dist = (facing === "left") ? 12.0 : 8.6;
-    return { weapon: w, right: w, left: along(w, ang, dist) };
-  }
-
-  function halberdHoldAngle(facing, shot) {
-    const kind = (shot && shot.kind) || "halberd_thrust";
-    const thrust = (shot && shot.thrust) || 0;
-    const swing = (shot && shot.swing) || 0;
-    const pull = (shot && shot.pull) || 0;
-    const reach = Math.max(0, thrust);
-    let base;
-    if (facing === "front") base = -0.42;
-    else if (facing === "back") base = 0.42;
-    else if (facing === "right") base = 0.52;
-    else base = -0.78; // left idle: head peeks ahead of the chest, clear of the helm
-    if (kind === "halberd_chop") {
-      // Windup cocks the head up; the cut continues down-forward on the weapon side.
-      // Angles stay shy of a flat shaft so the tip (and axe blade) remain inside ±42.
-      if (facing === "front") {
-        if (swing > 0) return base - 0.55 * swing;
-        if (swing < 0) return base - 0.70 * (-swing);
-        return base;
-      }
-      if (facing === "back") {
-        if (swing > 0) return base + 0.55 * swing;
-        if (swing < 0) return base + 0.70 * (-swing);
-        return base;
-      }
-      if (facing === "right") {
-        if (swing > 0) return base - 0.38 * swing; // more vertical, head up
-        if (swing < 0) return base + 0.48 * (-swing); // flatter, down-forward
-        return base;
-      }
-      if (swing > 0) return base + 0.38 * swing;
-      if (swing < 0) return base - 0.48 * (-swing);
-      return base;
-    }
-    // Thrust: keep front/back tilted off the visor (do not straighten through the helm).
-    // Side views lean forward at chest height — flatter than idle, never a floor dive.
-    if (facing === "front") return base - 0.20 * pull - 0.18 * reach;
-    if (facing === "back") return base + 0.20 * pull + 0.18 * reach;
-    if (facing === "right") return base - 0.16 * pull + 0.53 * reach;
-    return base + 0.16 * pull - 0.53 * reach;
-  }
-
-  function t3TwoHandPose(facing, opt, kind) {
-    if (kind === "longbow") return longbowPose(facing, opt);
-    if (kind === "staff") return staffPose(facing, opt);
-    if (kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop") return halberdPose(facing, opt);
-    return null;
-  }
-
-  /* ---------- held weapons ---------- */
-
-  function drawLongbowHeld(c, st, facing, shot, pos) {
-    const p = palFrom(st);
-    const draw = (shot && shot.draw) || 0;
-    const flash = (shot && shot.flash) || 0;
-    const recoil = (shot && shot.recoil) || 0;
-    c.save();
-    if (pos) c.translate(pos.x, pos.y);
-    // Aim the bow's "forward" along the facing. Never backward.
-    if (facing === "front") { c.rotate(-0.08); }
-    else if (facing === "back") { c.rotate(0.08); }
-    else if (facing === "right") { c.rotate(0.08 + recoil * 0.08); }
-    else { c.rotate(-0.08 - recoil * 0.08); }
-    // Local: +Y down the lower limb, -Y up the upper limb, string toward -X on right? 
-    // Keep the belly of the bow toward the target.
-    const tip = 16.5, low = 14.2;
-    const flex = draw * 2.2;
-    const strX = (facing === "left") ? (4.6 + flex) : -(4.6 + flex);
-    // limbs
-    c.strokeStyle = p.ink; c.lineWidth = 3.1; c.lineCap = "round";
-    c.beginPath();
-    c.moveTo(0, -tip);
-    c.quadraticCurveTo(strX * 0.15, -2, 0, 2);
-    c.quadraticCurveTo(-strX * 0.08, low * 0.55, 0, low);
-    c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 2.05;
-    c.beginPath();
-    c.moveTo(0, -tip + 0.4);
-    c.quadraticCurveTo(strX * 0.15, -2, 0, 2);
-    c.quadraticCurveTo(-strX * 0.08, low * 0.55, 0, low - 0.4);
-    c.stroke();
-    // riser
-    c.fillStyle = p.dark; c.fillRect(-1.6, -5.2, 3.2, 11.2);
-    c.fillStyle = p.main; c.fillRect(-1.2, -4.6, 2.4, 10.0);
-    c.fillStyle = p.trim; c.fillRect(-1.2, -1.2, 2.4, 2.4);
-    eclipseEmblem(c, p, 0, 0.0, 1.15);
-    // string
-    c.strokeStyle = "#e8e0c8"; c.lineWidth = 0.7;
-    c.beginPath(); c.moveTo(0, -tip); c.lineTo(strX, 0.4); c.lineTo(0, low); c.stroke();
-    // gold tips
-    c.fillStyle = p.trim;
-    c.beginPath(); c.arc(0, -tip, 1.35, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(0, low, 1.15, 0, Math.PI * 2); c.fill();
-    // Arrow only while the string is drawn. Hide it the instant the shot snaps (flash/snap).
-    if (draw > 0.25 && flash < 0.2 && !(shot && shot.snap)) {
-      const ax0 = strX, ay0 = 0.4;
-      const ax1 = (facing === "left") ? -13 : 13;
-      c.strokeStyle = p.ink; c.lineWidth = 1.15;
-      c.beginPath(); c.moveTo(ax0, ay0); c.lineTo(ax1, ay0); c.stroke();
-      c.fillStyle = p.trim;
-      c.beginPath();
-      if (facing === "left") { c.moveTo(ax1 - 2.2, ay0); c.lineTo(ax1 + 0.4, ay0 - 1.4); c.lineTo(ax1 + 0.4, ay0 + 1.4); }
-      else { c.moveTo(ax1 + 2.2, ay0); c.lineTo(ax1 - 0.4, ay0 - 1.4); c.lineTo(ax1 - 0.4, ay0 + 1.4); }
-      c.closePath(); c.fill();
-    }
-    if (flash > 0.12) {
-      c.fillStyle = "rgba(232,200,80," + (0.75 * flash) + ")";
-      c.beginPath(); c.arc((facing === "left") ? -12 : 12, 0.4, 4.0, 0, Math.PI * 2); c.fill();
-    }
-    c.restore();
-  }
-
-  function drawStaffHeld(c, st, facing, shot, pos) {
-    const p = palFrom(st);
-    const flash = (shot && shot.flash) || 0;
-    const ang = staffHoldAngle(facing, shot || {});
-    c.save();
-    if (pos) c.translate(pos.x, pos.y);
-    c.rotate(ang);
-    // shaft: head at -Y (up along the staff)
-    const len = 26.5;
-    c.strokeStyle = p.ink; c.lineWidth = 3.0; c.lineCap = "round";
-    c.beginPath(); c.moveTo(0, 8.5); c.lineTo(0, -len); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 1.9;
-    c.beginPath(); c.moveTo(0, 8.0); c.lineTo(0, -len + 0.6); c.stroke();
-    c.fillStyle = p.trim; c.fillRect(-1.4, -2.2, 2.8, 5.6);
-    // Nightfall head: falling star in a crescent
-    c.fillStyle = p.ink;
-    c.beginPath(); c.arc(0, -len - 1.2, 4.0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath(); c.arc(0, -len - 1.2, 3.2, 0, Math.PI * 2); c.fill();
-    moonMark(c, 0, -len - 1.2, 2.15, p.trim, p.dark);
-    c.fillStyle = p.trimLt;
-    c.beginPath();
-    c.moveTo(0, -len - 5.8); c.lineTo(1.1, -len - 3.4); c.lineTo(-1.1, -len - 3.4);
-    c.closePath(); c.fill();
-    if (flash > 0.1) {
-      c.fillStyle = "rgba(200,220,255," + (0.5 * flash) + ")";
-      c.beginPath(); c.arc(0, -len - 1.2, 5.5, 0, Math.PI * 2); c.fill();
-    }
-    c.restore();
-  }
-
-  function drawHalberdHead(c, p, dir) {
-    // Classic halberd head, local -Y up the shaft: a long top spear point,
-    // an axe blade on `dir`, and a straight back spike opposite. No hook, no scythe.
-    // Socket / langets
-    c.fillStyle = p.ink; c.fillRect(-1.55, -2.4, 3.1, 6.4);
-    c.fillStyle = p.trim; c.fillRect(-1.15, -2.0, 2.3, 5.6);
-    // Top spear point
-    c.fillStyle = p.ink;
-    c.beginPath();
-    c.moveTo(0, -12.2); c.lineTo(1.6, -2.2); c.lineTo(-1.6, -2.2); c.closePath(); c.fill();
-    c.fillStyle = p.trim;
-    c.beginPath();
-    c.moveTo(0, -11.4); c.lineTo(1.05, -2.4); c.lineTo(-1.05, -2.4); c.closePath(); c.fill();
-    // Axe blade (broad cutting edge, not a curved hook)
-    c.fillStyle = p.ink;
-    c.beginPath();
-    c.moveTo(0.55 * dir, -6.4);
-    c.lineTo(0.55 * dir, -0.5);
-    c.lineTo(3.8 * dir, 0.8);
-    c.quadraticCurveTo(8.0 * dir, 0.2, 7.6 * dir, -3.2);
-    c.quadraticCurveTo(7.2 * dir, -6.6, 0.55 * dir, -6.4);
-    c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(0.65 * dir, -5.8);
-    c.lineTo(0.65 * dir, -1.0);
-    c.lineTo(3.6 * dir, 0.1);
-    c.quadraticCurveTo(7.0 * dir, -0.3, 6.7 * dir, -3.2);
-    c.quadraticCurveTo(6.4 * dir, -5.9, 0.65 * dir, -5.8);
-    c.closePath(); c.fill();
-    c.fillStyle = p.trimLt;
-    c.beginPath();
-    c.moveTo(5.4 * dir, -5.4);
-    c.quadraticCurveTo(6.6 * dir, -3.2, 5.6 * dir, -1.2);
-    c.lineTo(5.0 * dir, -1.4);
-    c.quadraticCurveTo(5.8 * dir, -3.2, 4.8 * dir, -5.0);
-    c.closePath(); c.fill();
-    // Straight back spike
-    c.fillStyle = p.ink;
-    c.beginPath();
-    c.moveTo(-0.45 * dir, -5.0);
-    c.lineTo(-7.4 * dir, -2.6);
-    c.lineTo(-0.45 * dir, -1.5);
-    c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath();
-    c.moveTo(-0.45 * dir, -4.5);
-    c.lineTo(-6.5 * dir, -2.6);
-    c.lineTo(-0.45 * dir, -2.0);
-    c.closePath(); c.fill();
-  }
-
-  function drawHalberdHeld(c, st, facing, shot, pos) {
-    const p = palFrom(st);
-    const ang = halberdHoldAngle(facing, shot || {});
-    c.save();
-    if (pos) c.translate(pos.x, pos.y);
-    c.rotate(ang);
-    // Hands sit at the origin. Shorten the butt behind them (Kingsguard
-    // sword only pokes ~4 below the grip) so more of the length reads as
-    // forward reach. Spear tip is ~38 from the main hand; the sword's tip
-    // is ~19 from its grip.
-    const butt = 4.6;
-    const headY = -26.0;
-    c.strokeStyle = p.ink; c.lineWidth = 3.05; c.lineCap = "round";
-    c.beginPath(); c.moveTo(0, butt); c.lineTo(0, headY + 2.2); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 1.85;
-    c.beginPath(); c.moveTo(0, butt - 0.5); c.lineTo(0, headY + 2.6); c.stroke();
-    c.fillStyle = p.trim; c.fillRect(-1.35, -3.0, 2.7, 6.2);
-    c.save();
-    c.translate(0, headY);
-    const dir = (facing === "left" || facing === "front") ? -1 : 1;
-    drawHalberdHead(c, p, dir);
-    c.restore();
-    c.restore();
-  }
-
-  /* ---------- bank / lab icons (32-unit space, centered) ---------- */
 
   function rrect(ctx, x, y, w, h, r) {
     r = Math.min(r || 1.2, w / 2, h / 2);
@@ -975,156 +103,1397 @@
     ctx.closePath();
   }
 
+  /* ---------- emblems ---------- */
+
+  function blackSun(c, p, x, y, r) {
+    glow(c, x, y, r * 1.55, p.glow, 0.35);
+    c.fillStyle = p.ink;
+    c.beginPath(); c.arc(x, y, r + 1.05, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath(); c.arc(x, y, r + 0.35, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.corona || p.trimLt;
+    c.beginPath(); c.arc(x, y, r * 0.78, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.voidC || p.dark;
+    c.beginPath(); c.arc(x + r * 0.18, y - r * 0.06, r * 0.72, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trimLt;
+    c.globalAlpha = 0.75;
+    c.beginPath(); c.arc(x - r * 0.42, y - r * 0.22, r * 0.16, 0, Math.PI * 2); c.fill();
+    c.globalAlpha = 1;
+  }
+
+  function moonMark(c, x, y, r, fill, hole) {
+    c.fillStyle = fill;
+    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = hole;
+    c.beginPath(); c.arc(x + r * 0.38, y - r * 0.12, r * 0.72, 0, Math.PI * 2); c.fill();
+  }
+
+  function lidlessEye(c, x, y, s, p) {
+    glow(c, x, y, s * 1.6, p.glow, 0.4);
+    c.fillStyle = p.trimLt;
+    c.beginPath();
+    c.moveTo(x - s * 1.7, y);
+    c.quadraticCurveTo(x, y - s * 1.15, x + s * 1.7, y);
+    c.quadraticCurveTo(x, y + s * 1.15, x - s * 1.7, y);
+    c.closePath(); c.fill();
+    c.fillStyle = p.violet || p.mid;
+    c.beginPath(); c.arc(x, y, s * 0.7, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath(); c.arc(x, y, s * 0.38, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(x - s * 0.12, y - s * 0.12, s * 0.14, 0, Math.PI * 2); c.fill();
+  }
+
+  function soulCore(c, p, x, y, r) {
+    glow(c, x, y, r * 1.8, p.glow, 0.45);
+    c.fillStyle = p.ink;
+    c.beginPath(); c.arc(x, y, r + 0.7, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = p.glowHard; c.lineWidth = 0.85;
+    c.beginPath(); c.arc(x, y, r + 0.2, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = p.voidC;
+    c.beginPath(); c.arc(x, y, r * 0.7, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.core;
+    c.globalAlpha = 0.9;
+    c.beginPath(); c.arc(x, y, r * 0.32, 0, Math.PI * 2); c.fill();
+    c.globalAlpha = 1;
+    c.fillStyle = p.glowHard;
+    c.beginPath(); c.arc(x - r * 0.1, y - r * 0.12, r * 0.12, 0, Math.PI * 2); c.fill();
+  }
+
+  function soulCrack(c, p, x0, y0, x1, y1) {
+    c.strokeStyle = p.glow; c.lineWidth = 1.6; c.lineCap = "round";
+    c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+    c.strokeStyle = p.crack; c.lineWidth = 0.7;
+    c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+  }
+
+  /* ---------- worn: Eclipse hide ---------- */
+
+  function drawEclipseCoif(c, st, facing) {
+    const p = palFor("eclipse", st);
+    const sk = skinPal();
+    if (facing === "back") {
+      c.fillStyle = p.dark;
+      c.beginPath(); c.ellipse(0, -28.2, 10.6, 11.0, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(0, -28.4, 9.6, 10.0, 0, 0, Math.PI * 2); c.fill();
+      // rear crest
+      c.fillStyle = p.dark;
+      c.beginPath(); c.moveTo(-2.6, -38); c.lineTo(0, -51.0); c.lineTo(2.6, -38); c.closePath(); c.fill();
+      c.fillStyle = p.trim;
+      c.beginPath(); c.moveTo(-1.3, -38.2); c.lineTo(0, -49.4); c.lineTo(1.3, -38.2); c.closePath(); c.fill();
+      glow(c, 0, -36.5, 3.2, p.glow, 0.3);
+      blackSun(c, p, 0, -27.2, 2.3);
+      return;
+    }
+    if (facing === "right") {
+      c.fillStyle = p.dark;
+      c.beginPath(); c.ellipse(1.2, -28.0, 8.4, 10.6, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(1.0, -28.2, 7.5, 9.6, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath(); c.ellipse(4.8, -26.4, 3.5, 5.0, 0.1, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.eye;
+      c.beginPath(); c.ellipse(6.2, -27.0, 1.05, 1.25, 0, 0, Math.PI * 2); c.fill();
+      // brow corona
+      c.strokeStyle = p.trim; c.lineWidth = 1.2;
+      c.beginPath(); c.arc(2.2, -29.4, 6.4, -2.7, -0.2); c.stroke();
+      glow(c, 3.4, -33.5, 2.6, p.glow, 0.35);
+      blackSun(c, p, 3.6, -32.8, 1.55);
+      // short rear crest
+      c.fillStyle = p.trim;
+      c.beginPath(); c.moveTo(-3.4, -36.2); c.lineTo(-6.2, -49.5); c.lineTo(-1.2, -36.8); c.closePath(); c.fill();
+      return;
+    }
+    // front
+    c.fillStyle = p.dark;
+    c.beginPath(); c.ellipse(0, -28.2, 10.8, 11.2, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath(); c.ellipse(0, -28.5, 9.7, 10.1, 0, 0, Math.PI * 2); c.fill();
+    // face opening
+    c.fillStyle = sk.skin;
+    c.beginPath(); c.ellipse(0, -26.6, 6.4, 6.6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.eye;
+    c.beginPath(); c.arc(-2.15, -27.4, 1.05, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.15, -27.4, 1.05, 0, Math.PI * 2); c.fill();
+    // temple ray-plates
+    c.fillStyle = p.dark;
+    c.beginPath(); c.moveTo(-10.2, -30); c.lineTo(-15.8, -35.2); c.lineTo(-10.6, -25.5); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(10.2, -30); c.lineTo(15.8, -35.2); c.lineTo(10.6, -25.5); c.closePath(); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-10.0, -29.6); c.lineTo(-14.8, -34.2); c.lineTo(-10.4, -26.2); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(10.0, -29.6); c.lineTo(14.8, -34.2); c.lineTo(10.4, -26.2); c.closePath(); c.fill();
+    // brow corona + black sun (above the face, not over it)
+    c.strokeStyle = p.trim; c.lineWidth = 1.35;
+    c.beginPath(); c.arc(0, -31.4, 7.2, Math.PI * 1.05, Math.PI * -0.05, true); c.stroke();
+    glow(c, 0, -35.2, 3.4, p.glow, 0.4);
+    blackSun(c, p, 0, -35.0, 2.15);
+    // short rear/top crest peek
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-1.8, -38.6); c.lineTo(0, -50.0); c.lineTo(1.8, -38.6); c.closePath(); c.fill();
+  }
+
+  function drawEclipsePauldron(c, p, side) {
+    const s = side; // -1 left of screen (character right), +1 right of screen
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(s * 7.0, -22.4);
+    c.lineTo(s * 16.8, -26.0);
+    c.lineTo(s * 19.6, -22.0);
+    c.quadraticCurveTo(s * 20.6, -16.0, s * 16.8, -10.6);
+    c.lineTo(s * 7.8, -11.6);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(s * 7.8, -21.4);
+    c.lineTo(s * 16.0, -24.6);
+    c.lineTo(s * 18.2, -21.4);
+    c.quadraticCurveTo(s * 19.0, -16.2, s * 15.6, -11.6);
+    c.lineTo(s * 8.2, -12.4);
+    c.closePath(); c.fill();
+    // sharp upward spike
+    c.fillStyle = p.trim;
+    c.beginPath();
+    c.moveTo(s * 15.2, -24.0);
+    c.lineTo(s * 17.8, -31.2);
+    c.lineTo(s * 19.0, -22.4);
+    c.closePath(); c.fill();
+    c.strokeStyle = p.trim; c.lineWidth = 1.1;
+    c.beginPath();
+    c.moveTo(s * 8.4, -21.0);
+    c.lineTo(s * 16.0, -24.2);
+    c.quadraticCurveTo(s * 18.6, -16.4, s * 15.4, -12.0);
+    c.stroke();
+    blackSun(c, p, s * 14.0, -17.0, 2.05);
+  }
+
+  function drawEclipseBody(c, st, facing) {
+    const p = palFor("eclipse", st);
+    if (facing === "back" || facing === "right") {
+      const right = facing === "right";
+      c.fillStyle = p.dark;
+      c.beginPath();
+      if (right) {
+        c.moveTo(-6.6, -21.6); c.lineTo(9.4, -22.2);
+        c.quadraticCurveTo(11.4, -10, 8.2, -1.0); c.lineTo(-5.8, -1.0);
+        c.quadraticCurveTo(-7.6, -10, -6.6, -21.6);
+      } else {
+        c.moveTo(-12.4, -21.8); c.quadraticCurveTo(0, -23.8, 12.4, -21.8);
+        c.quadraticCurveTo(14.0, -10, 11.8, -1.0);
+        c.quadraticCurveTo(0, 0.8, -11.8, -1.0);
+        c.quadraticCurveTo(-14.0, -10, -12.4, -21.8);
+      }
+      c.closePath(); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      if (right) {
+        c.moveTo(-5.4, -20.6); c.lineTo(8.2, -21.2);
+        c.quadraticCurveTo(9.8, -10, 7.0, -2.0); c.lineTo(-4.8, -2.0);
+        c.quadraticCurveTo(-6.4, -10, -5.4, -20.6);
+      } else {
+        c.moveTo(-11.0, -20.6); c.quadraticCurveTo(0, -22.4, 11.0, -20.6);
+        c.quadraticCurveTo(12.4, -10, 10.6, -2.0);
+        c.quadraticCurveTo(0, -0.4, -10.6, -2.0);
+        c.quadraticCurveTo(-12.4, -10, -11.0, -20.6);
+      }
+      c.closePath(); c.fill();
+      // gold belt
+      c.fillStyle = p.trim;
+      if (right) c.fillRect(-5.2, -3.4, 13.0, 1.7);
+      else c.fillRect(-11.0, -3.4, 22.0, 1.7);
+      if (right) {
+        drawEclipsePauldron(c, p, 1);
+        blackSun(c, p, 3.0, -13.0, 2.15);
+      } else {
+        drawEclipsePauldron(c, p, -1);
+        drawEclipsePauldron(c, p, 1);
+        blackSun(c, p, 0, -13.4, 2.3);
+      }
+      return;
+    }
+    // front
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-12.6, -21.8); c.quadraticCurveTo(0, -24.0, 12.6, -21.8);
+    c.quadraticCurveTo(14.2, -10, 12.0, -1.0);
+    c.quadraticCurveTo(0, 1.0, -12.0, -1.0);
+    c.quadraticCurveTo(-14.2, -10, -12.6, -21.8);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(-11.2, -20.8); c.quadraticCurveTo(0, -22.6, 11.2, -20.8);
+    c.quadraticCurveTo(12.6, -10, 10.6, -2.0);
+    c.quadraticCurveTo(0, -0.2, -10.6, -2.0);
+    c.quadraticCurveTo(-12.6, -10, -11.2, -20.8);
+    c.closePath(); c.fill();
+    // layered chest plate
+    c.fillStyle = p.mid;
+    rrect(c, -7.4, -18.4, 14.8, 12.4, 1.6); c.fill();
+    c.strokeStyle = p.trim; c.lineWidth = 0.9;
+    rrect(c, -7.4, -18.4, 14.8, 12.4, 1.6); c.stroke();
+    blackSun(c, p, 0, -12.6, 3.15);
+    // gold belt + buckle
+    c.fillStyle = p.dark; c.fillRect(-11.2, -3.8, 22.4, 2.6);
+    c.fillStyle = p.trim; c.fillRect(-11.2, -3.4, 22.4, 1.7);
+    blackSun(c, p, 0, -2.5, 1.35);
+    // tassets
+    c.fillStyle = p.dark;
+    c.fillRect(-9.6, -1.4, 5.6, 4.4);
+    c.fillRect(4.0, -1.4, 5.6, 4.4);
+    c.fillStyle = p.main;
+    c.fillRect(-8.8, -1.0, 4.2, 3.4);
+    c.fillRect(4.6, -1.0, 4.2, 3.4);
+    c.strokeStyle = p.trim; c.lineWidth = 0.6;
+    c.strokeRect(-8.8, -1.0, 4.2, 3.4);
+    c.strokeRect(4.6, -1.0, 4.2, 3.4);
+    drawEclipsePauldron(c, p, -1);
+    drawEclipsePauldron(c, p, 1);
+  }
+
+  function drawEclipseChaps(c, st, facing, stride) {
+    const p = palFor("eclipse", st);
+    const s = stride || 0;
+    if (facing === "back" || facing === "right") {
+      const right = facing === "right";
+      if (right) {
+        const far = -s * 0.7, near = s * 0.7;
+        c.fillStyle = p.dark; c.fillRect(-3.4, -2 + far, 6.6, 13);
+        c.fillStyle = p.main; c.fillRect(-2.6, -1 + far, 5.2, 11.2);
+        c.fillStyle = p.dark; c.fillRect(-3.8, -2 + near, 7.4, 13.4);
+        c.fillStyle = p.main; c.fillRect(-3.0, -1 + near, 6.0, 11.6);
+        c.fillStyle = p.trim; c.fillRect(-4.2, -2.4, 8.8, 1.2);
+        // knee cop
+        c.fillStyle = p.trim; c.fillRect(-2.2, 5 + near, 4.4, 1.5);
+        return;
+      }
+      c.fillStyle = p.dark;
+      c.fillRect(-9.2, -2, 7.0, 13.4);
+      c.fillRect(2.2, -2, 7.0, 13.4);
+      c.fillStyle = p.main;
+      c.fillRect(-8.2, -1.2, 5.4, 11.8);
+      c.fillRect(2.8, -1.2, 5.4, 11.8);
+      c.fillStyle = p.trim;
+      c.fillRect(-9.2, -2.4, 18.4, 1.2);
+      c.fillRect(-7.4, 5.2, 4.0, 1.4);
+      c.fillRect(3.4, 5.2, 4.0, 1.4);
+      return;
+    }
+    c.fillStyle = p.dark;
+    c.fillRect(-9.4, -2.2, 7.4, 13.6);
+    c.fillRect(2.0, -2.2, 7.4, 13.6);
+    c.fillStyle = p.main;
+    c.fillRect(-8.4, -1.4, 5.6, 12.0);
+    c.fillRect(2.8, -1.4, 5.6, 12.0);
+    c.fillStyle = p.mid;
+    c.fillRect(-7.4, -1.0, 3.6, 5.0);
+    c.fillRect(3.8, -1.0, 3.6, 5.0);
+    c.fillStyle = p.trim;
+    c.fillRect(-9.4, -2.6, 18.8, 1.25);
+    c.fillRect(-7.6, 5.4, 4.2, 1.55);
+    c.fillRect(3.4, 5.4, 4.2, 1.55);
+  }
+
+
+  /* ---------- worn: Unsleeping vestments ---------- */
+
+  function drawVestmentsHood(c, st, facing) {
+    const p = palFor("vestments", st);
+    const sk = skinPal();
+    if (facing === "back") {
+      // trailing veil
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-9, -30); c.quadraticCurveTo(-16, -8, -10, 6);
+      c.lineTo(-6, 4); c.quadraticCurveTo(-11, -8, -6, -28);
+      c.closePath(); c.fill();
+      c.beginPath();
+      c.moveTo(9, -30); c.quadraticCurveTo(16, -8, 11, 7);
+      c.lineTo(6, 4.5); c.quadraticCurveTo(11, -8, 6, -28);
+      c.closePath(); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(0, -28.6, 11.0, 11.8, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.mid;
+      c.beginPath(); c.ellipse(0, -29.2, 8.4, 8.8, 0, 0, Math.PI * 2); c.fill();
+      glow(c, 0, -32.5, 4.2, p.glow, 0.35);
+      lidlessEye(c, 0, -31.6, 2.0, p);
+      return;
+    }
+    if (facing === "right") {
+      // veil trailing back
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-2, -32); c.quadraticCurveTo(-12, -10, -7, 7);
+      c.lineTo(-3, 5); c.quadraticCurveTo(-7, -10, 1, -30);
+      c.closePath(); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(1.0, -28.4, 8.8, 11.4, 0, 0, Math.PI * 2); c.fill();
+      // cowl over brow, face clear
+      c.fillStyle = p.dark;
+      c.beginPath(); c.ellipse(0.2, -31.2, 7.4, 6.0, 0.1, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath(); c.ellipse(5.0, -26.0, 3.6, 5.2, 0.1, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.eye;
+      c.beginPath(); c.ellipse(6.4, -26.6, 1.05, 1.25, 0, 0, Math.PI * 2); c.fill();
+      glow(c, 2.8, -33.6, 2.8, p.glow, 0.4);
+      lidlessEye(c, 2.8, -33.2, 1.45, p);
+      return;
+    }
+    // front: deep cowl, face clear, veil at the sides
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-12.4, -28); c.quadraticCurveTo(-16.5, -6, -11, 8);
+    c.lineTo(-7.5, 5); c.quadraticCurveTo(-12, -6, -8, -26);
+    c.closePath(); c.fill();
+    c.beginPath();
+    c.moveTo(12.4, -28); c.quadraticCurveTo(16.5, -6, 11, 8);
+    c.lineTo(7.5, 5); c.quadraticCurveTo(12, -6, 8, -26);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath(); c.ellipse(0, -28.8, 11.4, 12.0, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath(); c.ellipse(0, -31.6, 10.0, 7.2, 0, Math.PI, Math.PI * 2); c.fill();
+    // face
+    c.fillStyle = sk.skin;
+    c.beginPath(); c.ellipse(0, -25.8, 6.6, 7.0, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.eye;
+    c.beginPath(); c.arc(-2.2, -26.8, 1.05, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.2, -26.8, 1.05, 0, Math.PI * 2); c.fill();
+    // brow eye / moon, above the face
+    glow(c, 0, -35.2, 4.0, p.glow, 0.4);
+    lidlessEye(c, 0, -34.8, 2.15, p);
+  }
+
+  function drawVestmentsTop(c, st, facing) {
+    const p = palFor("vestments", st);
+    if (facing === "right") {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-7.0, -21.8); c.lineTo(9.2, -22.2);
+      c.quadraticCurveTo(12.4, -8, 9.0, 1.2); c.lineTo(-6.4, 1.2);
+      c.quadraticCurveTo(-8.4, -8, -7.0, -21.8);
+      c.closePath(); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-5.8, -20.8); c.lineTo(8.0, -21.2);
+      c.quadraticCurveTo(10.6, -8, 7.8, 0.2); c.lineTo(-5.4, 0.2);
+      c.quadraticCurveTo(-7.2, -8, -5.8, -20.8);
+      c.closePath(); c.fill();
+      // shoulder drape
+      c.fillStyle = p.mid;
+      c.beginPath();
+      c.moveTo(2, -21.6); c.quadraticCurveTo(12.5, -18, 10.5, -10);
+      c.lineTo(6.5, -10.5); c.quadraticCurveTo(8, -18, 2, -20.4);
+      c.closePath(); c.fill();
+      c.fillStyle = p.trim; c.globalAlpha = 0.8;
+      c.fillRect(1.8, -19.6, 1.15, 16.6);
+      c.globalAlpha = 1;
+      glow(c, 3.2, -13.4, 3.0, p.glow, 0.3);
+      moonMark(c, 3.4, -13.2, 2.1, p.trimLt, p.dark);
+      return;
+    }
+    const back = facing === "back";
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-13.0, -22.0); c.quadraticCurveTo(0, -24.4, 13.0, -22.0);
+    c.quadraticCurveTo(15.2, -8, 13.0, 1.4);
+    c.quadraticCurveTo(0, 3.0, -13.0, 1.4);
+    c.quadraticCurveTo(-15.2, -8, -13.0, -22.0);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(-11.6, -21.0); c.quadraticCurveTo(0, -23.0, 11.6, -21.0);
+    c.quadraticCurveTo(13.4, -8, 11.4, 0.2);
+    c.quadraticCurveTo(0, 1.8, -11.4, 0.2);
+    c.quadraticCurveTo(-13.4, -8, -11.6, -21.0);
+    c.closePath(); c.fill();
+    // draped shoulders
+    c.fillStyle = p.mid;
+    c.beginPath();
+    c.moveTo(-12.4, -21.4); c.quadraticCurveTo(-16.5, -14, -13.6, -7.5);
+    c.lineTo(-9.0, -8.5); c.quadraticCurveTo(-11.4, -15, -8.6, -20.6);
+    c.closePath(); c.fill();
+    c.beginPath();
+    c.moveTo(12.4, -21.4); c.quadraticCurveTo(16.5, -14, 13.6, -7.5);
+    c.lineTo(9.0, -8.5); c.quadraticCurveTo(11.4, -15, 8.6, -20.6);
+    c.closePath(); c.fill();
+    // starlight panel
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-3.6, -20.4); c.lineTo(3.6, -20.4); c.lineTo(2.6, -0.4); c.lineTo(-2.6, -0.4);
+    c.closePath(); c.fill();
+    c.strokeStyle = p.trimLt; c.lineWidth = 0.7; c.globalAlpha = 0.85;
+    c.beginPath(); c.moveTo(0, -20.0); c.lineTo(0, -1.0); c.stroke();
+    c.globalAlpha = 1;
+    glow(c, 0, -12.6, 4.2, p.glow, 0.35);
+    if (!back) lidlessEye(c, 0, -12.4, 2.25, p);
+    else moonMark(c, 0, -13.6, 2.2, p.trimLt, p.dark);
+  }
+
+  function drawVestmentsBottom(c, st, facing, stride) {
+    const p = palFor("vestments", st);
+    // Flowing tattered hem; covers the feet like Widow robes.
+    c.fillStyle = p.dark;
+    c.beginPath();
+    if (facing === "right") {
+      c.moveTo(-6.4, -1.2); c.lineTo(7.8, -1.2);
+      c.lineTo(10.2, 9.5); c.lineTo(7.4, 12.6); c.lineTo(4.2, 10.4);
+      c.lineTo(1.6, 13.2); c.lineTo(-1.4, 10.2); c.lineTo(-4.6, 13.0);
+      c.lineTo(-7.8, 9.8);
+    } else {
+      c.moveTo(-11.6, -1.2); c.lineTo(11.6, -1.2);
+      c.lineTo(13.6, 9.2); c.lineTo(10.0, 13.0); c.lineTo(6.4, 10.4);
+      c.lineTo(2.6, 13.4); c.lineTo(0, 10.6); c.lineTo(-3.2, 13.5);
+      c.lineTo(-7.2, 10.2); c.lineTo(-11.0, 13.2); c.lineTo(-13.6, 9.0);
+    }
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    if (facing === "right") {
+      c.moveTo(-5.4, -0.6); c.lineTo(6.8, -0.6);
+      c.lineTo(8.8, 8.8); c.lineTo(6.4, 11.4); c.lineTo(3.6, 9.4);
+      c.lineTo(1.4, 11.8); c.lineTo(-1.0, 9.2); c.lineTo(-3.8, 11.6);
+      c.lineTo(-6.6, 8.8);
+    } else {
+      c.moveTo(-10.4, -0.6); c.lineTo(10.4, -0.6);
+      c.lineTo(12.2, 8.6); c.lineTo(9.0, 11.8); c.lineTo(5.8, 9.4);
+      c.lineTo(2.4, 12.2); c.lineTo(0, 9.6); c.lineTo(-2.8, 12.3);
+      c.lineTo(-6.4, 9.2); c.lineTo(-10.0, 12.0); c.lineTo(-12.2, 8.4);
+    }
+    c.closePath(); c.fill();
+    c.strokeStyle = p.glowHard; c.globalAlpha = 0.35; c.lineWidth = 1.1;
+    c.beginPath();
+    if (facing === "right") { c.moveTo(-6.6, 8.8); c.lineTo(8.8, 8.8); }
+    else { c.moveTo(-12.0, 8.6); c.lineTo(12.0, 8.6); }
+    c.stroke();
+    c.globalAlpha = 1;
+    c.strokeStyle = p.trim; c.lineWidth = 0.7;
+    if (facing === "right") { c.beginPath(); c.moveTo(1.4, -0.4); c.lineTo(1.4, 8.4); c.stroke(); }
+    else { c.beginPath(); c.moveTo(0, -0.4); c.lineTo(0, 9.0); c.stroke(); }
+  }
+
+  /* ---------- worn: Hollowplate ---------- */
+
+  function drawHollowplateHelm(c, st, facing) {
+    const p = palFor("hollowplate", st);
+    const sk = skinPal();
+    if (facing === "back") {
+      c.fillStyle = p.dark;
+      c.beginPath(); c.ellipse(0, -28.6, 10.8, 11.6, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath(); c.ellipse(0, -28.8, 9.6, 10.4, 0, 0, Math.PI * 2); c.fill();
+      // tall crest
+      c.fillStyle = p.dark;
+      c.beginPath(); c.moveTo(-2.6, -38.4); c.lineTo(0, -54.5); c.lineTo(2.6, -38.4); c.closePath(); c.fill();
+      c.fillStyle = p.trim;
+      c.beginPath(); c.moveTo(-1.3, -38.6); c.lineTo(0, -52.8); c.lineTo(1.3, -38.6); c.closePath(); c.fill();
+      soulCrack(c, p, 0, -50, 0, -36);
+      // short swept horns
+      c.fillStyle = p.light;
+      c.beginPath(); c.moveTo(-8.4, -34); c.lineTo(-16.2, -46); c.lineTo(-6.2, -33); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(8.4, -34); c.lineTo(16.2, -46); c.lineTo(6.2, -33); c.closePath(); c.fill();
+      return;
+    }
+    if (facing === "right") {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-5.4, -22.4); c.lineTo(-4.2, -36.4); c.lineTo(3.6, -38.0);
+      c.lineTo(9.2, -32.0); c.lineTo(8.6, -22.0);
+      c.closePath(); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-4.2, -23.0); c.lineTo(-3.2, -35.2); c.lineTo(3.0, -36.6);
+      c.lineTo(8.0, -31.0); c.lineTo(7.4, -22.6);
+      c.closePath(); c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath(); c.ellipse(5.2, -27.2, 3.0, 4.0, 0.1, 0, Math.PI * 2); c.fill();
+      c.fillStyle = sk.eye;
+      c.beginPath(); c.ellipse(6.4, -27.6, 0.95, 1.15, 0, 0, Math.PI * 2); c.fill();
+      glow(c, 6.4, -27.6, 2.0, p.glow, 0.45);
+      // visor rim
+      c.strokeStyle = p.trim; c.lineWidth = 0.8;
+      c.beginPath(); c.ellipse(5.2, -27.2, 3.2, 4.2, 0.1, -0.6, 1.4); c.stroke();
+      // crest
+      c.fillStyle = p.dark;
+      c.beginPath(); c.moveTo(0.2, -36.8); c.lineTo(1.2, -54.0); c.lineTo(3.2, -36.6); c.closePath(); c.fill();
+      c.fillStyle = p.trim;
+      c.beginPath(); c.moveTo(0.8, -37.0); c.lineTo(1.4, -52.4); c.lineTo(2.4, -36.8); c.closePath(); c.fill();
+      soulCrack(c, p, 1.4, -50, 1.4, -37);
+      // forward horn
+      c.fillStyle = p.light;
+      c.beginPath(); c.moveTo(6.4, -33.4); c.lineTo(14.8, -44.5); c.lineTo(5.0, -31.8); c.closePath(); c.fill();
+      c.strokeStyle = p.glowHard; c.lineWidth = 0.6;
+      c.beginPath(); c.moveTo(6.6, -33.6); c.lineTo(13.6, -43.2); c.stroke();
+      return;
+    }
+    // front
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-11.4, -22.0); c.lineTo(-10.6, -36.8); c.quadraticCurveTo(0, -40.4, 10.6, -36.8);
+    c.lineTo(11.4, -22.0); c.lineTo(8.4, -20.6); c.lineTo(-8.4, -20.6);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(-10.0, -22.6); c.lineTo(-9.4, -35.6); c.quadraticCurveTo(0, -38.6, 9.4, -35.6);
+    c.lineTo(10.0, -22.6); c.lineTo(7.4, -21.4); c.lineTo(-7.4, -21.4);
+    c.closePath(); c.fill();
+    // visor slit — face shows through
+    c.fillStyle = sk.skin;
+    c.fillRect(-4.8, -29.6, 9.6, 4.2);
+    c.fillStyle = sk.eye;
+    c.beginPath(); c.arc(-2.1, -27.6, 0.95, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.1, -27.6, 0.95, 0, Math.PI * 2); c.fill();
+    glow(c, -2.1, -27.6, 1.8, p.glow, 0.5);
+    glow(c, 2.1, -27.6, 1.8, p.glow, 0.5);
+    c.strokeStyle = p.trim; c.lineWidth = 1.05;
+    c.strokeRect(-5.0, -29.8, 10.0, 4.6);
+    // tall central crest
+    c.fillStyle = p.dark;
+    c.beginPath(); c.moveTo(-2.8, -37.6); c.lineTo(0, -55.0); c.lineTo(2.8, -37.6); c.closePath(); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-1.35, -38.0); c.lineTo(0, -53.4); c.lineTo(1.35, -38.0); c.closePath(); c.fill();
+    soulCrack(c, p, 0, -51.5, 0, -38);
+    // swept horns
+    c.fillStyle = p.light;
+    c.beginPath(); c.moveTo(-9.4, -34.4); c.lineTo(-17.6, -47.5); c.lineTo(-7.0, -32.8); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(9.4, -34.4); c.lineTo(17.6, -47.5); c.lineTo(7.0, -32.8); c.closePath(); c.fill();
+    c.strokeStyle = p.glowHard; c.lineWidth = 0.65;
+    c.beginPath(); c.moveTo(-9.2, -34.6); c.lineTo(-16.4, -46.0); c.stroke();
+    c.beginPath(); c.moveTo(9.2, -34.6); c.lineTo(16.4, -46.0); c.stroke();
+    c.fillStyle = p.trim; c.fillRect(-10.2, -22.4, 20.4, 1.3);
+  }
+
+  function drawHollowPauldron(c, p, side) {
+    const s = side;
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(s * 6.8, -22.0);
+    c.lineTo(s * 18.0, -24.4);
+    c.lineTo(s * 20.2, -18.0);
+    c.quadraticCurveTo(s * 18.6, -12.4, s * 14.4, -10.8);
+    c.lineTo(s * 7.4, -12.0);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(s * 7.8, -21.0);
+    c.lineTo(s * 16.8, -23.0);
+    c.lineTo(s * 18.4, -18.0);
+    c.quadraticCurveTo(s * 17.0, -13.0, s * 13.6, -11.8);
+    c.lineTo(s * 8.0, -12.8);
+    c.closePath(); c.fill();
+    c.strokeStyle = p.trim; c.lineWidth = 1.0;
+    c.beginPath();
+    c.moveTo(s * 8.0, -20.6);
+    c.lineTo(s * 16.6, -22.6);
+    c.lineTo(s * 18.0, -18.0);
+    c.stroke();
+    // upswept spike
+    c.fillStyle = p.light;
+    c.beginPath();
+    c.moveTo(s * 14.8, -22.8);
+    c.lineTo(s * 19.6, -32.0);
+    c.lineTo(s * 16.4, -21.8);
+    c.closePath(); c.fill();
+    soulCrack(c, p, s * 12.4, -20.4, s * 16.4, -15.0);
+  }
+
+  function drawHollowplateBody(c, st, facing) {
+    const p = palFor("hollowplate", st);
+    if (facing === "right") {
+      c.fillStyle = p.dark;
+      c.beginPath();
+      c.moveTo(-6.8, -22.0); c.lineTo(9.6, -22.4);
+      c.quadraticCurveTo(12.0, -10, 8.8, -0.4); c.lineTo(-6.0, -0.4);
+      c.quadraticCurveTo(-8.0, -10, -6.8, -22.0);
+      c.closePath(); c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(-5.6, -21.0); c.lineTo(8.4, -21.4);
+      c.quadraticCurveTo(10.4, -10, 7.6, -1.4); c.lineTo(-5.0, -1.4);
+      c.quadraticCurveTo(-6.8, -10, -5.6, -21.0);
+      c.closePath(); c.fill();
+      c.fillStyle = p.trim; c.fillRect(-5.4, -3.6, 13.4, 1.6);
+      soulCrack(c, p, -3.2, -15, 6.4, -15);
+      soulCrack(c, p, -2.8, -9, 6.0, -9);
+      soulCore(c, p, 2.8, -13.0, 2.5);
+      drawHollowPauldron(c, p, 1);
+      return;
+    }
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-13.4, -22.2); c.lineTo(13.4, -22.2);
+    c.quadraticCurveTo(15.4, -10, 12.8, -0.4);
+    c.lineTo(-12.8, -0.4);
+    c.quadraticCurveTo(-15.4, -10, -13.4, -22.2);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(-12.0, -21.2); c.lineTo(12.0, -21.2);
+    c.quadraticCurveTo(13.8, -10, 11.4, -1.4);
+    c.lineTo(-11.4, -1.4);
+    c.quadraticCurveTo(-13.8, -10, -12.0, -21.2);
+    c.closePath(); c.fill();
+    c.fillStyle = p.light;
+    c.beginPath(); c.moveTo(-4.6, -20.6); c.lineTo(4.6, -20.6); c.lineTo(2.6, -6.2); c.lineTo(-2.6, -6.2); c.closePath(); c.fill();
+    soulCrack(c, p, -10.6, -16.0, -4.2, -16.0);
+    soulCrack(c, p, 4.2, -16.0, 10.6, -16.0);
+    soulCrack(c, p, -10.2, -9.6, -4.0, -9.6);
+    soulCrack(c, p, 4.0, -9.6, 10.2, -9.6);
+    c.fillStyle = p.trim; c.fillRect(-12.0, -21.2, 24.0, 1.3);
+    c.fillStyle = p.dark; c.fillRect(-11.6, -3.8, 23.2, 2.6);
+    c.fillStyle = p.trim; c.fillRect(-11.6, -3.4, 23.2, 1.6);
+    soulCore(c, p, 0, -13.0, 3.35);
+    drawHollowPauldron(c, p, -1);
+    drawHollowPauldron(c, p, 1);
+  }
+
+  function drawHollowplateLegs(c, st, facing, stride) {
+    const p = palFor("hollowplate", st);
+    const s = stride || 0;
+    if (facing === "right") {
+      const far = -s * 0.7, near = s * 0.7;
+      c.fillStyle = p.dark; c.fillRect(-3.6, -2 + far, 6.8, 13.2);
+      c.fillStyle = p.main; c.fillRect(-2.8, -1 + far, 5.4, 11.4);
+      c.fillStyle = p.dark; c.fillRect(-4.0, -2 + near, 7.6, 13.6);
+      c.fillStyle = p.main; c.fillRect(-3.2, -1 + near, 6.2, 11.8);
+      soulCrack(c, p, -1.0, 2 + near, 2.2, 7 + near);
+      c.fillStyle = p.trim; c.fillRect(-4.2, -2.4, 8.8, 1.2);
+      return;
+    }
+    c.fillStyle = p.dark;
+    c.fillRect(-9.6, -2.2, 7.4, 13.8);
+    c.fillRect(2.2, -2.2, 7.4, 13.8);
+    c.fillStyle = p.main;
+    c.fillRect(-8.6, -1.4, 5.6, 12.2);
+    c.fillRect(3.0, -1.4, 5.6, 12.2);
+    soulCrack(c, p, -7.2, 2.4, -4.4, 7.6);
+    soulCrack(c, p, 4.4, 2.4, 7.2, 7.6);
+    c.fillStyle = p.trim;
+    c.fillRect(-9.6, -2.6, 19.2, 1.25);
+    c.fillRect(-7.6, 6.0, 3.8, 1.4);
+    c.fillRect(3.8, 6.0, 3.8, 1.4);
+  }
+
+  /* ---------- jewelry ---------- */
+
+  function drawEclipsePendantWorn(c, st, facing) {
+    const p = palFor("eclipse", st);
+    if (facing === "back") {
+      c.strokeStyle = p.trim; c.lineWidth = 1.2;
+      c.beginPath(); c.arc(0, -21.2, 5.4, Math.PI * 0.15, Math.PI * 0.85); c.stroke();
+      return;
+    }
+    if (facing === "right") {
+      c.strokeStyle = p.trim; c.lineWidth = 1.2;
+      c.beginPath(); c.arc(1.6, -20, 5.4, 0.15, 1.2); c.stroke();
+      blackSun(c, p, 5.6, -14.4, 2.0);
+      return;
+    }
+    c.strokeStyle = p.trim; c.lineWidth = 1.35;
+    c.beginPath(); c.arc(0, -22, 6.2, 0.2, Math.PI - 0.2); c.stroke();
+    blackSun(c, p, 0, -13.2, 2.45);
+  }
+
+  function drawUnsleepingCharmWorn(c, st, facing) {
+    // Hanging moon-teardrop with a tiny lidless eye — not the stole's cloth panel.
+    const p = palFor("vestments", st);
+    if (facing === "back") {
+      c.strokeStyle = p.trim; c.lineWidth = 1.15;
+      c.beginPath(); c.arc(0, -21.2, 5.0, Math.PI * 0.18, Math.PI * 0.82); c.stroke();
+      return;
+    }
+    if (facing === "right") {
+      c.strokeStyle = p.trim; c.lineWidth = 1.15;
+      c.beginPath(); c.arc(1.6, -20, 5.0, 0.15, 1.15); c.stroke();
+      glow(c, 5.2, -14.6, 2.4, p.glow, 0.4);
+      moonMark(c, 5.2, -14.6, 1.85, p.trimLt, p.dark);
+      return;
+    }
+    c.strokeStyle = p.trim; c.lineWidth = 1.25;
+    c.beginPath(); c.arc(0, -22, 5.8, 0.22, Math.PI - 0.22); c.stroke();
+    glow(c, 0, -13.4, 3.2, p.glow, 0.35);
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(0, -9.4); c.quadraticCurveTo(3.8, -13.8, 0, -18.0); c.quadraticCurveTo(-3.8, -13.8, 0, -9.4);
+    c.closePath(); c.fill();
+    c.strokeStyle = p.trimLt; c.lineWidth = 0.7;
+    c.stroke();
+    lidlessEye(c, 0, -13.8, 1.15, p);
+  }
+
+  function drawHollowTorqueWorn(c, st, facing) {
+    const p = palFor("hollowplate", st);
+    if (facing === "back") {
+      c.strokeStyle = p.ink; c.lineWidth = 2.3;
+      c.beginPath(); c.arc(0, -22.4, 5.7, Math.PI * 0.12, Math.PI * 0.88); c.stroke();
+      c.strokeStyle = p.trim; c.lineWidth = 1.15;
+      c.beginPath(); c.arc(0, -22.4, 5.7, Math.PI * 0.12, Math.PI * 0.88); c.stroke();
+      return;
+    }
+    if (facing === "right") {
+      c.strokeStyle = p.ink; c.lineWidth = 2.3;
+      c.beginPath(); c.arc(1.2, -21.4, 5.3, 0.05, 1.25); c.stroke();
+      c.strokeStyle = p.trim; c.lineWidth = 1.15;
+      c.beginPath(); c.arc(1.2, -21.4, 5.3, 0.05, 1.25); c.stroke();
+      soulCore(c, p, 5.8, -17.6, 1.15);
+      return;
+    }
+    c.strokeStyle = p.ink; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(0, -22.6, 6.1, 0.18, Math.PI - 0.18); c.stroke();
+    c.strokeStyle = p.trim; c.lineWidth = 1.2;
+    c.beginPath(); c.arc(0, -22.6, 6.1, 0.18, Math.PI - 0.18); c.stroke();
+    soulCore(c, p, -5.6, -20.4, 1.15);
+    soulCore(c, p, 5.6, -20.4, 1.15);
+  }
+
+  function drawT3Ring(c, st, facing, hands, kind) {
+    // Thin band on the finger — never swallow the fist.
+    const set = (kind === "eclipse_band") ? "eclipse" : (kind === "hollow_signet") ? "hollowplate" : "vestments";
+    const p = palFor(set, st);
+    const h = (hands && hands.left) || { x: 12, y: -9 };
+    c.save();
+    c.translate(h.x + 0.55, h.y + 1.2);
+    c.strokeStyle = p.ink; c.lineWidth = 0.7;
+    c.beginPath(); c.arc(0, 0, 1.15, 0, Math.PI * 2); c.stroke();
+    c.strokeStyle = p.trim; c.lineWidth = 0.5;
+    c.beginPath(); c.arc(0, 0, 1.15, 0, Math.PI * 2); c.stroke();
+    if (kind === "eclipse_band") {
+      blackSun(c, p, 0, -0.15, 0.55);
+    } else if (kind === "hollow_signet") {
+      c.fillStyle = p.trim;
+      c.fillRect(-0.5, -0.7, 1.0, 0.65);
+      glow(c, 0, -0.4, 0.7, p.glow, 0.5);
+      c.fillStyle = p.core;
+      c.fillRect(-0.28, -0.55, 0.56, 0.35);
+    } else {
+      c.fillStyle = p.trimLt;
+      c.beginPath(); c.arc(0, -0.15, 0.45, 0, Math.PI * 2); c.fill();
+    }
+    c.restore();
+  }
+
+
+  /* ---------- poses ---------- */
+
+  function hangingLeft(facing, opt) {
+    if (typeof global.heroHands === "function") {
+      const h = global.heroHands(facing, Object.assign({}, opt || {}, { shot: { kind: "idle", raise: 0, draw: 0 } }));
+      return { x: h.left.x, y: h.left.y };
+    }
+    if (facing === "front") return { x: 12.0, y: -8.8 };
+    if (facing === "back") return { x: -12.0, y: -10.6 };
+    if (facing === "right") return { x: -1.6, y: -6.0 };
+    return { x: -7.6, y: -5.0 };
+  }
+
+  function longbowPose(facing, opt) {
+    const shot = (opt && opt.shot) || {};
+    const draw = shot.draw || 0;
+    const recoil = shot.recoil || 0;
+    // Right (main) hand stays on the riser. Left hangs at idle; draws the string during the attack.
+    let riser, string;
+    if (facing === "front") {
+      riser = { x: -11.8, y: -11.0 };
+      // string is toward the body (+x); left hand draws in front of the chest
+      string = { x: -5.6 + draw * 2.2 + recoil * 0.4, y: -11.2 - draw * 0.3 };
+    } else if (facing === "back") {
+      riser = { x: 11.4, y: -12.2 };
+      string = { x: 5.4 - draw * 2.2 - recoil * 0.4, y: -12.4 - draw * 0.3 };
+    } else if (facing === "right") {
+      riser = { x: 7.8, y: -10.6 };
+      string = { x: 3.0 - draw * 5.4 + recoil * 1.2, y: -11.0 - draw * 0.5 };
+    } else {
+      // left: far (right) hand on the riser, behind the body; limbs/wings peek forward
+      riser = { x: 1.6, y: -7.4 };
+      string = { x: -2.4 - draw * 3.8 + recoil * 0.8, y: -9.0 - draw * 0.4 };
+    }
+    const left = (draw > 0.08) ? string : hangingLeft(facing, opt);
+    return { weapon: riser, right: riser, left: left, twoHand: draw > 0.08 };
+  }
+
+  function staffPose(facing, opt) {
+    // Always one-handed. Raise lifts only the right / staff hand.
+    const shot = (opt && opt.shot) || {};
+    const raise = shot.raise || 0;
+    const lift = raise * 11.5;
+    let rest;
+    if (facing === "front") rest = { x: -11.4, y: -8.0 - lift };
+    else if (facing === "back") rest = { x: 11.2, y: -10.0 - lift };
+    else if (facing === "right") rest = { x: 7.6, y: -8.2 - lift };
+    else rest = { x: 2.6, y: -6.4 - lift };
+    return { weapon: rest, right: rest, left: hangingLeft(facing, opt), twoHand: false };
+  }
+
+  function staffHoldAngle(facing, shot) {
+    const raise = (shot && shot.raise) || 0;
+    if (facing === "front") return -0.28 - raise * 0.08;
+    if (facing === "back") return 0.28 + raise * 0.08;
+    if (facing === "right") return 0.32 - raise * 0.05;
+    return -0.72 + raise * 0.05;
+  }
+
+  function halberdAttacking(shot) {
+    const ph = shot && shot.phase;
+    if (ph === "windup" || ph === "after") return true;
+    if (!shot) return false;
+    return (Math.abs(shot.thrust || 0) > 0.02) || (shot.pull || 0) > 0.02 || (Math.abs(shot.swing || 0) > 0.02);
+  }
+
+  function halberdPose(facing, opt) {
+    const shot = (opt && opt.shot) || {};
+    const kind = shot.kind || "halberd_thrust";
+    const thrust = shot.thrust || 0;
+    const swing = shot.swing || 0;
+    const pull = shot.pull || 0;
+    const reach = Math.max(0, Math.min(1, thrust));
+    const two = halberdAttacking(shot);
+    let rest;
+    if (two) {
+      if (facing === "front") rest = { x: -6.2, y: -7.0 };
+      else if (facing === "back") rest = { x: 6.2, y: -8.2 };
+      else if (facing === "right") rest = { x: 5.8, y: -7.4 };
+      else rest = { x: 1.4, y: -6.0 };
+    } else {
+      if (facing === "front") rest = { x: -11.2, y: -8.6 };
+      else if (facing === "back") rest = { x: 11.0, y: -10.6 };
+      else if (facing === "right") rest = { x: 7.4, y: -8.8 };
+      else rest = { x: 2.8, y: -6.4 };
+    }
+    const w = { x: rest.x, y: rest.y };
+    if (two && kind === "halberd_chop" && swing) {
+      if (swing > 0) {
+        if (facing === "front") { w.x -= 2.0 * swing; w.y -= 12.0 * swing; }
+        else if (facing === "back") { w.x += 2.0 * swing; w.y -= 12.0 * swing; }
+        else if (facing === "right") { w.x -= 1.5 * swing; w.y -= 11.0 * swing; }
+        else { w.x += 1.5 * swing; w.y -= 11.0 * swing; }
+      } else {
+        const u = -swing;
+        if (facing === "front") { w.x -= 3.0 * u; w.y += 8.5 * u; }
+        else if (facing === "back") { w.x += 3.0 * u; w.y += 8.5 * u; }
+        else if (facing === "right") { w.x += 1.8 * u; w.y += 8.0 * u; }
+        else { w.x -= 1.2 * u; w.y += 8.0 * u; }
+      }
+    } else if (two) {
+      if (facing === "front") {
+        w.x -= 2.4 * pull + 1.6 * reach;
+        w.y += 1.6 * pull + 6.2 * reach;
+      } else if (facing === "back") {
+        w.x += 2.2 * pull + 1.2 * reach;
+        w.y += 1.4 * pull + 4.0 * reach;
+      } else if (facing === "right") {
+        w.x += -1.6 * pull + 0.8 * reach;
+        w.y += -0.5 * pull + 0.5 * reach;
+      } else {
+        w.x += 1.4 * pull + 0.6 * reach;
+        w.y += -0.5 * pull + 0.5 * reach;
+      }
+    }
+    const ang = halberdHoldAngle(facing, shot);
+    if (!two) return { weapon: w, right: w, left: hangingLeft(facing, opt), twoHand: false };
+    const dist = (facing === "left") ? 12.0 : 8.6;
+    return { weapon: w, right: w, left: along(w, ang, dist), twoHand: true };
+  }
+
+  function halberdHoldAngle(facing, shot) {
+    const kind = (shot && shot.kind) || "halberd_thrust";
+    const thrust = (shot && shot.thrust) || 0;
+    const swing = (shot && shot.swing) || 0;
+    const pull = (shot && shot.pull) || 0;
+    const reach = Math.max(0, thrust);
+    let base;
+    if (facing === "front") base = -0.42;
+    else if (facing === "back") base = 0.42;
+    else if (facing === "right") base = 0.52;
+    else base = -0.82;
+    if (kind === "halberd_chop") {
+      if (facing === "front") {
+        if (swing > 0) return base - 0.55 * swing;
+        if (swing < 0) return base - 0.70 * (-swing);
+        return base;
+      }
+      if (facing === "back") {
+        if (swing > 0) return base + 0.55 * swing;
+        if (swing < 0) return base + 0.70 * (-swing);
+        return base;
+      }
+      if (facing === "right") {
+        if (swing > 0) return base - 0.32 * swing;
+        if (swing < 0) return base + 0.32 * (-swing);
+        return base;
+      }
+      if (swing > 0) return base + 0.32 * swing;
+      if (swing < 0) return base - 0.22 * (-swing);
+      return base;
+    }
+    if (facing === "front") return base - 0.22 * pull - 0.32 * reach;
+    if (facing === "back") return base + 0.22 * pull + 0.32 * reach;
+    if (facing === "right") return base - 0.14 * pull + 0.36 * reach;
+    return base + 0.14 * pull - 0.22 * reach;
+  }
+
+  function t3WeaponPose(facing, opt, kind) {
+    if (kind === "longbow") return longbowPose(facing, opt);
+    if (kind === "staff") return staffPose(facing, opt);
+    if (kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop") return halberdPose(facing, opt);
+    return null;
+  }
+
+  function t3TwoHandPose(facing, opt, kind) {
+    // Kept for the twoHandPose hook; t3WeaponPose is the real entry.
+    return t3WeaponPose(facing, opt, kind);
+  }
+
+  /* ---------- held weapons ---------- */
+
+  function drawLongbowHeld(c, st, facing, shot, pos) {
+    const p = palFor("eclipse", st);
+    const draw = (shot && shot.draw) || 0;
+    const flash = (shot && shot.flash) || 0;
+    const recoil = (shot && shot.recoil) || 0;
+    c.save();
+    if (pos) c.translate(pos.x, pos.y);
+    // Slight lean; left leans forward so the upper wing peeks past the body.
+    if (facing === "front") c.rotate(-0.08);
+    else if (facing === "back") c.rotate(0.08);
+    else if (facing === "right") c.rotate(0.08 + recoil * 0.08);
+    else c.rotate(-0.20 - recoil * 0.08);
+
+    const tip = 19.4, low = 16.2;
+    const flex = draw * 3.6;
+    // String toward the body, arrow shoots away / forward.
+    const inward = (facing === "front" || facing === "left") ? 1 : -1;
+    const strX = inward * (6.0 + flex);
+    const out = -inward;
+
+    // soft gold corona around the limbs
+    c.strokeStyle = p.glow; c.globalAlpha = 0.40; c.lineWidth = 6.2; c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(0, -tip);
+    c.quadraticCurveTo(out * 4.0, -9, 0, 0);
+    c.quadraticCurveTo(out * 3.2, 8, 0, low);
+    c.stroke();
+    c.globalAlpha = 1;
+
+    // Recurve / winged limbs — deep crescent, gold-lined
+    c.strokeStyle = p.ink; c.lineWidth = 4.0;
+    c.beginPath();
+    c.moveTo(0, -tip);
+    c.quadraticCurveTo(out * 5.4, -11.5, 0, -2.4);
+    c.quadraticCurveTo(out * 4.4, 8.4, 0, low);
+    c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 2.4;
+    c.beginPath();
+    c.moveTo(0, -tip + 0.6);
+    c.quadraticCurveTo(out * 4.8, -11.2, 0, -2.4);
+    c.quadraticCurveTo(out * 4.0, 8.2, 0, low - 0.6);
+    c.stroke();
+
+    // Upper gold wing (sun-ray)
+    c.fillStyle = p.trim;
+    c.beginPath();
+    c.moveTo(out * 0.2, -tip + 1.6);
+    c.quadraticCurveTo(out * 9.2, -14.8, out * 1.2, -6.0);
+    c.lineTo(out * 0.2, -7.0);
+    c.closePath(); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath();
+    c.moveTo(out * 0.3, -tip + 3.0);
+    c.quadraticCurveTo(out * 7.4, -13.8, out * 1.0, -7.2);
+    c.closePath(); c.fill();
+    // Lower gold wing
+    c.fillStyle = p.trim;
+    c.beginPath();
+    c.moveTo(out * 0.2, low - 1.4);
+    c.quadraticCurveTo(out * 7.6, 12.4, out * 1.0, 5.2);
+    c.lineTo(out * 0.2, 6.2);
+    c.closePath(); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath();
+    c.moveTo(out * 0.3, low - 2.6);
+    c.quadraticCurveTo(out * 6.0, 11.0, out * 0.8, 6.0);
+    c.closePath(); c.fill();
+
+    // Riser — black sun in a gold corona, bigger
+    c.fillStyle = p.dark; c.fillRect(-2.3, -6.4, 4.6, 13.0);
+    c.fillStyle = p.trim; c.fillRect(-1.7, -5.8, 3.4, 11.8);
+    c.fillStyle = p.main; c.fillRect(-1.25, -5.2, 2.5, 10.6);
+    glow(c, 0, 0.2, 6.4, p.glow, 0.5);
+    blackSun(c, p, 0, 0.2, 2.85);
+
+    // Glowing string
+    c.strokeStyle = p.glow; c.lineWidth = 2.8; c.globalAlpha = 0.55;
+    c.beginPath(); c.moveTo(0, -tip + 0.6); c.lineTo(strX, 0.3); c.lineTo(0, low - 0.4); c.stroke();
+    c.globalAlpha = 1;
+    c.strokeStyle = p.trimLt; c.lineWidth = 1.15;
+    c.beginPath(); c.moveTo(0, -tip + 0.6); c.lineTo(strX, 0.3); c.lineTo(0, low - 0.4); c.stroke();
+
+    // Gold limb tips
+    glow(c, 0, -tip, 3.2, p.glow, 0.5);
+    c.fillStyle = p.trim;
+    c.beginPath(); c.arc(0, -tip, 2.05, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(0, -tip, 1.05, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath(); c.arc(0, low, 1.7, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(0, low, 0.8, 0, Math.PI * 2); c.fill();
+
+    // Glowing energy arrow while drawn
+    if (draw > 0.25 && flash < 0.2 && !(shot && shot.snap)) {
+      const ax0 = strX, ay0 = 0.3;
+      const ax1 = out * 16.5;
+      c.strokeStyle = p.glow; c.lineWidth = 3.0; c.globalAlpha = 0.55;
+      c.beginPath(); c.moveTo(ax0, ay0); c.lineTo(ax1, ay0); c.stroke();
+      c.globalAlpha = 1;
+      c.strokeStyle = p.trimLt; c.lineWidth = 1.35;
+      c.beginPath(); c.moveTo(ax0, ay0); c.lineTo(ax1, ay0); c.stroke();
+      // black-sun arrowhead with gold edge
+      c.fillStyle = p.voidC;
+      c.beginPath();
+      c.moveTo(ax1 + out * 3.4, ay0);
+      c.lineTo(ax1 - out * 0.6, ay0 - 2.0);
+      c.lineTo(ax1 - out * 0.6, ay0 + 2.0);
+      c.closePath(); c.fill();
+      c.fillStyle = p.trim;
+      c.beginPath();
+      c.moveTo(ax1 + out * 2.2, ay0);
+      c.lineTo(ax1 - out * 0.2, ay0 - 1.2);
+      c.lineTo(ax1 - out * 0.2, ay0 + 1.2);
+      c.closePath(); c.fill();
+    }
+
+    // Release: elongated gold energy bolt, not a plain dot
+    if (flash > 0.12) {
+      const len = 12 + flash * 10;
+      glow(c, out * 9, 0.3, 7.5, p.glow, 0.6 * flash);
+      c.fillStyle = p.glowHard;
+      c.globalAlpha = 0.9 * flash;
+      c.beginPath();
+      c.moveTo(out * (len + 4), 0.3);
+      c.lineTo(out * 1.6, -3.0);
+      c.lineTo(out * 1.6, 3.6);
+      c.closePath(); c.fill();
+      c.fillStyle = "#fff6d0";
+      c.globalAlpha = Math.min(1, 1.05 * flash);
+      c.beginPath();
+      c.moveTo(out * (len + 1.5), 0.3);
+      c.lineTo(out * 3.2, -1.25);
+      c.lineTo(out * 3.2, 1.85);
+      c.closePath(); c.fill();
+      c.globalAlpha = 1;
+      glow(c, 0, 0.2, 5.2, p.glow, 0.55 * flash);
+    }
+    c.restore();
+  }
+
+  function drawStaffHeld(c, st, facing, shot, pos) {
+    const p = palFor("vestments", st);
+    const flash = (shot && shot.flash) || 0;
+    const raise = (shot && shot.raise) || 0;
+    const ang = staffHoldAngle(facing, shot || {});
+    c.save();
+    if (pos) c.translate(pos.x, pos.y);
+    c.rotate(ang);
+    const len = 24.0;
+    // faint violet core in the shaft
+    c.strokeStyle = p.glow; c.lineWidth = 3.6; c.globalAlpha = 0.3;
+    c.beginPath(); c.moveTo(0, 8.2); c.lineTo(0, -len); c.stroke();
+    c.globalAlpha = 1;
+    c.strokeStyle = p.ink; c.lineWidth = 3.15; c.lineCap = "round";
+    c.beginPath(); c.moveTo(0, 8.5); c.lineTo(0, -len); c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 1.85;
+    c.beginPath(); c.moveTo(0, 8.0); c.lineTo(0, -len + 0.5); c.stroke();
+    // silver bindings
+    c.fillStyle = p.trim;
+    c.fillRect(-1.6, -2.4, 3.2, 2.0);
+    c.fillRect(-1.5, 4.0, 3.0, 1.6);
+    c.fillRect(-1.5, -12.4, 3.0, 1.5);
+    // Nightfall head: large floating orb in a crescent / eclipse ring
+    const hx = 0, hy = -len - 1.2;
+    glow(c, hx, hy, 9.5 + flash * 3, p.glow, 0.4 + flash * 0.35);
+    // eclipse ring
+    c.strokeStyle = p.ink; c.lineWidth = 3.4;
+    c.beginPath(); c.arc(hx, hy, 6.6, 0, Math.PI * 2); c.stroke();
+    c.strokeStyle = p.trim; c.lineWidth = 1.6;
+    c.beginPath(); c.arc(hx, hy, 6.6, 0, Math.PI * 2); c.stroke();
+    // crescent
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(hx, hy, 5.1, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath(); c.arc(hx + 2.0, hy - 0.6, 4.2, 0, Math.PI * 2); c.fill();
+    // inner star / moon
+    c.fillStyle = p.glowHard;
+    c.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      const r = (i % 2 === 0) ? 2.35 : 0.9;
+      if (i === 0) c.moveTo(hx + Math.cos(a) * r, hy + Math.sin(a) * r);
+      else c.lineTo(hx + Math.cos(a) * r, hy + Math.sin(a) * r);
+    }
+    c.closePath(); c.fill();
+    if (flash > 0.1) {
+      glow(c, hx, hy, 11, p.glowHard, 0.45 * flash);
+    }
+    c.restore();
+  }
+
+  function drawHalberdHead(c, p, dir) {
+    // Classic, bigger, menacing: long spear, broad axe, straight back spike, soul-light edges.
+    c.fillStyle = p.ink; c.fillRect(-1.7, -2.6, 3.4, 7.0);
+    c.fillStyle = p.trim; c.fillRect(-1.2, -2.2, 2.4, 6.2);
+    // Spear point
+    c.fillStyle = p.ink;
+    c.beginPath();
+    c.moveTo(0, -14.4); c.lineTo(1.85, -2.4); c.lineTo(-1.85, -2.4); c.closePath(); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath();
+    c.moveTo(0, -13.4); c.lineTo(1.2, -2.6); c.lineTo(-1.2, -2.6); c.closePath(); c.fill();
+    c.strokeStyle = p.glowHard; c.lineWidth = 0.7;
+    c.beginPath(); c.moveTo(0, -13.2); c.lineTo(0, -3.0); c.stroke();
+    // Axe blade
+    c.fillStyle = p.ink;
+    c.beginPath();
+    c.moveTo(0.6 * dir, -7.4);
+    c.lineTo(0.6 * dir, -0.2);
+    c.lineTo(4.4 * dir, 1.2);
+    c.quadraticCurveTo(9.4 * dir, 0.4, 9.0 * dir, -3.6);
+    c.quadraticCurveTo(8.4 * dir, -7.8, 0.6 * dir, -7.4);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(0.75 * dir, -6.6);
+    c.lineTo(0.75 * dir, -0.8);
+    c.lineTo(4.0 * dir, 0.3);
+    c.quadraticCurveTo(8.2 * dir, -0.2, 7.8 * dir, -3.6);
+    c.quadraticCurveTo(7.4 * dir, -6.8, 0.75 * dir, -6.6);
+    c.closePath(); c.fill();
+    // hollow in the blade + soul-light edge
+    c.fillStyle = p.voidC;
+    c.beginPath(); c.ellipse(4.6 * dir, -3.4, 1.5, 1.15, 0, 0, Math.PI * 2); c.fill();
+    glow(c, 4.6 * dir, -3.4, 2.2, p.glow, 0.45);
+    c.strokeStyle = p.glowHard; c.lineWidth = 0.85;
+    c.beginPath();
+    c.moveTo(4.2 * dir, 0.5);
+    c.quadraticCurveTo(8.6 * dir, -0.2, 8.2 * dir, -3.6);
+    c.quadraticCurveTo(7.8 * dir, -7.2, 1.2 * dir, -7.0);
+    c.stroke();
+    // Back spike
+    c.fillStyle = p.ink;
+    c.beginPath();
+    c.moveTo(-0.5 * dir, -5.8);
+    c.lineTo(-8.6 * dir, -2.8);
+    c.lineTo(-0.5 * dir, -1.4);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(-0.5 * dir, -5.2);
+    c.lineTo(-7.6 * dir, -2.8);
+    c.lineTo(-0.5 * dir, -2.0);
+    c.closePath(); c.fill();
+    c.strokeStyle = p.glowHard; c.lineWidth = 0.65;
+    c.beginPath(); c.moveTo(-0.6 * dir, -5.0); c.lineTo(-7.4 * dir, -2.8); c.stroke();
+  }
+
+  function drawHalberdHeld(c, st, facing, shot, pos) {
+    const p = palFor("hollowplate", st);
+    const ang = halberdHoldAngle(facing, shot || {});
+    c.save();
+    if (pos) c.translate(pos.x, pos.y);
+    c.rotate(ang);
+    const butt = 4.6;
+    const headY = -26.0;
+    c.strokeStyle = p.ink; c.lineWidth = 3.15; c.lineCap = "round";
+    c.beginPath(); c.moveTo(0, butt); c.lineTo(0, headY + 2.2); c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 1.85;
+    c.beginPath(); c.moveTo(0, butt - 0.5); c.lineTo(0, headY + 2.6); c.stroke();
+    // faint soul line in the shaft
+    c.strokeStyle = p.glowHard; c.lineWidth = 0.55; c.globalAlpha = 0.55;
+    c.beginPath(); c.moveTo(0, butt - 1); c.lineTo(0, headY + 3); c.stroke();
+    c.globalAlpha = 1;
+    c.fillStyle = p.trim; c.fillRect(-1.4, -3.0, 2.8, 6.2);
+    c.save();
+    c.translate(0, headY);
+    const dir = (facing === "left" || facing === "front") ? -1 : 1;
+    drawHalberdHead(c, p, dir);
+    c.restore();
+    c.restore();
+  }
+
+
+  /* ---------- bank / lab icons (32-unit space, centered) ---------- */
+
   function iconEclipseCoif(c, p) {
-    c.fillStyle = p.dark; c.beginPath(); c.ellipse(0, -1, 11, 10, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.main; c.beginPath(); c.ellipse(0, -2, 10, 9, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.light; c.beginPath(); c.ellipse(-3, -5, 4, 2.5, -0.4, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.dark; c.fillRect(-12, 2, 6, 8); c.fillRect(6, 2, 6, 8);
-    c.fillStyle = p.main; c.fillRect(-11, 2, 5, 6); c.fillRect(6, 2, 5, 6);
-    c.strokeStyle = p.trim; c.lineWidth = 0.85;
-    c.beginPath(); c.arc(0, -1, 7, 0.2, Math.PI - 0.2); c.stroke();
-    eclipseEmblem(c, p, 0, -6.2, 2.1);
+    c.fillStyle = p.dark; c.beginPath(); c.ellipse(0, -1, 11.4, 10.6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.main; c.beginPath(); c.ellipse(0, -2, 10.2, 9.6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#d2a878"; c.beginPath(); c.ellipse(0, 1.2, 6.0, 5.4, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-11, -4); c.lineTo(-15.2, -8.8); c.lineTo(-9.6, 0); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(11, -4); c.lineTo(15.2, -8.8); c.lineTo(9.6, 0); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-2, -11); c.lineTo(0, -15.6); c.lineTo(2, -11); c.closePath(); c.fill();
+    blackSun(c, p, 0, -8.0, 2.4);
   }
   function iconEclipseBody(c, p) {
-    c.fillStyle = p.dark; rrect(c, -11, -11, 22, 24, 2); c.fill();
-    c.fillStyle = p.main; rrect(c, -10, -10, 20, 22, 2); c.fill();
-    c.fillStyle = p.light; rrect(c, -7, -8, 8, 6, 1); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.8;
-    c.beginPath(); c.moveTo(-8, 8); c.lineTo(8, 8); c.stroke();
-    eclipseEmblem(c, p, 0, 0, 3.1);
+    c.fillStyle = p.dark; rrect(c, -12, -12, 24, 25, 2); c.fill();
+    c.fillStyle = p.main; rrect(c, -10.5, -11, 21, 23, 2); c.fill();
+    c.fillStyle = p.trim; c.fillRect(-10.5, 8, 21, 1.6);
+    blackSun(c, p, 0, -2, 3.4);
+    // pauldron hints
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-10, -10); c.lineTo(-15, -8); c.lineTo(-10, -2); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(10, -10); c.lineTo(15, -8); c.lineTo(10, -2); c.closePath(); c.fill();
   }
   function iconEclipseChaps(c, p) {
-    c.fillStyle = p.dark; rrect(c, -11, -12, 10, 24, 2); c.fill(); rrect(c, 1, -12, 10, 24, 2); c.fill();
-    c.fillStyle = p.main; rrect(c, -10, -11, 8, 22, 2); c.fill(); rrect(c, 2, -11, 8, 22, 2); c.fill();
-    c.fillStyle = p.light; c.fillRect(-9, -9, 3, 8); c.fillRect(3, -9, 3, 8);
-    c.fillStyle = p.trim; c.fillRect(-11, -4, 22, 2);
+    c.fillStyle = p.dark; c.fillRect(-11, -11, 10, 24); c.fillRect(1, -11, 10, 24);
+    c.fillStyle = p.main; c.fillRect(-9.5, -10, 7.4, 21); c.fillRect(2.1, -10, 7.4, 21);
+    c.fillStyle = p.trim; c.fillRect(-11, -11, 22, 2); c.fillRect(-8, 4, 5, 1.6); c.fillRect(3, 4, 5, 1.6);
   }
   function iconLongbow(c, p) {
-    c.strokeStyle = p.dark; c.lineWidth = 3.2; c.lineCap = "round";
-    c.beginPath(); c.moveTo(-2, 13); c.quadraticCurveTo(-11, 0, -2, -13); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 2.0;
-    c.beginPath(); c.moveTo(-2, 12.4); c.quadraticCurveTo(-10, 0, -2, -12.4); c.stroke();
-    c.strokeStyle = "#e8e0c8"; c.lineWidth = 0.7;
-    c.beginPath(); c.moveTo(-2, -12.4); c.lineTo(8, 0); c.lineTo(-2, 12.4); c.stroke();
-    c.fillStyle = p.dark; rrect(c, -4.2, -3.4, 4.4, 6.8, 1); c.fill();
-    c.fillStyle = p.main; rrect(c, -3.6, -2.8, 3.2, 5.6, 0.8); c.fill();
+    c.strokeStyle = p.glow; c.globalAlpha = 0.45; c.lineWidth = 6; c.lineCap = "round";
+    c.beginPath(); c.moveTo(0, -15); c.quadraticCurveTo(12, 0, 0, 15); c.stroke();
+    c.globalAlpha = 1;
+    c.strokeStyle = p.ink; c.lineWidth = 3.6;
+    c.beginPath(); c.moveTo(0, -15); c.quadraticCurveTo(11, 0, 0, 15); c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 2.2;
+    c.beginPath(); c.moveTo(0, -14.2); c.quadraticCurveTo(10, 0, 0, 14.2); c.stroke();
+    // upper + lower gold wings
     c.fillStyle = p.trim;
-    c.beginPath(); c.arc(-2, -12.6, 1.6, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(-2, 12.6, 1.5, 0, Math.PI * 2); c.fill();
-    eclipseEmblem(c, p, -2, 0, 1.5);
+    c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(11, -9, 2, -4); c.lineTo(0, -5.4); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(0, 13); c.quadraticCurveTo(11, 9, 2, 4); c.lineTo(0, 5.4); c.closePath(); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.moveTo(0.4, -12); c.quadraticCurveTo(8.5, -8.5, 1.6, -5.2); c.closePath(); c.fill();
+    // glowing string
+    c.strokeStyle = p.glow; c.lineWidth = 2.0; c.globalAlpha = 0.5;
+    c.beginPath(); c.moveTo(0, -15); c.lineTo(-10, 0); c.lineTo(0, 15); c.stroke();
+    c.globalAlpha = 1;
+    c.strokeStyle = p.trimLt; c.lineWidth = 1.0;
+    c.beginPath(); c.moveTo(0, -15); c.lineTo(-10, 0); c.lineTo(0, 15); c.stroke();
+    glow(c, 0, 0, 6, p.glow, 0.45);
+    blackSun(c, p, 0, 0, 2.8);
+    c.fillStyle = p.trim;
+    c.beginPath(); c.arc(0, -15, 2.0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, 15, 1.6, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(0, -15, 0.9, 0, Math.PI * 2); c.fill();
   }
   function iconEclipsePendant(c, p) {
     c.strokeStyle = p.trim; c.lineWidth = 1.6;
-    c.beginPath(); c.arc(0, -4, 10, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
-    eclipseEmblem(c, p, 0, 5, 6.2);
+    c.beginPath(); c.arc(0, -6, 7, 0.3, Math.PI - 0.3); c.stroke();
+    blackSun(c, p, 0, 3, 5.2);
   }
   function iconEclipseBand(c, p) {
-    c.strokeStyle = p.dark; c.lineWidth = 4;
-    c.beginPath(); c.arc(0, 2, 8, 0, Math.PI * 2); c.stroke();
+    c.strokeStyle = p.dark; c.lineWidth = 4.2;
+    c.beginPath(); c.arc(0, 1, 8.2, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = p.trim; c.lineWidth = 2.4;
-    c.beginPath(); c.arc(0, 2, 8, 0, Math.PI * 2); c.stroke();
-    eclipseEmblem(c, p, 0, -6.2, 3.0);
+    c.beginPath(); c.arc(0, 1, 8.2, 0, Math.PI * 2); c.stroke();
+    blackSun(c, p, 0, 1, 3.2);
   }
 
   function iconHood(c, p) {
-    c.fillStyle = p.dark; c.beginPath(); c.ellipse(0, -2, 12, 11.5, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.main; c.beginPath(); c.ellipse(0, -3, 10.5, 10, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.light; c.beginPath(); c.ellipse(-3.5, -7, 4, 2.4, -0.4, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.dark; rrect(c, -10, 4, 20, 8, 2); c.fill();
-    c.fillStyle = p.main; rrect(c, -9, 4, 18, 6, 1.5); c.fill();
-    // face opening
-    c.fillStyle = shade(p.main, -0.45);
-    c.beginPath(); c.ellipse(0, -1, 5.2, 5.6, 0, 0, Math.PI * 2); c.fill();
-    moonMark(c, 0, -9.4, 2.1, p.trim, p.dark);
+    c.fillStyle = p.dark;
+    c.beginPath(); c.moveTo(-12, -4); c.quadraticCurveTo(-16, 8, -10, 14); c.lineTo(-6, 10); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(12, -4); c.quadraticCurveTo(16, 8, 10, 14); c.lineTo(6, 10); c.closePath(); c.fill();
+    c.fillStyle = p.main; c.beginPath(); c.ellipse(0, -2, 11.4, 11.6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#d2a878"; c.beginPath(); c.ellipse(0, 2.4, 6.2, 6.0, 0, 0, Math.PI * 2); c.fill();
+    lidlessEye(c, 0, -8.4, 2.4, p);
   }
   function iconRobeTop(c, p) {
-    c.fillStyle = p.dark;
-    c.beginPath(); c.moveTo(-12, -10); c.lineTo(12, -10); c.lineTo(13, 13); c.lineTo(-13, 13); c.closePath(); c.fill();
-    c.fillStyle = p.main;
-    c.beginPath(); c.moveTo(-10.5, -9); c.lineTo(10.5, -9); c.lineTo(11.4, 12); c.lineTo(-11.4, 12); c.closePath(); c.fill();
-    c.fillStyle = p.light; rrect(c, -6, -7, 7, 5, 1); c.fill();
-    c.fillStyle = p.mid || shade(p.main, 0.08);
-    c.fillRect(-2.4, -9, 4.8, 20);
-    c.strokeStyle = p.trim; c.lineWidth = 0.9;
-    c.beginPath(); c.moveTo(0, -8); c.lineTo(0, 11); c.stroke();
-    moonMark(c, 0, 1, 2.6, p.trim, p.dark);
+    c.fillStyle = p.dark; rrect(c, -12, -12, 24, 25, 2.4); c.fill();
+    c.fillStyle = p.main; rrect(c, -10.6, -11, 21.2, 23, 2.2); c.fill();
+    c.fillStyle = p.mid; c.fillRect(-12, -11, 4, 14); c.fillRect(8, -11, 4, 14);
+    c.fillStyle = p.dark; c.fillRect(-3.2, -10, 6.4, 20);
+    lidlessEye(c, 0, -2, 2.5, p);
   }
   function iconRobeBottom(c, p) {
     c.fillStyle = p.dark;
-    c.beginPath(); c.moveTo(-11, -12); c.lineTo(11, -12); c.lineTo(13, 13); c.lineTo(1.2, 13); c.lineTo(0, 8); c.lineTo(-1.2, 13); c.lineTo(-13, 13); c.closePath(); c.fill();
+    c.beginPath();
+    c.moveTo(-12, -12); c.lineTo(12, -12);
+    c.lineTo(14, 8); c.lineTo(9, 14); c.lineTo(4, 10);
+    c.lineTo(0, 14.5); c.lineTo(-5, 10); c.lineTo(-10, 14); c.lineTo(-14, 8);
+    c.closePath(); c.fill();
     c.fillStyle = p.main;
-    c.beginPath(); c.moveTo(-9.6, -10.6); c.lineTo(9.6, -10.6); c.lineTo(11.4, 11.6); c.lineTo(1.3, 11.6); c.lineTo(0, 7); c.lineTo(-1.3, 11.6); c.lineTo(-11.4, 11.6); c.closePath(); c.fill();
-    c.fillStyle = p.trim; c.fillRect(-11, -12, 22, 2.2);
+    c.beginPath();
+    c.moveTo(-10, -10); c.lineTo(10, -10);
+    c.lineTo(12, 7); c.lineTo(8, 12); c.lineTo(3.5, 8.5);
+    c.lineTo(0, 12.5); c.lineTo(-4, 8.5); c.lineTo(-8.5, 12); c.lineTo(-12, 7);
+    c.closePath(); c.fill();
     c.strokeStyle = p.trim; c.lineWidth = 0.8;
-    c.beginPath(); c.moveTo(0, -9); c.lineTo(0, 7); c.stroke();
+    c.beginPath(); c.moveTo(0, -10); c.lineTo(0, 8); c.stroke();
   }
   function iconStaff(c, p) {
     c.strokeStyle = p.dark; c.lineWidth = 3.2; c.lineCap = "round";
-    c.beginPath(); c.moveTo(-2, 13); c.lineTo(2, -8); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 1.9;
-    c.beginPath(); c.moveTo(-2, 12.4); c.lineTo(2, -7.4); c.stroke();
-    c.save(); c.translate(2.4, -9.4);
-    c.fillStyle = p.dark; c.beginPath(); c.arc(0, 0, 5.2, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.main; c.beginPath(); c.arc(0, 0, 4.1, 0, Math.PI * 2); c.fill();
-    moonMark(c, 0, 0, 2.6, p.trim, p.dark);
-    c.fillStyle = p.trim;
-    c.beginPath(); c.moveTo(0, -6.4); c.lineTo(1.4, -3.2); c.lineTo(-1.4, -3.2); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-5, 14); c.lineTo(4, -2); c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 1.8;
+    c.beginPath(); c.moveTo(-4.6, 13.2); c.lineTo(3.6, -1.2); c.stroke();
+    c.save();
+    c.translate(5.4, -6.2);
+    glow(c, 0, 0, 10, p.glow, 0.4);
+    c.strokeStyle = p.trim; c.lineWidth = 2.2;
+    c.beginPath(); c.arc(0, 0, 7.2, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(0, 0, 5.2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath(); c.arc(2.0, -0.6, 4.2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.glowHard;
+    c.beginPath(); c.arc(0, 0, 1.6, 0, Math.PI * 2); c.fill();
     c.restore();
   }
   function iconCharm(c, p) {
-    c.strokeStyle = p.trim; c.lineWidth = 1.6;
-    c.beginPath(); c.arc(0, -5, 9, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+    c.strokeStyle = p.trim; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(0, -7, 6.5, 0.3, Math.PI - 0.3); c.stroke();
+    glow(c, 0, 3, 7, p.glow, 0.35);
     c.fillStyle = p.main;
     c.beginPath(); c.moveTo(0, 12); c.quadraticCurveTo(8, 2, 0, -6); c.quadraticCurveTo(-8, 2, 0, 12); c.closePath(); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.9; c.stroke();
-    moonMark(c, 0, 2.2, 3.2, p.trim, p.dark);
+    c.strokeStyle = p.trimLt; c.lineWidth = 0.8; c.stroke();
+    lidlessEye(c, 0, 2.2, 2.0, p);
   }
   function iconDreamless(c, p) {
-    c.strokeStyle = p.dark; c.lineWidth = 4;
-    c.beginPath(); c.arc(0, 2, 8, 0, Math.PI * 2); c.stroke();
+    c.strokeStyle = p.dark; c.lineWidth = 4.2;
+    c.beginPath(); c.arc(0, 1, 8.2, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = p.trim; c.lineWidth = 2.4;
-    c.beginPath(); c.arc(0, 2, 8, 0, Math.PI * 2); c.stroke();
-    c.fillStyle = p.main; rrect(c, -4, -10, 8, 6, 1); c.fill();
-    moonMark(c, 0, -7, 2.3, p.trim, p.dark);
+    c.beginPath(); c.arc(0, 1, 8.2, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = p.trimLt;
+    c.beginPath(); c.arc(0, 1, 3.4, 0, Math.PI * 2); c.fill();
   }
 
   function iconHelm(c, p) {
     c.fillStyle = p.dark;
-    c.beginPath(); c.arc(0, 0, 12, Math.PI, 0); c.lineTo(12, 8); c.lineTo(-12, 8); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-11, 8); c.lineTo(-10, -6); c.quadraticCurveTo(0, -11, 10, -6); c.lineTo(11, 8); c.closePath(); c.fill();
     c.fillStyle = p.main;
-    c.beginPath(); c.arc(0, -0.4, 10.4, Math.PI, 0); c.lineTo(10.2, 7); c.lineTo(-10.2, 7); c.closePath(); c.fill();
-    c.fillStyle = p.light; c.beginPath(); c.ellipse(-3.4, -6, 3.4, 2, -0.4, 0, Math.PI * 2); c.fill();
-    c.fillStyle = "#0a0c10"; rrect(c, -7, -3.2, 14, 4.2, 0.6); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.9; c.strokeRect(-7, -3.2, 14, 4.2);
-    c.fillStyle = p.trim; c.fillRect(-10.2, 6.2, 20.4, 1.6);
-    c.strokeStyle = p.trim; c.lineWidth = 0.8;
-    c.beginPath(); c.moveTo(0, 0.8); c.lineTo(0, 6.2); c.stroke();
+    c.beginPath(); c.moveTo(-9.4, 6.6); c.lineTo(-8.6, -5); c.quadraticCurveTo(0, -9, 8.6, -5); c.lineTo(9.4, 6.6); c.closePath(); c.fill();
+    c.fillStyle = "#d2a878"; c.fillRect(-5, -2, 10, 4.2);
+    c.fillStyle = p.glowHard; c.globalAlpha = 0.5;
+    c.beginPath(); c.arc(-2, 0, 1.4, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2, 0, 1.4, 0, Math.PI * 2); c.fill();
+    c.globalAlpha = 1;
+    c.strokeStyle = p.trim; c.lineWidth = 0.9; c.strokeRect(-5.2, -2.2, 10.4, 4.6);
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-2.2, -8); c.lineTo(0, -16); c.lineTo(2.2, -8); c.closePath(); c.fill();
+    c.fillStyle = p.light;
+    c.beginPath(); c.moveTo(-8, -6); c.lineTo(-14.5, -14); c.lineTo(-6, -5); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(8, -6); c.lineTo(14.5, -14); c.lineTo(6, -5); c.closePath(); c.fill();
   }
   function iconPlate(c, p) {
-    c.fillStyle = p.dark; rrect(c, -12, -11, 24, 24, 2); c.fill();
-    c.fillStyle = p.main; rrect(c, -11, -10, 22, 22, 2); c.fill();
-    c.fillStyle = p.light; rrect(c, -5, -8, 10, 5, 1); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 0.85;
-    c.beginPath(); c.moveTo(-9, -2); c.lineTo(9, -2); c.moveTo(-9, 4); c.lineTo(9, 4); c.stroke();
-    c.fillStyle = p.trim; c.fillRect(-1, -10, 2, 20);
-    c.fillStyle = p.dark; c.beginPath(); c.arc(0, 1, 3.1, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = p.trim; c.lineWidth = 1; c.beginPath(); c.arc(0, 1, 3.1, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = p.dark; rrect(c, -12, -12, 24, 25, 1.6); c.fill();
+    c.fillStyle = p.main; rrect(c, -10.6, -11, 21.2, 23, 1.4); c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath(); c.moveTo(-10, -10); c.lineTo(-15.4, -12); c.lineTo(-16, -4); c.lineTo(-10, -2); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(10, -10); c.lineTo(15.4, -12); c.lineTo(16, -4); c.lineTo(10, -2); c.closePath(); c.fill();
+    soulCore(c, p, 0, -1.5, 3.6);
   }
   function iconLegs(c, p) {
-    c.fillStyle = p.dark; rrect(c, -11, -12, 10, 24, 1.5); c.fill(); rrect(c, 1, -12, 10, 24, 1.5); c.fill();
-    c.fillStyle = p.main; rrect(c, -10, -11, 8, 22, 1.4); c.fill(); rrect(c, 2, -11, 8, 22, 1.4); c.fill();
-    c.fillStyle = p.light; c.fillRect(-10, -11, 2, 22); c.fillRect(2, -11, 2, 22);
-    c.strokeStyle = p.trim; c.lineWidth = 0.8;
-    c.beginPath(); c.moveTo(-9, -2); c.lineTo(-3, -2); c.moveTo(3, -2); c.lineTo(9, -2); c.stroke();
-    c.fillStyle = p.trim; c.fillRect(-11, -12, 22, 2);
+    c.fillStyle = p.dark; c.fillRect(-11, -11, 10, 24); c.fillRect(1, -11, 10, 24);
+    c.fillStyle = p.main; c.fillRect(-9.5, -10, 7.4, 21); c.fillRect(2.1, -10, 7.4, 21);
+    soulCrack(c, p, -7, -2, -4, 8);
+    soulCrack(c, p, 4, -2, 7, 8);
+    c.fillStyle = p.trim; c.fillRect(-11, -11, 22, 2);
   }
   function iconHalberd(c, p) {
     c.strokeStyle = p.dark; c.lineWidth = 3.0; c.lineCap = "round";
-    c.beginPath(); c.moveTo(-6, 13); c.lineTo(6, -10); c.stroke();
+    c.beginPath(); c.moveTo(-7, 14); c.lineTo(5, -6); c.stroke();
     c.strokeStyle = p.main; c.lineWidth = 1.8;
-    c.beginPath(); c.moveTo(-5.6, 12.2); c.lineTo(5.6, -9.2); c.stroke();
+    c.beginPath(); c.moveTo(-6.6, 13.2); c.lineTo(4.6, -5.2); c.stroke();
     c.save();
-    c.translate(6.2, -10.2); c.rotate(0.48);
+    c.translate(6.0, -8.4); c.rotate(0.48);
+    c.scale(0.92, 0.92);
     drawHalberdHead(c, p, 1);
     c.restore();
   }
@@ -1133,9 +1502,8 @@
     c.beginPath(); c.arc(0, 1, 9, 0.35, Math.PI * 2 - 0.35); c.stroke();
     c.strokeStyle = p.trim; c.lineWidth = 2.6;
     c.beginPath(); c.arc(0, 1, 9, 0.35, Math.PI * 2 - 0.35); c.stroke();
-    c.fillStyle = p.trim;
-    c.beginPath(); c.arc(-7.4, -3.6, 2.1, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(7.4, -3.6, 2.1, 0, Math.PI * 2); c.fill();
+    soulCore(c, p, -7.4, -3.6, 1.8);
+    soulCore(c, p, 7.4, -3.6, 1.8);
   }
   function iconSignet(c, p) {
     c.strokeStyle = p.dark; c.lineWidth = 4;
@@ -1143,13 +1511,13 @@
     c.strokeStyle = p.main; c.lineWidth = 2.4;
     c.beginPath(); c.arc(0, 2, 8, 0, Math.PI * 2); c.stroke();
     c.fillStyle = p.trim; rrect(c, -4.2, -10, 8.4, 6.2, 0.8); c.fill();
-    c.fillStyle = p.dark; rrect(c, -2.2, -8.4, 4.4, 3.0, 0.4); c.fill();
+    soulCore(c, p, 0, -6.8, 1.6);
   }
 
   const ICON_PAL = {
-    eclipse: { main: "#2a1c28", dark: "#140c16", light: "#5a4458", trim: "#e0b050", trimLt: "#f0d890", ink: "#3a2808" },
-    vestments: { main: "#181428", dark: "#0c0a16", light: "#4a4868", trim: "#c8d4f0", trimLt: "#e8eef8", ink: "#1a2438" },
-    hollowplate: { main: "#3a4450", dark: "#161a20", light: "#7a8490", trim: "#c8d0d8", trimLt: "#e8eef0", ink: "#0c1014" }
+    eclipse: SET.eclipse,
+    vestments: SET.vestments,
+    hollowplate: SET.hollowplate
   };
 
   function drawItemIcon(ctx, id) {
@@ -1189,12 +1557,10 @@
       if (part === "body") return drawHollowplateBody(c, st, facing);
       if (part === "legs") return drawHollowplateLegs(c, st, facing, extra);
     }
-    return false;
   }
 
   global.XscapeGloamT3Art = {
     isT3Id: isT3Id,
-    drawItemIcon: drawItemIcon,
     drawWorn: drawWorn,
     drawEclipseCoif: drawEclipseCoif,
     drawEclipseBody: drawEclipseBody,
@@ -1209,14 +1575,11 @@
     drawUnsleepingCharmWorn: drawUnsleepingCharmWorn,
     drawHollowTorqueWorn: drawHollowTorqueWorn,
     drawT3Ring: drawT3Ring,
+    t3WeaponPose: t3WeaponPose,
+    t3TwoHandPose: t3TwoHandPose,
     drawLongbowHeld: drawLongbowHeld,
     drawStaffHeld: drawStaffHeld,
     drawHalberdHeld: drawHalberdHeld,
-    t3TwoHandPose: t3TwoHandPose,
-    longbowPose: longbowPose,
-    staffPose: staffPose,
-    halberdPose: halberdPose,
-    staffHoldAngle: staffHoldAngle,
-    halberdHoldAngle: halberdHoldAngle
+    drawItemIcon: drawItemIcon
   };
-})(typeof window !== "undefined" ? window : (typeof globalThis !== "undefined" ? globalThis : this));
+})(typeof window !== "undefined" ? window : globalThis);
