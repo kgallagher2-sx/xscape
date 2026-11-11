@@ -321,114 +321,170 @@
     "tztok-jad": {
       id: "tztok-jad",
       name: "Magmor, the Molten Titan",
-      hitpoints: 360,
-      attack: 750,
-      strength: 240,
-      defence: 60,       // arcade; OSRS is 480 (see osrsDefence)
+      hp: 360, hitpoints: 360,
+      levels: { attack: 750, strength: 240, defence: 60, magic: 510, ranged: 960 },
       osrsDefence: 480,
-      magic: 510,
-      ranged: 960,
-      bonuses: b({ amagic: 60, arange: 60, str: 0, rstr: 0 }),
-      defBonuses: b({}),
-      maxHit: { mage: 97, ranged: 97, melee: 97 },
-      attackSpeed: 8
+      atk: b({ amagic: 60, arange: 60 }),
+      def: b({}),
+      attacks: [
+        { style: "magic", speed: 8, magicBase: 97 },
+        { style: "ranged", speed: 8 },
+        { style: "crush", speed: 8, maxHit: 97, overrideReason: "arcade melee max matches mage/range 97; formula at strength 240 str 0 is 25" }
+      ],
+      weakness: "ranged"
     },
     healer: {
       id: "healer",
       name: "Emberling",
-      hitpoints: 32,
-      attack: 190,
-      strength: 70,
-      defence: 40,
-      magic: 1,
-      ranged: 1,
-      bonuses: b({ astab: 0, aslash: 0, acrush: 0, str: 0 }),
-      defBonuses: b({ drange: 0 }),
-      maxHit: { melee: 14 },
-      attackSpeed: 4
+      hp: 32, hitpoints: 32,
+      levels: { attack: 190, strength: 70, defence: 40, magic: 1, ranged: 1 },
+      atk: b({}),
+      def: b({ drange: 0 }),
+      attacks: [
+        { style: "crush", speed: 4, maxHit: 14, overrideReason: "formula at strength 70 str 0 is 8; keep hand-set melee max 14" }
+      ],
+      weakness: "ranged"
     },
     "kree-arra": {
       id: "kree-arra",
       name: "Vaelkor the Stormwing",
-      hitpoints: 255,
-      attack: 300,
-      strength: 200,
-      defence: 260,      // OSRS; arcade ranged defence bonus is tuned for a ~2–3 min Tier 2 kill
+      hp: 255, hitpoints: 255,
+      levels: { attack: 300, strength: 200, defence: 260, magic: 200, ranged: 260 },
       osrsDefence: 260,
-      magic: 200,
-      ranged: 260,
       flying: true,
-      bonuses: b({ arange: 80, amagic: 40, str: 20 }),
-      defBonuses: b({ drange: 110, dmagic: 20, dstab: 72, dslash: 80, dcrush: 90 }),
-      maxHit: { mage: 21, ranged: 71, melee: 26 },
-      attackSpeed: 5
+      atk: b({ arange: 80, amagic: 40, str: 20 }),
+      def: b({ drange: 110, dmagic: 20, dstab: 72, dslash: 80, dcrush: 90 }),
+      attacks: [
+        { style: "magic", speed: 5, magicBase: 21 },
+        { style: "ranged", speed: 5, maxHit: 71, overrideReason: "formula at ranged 260 rstr 0 is 27; keep hand-set ranged max 71" },
+        { style: "crush", speed: 5, maxHit: 26, overrideReason: "formula at strength 200 str 20 is 27; keep hand-set melee max 26" }
+      ],
+      weakness: "magic"
     },
     "wingman-skree": {
       id: "wingman-skree", name: "Rask",
-      hitpoints: 28, attack: 80, strength: 50, defence: 40, magic: 120, ranged: 20,
-      flying: true, bonuses: b({ amagic: 30 }), defBonuses: b({ drange: 10 }),
-      maxHit: { mage: 8 }, attackSpeed: 7
+      hp: 28, hitpoints: 28,
+      levels: { attack: 80, strength: 50, defence: 40, magic: 120, ranged: 20 },
+      flying: true,
+      atk: b({ amagic: 30 }),
+      def: b({ drange: 10 }),
+      attacks: [
+        { style: "magic", speed: 7, magicBase: 8 }
+      ],
+      weakness: "magic"
     },
     "flockleader-geerin": {
       id: "flockleader-geerin", name: "Veyra",
-      hitpoints: 28, attack: 80, strength: 50, defence: 40, magic: 20, ranged: 120,
-      flying: true, bonuses: b({ arange: 30 }), defBonuses: b({ drange: 10 }),
-      maxHit: { ranged: 12 }, attackSpeed: 7
+      hp: 28, hitpoints: 28,
+      levels: { attack: 80, strength: 50, defence: 40, magic: 20, ranged: 120 },
+      flying: true,
+      atk: b({ arange: 30 }),
+      def: b({ drange: 10 }),
+      attacks: [
+        { style: "ranged", speed: 7, maxHit: 12, overrideReason: "no rstr at ranged 120 reproduces maxHit 12 (formula 13); changing ranged would change accuracy" }
+      ],
+      weakness: "magic"
     },
     "flight-kilisa": {
       id: "flight-kilisa", name: "Korrin",
-      hitpoints: 28, attack: 120, strength: 80, defence: 40, magic: 20, ranged: 20,
-      flying: true, bonuses: b({ str: 20 }), defBonuses: b({ drange: 10 }),
-      maxHit: { melee: 10 }, attackSpeed: 7
+      hp: 28, hitpoints: 28,
+      levels: { attack: 120, strength: 80, defence: 40, magic: 20, ranged: 20 },
+      flying: true,
+      atk: b({ str: 20 }),
+      def: b({ drange: 10 }),
+      attacks: [
+        { style: "crush", speed: 7, maxHit: 10, overrideReason: "formula at strength 80 str 20 is 12; keep hand-set melee max 10" }
+      ],
+      weakness: "magic"
     },
     "widow-queen": {
       id: "widow-queen", name: "Widow Queen",
-      hitpoints: 600, attack: 400, strength: 300, defence: 220,
-      osrsDefence: 220, magic: 300, ranged: 80,
-      bonuses: b({ amagic: 40, str: 40 }),
-      defBonuses: b({ dmagic: 20, drange: 40, dstab: 40, dslash: 40, dcrush: 40 }),
-      maxHit: { mage: 28, melee: 30 },
-      attackSpeed: 5
+      hp: 600, hitpoints: 600,
+      levels: { attack: 400, strength: 300, defence: 220, magic: 300, ranged: 80 },
+      osrsDefence: 220,
+      atk: b({ amagic: 40, str: 40 }),
+      def: b({ dmagic: 20, drange: 40, dstab: 40, dslash: 40, dcrush: 40 }),
+      attacks: [
+        { style: "magic", speed: 5, magicBase: 28 },
+        { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 300 str 40 is 50; keep hand-set melee max 30" }
+      ],
+      weakness: "magic"
     },
     "widow-baby": {
       id: "widow-baby", name: "Baby spider",
-      hitpoints: 8, attack: 40, strength: 20, defence: 10, magic: 1, ranged: 1,
-      bonuses: b({ str: 8 }), defBonuses: b({ dmagic: 0, drange: 0 }),
-      maxHit: { melee: 8 }, attackSpeed: 3
+      hp: 8, hitpoints: 8,
+      levels: { attack: 40, strength: 20, defence: 10, magic: 1, ranged: 1 },
+      atk: b({ str: 8 }),
+      def: b({ dmagic: 0, drange: 0 }),
+      attacks: [
+        { style: "crush", speed: 3, maxHit: 8, overrideReason: "formula at strength 20 str 8 is 3; keep hand-set melee max 8" }
+      ],
+      weakness: "magic"
     },
     "widow-skel": {
       id: "widow-skel", name: "Risen victim",
-      hitpoints: 1, attack: 80, strength: 80, defence: 1, magic: 1, ranged: 1,
-      bonuses: b({ str: 40 }), defBonuses: b({}),
-      maxHit: { melee: 25 }, attackSpeed: 4
+      hp: 1, hitpoints: 1,
+      levels: { attack: 80, strength: 80, defence: 1, magic: 1, ranged: 1 },
+      atk: b({ str: 40 }),
+      def: b({}),
+      attacks: [
+        { style: "crush", speed: 4, maxHit: 25, overrideReason: "formula at strength 80 str 40 is 14; keep hand-set melee max 25" }
+      ],
+      weakness: "crush"
     },
     "hollow-knight-king": {
       id: "hollow-knight-king", name: "Hollow Knight-King",
-      combat: 520, hitpoints: 600, attack: 200, strength: 200, defence: 200, magic: 80, ranged: 80, speed: 5,
-      maxHit: { melee: 30, mage: 22, ranged: 1 },
-      bonuses: b({ astab: 40, aslash: 80, acrush: 20 }),
-      defBonuses: b({ dmagic: 40, drange: 80, dstab: 180, dslash: 180, dcrush: 160 })
+      combat: 520,
+      hp: 600, hitpoints: 600,
+      levels: { attack: 200, strength: 200, defence: 200, magic: 80, ranged: 80 },
+      atk: b({ astab: 40, aslash: 80, acrush: 20 }),
+      def: b({ dmagic: 40, drange: 80, dstab: 180, dslash: 180, dcrush: 160 }),
+      attacks: [
+        { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 200 str 0 is 21; keep hand-set melee max 30" },
+        { style: "magic", speed: 5, magicBase: 22 },
+        { style: "ranged", speed: 5, maxHit: 1, overrideReason: "no rstr at ranged 80 reproduces maxHit 1 (formula 9); changing ranged would change accuracy" }
+      ],
+      weakness: "crush"
     },
     "spectral-knight": {
       id: "spectral-knight", name: "Spectral knight",
-      combat: 40, hitpoints: 18, attack: 40, strength: 30, defence: 20, magic: 1, ranged: 1, speed: 4,
-      maxHit: { melee: 12 },
-      bonuses: b({ astab: 0, aslash: 10, acrush: 0 }),
-      defBonuses: b({ dmagic: 0, drange: 0, dstab: 10, dslash: 10, dcrush: 10 })
+      combat: 40,
+      hp: 18, hitpoints: 18,
+      levels: { attack: 40, strength: 30, defence: 20, magic: 1, ranged: 1 },
+      atk: b({ aslash: 10 }),
+      def: b({ dmagic: 0, drange: 0, dstab: 10, dslash: 10, dcrush: 10 }),
+      attacks: [
+        { style: "crush", speed: 4, maxHit: 12, overrideReason: "formula at strength 30 str 0 is 4; keep hand-set melee max 12" }
+      ],
+      weakness: "crush"
     },
     "gorehorn-the-minotaur": {
       id: "gorehorn-the-minotaur", name: "Gorehorn, the Minotaur",
-      combat: 520, hitpoints: 600, attack: 220, strength: 220, defence: 180, magic: 20, ranged: 20, speed: 5,
-      maxHit: { melee: 30, mage: 1, ranged: 1 },
-      bonuses: b({ astab: 20, aslash: 40, acrush: 90 }),
-      defBonuses: b({ dmagic: 20, drange: 60, dstab: 160, dslash: 150, dcrush: 180 })
+      combat: 520,
+      hp: 600, hitpoints: 600,
+      levels: { attack: 220, strength: 220, defence: 180, magic: 20, ranged: 20 },
+      atk: b({ astab: 20, aslash: 40, acrush: 90 }),
+      def: b({ dmagic: 20, drange: 60, dstab: 160, dslash: 150, dcrush: 180 }),
+      attacks: [
+        { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 220 str 0 is 23; keep hand-set melee max 30" },
+        { style: "magic", speed: 5, magicBase: 1 },
+        { style: "ranged", speed: 5, maxHit: 1, overrideReason: "no rstr at ranged 20 reproduces maxHit 1 (formula 3); changing ranged would change accuracy" }
+      ],
+      weakness: "slash"
     },
     "drowned-colossus": {
       id: "drowned-colossus", name: "The Drowned Colossus",
-      combat: 520, hitpoints: 600, attack: 220, strength: 200, defence: 160, magic: 40, ranged: 20, speed: 5,
-      maxHit: { melee: 30, mage: 1, ranged: 1 },
-      bonuses: b({ astab: 40, aslash: 70, acrush: 50 }),
-      defBonuses: b({ dmagic: 40, drange: 50, dstab: 120, dslash: 110, dcrush: 130 })
+      combat: 520,
+      hp: 600, hitpoints: 600,
+      levels: { attack: 220, strength: 200, defence: 160, magic: 40, ranged: 20 },
+      atk: b({ astab: 40, aslash: 70, acrush: 50 }),
+      def: b({ dmagic: 40, drange: 50, dstab: 120, dslash: 110, dcrush: 130 }),
+      attacks: [
+        { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 200 str 0 is 21; keep hand-set melee max 30" },
+        { style: "magic", speed: 5, magicBase: 1 },
+        { style: "ranged", speed: 5, maxHit: 1, overrideReason: "no rstr at ranged 20 reproduces maxHit 1 (formula 3); changing ranged would change accuracy" }
+      ],
+      weakness: "stab"
     }
   };
 
@@ -527,14 +583,14 @@
     const atkRoll = maxRoll(atkLevel, atkBonus);
     // Default (FLAGS.npcMagicDefUsesMagicLevel = false): identical to the
     // historical path — general defence level for every style, including magic.
-    var npcDefLevel = mon.defence;
-    var npcDefBonus = styleDefenceBonus(mon.defBonuses || emptyBonuses(), style);
+    var npcStatsNow = npcStats(mon);
+    var npcDefLevel = npcStatsNow.levels.defence;
+    var npcDefBonus = styleDefenceBonus(npcStatsNow.def || emptyBonuses(), style);
     if ((style === "mage" || style === "magic") && FLAGS && FLAGS.npcMagicDefUsesMagicLevel) {
-      var flagStats = npcStats(mon);
-      npcDefLevel = (flagStats.levels && flagStats.levels.magic != null)
-        ? flagStats.levels.magic
-        : (mon.magic != null ? mon.magic : mon.defence);
-      npcDefBonus = styleDefenceBonus(flagStats.def || mon.defBonuses || emptyBonuses(), "magic");
+      npcDefLevel = (npcStatsNow.levels && npcStatsNow.levels.magic != null)
+        ? npcStatsNow.levels.magic
+        : npcDefLevel;
+      npcDefBonus = styleDefenceBonus(npcStatsNow.def || emptyBonuses(), "magic");
     }
     const defRoll = maxRoll(effectiveNpcLevel(npcDefLevel), npcDefBonus);
     const chance = hitChance(atkRoll, defRoll);
@@ -593,14 +649,31 @@
     if (style === "magic") style = "mage";
     const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
     const pb = playerBonuses();
+    const stats = npcStats(mon);
     let atkSkill;
-    if (style === "ranged") atkSkill = mon.ranged;
-    else if (style === "mage") atkSkill = mon.magic;
-    else atkSkill = mon.attack;
-    const atkRoll = maxRoll(effectiveNpcLevel(atkSkill), styleAttackBonus(mon.bonuses || emptyBonuses(), style === "mage" ? "magic" : style));
+    if (style === "ranged") atkSkill = stats.levels.ranged;
+    else if (style === "mage") atkSkill = stats.levels.magic;
+    else atkSkill = stats.levels.attack;
+    const atkRoll = maxRoll(effectiveNpcLevel(atkSkill), styleAttackBonus(stats.atk || emptyBonuses(), style === "mage" ? "magic" : style));
     const defRoll = maxRoll(effectivePlayerLevel(combatSkillLevel("defence", false), 1, 0), styleDefenceBonus(pb, style === "mage" ? "magic" : style));
-    const max = (mon.maxHit && (mon.maxHit[style] || mon.maxHit.melee || mon.maxHit.ranged)) || 1;
-    const chance = hitChance(atkRoll, defRoll);
+    // Same max-hit fallback as the legacy mon.maxHit[style] || mon.maxHit.melee || mon.maxHit.ranged || 1
+    // so a call with a style the NPC does not use still returns the old number.
+    const ordinary = ((stats.attacks || mon.attacks) || []).filter(function (a) { return a && !a.special; });
+    function attackFor(st) {
+      const ns = normalizeNpcStyle(st);
+      for (let i = 0; i < ordinary.length; i++) {
+        if (normalizeNpcStyle(ordinary[i].style) === ns) return ordinary[i];
+      }
+      return null;
+    }
+    var picked = attackFor(style);
+    if (!picked) {
+      picked = attackFor("melee") || attackFor("crush") || attackFor("ranged");
+      // Legacy did not fall back to a mage-only maxHit; missing melee+ranged => 1.
+      if (!picked && attackFor("magic")) picked = null;
+    }
+    const max = picked ? npcMaxHit(mon, picked) : 1;
+    const chance = npcHitChance(mon, style);
     return { style, maxHit: max, chance, atkRoll, defRoll, expected: expectedDamage(max, chance) };
   }
 
@@ -616,10 +689,9 @@
 
   /* ---------- NPC STATS (Combat Balance, 2026-11-11) ----------
      Approved refactor (Gameboy / Kellen): bosses use the same stat system
-     as players; players are always level 99. This block is additive.
-     MONSTERS data and boss/raid files are not migrated here — helpers
-     accept both the current legacy shape (hand-set maxHit, defence /
-     defBonuses) and the new shape Boss Mechanics will move each entry to:
+     as players; players are always level 99. MONSTERS entries use the new
+     shape below. Helpers still accept the legacy shape (hand-set maxHit,
+     defence / defBonuses) if an older record is passed in:
 
        { name, hp, levels:{attack,strength,defence,magic,ranged},
          atk:{astab,aslash,acrush,amagic,arange,str,rstr,mdmg},
@@ -1146,6 +1218,41 @@
   // from in-game raids on index.html (combat.js loads before raid.js).
   // Keeping window.XscapeCombat itself is safe: raid.js only branches on
   // those three members, not on the namespace existing.
+
+  // Fill legacy top-level aliases so older readers (mon.defence, mon.hitpoints,
+  // mon.bonuses, mon.defBonuses, mon.maxHit) keep working after the shape move.
+  (function stampLegacyNpcAliases(table) {
+    Object.keys(table).forEach(function (id) {
+      const mon = table[id];
+      if (!mon || !mon.levels) return;
+      if (mon.hp != null && mon.hitpoints == null) mon.hitpoints = mon.hp;
+      if (mon.hitpoints != null && mon.hp == null) mon.hp = mon.hitpoints;
+      mon.attack = mon.levels.attack;
+      mon.strength = mon.levels.strength;
+      mon.defence = mon.levels.defence;
+      mon.magic = mon.levels.magic;
+      mon.ranged = mon.levels.ranged;
+      if (!mon.bonuses) mon.bonuses = mon.atk;
+      if (!mon.defBonuses) mon.defBonuses = mon.def;
+      if (mon.attackSpeed == null || mon.speed == null) {
+        const a0 = (mon.attacks || []).find(function (a) { return a && !a.special && a.speed != null; });
+        if (a0) {
+          if (mon.attackSpeed == null) mon.attackSpeed = a0.speed;
+          if (mon.speed == null) mon.speed = a0.speed;
+        }
+      }
+      if (!mon.maxHit) {
+        const mh = {};
+        (mon.attacks || []).forEach(function (a) {
+          if (!a || a.special) return;
+          const ns = normalizeNpcStyle(a.style);
+          const key = ns === "magic" ? "mage" : (ns === "ranged" ? "ranged" : "melee");
+          mh[key] = npcMaxHit(mon, a);
+        });
+        mon.maxHit = mh;
+      }
+    });
+  })(MONSTERS);
 
   var api = {
     ITEMS: ITEMS,

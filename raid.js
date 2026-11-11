@@ -98,11 +98,78 @@
   }
   const UNIQUE_WEIGHTS = { "hollowbolt-xbow": 1, "veilhide-body": 2, "veilhide-chaps": 2, "veilhide-vambs": 2, "crownshard-boots": 2, "unsleeping-stole": 2, "gloamheart-cape": 1 };
 
-  const MONSTERS = {
-    morvane: { name: "Morvane the Unsleeping", id: "morvane", hp: MORVANE_HP, defLevel: 70, defBonus: { mage: 40, range: 50, melee: 30 }, maxHit: { 1: 42, 2: 48, 3: 55, 4: 65 }, accuracy: { 1: 0.88, 2: 0.90, 3: 0.93, 4: 0.96 } },
-    warden: { name: "The Pale Warden", id: "warden", hp: WARDEN_HP, defLevel: 40, defBonus: { mage: 20, range: 20, melee: 30 }, maxHit: 22, accuracy: 0.80 },
-    shade: { name: "Cinder Shade", id: "shade", hp: SHADE_HP, defLevel: 5, defBonus: { mage: 0, range: 0, melee: 0 }, maxHit: 6, accuracy: 0.70 }
+  const HOST_MONSTERS = {
+    morvane: {
+      id: "morvane", name: "Morvane the Unsleeping",
+      hp: MORVANE_HP, hitpoints: MORVANE_HP,
+      levels: { attack: 280, strength: 200, defence: 70, magic: 260, ranged: 260 },
+      attack: 280, strength: 200, defence: 70, magic: 260, ranged: 260,
+      osrsDefence: 70,
+      atk: { astab: 40, aslash: 40, acrush: 40, amagic: 40, arange: 40, str: 0, rstr: 0, mdmg: 0 },
+      bonuses: { astab: 40, aslash: 40, acrush: 40, amagic: 40, arange: 40, str: 0, rstr: 0, mdmg: 0 },
+      def: { dstab: 30, dslash: 30, dcrush: 30, dmagic: 40, drange: 50 },
+      defBonuses: { dstab: 30, dslash: 30, dcrush: 30, dmagic: 40, drange: 50 },
+      attacks: [
+        { style: "magic", speed: 6, magicBase: 42 },
+        { style: "ranged", speed: 6, maxHit: 42, overrideReason: "formula at ranged 260 rstr 0 is 27; HOST ordinary max is 42" },
+        { style: "crush", speed: 6, maxHit: 42, overrideReason: "formula at strength 200 str 0 is 21; HOST ordinary max is 42" },
+        { style: "magic", special: true, maxHit: 42, accuracy: 0.88, phase: 1, speed: 6 },
+        { style: "magic", special: true, maxHit: 48, accuracy: 0.90, phase: 2, speed: 5 },
+        { style: "magic", special: true, maxHit: 55, accuracy: 0.93, phase: 3, speed: 4 },
+        { style: "magic", special: true, maxHit: 65, accuracy: 0.96, phase: 4, speed: 3 }
+      ],
+      weakness: "magic",
+      groupHpScale: true,
+      // Aliases for standalone raid.html / older readers.
+      defLevel: 70,
+      defBonus: { mage: 40, range: 50, melee: 30 }
+    },
+    warden: {
+      id: "warden", name: "The Pale Warden",
+      hp: WARDEN_HP, hitpoints: WARDEN_HP,
+      levels: { attack: 120, strength: 80, defence: 40, magic: 80, ranged: 80 },
+      attack: 120, strength: 80, defence: 40, magic: 80, ranged: 80,
+      atk: { astab: 0, aslash: 0, acrush: 0, amagic: 20, arange: 20, str: 0, rstr: 0, mdmg: 0 },
+      bonuses: { astab: 0, aslash: 0, acrush: 0, amagic: 20, arange: 20, str: 0, rstr: 0, mdmg: 0 },
+      def: { dstab: 10, dslash: 10, dcrush: 10, dmagic: 20, drange: 20 },
+      defBonuses: { dstab: 10, dslash: 10, dcrush: 10, dmagic: 20, drange: 20 },
+      attacks: [
+        { style: "magic", speed: 5, magicBase: 22 },
+        { style: "ranged", speed: 5, maxHit: 22, overrideReason: "formula at ranged 80 rstr 0 is 9; HOST ordinary max is 22" },
+        { style: "crush", speed: 5, maxHit: 16, overrideReason: "formula at strength 80 str 0 is 9; HOST ordinary melee max is 16" },
+        { style: "magic", special: true, maxHit: 22, accuracy: 0.80, speed: 5 }
+      ],
+      weakness: "ranged",
+      groupHpScale: true,
+      // Aliases. Melee def 10 is the live host table (canonical); standalone used 30.
+      defLevel: 40,
+      defBonus: { mage: 20, range: 20, melee: 10 },
+      maxHit: 22,
+      accuracy: 0.80
+    },
+    shade: {
+      id: "shade", name: "Cinder Shade",
+      hp: SHADE_HP, hitpoints: SHADE_HP,
+      levels: { attack: 40, strength: 20, defence: 5, magic: 1, ranged: 1 },
+      attack: 40, strength: 20, defence: 5, magic: 1, ranged: 1,
+      atk: { astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0, str: 0, rstr: 0, mdmg: 0 },
+      bonuses: { astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0, str: 0, rstr: 0, mdmg: 0 },
+      def: { dstab: 0, dslash: 0, dcrush: 0, dmagic: 0, drange: 0 },
+      defBonuses: { dstab: 0, dslash: 0, dcrush: 0, dmagic: 0, drange: 0 },
+      attacks: [
+        { style: "crush", speed: 4, maxHit: 6, overrideReason: "formula at strength 20 str 0 is 3; keep hand-set melee max 6" },
+        { style: "crush", special: true, maxHit: 6, accuracy: 0.70, speed: 4 }
+      ],
+      weakness: "crush",
+      groupHpScale: true,
+      // Aliases. defLevel 5 is the approved live-table value (HOST was 8).
+      defLevel: 5,
+      defBonus: { mage: 0, range: 0, melee: 0 },
+      maxHit: 6,
+      accuracy: 0.70
+    }
   };
+  const MONSTERS = HOST_MONSTERS;
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -163,30 +230,7 @@
     weapon: "nightfall_staff", body: "unsleeping_robe_top", shield: null,
     legs: "unsleeping_robe_bottom", hands: null, feet: null, ring: "dreamless_ring"
   };
-  const HOST_MONSTERS = {
-    morvane: {
-      id: "morvane", name: "Morvane the Unsleeping", hitpoints: MORVANE_HP,
-      attack: 280, strength: 200, defence: 70, osrsDefence: 70,
-      magic: 260, ranged: 260,
-      bonuses: { astab: 40, aslash: 40, acrush: 40, amagic: 40, arange: 40, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:0, mdmg:0 },
-      defBonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:0, dstab:30,dslash:30,dcrush:30,dmagic:40,drange:50, str:0, rstr:0, mdmg:0 },
-      maxHit: { mage: 42, ranged: 42, melee: 42 }, attackSpeed: 6
-    },
-    warden: {
-      id: "warden", name: "The Pale Warden", hitpoints: 60,
-      attack: 120, strength: 80, defence: 40, magic: 80, ranged: 80,
-      bonuses: { astab:0,aslash:0,acrush:0,amagic:20,arange:20, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:0, mdmg:0 },
-      defBonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:0, dstab:10,dslash:10,dcrush:10,dmagic:20,drange:20, str:0, rstr:0, mdmg:0 },
-      maxHit: { mage: 22, ranged: 22, melee: 16 }, attackSpeed: 5
-    },
-    shade: {
-      id: "shade", name: "Cinder Shade", hitpoints: 16,
-      attack: 40, strength: 20, defence: 8, magic: 1, ranged: 1,
-      bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:0, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:0, mdmg:0 },
-      defBonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:0, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:0, mdmg:0 },
-      maxHit: { melee: 6 }, attackSpeed: 4
-    }
-  };
+  /* HOST_MONSTERS is defined with the raid MONSTERS table above. */
   function registerItems() {
     if (!global.XscapeItems) global.XscapeItems = {};
     for (const k of Object.keys(RAID_ITEMS)) {
@@ -253,9 +297,43 @@
     return effectiveRanged(level, potOn) * (rangeAtk + 64);
   }
   function monsterDefRoll(mon, style) {
+    if (mon && mon.levels && mon.def) {
+      const defLv = mon.levels.defence || 0;
+      const key = (style === "mage" || style === "magic") ? "dmagic"
+        : (style === "range" || style === "ranged") ? "drange"
+        : (style === "stab") ? "dstab"
+        : (style === "slash") ? "dslash"
+        : "dcrush";
+      const bonus = mon.def[key] != null ? mon.def[key] : 0;
+      return (defLv + 9) * (bonus + 64);
+    }
     const defLv = mon.defLevel || 0;
     const bonus = (mon.defBonus && mon.defBonus[style] != null) ? mon.defBonus[style] : 0;
     return (defLv + 9) * (bonus + 64);
+  }
+  function specialAttackOf(mon, phaseN) {
+    if (!mon || !Array.isArray(mon.attacks)) return null;
+    const specials = mon.attacks.filter(function (a) { return a && a.special === true; });
+    if (phaseN != null) {
+      for (let i = 0; i < specials.length; i++) {
+        if (specials[i].phase === phaseN) return specials[i];
+      }
+    }
+    return specials.length ? specials[0] : null;
+  }
+  function monSpecialMaxHit(mon, phaseN) {
+    const sp = specialAttackOf(mon, phaseN);
+    if (sp && sp.maxHit != null) return sp.maxHit;
+    if (typeof mon.maxHit === "number") return mon.maxHit;
+    if (mon.maxHit && phaseN != null && mon.maxHit[phaseN] != null) return mon.maxHit[phaseN];
+    return 0;
+  }
+  function monSpecialAccuracy(mon, phaseN) {
+    const sp = specialAttackOf(mon, phaseN);
+    if (sp && sp.accuracy != null) return sp.accuracy;
+    if (typeof mon.accuracy === "number") return mon.accuracy;
+    if (mon.accuracy && phaseN != null && mon.accuracy[phaseN] != null) return mon.accuracy[phaseN];
+    return 0;
   }
   function fighterGear(f) {
     return (f && (f.equipment || f.loadout)) || f || {};
@@ -1724,7 +1802,7 @@
       if (rs.exitIn <= 0) { rs.exitIn = null; placeExit(st); }
     }
     const b = st.boss;
-    if (b && b.hp > 0) tickPrayerBoss(st, b, { styles: ["mage", "range"], speed: 5, tel: 2, maxHit: MONSTERS.warden.maxHit, accuracy: MONSTERS.warden.accuracy });
+    if (b && b.hp > 0) tickPrayerBoss(st, b, { styles: ["mage", "range"], speed: 5, tel: 2, maxHit: monSpecialMaxHit(MONSTERS.warden), accuracy: monSpecialAccuracy(MONSTERS.warden) });
     rs.spawnIn--;
     const liveShades = st.adds.filter(function (a) { return a.hp > 0; }).length;
     if (rs.spawnIn <= 0 && b && b.hp > 0 && liveShades < shadeCap(st)) {
@@ -1755,7 +1833,7 @@
         a.atkCd = 4;
         withFighter(st, prey2, function () {
           const prot = st.prayer === "melee";
-          const dmg = rollBossHit(st.rng, MONSTERS.shade.maxHit, MONSTERS.shade.accuracy, prot, st.god);
+          const dmg = rollBossHit(st.rng, monSpecialMaxHit(MONSTERS.shade), monSpecialAccuracy(MONSTERS.shade), prot, st.god);
           if (prot) { splat(st, st.player.col, st.player.row, 0, "#80c0ff"); sfx(st, "block"); }
           else if (dmg > 0) hurtPlayer(st, dmg, "A shade burns you.");
         });
@@ -1888,10 +1966,18 @@
     return 1;
   }
   function phaseCfg(n) {
-    if (n <= 1) return { speed: 6, tel: 3, styles: ["mage","range"], maxHit: 42, accuracy: 0.88 };
-    if (n === 2) return { speed: 5, tel: 2, styles: ["mage","range","melee"], maxHit: 48, accuracy: 0.90 };
-    if (n === 3) return { speed: 4, tel: 2, styles: ["mage","range","melee"], maxHit: 55, accuracy: 0.93 };
-    return { speed: 3, tel: 1, styles: ["mage","range","melee"], maxHit: 65, accuracy: 0.96 };
+    const fallback = (n <= 1)
+      ? { speed: 6, tel: 3, styles: ["mage","range"], maxHit: 42, accuracy: 0.88 }
+      : (n === 2)
+        ? { speed: 5, tel: 2, styles: ["mage","range","melee"], maxHit: 48, accuracy: 0.90 }
+        : (n === 3)
+          ? { speed: 4, tel: 2, styles: ["mage","range","melee"], maxHit: 55, accuracy: 0.93 }
+          : { speed: 3, tel: 1, styles: ["mage","range","melee"], maxHit: 65, accuracy: 0.96 };
+    const phase = (n <= 1) ? 1 : n;
+    const mon = MONSTERS.morvane;
+    fallback.maxHit = monSpecialMaxHit(mon, phase) || fallback.maxHit;
+    fallback.accuracy = monSpecialAccuracy(mon, phase) || fallback.accuracy;
+    return fallback;
   }
   function tickThrone(st) {
     const b = st.boss;
