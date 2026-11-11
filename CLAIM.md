@@ -11,3 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
+- gloam-t3-sprites.js, item-icons.js, lab-gear.js, lab.html, sprites.js, index.html | Item & Character Design | 2026-11-11 11:41 America/New_York | Ship approved Gloamhold tier-3 icons and worn sprites
