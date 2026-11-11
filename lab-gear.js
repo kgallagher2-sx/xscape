@@ -1984,8 +1984,16 @@ function drawHeroArmSleeve(c, id, facing, side, opt, hands) {
   // If a two-hand pose pulled the hand inward, lean the sleeve toward it a little.
   let sx = sh.x, sy = sh.y - lift;
   if (hands && hands[side]) {
-    sx = sh.x * 0.65 + hands[side].x * 0.35;
-    sy = (sh.y - lift) * 0.55 + hands[side].y * 0.45;
+    let toward = 0.35, fromSh = 0.65, towardY = 0.45, fromShY = 0.55;
+    const wid = opt && opt.equipment && opt.equipment.weapon;
+    const wk = wid ? weaponKind(wid) : "";
+    // T3 two-handers have no gloves; pull the empty sleeve to the haft so
+    // the off-arm does not read as hanging free. Gorehorn (axe) stays put.
+    if (wk === "halberd" || wk === "staff" || wk === "longbow") {
+      toward = 0.72; fromSh = 0.28; towardY = 0.70; fromShY = 0.30;
+    }
+    sx = sh.x * fromSh + hands[side].x * toward;
+    sy = (sh.y - lift) * fromShY + hands[side].y * towardY;
   }
   c.save();
   c.fillStyle = p.main;

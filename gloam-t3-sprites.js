@@ -607,25 +607,26 @@
   }
 
   function drawT3Ring(c, st, facing, hands, kind) {
+    // Thin band on the finger — never a disc that swallows the left fist.
+    // On 2h weapons the off-hand must still read as a hand on the haft.
     const p = palFrom(st);
     const h = (hands && hands.left) || { x: 12, y: -9 };
     c.save();
-    c.translate(h.x + (facing === "back" ? 0.8 : 0.6), h.y);
-    c.strokeStyle = p.ink; c.lineWidth = 1.55;
-    c.beginPath(); c.arc(0, 0, 1.75, 0, Math.PI * 2); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 1.15;
-    c.beginPath(); c.arc(0, 0, 1.75, 0, Math.PI * 2); c.stroke();
+    c.translate(h.x + 0.55, h.y + 1.2);
+    c.strokeStyle = p.ink; c.lineWidth = 0.7;
+    c.beginPath(); c.arc(0, 0, 1.15, 0, Math.PI * 2); c.stroke();
+    c.strokeStyle = p.trim; c.lineWidth = 0.5;
+    c.beginPath(); c.arc(0, 0, 1.15, 0, Math.PI * 2); c.stroke();
     if (kind === "eclipse_band") {
-      eclipseEmblem(c, p, 0, 0, 0.85);
+      eclipseEmblem(c, p, 0, -0.15, 0.5);
     } else if (kind === "hollow_signet") {
       c.fillStyle = p.trim;
-      c.fillRect(-0.85, -0.7, 1.7, 1.4);
+      c.fillRect(-0.5, -0.7, 1.0, 0.65);
       c.fillStyle = p.dark;
-      c.fillRect(-0.45, -0.3, 0.9, 0.6);
+      c.fillRect(-0.28, -0.55, 0.56, 0.35);
     } else {
-      // dreamless: pale stone
       c.fillStyle = p.trim;
-      c.beginPath(); c.arc(0, 0, 0.85, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(0, -0.15, 0.45, 0, Math.PI * 2); c.fill();
     }
     c.restore();
   }
@@ -653,8 +654,12 @@
       riser = { x: -7.0, y: -9.6 };
       string = { x: -1.2 + draw * 6.5 - recoil * 1.4, y: -10.4 - draw * 0.6 };
     }
+    // Idle rest: bow-hand (left) slightly above the riser emblem, main hand
+    // (right) below it, so both fists read on the bow. During the draw the
+    // right hand moves to the string.
+    const upper = { x: riser.x, y: riser.y - 3.4 };
     const lower = { x: riser.x, y: riser.y + 5.4 };
-    return { weapon: riser, left: riser, right: (draw > 0.08 ? string : lower) };
+    return { weapon: riser, left: upper, right: (draw > 0.08 ? string : lower) };
   }
 
   function staffPose(facing, opt) {
@@ -665,9 +670,12 @@
     if (facing === "front") rest = { x: -6.0, y: -7.2 - lift };
     else if (facing === "back") rest = { x: 6.0, y: -8.4 - lift };
     else if (facing === "right") rest = { x: 6.4, y: -7.2 - lift };
-    else rest = { x: -2.2, y: -6.2 - lift }; // left: forward of the torso so the head peeks
+    else rest = { x: -4.2, y: -5.8 - lift }; // left: far fist peeks at the front of the torso
     const ang = staffHoldAngle(facing, shot);
-    return { weapon: rest, right: rest, left: along(rest, ang, facing === "left" ? 12.5 : 8.2) };
+    // Gorehorn reference: off-hand (left) sits on the shaft above the main
+    // hand, farther along the haft on a left profile so it grips the peek.
+    const dist = (facing === "left") ? 11.5 : 8.6;
+    return { weapon: rest, right: rest, left: along(rest, ang, dist) };
   }
 
   function staffHoldAngle(facing, shot) {
@@ -691,7 +699,7 @@
     if (facing === "front") rest = { x: -5.8, y: -6.8 };
     else if (facing === "back") rest = { x: 5.8, y: -8.0 };
     else if (facing === "right") rest = { x: 6.4, y: -7.0 };
-    else rest = { x: -1.2, y: -5.2 }; // left: forward so the head peeks past the chest, not the helm
+    else rest = { x: -3.6, y: -5.0 }; // left: far fist peeks at the chest; head stays clear of the helm
     const w = { x: rest.x, y: rest.y };
     const reach = Math.max(0, Math.min(1, thrust));
     if (kind === "halberd_chop" && swing) {
@@ -710,23 +718,24 @@
         else { w.x -= 3.2 * u; w.y += 8.5 * u; }
       }
     } else {
-      // Thrust / idle. Side pokes stay canted and the grip drops so a long shaft fits in ±42.
+      // Thrust / idle. Side pokes stay at chest-to-waist height (no dive at
+      // the floor) and stay canted so a long shaft fits in ±42.
       if (facing === "front") {
         w.x -= 2.2 * pull + 1.2 * reach;
-        w.y += 1.4 * pull + 6.5 * reach;
+        w.y += 1.4 * pull + 4.0 * reach;
       } else if (facing === "back") {
         w.x += 2.2 * pull + 1.2 * reach;
-        w.y += 1.4 * pull + 6.5 * reach;
+        w.y += 1.4 * pull + 4.0 * reach;
       } else if (facing === "right") {
-        w.x += -2.4 * pull + 4.5 * reach;
-        w.y += -1.0 * pull + 9.5 * reach;
+        w.x += -2.0 * pull + 1.6 * reach;
+        w.y += -0.6 * pull + 0.6 * reach;
       } else {
-        w.x += 2.4 * pull - 4.5 * reach;
-        w.y += -1.0 * pull + 9.5 * reach;
+        w.x += 2.0 * pull - 1.6 * reach;
+        w.y += -0.6 * pull + 0.6 * reach;
       }
     }
     const ang = halberdHoldAngle(facing, shot);
-    const dist = (facing === "left") ? 14.5 : 9.0;
+    const dist = (facing === "left") ? 12.0 : 8.6;
     return { weapon: w, right: w, left: along(w, ang, dist) };
   }
 
@@ -764,11 +773,11 @@
       return base;
     }
     // Thrust: keep front/back tilted off the visor (do not straighten through the helm).
-    // Side views lean toward the target but stay canted, and the dropped grip sells the poke.
+    // Side views lean forward at chest height — flatter than idle, never a floor dive.
     if (facing === "front") return base - 0.20 * pull - 0.18 * reach;
     if (facing === "back") return base + 0.20 * pull + 0.18 * reach;
-    if (facing === "right") return base - 0.16 * pull + 0.33 * reach;
-    return base + 0.16 * pull - 0.33 * reach;
+    if (facing === "right") return base - 0.16 * pull + 0.53 * reach;
+    return base + 0.16 * pull - 0.53 * reach;
   }
 
   function t3TwoHandPose(facing, opt, kind) {
@@ -873,40 +882,54 @@
   }
 
   function drawHalberdHead(c, p, dir) {
-    // dir: +1 blade on +X (right / front-out), -1 on -X
-    // Spike, forward axe blade, small hook. Head points along -Y (up the shaft).
+    // Classic halberd head, local -Y up the shaft: a long top spear point,
+    // an axe blade on `dir`, and a straight back spike opposite. No hook, no scythe.
+    // Socket / langets
+    c.fillStyle = p.ink; c.fillRect(-1.55, -2.4, 3.1, 6.4);
+    c.fillStyle = p.trim; c.fillRect(-1.15, -2.0, 2.3, 5.6);
+    // Top spear point
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(0, -7.4); c.lineTo(1.3, -1.6); c.lineTo(-1.3, -1.6); c.closePath(); c.fill();
+    c.moveTo(0, -12.2); c.lineTo(1.6, -2.2); c.lineTo(-1.6, -2.2); c.closePath(); c.fill();
     c.fillStyle = p.trim;
     c.beginPath();
-    c.moveTo(0, -7.0); c.lineTo(0.9, -2.0); c.lineTo(-0.9, -2.0); c.closePath(); c.fill();
-    // axe blade (forward)
+    c.moveTo(0, -11.4); c.lineTo(1.05, -2.4); c.lineTo(-1.05, -2.4); c.closePath(); c.fill();
+    // Axe blade (broad cutting edge, not a curved hook)
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(0.4 * dir, -5.6);
-    c.quadraticCurveTo(8.4 * dir, -4.6, 7.2 * dir, -1.0);
-    c.quadraticCurveTo(4.0 * dir, -0.4, 0.4 * dir, -1.6);
+    c.moveTo(0.55 * dir, -6.4);
+    c.lineTo(0.55 * dir, -0.5);
+    c.lineTo(3.8 * dir, 0.8);
+    c.quadraticCurveTo(8.0 * dir, 0.2, 7.6 * dir, -3.2);
+    c.quadraticCurveTo(7.2 * dir, -6.6, 0.55 * dir, -6.4);
     c.closePath(); c.fill();
     c.fillStyle = p.main;
     c.beginPath();
-    c.moveTo(0.5 * dir, -5.1);
-    c.quadraticCurveTo(7.2 * dir, -4.2, 6.2 * dir, -1.3);
-    c.quadraticCurveTo(3.6 * dir, -0.8, 0.5 * dir, -2.0);
+    c.moveTo(0.65 * dir, -5.8);
+    c.lineTo(0.65 * dir, -1.0);
+    c.lineTo(3.6 * dir, 0.1);
+    c.quadraticCurveTo(7.0 * dir, -0.3, 6.7 * dir, -3.2);
+    c.quadraticCurveTo(6.4 * dir, -5.9, 0.65 * dir, -5.8);
     c.closePath(); c.fill();
     c.fillStyle = p.trimLt;
     c.beginPath();
-    c.moveTo(0.6 * dir, -4.6);
-    c.quadraticCurveTo(6.4 * dir, -3.8, 5.8 * dir, -1.6);
-    c.lineTo(5.2 * dir, -1.8);
-    c.quadraticCurveTo(6.0 * dir, -3.6, 0.6 * dir, -4.2);
+    c.moveTo(5.4 * dir, -5.4);
+    c.quadraticCurveTo(6.6 * dir, -3.2, 5.6 * dir, -1.2);
+    c.lineTo(5.0 * dir, -1.4);
+    c.quadraticCurveTo(5.8 * dir, -3.2, 4.8 * dir, -5.0);
     c.closePath(); c.fill();
-    // small hook opposite the blade (part of a halberd head, not a backward weapon)
-    c.fillStyle = p.dark;
+    // Straight back spike
+    c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(-0.3 * dir, -3.6);
-    c.quadraticCurveTo(-3.4 * dir, -3.2, -3.0 * dir, -1.6);
-    c.lineTo(-0.3 * dir, -2.0);
+    c.moveTo(-0.45 * dir, -5.0);
+    c.lineTo(-7.4 * dir, -2.6);
+    c.lineTo(-0.45 * dir, -1.5);
+    c.closePath(); c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(-0.45 * dir, -4.5);
+    c.lineTo(-6.5 * dir, -2.6);
+    c.lineTo(-0.45 * dir, -2.0);
     c.closePath(); c.fill();
   }
 
@@ -916,14 +939,19 @@
     c.save();
     if (pos) c.translate(pos.x, pos.y);
     c.rotate(ang);
-    const shaft = 33.5; // visibly longer than a sword; kept canted on side thrusts so the tip stays in ±42
+    // Hands sit at the origin. Shorten the butt behind them (Kingsguard
+    // sword only pokes ~4 below the grip) so more of the length reads as
+    // forward reach. Spear tip is ~38 from the main hand; the sword's tip
+    // is ~19 from its grip.
+    const butt = 4.6;
+    const headY = -26.0;
     c.strokeStyle = p.ink; c.lineWidth = 3.05; c.lineCap = "round";
-    c.beginPath(); c.moveTo(0, 9.0); c.lineTo(0, -shaft + 6); c.stroke();
+    c.beginPath(); c.moveTo(0, butt); c.lineTo(0, headY + 2.2); c.stroke();
     c.strokeStyle = p.main; c.lineWidth = 1.85;
-    c.beginPath(); c.moveTo(0, 8.5); c.lineTo(0, -shaft + 6.4); c.stroke();
+    c.beginPath(); c.moveTo(0, butt - 0.5); c.lineTo(0, headY + 2.6); c.stroke();
     c.fillStyle = p.trim; c.fillRect(-1.35, -3.0, 2.7, 6.2);
     c.save();
-    c.translate(0, -shaft + 6.5);
+    c.translate(0, headY);
     const dir = (facing === "left" || facing === "front") ? -1 : 1;
     drawHalberdHead(c, p, dir);
     c.restore();
