@@ -11,4 +11,3 @@ One line per claim, in this format:
 
 ## Active claims
 
-- knight.js, gorehorn.js, colossus.js, index.html | Boss Mechanics | 2026-11-11 14:18 America/New_York | Draw click X markers in Knight/Gorehorn/Colossus hostFrame; clear marks on scene change
