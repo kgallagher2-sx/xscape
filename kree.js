@@ -341,12 +341,28 @@
     const vsStyle = vsStyleOf(style);
     const isMagic = vsStyle === "magic" || vsStyle === "mage";
     const isMelee = !isMagic && vsStyle !== "ranged";
+    let spellId = null;
+    if (isMagic) {
+      const XC = global.XscapeCombat;
+      const P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+      const weaponId = (P && P.equipment && P.equipment.weapon) || null;
+      const cast = (XC && typeof XC.tryCastSpell === "function")
+        ? XC.tryCastSpell(P, weaponId)
+        : { ok: false, message: "Choose a spell" };
+      if (!cast.ok) {
+        if (typeof global.flashMsg === "function") flashMsg(cast.message, "#c0c0c0");
+        return false;
+      }
+      spellId = cast.spell && cast.spell.id;
+    }
     let dmg = 0;
     if (!playerCanHitFlying()) {
       dmg = 0;
       if (typeof global.flashMsg === "function") flashMsg("It flies out of melee reach", "#c0c0c0");
     } else {
-      const vs = (typeof global.combatVsMonster === "function") ? combatVsMonster(dest.monId, vsStyle) : { maxHit: 20, chance: 0.5 };
+      const vs = (typeof global.combatVsMonster === "function")
+        ? combatVsMonster(dest.monId, vsStyle, isMagic ? { spellId: spellId } : undefined)
+        : { maxHit: 20, chance: 0.5 };
       let max = vs.maxHit;
       if (typeof global.meleeSetMaxHit === "function" && !isMagic && vsStyle !== "ranged") {
         max = global.meleeSetMaxHit(max);
@@ -368,6 +384,7 @@
     }
     if (isMagic && audio && audio.wind) audio.wind();
     else if (!isMelee && audio && audio.crossbow) audio.crossbow();
+    return true;
   }
 
   function applyBoltHit(target, dmg) {
@@ -450,8 +467,7 @@
     G.player.atkCd--;
     if (G.player.atkCd < 0) G.player.atkCd = 0;
     if (G.player.atkCd <= 0 && G.player.hp > 0 && k && k.hp > 0) {
-      fireBolt();
-      G.player.atkCd = playerSpeed();
+      if (fireBolt() !== false) G.player.atkCd = playerSpeed();
     }
 
     tickMinions();

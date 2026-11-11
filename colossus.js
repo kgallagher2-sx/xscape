@@ -400,6 +400,22 @@
     const G = g();
     if (!G.player || G.player.hp <= 0) return;
     const style = playerStyle();
+
+    const isMagic = style === "mage" || style === "magic";
+    let spellId = null;
+    if (isMagic) {
+      const XC = global.XscapeCombat;
+      const P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+      const weaponId = (P && P.equipment && P.equipment.weapon) || null;
+      const cast = (XC && typeof XC.tryCastSpell === "function")
+        ? XC.tryCastSpell(P, weaponId)
+        : { ok: false, message: "Choose a spell" };
+      if (!cast.ok) {
+        if (typeof global.flashMsg === "function") flashMsg(cast.message, "#c0c0c0");
+        return false;
+      }
+      spellId = cast.spell && cast.spell.id;
+    }
     const monId = "drowned-colossus";
     let target = { kind: "colossus", x: G.colossus.x, y: G.colossus.y };
     if (G.target && typeof G.target === "number" && G.colossusEels[G.target] && G.colossusEels[G.target].alive) {
@@ -407,11 +423,15 @@
       const pos = eelPos(eel);
       target = { kind: "eel", i: G.target, x: pos.x, y: pos.y };
     }
+    const vsStyle = (style === "ranged" || style === "range") ? "ranged"
+      : isMagic ? "magic"
+      : (style === "stab" || style === "crush" || style === "slash") ? style
+      : "slash";
     const vs = (typeof global.combatVsMonster === "function")
-      ? combatVsMonster(monId, style === "ranged" || style === "mage" ? style : (style === "stab" || style === "crush" || style === "slash" ? style : "slash"))
+      ? combatVsMonster(monId, vsStyle, isMagic ? { spellId: spellId } : undefined)
       : { maxHit: 20, chance: 0.7 };
     let max = vs.maxHit;
-    if (typeof global.meleeSetMaxHit === "function" && style !== "ranged" && style !== "mage") {
+    if (typeof global.meleeSetMaxHit === "function" && !isMagic && vsStyle !== "ranged") {
       max = global.meleeSetMaxHit(max);
     }
     const dmg = (typeof global.rollHit === "function") ? rollHit(max, vs.chance) : irand(0, max);
@@ -424,9 +444,12 @@
       dmg: dmg, dest: target,
       from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
       to: { x: target.x, y: target.y },
-      style: style
+      style: style,
+      kind: isMagic ? "magic" : "bolt"
     });
-    if (audio() && audio().crossbow) audio().crossbow();
+    if (isMagic && audio() && audio().wind) audio().wind();
+    else if (audio() && audio().crossbow) audio().crossbow();
+    return true;
   }
 
   function pickSpecial() {
@@ -498,8 +521,7 @@
     G.player.atkCd--;
     if (G.player.atkCd < 0) G.player.atkCd = 0;
     if (G.player.atkCd <= 0 && G.player.hp > 0 && k && k.hp > 0) {
-      playerAttack();
-      G.player.atkCd = playerSpeed();
+      if (playerAttack() !== false) G.player.atkCd = playerSpeed();
     }
 
     // Bolt travel and hits are advanced by drawBolts(dt) in the frame loop.

@@ -23,7 +23,7 @@
   const POT_DELAY = 0; // OSRS: potions/brews do not delay the attack timer
   const CONSUME_CD = 3;
   const PRAYER_DRAIN_EVERY = 2;
-  const MORVANE_HP = 140;
+  const MORVANE_HP = 720;
   const WARDEN_HP = 60;
   const SHADE_HP = 16;
   // Per-player raid score maps linearly to 2–8M GP on the server.
@@ -299,12 +299,14 @@
   function meleeSetMaxHitFrom(max, eq, hp) {
     return Math.max(0, Math.floor(max * gorehornSetMultiplierFrom(eq, hp)));
   }
-  function rollPlayerHit(rng, mon, loadout, potOn, hp) {
+  function rollPlayerHit(rng, mon, loadout, potOn, hp, spellId) {
     const eq = fighterGear(loadout);
     const vsStyle = vsStyleOf(playerStyleFrom(eq));
     const hitHp = (hp != null) ? hp : (loadout && loadout.hp != null ? loadout.hp : null);
     if (typeof global.combatVsMonster === "function" && mon && mon.id) {
-      const vs = global.combatVsMonster(mon.id, vsStyle, { equipment: eq });
+      const vsOpts = { equipment: eq };
+      if (spellId) vsOpts.spellId = spellId;
+      const vs = global.combatVsMonster(mon.id, vsStyle, vsOpts);
       const ch = vs.chance || 0;
       let max = vs.maxHit || 0;
       if (vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
@@ -1575,11 +1577,28 @@
         return;
       }
     }
+    var spellId = null;
+    if (isMagic) {
+      var XC = global.XscapeCombat;
+      var P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+      var source = (P && Array.isArray(P.inventory)) ? P
+        : (st.player && Array.isArray(st.player.inventory) ? st.player : P);
+      var weaponId = (eq && eq.weapon) || (P && P.equipment && P.equipment.weapon) || null;
+      var cast = (XC && typeof XC.tryCastSpell === "function")
+        ? XC.tryCastSpell(source, weaponId, { equipment: eq })
+        : { ok: false, message: "Choose a spell" };
+      if (!cast.ok) {
+        if (typeof global.flashMsg === "function") flashMsg(cast.message, "#c0c0c0");
+        flash(st, cast.message, "#c0c0c0");
+        return;
+      }
+      spellId = cast.spell && cast.spell.id;
+    }
     st.player.atkCd = playerSpeedFrom(eq);
     syncRaidDebugTile(st);
     if (isMagic) sfx(st, "wind");
     else if (!isMelee) sfx(st, "crossbow");
-    const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0, st.player.hp);
+    const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0, st.player.hp, spellId);
     if (!isMelee) {
       st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt" });
     }

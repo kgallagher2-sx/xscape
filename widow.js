@@ -563,8 +563,23 @@
     const dest = currentTarget();
     if (dest.kind === "widow" && (!G.widow || G.widow.hp <= 0)) return;
     const style = playerAttackStyle();
+    const isMagic = style === "magic" || style === "mage";
+    let spellId = null;
+    if (isMagic) {
+      const XC = global.XscapeCombat;
+      const P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+      const weaponId = (P && P.equipment && P.equipment.weapon) || null;
+      const cast = (XC && typeof XC.tryCastSpell === "function")
+        ? XC.tryCastSpell(P, weaponId)
+        : { ok: false, message: "Choose a spell" };
+      if (!cast.ok) {
+        if (typeof global.flashMsg === "function") flashMsg(cast.message, "#c0c0c0");
+        return false;
+      }
+      spellId = cast.spell && cast.spell.id;
+    }
     const vs = (typeof global.combatVsMonster === "function")
-      ? combatVsMonster(dest.monId, style)
+      ? combatVsMonster(dest.monId, style, isMagic ? { spellId: spellId } : undefined)
       : { maxHit: 20, chance: 0.5 };
     const dmg = (typeof global.rollHit === "function") ? rollHit(vs.maxHit, vs.chance) : irand(0, vs.maxHit);
     const tip = (typeof global.playerBowTip === "function") ? playerBowTip() : { x: -12, y: -20 };
@@ -580,6 +595,7 @@
       if ((style === "magic" || style === "mage") && audio.wind) audio.wind();
       else if (audio.crossbow) audio.crossbow();
     }
+    return true;
   }
 
   function applyBoltHit(target, dmg) {
@@ -665,8 +681,7 @@
     G.player.atkCd--;
     if (G.player.atkCd < 0) G.player.atkCd = 0;
     if (G.player.atkCd <= 0 && G.player.hp > 0 && w && w.hp > 0 && !(G.player.stuckTicks > 0)) {
-      fireBolt();
-      G.player.atkCd = attackSpeed();
+      if (fireBolt() !== false) G.player.atkCd = attackSpeed();
     }
 
     tickMinions();
