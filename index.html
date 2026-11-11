@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111160121-ee56347";</script>
+  <script>window.XSCAPE_BUILD = "20261111161316-82707d4";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -320,7 +320,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-knight-tut, #overlay-knight-loot, #overlay-gorehorn-tut, #overlay-gorehorn-loot, #overlay-colossus-tut, #overlay-colossus-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-knight-tut, #overlay-knight-loot, #overlay-gorehorn-tut, #overlay-gorehorn-loot, #overlay-colossus-tut, #overlay-colossus-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-spellbook, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -863,6 +863,43 @@
     }
     #overlay-hub.is-world #hub-chat-log { display: block; }
     #overlay-hub.is-world.chat-open #hub-chat-bar { display: flex; }
+    #spell-chip, #hub-spell-chip {
+      display: none; align-items: center; gap: 6px;
+      min-height: 36px; padding: 4px 10px; margin: 0;
+      background: linear-gradient(#2a3a50, #152030);
+      border: 2px solid #5ac0ff; border-radius: 4px;
+      color: #d8f0ff; font: 700 12px "Trebuchet MS", sans-serif;
+      text-shadow: 0 1px 2px #000; cursor: pointer;
+      box-shadow: 0 0 8px #1a80ff80;
+      touch-action: manipulation; z-index: 8;
+    }
+    #spell-chip .spell-chip-hit, #hub-spell-chip .spell-chip-hit { color: #ffe44a; }
+    #spell-chip { position: absolute; top: 8px; left: var(--hud-left); pointer-events: auto; }
+    #hub-spell-chip {
+      pointer-events: auto; position: absolute;
+      top: calc(var(--hud-top) + 38px); left: var(--hud-left);
+    }
+    #app.fight-world.has-spell-chip #spell-chip { display: inline-flex; }
+    #overlay-hub.is-world.has-spell-chip #hub-spell-chip { display: inline-flex; }
+    #app.duel-world #spell-chip, #app.duel-world #hub-spell-chip { display: none !important; }
+    #overlay-spellbook { overflow: hidden; }
+    #overlay-spellbook .sheet-card { width: 100%; max-width: 340px; }
+    .spell-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+      width: 100%; text-align: left; margin: 0 0 6px; padding: 8px 10px;
+      min-height: 52px; border-radius: 6px; cursor: pointer;
+      background: linear-gradient(#3a2c1c, #22180e);
+      border: 2px solid #5a4630; color: #efe0b0;
+      font-family: inherit;
+    }
+    .spell-row:active { filter: brightness(1.15); }
+    .spell-row.on { border-color: #5ac0ff; box-shadow: 0 0 8px #1a80ff, inset 0 0 8px #0a3060; background: linear-gradient(#2a3a50, #152030); }
+    .spell-row.cant { opacity: 0.7; }
+    .spell-row .spell-name { font-size: 15px; font-weight: 700; color: #ffe9a0; }
+    .spell-row .spell-hit { font-size: 14px; font-weight: 700; color: #ffe44a; align-self: center; }
+    .spell-row .spell-cost { grid-column: 1 / -1; font-size: 11px; color: #c9d8e8; }
+    .spell-row.cant .spell-cost { color: #ff8a70; }
+
     #hub-gp-chip {
       pointer-events: none; position: absolute; top: var(--hud-top);
       left: calc(var(--hud-left) + 46px); z-index: 6; font-size: 13px; font-weight: 700;
@@ -916,7 +953,7 @@
     #overlay-shop .shop-row { grid-template-columns: 36px minmax(0, 1fr) auto auto; }
     .loot-with-icon { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
     .osrs-slot:active { filter: brightness(1.2); }
-    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-spellbook, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-hub.is-world #hub-dock { display: flex; }
     #overlay-hub.is-world #hub-gp-chip { display: block; }
     #hub-dock, #hub-gp-chip { display: none; }
@@ -1051,6 +1088,7 @@
     <div id="arena-wrap">
       <canvas id="arena"></canvas>
       <div class="float-msg" id="float-msg"></div>
+      <button type="button" id="spell-chip" aria-label="Choose spell" hidden></button>
       <div id="debug-combat" class="hidden"></div>
       <div id="move-pad">
         <button type="button" id="btn-run" aria-label="Toggle run">Walk</button>
@@ -1119,6 +1157,7 @@
       <button class="mode-info hub-chrome" id="btn-hub-help" type="button" aria-label="How to play">?</button>
       <div id="hub-chrome-mount" class="hub-chrome"></div>
       <div id="hub-gp-chip" class="hub-chrome">GP: 0</div>
+      <button type="button" id="hub-spell-chip" class="hub-chrome" aria-label="Choose spell" hidden></button>
       <div id="hub-dock" class="hub-chrome">
         <button type="button" class="btn secondary" data-dock="inv">Inv</button>
         <button type="button" class="btn secondary" data-dock="gear">Gear</button>
@@ -1437,6 +1476,17 @@
         </div>
         <div class="sheet-actions">
           <button class="btn" type="button" data-close="inv">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-spellbook">
+      <div class="gear-card sheet-card">
+        <button class="overlay-x" id="btn-spellbook-x" type="button" aria-label="Close">×</button>
+        <h2 id="spellbook-title">Spells</h2>
+        <div class="sheet-scroll" id="spellbook-list"></div>
+        <div class="sheet-actions">
+          <button class="btn" type="button" id="btn-spellbook-close">CLOSE</button>
         </div>
       </div>
     </div>
@@ -1978,16 +2028,76 @@ function isWorn(id) {
   return false;
 }
 
+function isRuneItem(id) {
+  if (!id) return false;
+  if (window.XscapeCombat && typeof XscapeCombat.isRuneId === "function") return !!XscapeCombat.isRuneId(id);
+  if (window.XscapeSupplies && typeof XscapeSupplies.isRuneId === "function") return !!XscapeSupplies.isRuneId(id);
+  return /_rune$/.test(String(id));
+}
+
+function runeItemName(id) {
+  const combat = window.XscapeCombat;
+  const rec = combat && combat.RUNES && combat.RUNES[id];
+  if (rec && rec.name) return rec.name;
+  if (window.XscapeIcons && typeof XscapeIcons.itemName === "function") return XscapeIcons.itemName(id);
+  return String(id || "").replace(/_/g, " ");
+}
+
 function inventoryList() {
-  return (Profile.inventory || []).filter((id) => ITEMS[id] && !itemIsHidden(ITEMS[id]));
+  return (Profile.inventory || []).filter((id) => {
+    if (!id) return false;
+    if (isRuneItem(id)) return true;
+    return !!(ITEMS[id] && !itemIsHidden(ITEMS[id]));
+  });
 }
 
 function inventoryHas(id) {
   return (Profile.inventory || []).indexOf(id) !== -1;
 }
 
+/* Each rune type occupies one of the 28 inventory slots, matching supplies.js. */
+function uniqueInventorySlots(arr) {
+  const list = arr || Profile.inventory || [];
+  const seen = {};
+  let n = 0;
+  for (let i = 0; i < list.length; i++) {
+    const id = list[i];
+    if (!id) continue;
+    const it = ITEMS[id];
+    if (it && itemIsHidden(it)) continue;
+    if (isRuneItem(id)) {
+      if (seen[id]) continue;
+      seen[id] = true;
+    }
+    n++;
+  }
+  return n;
+}
+
 function inventorySpace() {
-  return Math.max(0, INVENTORY_CAP - (Profile.inventory || []).length);
+  return Math.max(0, INVENTORY_CAP - uniqueInventorySlots());
+}
+
+/* Visual slots for inventory overlays: collapse rune copies into one cell with a qty badge. */
+function inventoryDisplaySlots(arr) {
+  const list = arr || inventoryList();
+  const out = [];
+  const runeAt = {};
+  for (let i = 0; i < list.length; i++) {
+    const id = list[i];
+    if (!id) continue;
+    if (isRuneItem(id)) {
+      if (runeAt[id] != null) {
+        out[runeAt[id]].qty++;
+        continue;
+      }
+      runeAt[id] = out.length;
+      out.push({ id: id, qty: 1 });
+    } else {
+      out.push({ id: id, qty: 1 });
+    }
+  }
+  return out;
 }
 
 function itemIsConsumable(id) {
@@ -2016,7 +2126,8 @@ function bankUniqueCount() {
   const b = Profile.bank || [];
   for (let i = 0; i < b.length; i++) {
     const id = b[i];
-    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id]) || seen[id]) continue;
+    if (!id || seen[id]) continue;
+    if (!isRuneItem(id) && (!ITEMS[id] || itemIsHidden(ITEMS[id]))) continue;
     seen[id] = true;
     n++;
   }
@@ -2028,9 +2139,11 @@ function bankSpace() {
 }
 
 function addToInventory(id) {
-  if (!id || !ITEMS[id]) return false;
+  if (!id) return false;
+  if (!ITEMS[id] && !isRuneItem(id)) return false;
   if (!Profile.inventory) Profile.inventory = [];
-  if (Profile.inventory.length >= INVENTORY_CAP) return false;
+  const needsSlot = (isRuneItem(id) && inventoryHas(id)) ? 0 : 1;
+  if (needsSlot && uniqueInventorySlots() >= INVENTORY_CAP) return false;
   Profile.inventory.push(id);
   return true;
 }
@@ -2044,7 +2157,7 @@ function removeFromInventory(id) {
 }
 
 function addToBankStore(id) {
-  if (!id || !ITEMS[id]) return false;
+  if (!id || (!ITEMS[id] && !isRuneItem(id))) return false;
   if (!Profile.bank) Profile.bank = [];
   if (bankCount(id) === 0 && bankUniqueCount() >= BANK_CAP) return false;
   Profile.bank.push(id);
@@ -2089,7 +2202,8 @@ function bankList() {
   const b = Profile.bank || [];
   for (let i = 0; i < b.length; i++) {
     const id = b[i];
-    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id]) || seen[id]) continue;
+    if (!id || seen[id]) continue;
+    if (!isRuneItem(id) && (!ITEMS[id] || itemIsHidden(ITEMS[id]))) continue;
     seen[id] = true;
     out.push(id);
   }
@@ -2102,13 +2216,25 @@ function bankStacks() {
 
 function normalizeContainers() {
   const inv = [];
+  const runeSeen = {};
+  let slots = 0;
   (Profile.inventory || []).forEach((id) => {
     if (!id) return;
     const it = ITEMS[id];
-    // Keep unknown ids: supplies.js registers potions after the first load.
+    // Keep unknown ids: supplies.js registers potions after the first load. Runes too.
     if (it && itemIsHidden(it)) return;
-    if (inv.length >= INVENTORY_CAP) return;
+    if (isRuneItem(id)) {
+      if (!runeSeen[id]) {
+        if (slots >= INVENTORY_CAP) return;
+        runeSeen[id] = true;
+        slots++;
+      }
+      inv.push(id);
+      return;
+    }
+    if (slots >= INVENTORY_CAP) return;
     inv.push(id);
+    slots++;
   });
   Profile.inventory = inv;
   const counts = {};
@@ -2783,6 +2909,7 @@ function updateDebugCombat() {
 function refreshGearViews() {
   drawGearIcons(true);
   renderEquipmentOverlay();
+  if (typeof refreshSpellChip === "function") refreshSpellChip();
 }
 
 function gearTierClass(tier) {
@@ -2855,13 +2982,16 @@ function renderEquipmentOverlay() {
   }
   const invEl = $("gear-inventory");
   if (invEl) {
-    const items = inventoryList();
+    const items = inventoryDisplaySlots();
     const slots = [];
     for (let i = 0; i < 28; i++) {
-      const id = items[i];
-      const it = id && ITEMS[id];
+      const cell = items[i];
+      const id = cell && cell.id;
+      const it = id && (ITEMS[id] || (isRuneItem(id) && { name: runeItemName(id) }));
       if (it) {
-        slots.push('<button type="button" class="osrs-slot" data-inv-item="' + id + '" title="' + it.name + '"></button>');
+        const qty = cell.qty || 1;
+        const title = it.name + (qty > 1 ? (" ×" + qty) : "");
+        slots.push('<button type="button" class="osrs-slot" data-inv-item="' + id + '" data-qty="' + qty + '" title="' + title + '"></button>');
       } else {
         slots.push('<div class="osrs-slot empty"></div>');
       }
@@ -2893,6 +3023,137 @@ function closeEquipmentView() {
   swallowNextTaps();
   if (inHubScene()) $("overlay-hub").classList.remove("hidden");
 }
+
+function equippedWeaponId() {
+  return (Profile.equipment && Profile.equipment.weapon) || null;
+}
+
+function applyLocalAutocast() {
+  const requested = Profile.autocast || (Profile.settings && Profile.settings.autocast) || null;
+  Profile.autocast = requested || null;
+  if (!Profile.settings || typeof Profile.settings !== "object") Profile.settings = {};
+  Profile.settings.autocast = Profile.autocast;
+  if (typeof refreshSpellChip === "function") refreshSpellChip();
+}
+
+function spellWeaponId(overrideId) {
+  const combat = window.XscapeCombat;
+  const id = overrideId || equippedWeaponId();
+  if (!combat || !id || typeof combat.allowedSpellsFor !== "function") return null;
+  const allowed = combat.allowedSpellsFor(id);
+  if (!allowed || !allowed.length) return null;
+  return id;
+}
+
+function formatSpellRuneCost(spell) {
+  if (!spell || !spell.runes) return "";
+  const combat = window.XscapeCombat;
+  const names = [];
+  Object.keys(spell.runes).forEach((rid) => {
+    const n = spell.runes[rid];
+    if (!n) return;
+    const rec = combat && combat.RUNES && combat.RUNES[rid];
+    const name = (rec && rec.name) || runeItemName(rid);
+    names.push(n + " " + name + (n === 1 ? "" : ""));
+  });
+  return names.join(", ");
+}
+
+function spellChipLabel(spell, maxHit) {
+  if (!spell) return "Spell";
+  const hit = (maxHit != null) ? maxHit : (spell.base || 0);
+  return spell.name + ' <span class="spell-chip-hit">' + hit + "</span>";
+}
+
+function refreshSpellChip() {
+  const combat = window.XscapeCombat;
+  const app = $("app");
+  const hub = $("overlay-hub");
+  const weaponId = spellWeaponId();
+  const duel = !!(app && app.classList.contains("duel-world"));
+  const show = !!(!duel && weaponId);
+  if (app) app.classList.toggle("has-spell-chip", show);
+  if (hub) hub.classList.toggle("has-spell-chip", show);
+  const chips = [$("spell-chip"), $("hub-spell-chip")];
+  if (!show) {
+    chips.forEach((el) => {
+      if (!el) return;
+      el.setAttribute("hidden", "");
+      el.innerHTML = "";
+    });
+    return;
+  }
+  const requested = Profile.autocast || (Profile.settings && Profile.settings.autocast) || null;
+  const spellId = combat.resolvedAutocast(weaponId, requested);
+  const spell = combat.spellById ? combat.spellById(spellId) : (combat.SPELLS && combat.SPELLS[spellId]);
+  const maxHit = (combat.spellMaxHit)
+    ? combat.spellMaxHit(Profile.equipment, spellId)
+    : (spell && spell.base) || 0;
+  chips.forEach((el) => {
+    if (!el) return;
+    el.removeAttribute("hidden");
+    el.innerHTML = spellChipLabel(spell, maxHit);
+    el.setAttribute("aria-label", "Choose spell: " + ((spell && spell.name) || "Spell"));
+  });
+}
+
+function closeSpellSelector() {
+  const el = $("overlay-spellbook");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  if (typeof swallowNextTaps === "function") swallowNextTaps();
+}
+
+function setAutocast(spellId) {
+  const combat = window.XscapeCombat;
+  const weaponId = equippedWeaponId();
+  let resolved = spellId;
+  if (combat && typeof combat.resolvedAutocast === "function") {
+    resolved = combat.resolvedAutocast(weaponId, spellId);
+  }
+  Profile.autocast = resolved || null;
+  if (!Profile.settings || typeof Profile.settings !== "object") Profile.settings = {};
+  Profile.settings.autocast = Profile.autocast;
+  if (typeof saveProfile === "function") saveProfile();
+  refreshSpellChip();
+}
+
+function openSpellSelector(opts) {
+  opts = opts || {};
+  const combat = window.XscapeCombat;
+  const el = $("overlay-spellbook");
+  const list = $("spellbook-list");
+  if (!el || !list || !combat) return false;
+  const preview = !!(opts.weaponId && opts.preview);
+  const weaponId = spellWeaponId(opts.weaponId) || (preview ? opts.weaponId : null);
+  const allowed = (weaponId && combat.allowedSpellsFor) ? combat.allowedSpellsFor(weaponId) : [];
+  if (!allowed.length) return false;
+  const wep = (ITEMS && ITEMS[weaponId]) || { name: weaponId };
+  const title = $("spellbook-title");
+  if (title) title.textContent = (wep && wep.name) ? (wep.name + " spells") : "Spells";
+  const requested = Profile.autocast || (Profile.settings && Profile.settings.autocast) || null;
+  const selected = combat.resolvedAutocast(weaponId, requested);
+  list.innerHTML = allowed.map((id) => {
+    const spell = combat.spellById ? combat.spellById(id) : (combat.SPELLS && combat.SPELLS[id]);
+    if (!spell) return "";
+    const maxHit = combat.spellMaxHit
+      ? combat.spellMaxHit(Profile.equipment, id)
+      : (spell.base || 0);
+    const cost = formatSpellRuneCost(spell);
+    const can = combat.canCast ? combat.canCast(Profile, id) : true;
+    const on = id === selected ? " on" : "";
+    const cant = can ? "" : " cant";
+    return '<button type="button" class="spell-row' + on + cant + '" data-spell="' + id + '">' +
+      '<span class="spell-name">' + spell.name + "</span>" +
+      '<span class="spell-hit">' + maxHit + " max</span>" +
+      '<span class="spell-cost">' + cost + (can ? "" : " — out of runes") + "</span>" +
+      "</button>";
+  }).join("");
+  el.classList.remove("hidden");
+  el.setAttribute("data-preview", preview ? "1" : "0");
+  return true;
+}
+
 
 function openShop() {
   hideAllOverlays();
@@ -3234,6 +3495,9 @@ function loadProfile() {
       Profile.widowBestTicks = raw.widowBestTicks || null;
       Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
       Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
+      Profile.autocast = raw.autocast || (raw.settings && raw.settings.autocast) || null;
+      if (!Profile.settings || typeof Profile.settings !== "object") Profile.settings = {};
+      if (Profile.autocast) Profile.settings.autocast = Profile.autocast;
     } else {
       Profile.name = loadName();
       Profile.gp = 0;
@@ -3265,6 +3529,7 @@ function loadProfile() {
   maybeGrantLegacyFireCape();
   if (!Array.isArray(Profile.inventory)) Profile.inventory = [];
   normalizeContainers();
+  applyLocalAutocast();
   syncPlayerCaps();
   G.name = Profile.name;
   G.gp = Profile.gp;
@@ -3283,6 +3548,8 @@ function saveProfile() {
       unlockedItems: Profile.unlockedItems || [],
       bank: Profile.bank || migrateOwned(null, Profile.equipment, Profile.unlockedItems),
       inventory: Profile.inventory || [],
+      autocast: Profile.autocast || null,
+      settings: { autocast: Profile.autocast || null },
       raidCompletions: Profile.raidCompletions || 0,
       raidBestTicks: Profile.raidBestTicks || null,
       kreeKills: Profile.kreeKills || 0,
@@ -6095,7 +6362,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gorehorn-tut","overlay-gorehorn-loot","overlay-colossus-tut","overlay-colossus-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gorehorn-tut","overlay-gorehorn-loot","overlay-colossus-tut","overlay-colossus-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-spellbook","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Vaelkor the Stormwing / Jad / Gloamhold.
@@ -6904,6 +7171,22 @@ bindTap($("btn-shop-x"), () => { audio.unlock(); closeShop(); });
 bindBackdropClose($("overlay-shop"), () => { audio.unlock(); closeShop(); });
 if ($("overlay-supply-shop")) bindBackdropClose($("overlay-supply-shop"), () => { audio.unlock(); if (window.closeSupplyShop) closeSupplyShop(); });
 if ($("overlay-hotkeys")) bindBackdropClose($("overlay-hotkeys"), () => { if (window.XscapeSupplies && XscapeSupplies.closeHotkeys) XscapeSupplies.closeHotkeys(); });
+if ($("spell-chip")) bindTap($("spell-chip"), () => { audio.unlock(); openSpellSelector(); });
+if ($("hub-spell-chip")) bindTap($("hub-spell-chip"), () => { audio.unlock(); openSpellSelector(); });
+if ($("btn-spellbook-close")) bindTap($("btn-spellbook-close"), () => { audio.unlock(); closeSpellSelector(); });
+if ($("btn-spellbook-x")) bindTap($("btn-spellbook-x"), () => { audio.unlock(); closeSpellSelector(); });
+if ($("overlay-spellbook")) bindBackdropClose($("overlay-spellbook"), () => { audio.unlock(); closeSpellSelector(); });
+if ($("spellbook-list")) {
+  $("spellbook-list").addEventListener("click", (e) => {
+    const btn = e.target.closest && e.target.closest("[data-spell]");
+    if (!btn) return;
+    audio.unlock();
+    const preview = $("overlay-spellbook") && $("overlay-spellbook").getAttribute("data-preview") === "1";
+    if (!preview) setAutocast(btn.getAttribute("data-spell"));
+    closeSpellSelector();
+    refreshSpellChip();
+  });
+}
 if ($("overlay-quick-edit")) bindBackdropClose($("overlay-quick-edit"), () => { if (window.XscapeSupplies && XscapeSupplies.hidePicker) XscapeSupplies.hidePicker(); });
 if ($("overlay-chat-history")) bindBackdropClose($("overlay-chat-history"), () => { if (window.XscapeHub && XscapeHub.closeChatHistory) XscapeHub.closeChatHistory(); });
 if ($("overlay-trade-history")) bindBackdropClose($("overlay-trade-history"), () => { if (window.XscapeTrade && XscapeTrade.closeTradeHistory) XscapeTrade.closeTradeHistory(); });
@@ -7404,7 +7687,7 @@ window.KellenScape = {
   launchTileAttack, testFireball, queueMoveTo, queueMoveBy, setRunning,
   playerTile, tileCenter, tileAt, playerBonuses,
   combatVsMonster, monsterVsPlayer, estimateKill, simulateJadKill, equipLoadout,
-  ownItem, equipItem, unequipSlot, bankList, bankStacks, bankCount, inventoryList, inventoryCount, isOwned, depositItem, withdrawItem, depositAll, BANK_CAP, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
+  ownItem, equipItem, unequipSlot, bankList, bankStacks, bankCount, inventoryList, inventoryCount, inventoryDisplaySlots, uniqueInventorySlots, isRuneItem, isOwned, depositItem, withdrawItem, depositAll, BANK_CAP, openEquipmentView, openShop, buyShopItem, buyShopBundle, SHOP,
   sipRangePot, combatSkillLevel,
   get stats() { return window.PlayerStats; },
   ownsFireCape, awardFireCape, updateRaidLock, wearingFireCape, gloamholdLockReason, tryEnterGloamhold,
@@ -7473,6 +7756,12 @@ window.depositAll = depositAll;
 window.bankCount = bankCount;
 window.bankStacks = bankStacks;
 window.BANK_CAP = BANK_CAP;
+window.refreshSpellChip = refreshSpellChip;
+window.openSpellSelector = openSpellSelector;
+window.closeSpellSelector = closeSpellSelector;
+window.setAutocast = setAutocast;
+window.inventoryDisplaySlots = inventoryDisplaySlots;
+
 window.normalizeContainers = normalizeContainers;
 window.refreshGearViews = refreshGearViews;
 window.ownsFireCape = ownsFireCape;

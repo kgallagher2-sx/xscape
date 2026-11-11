@@ -516,9 +516,7 @@
     return res;
   }
 
-  function localPayload() {
-    var P = global.Profile || {};
-    var js = localJadStats();
+  function collectPlayerSettings(forCloud) {
     var settings = {};
     try {
       settings.muted = localStorage.getItem("kellenscape-muted") === "1";
@@ -532,6 +530,21 @@
       var qs = XscapeSupplies.settingsSlice();
       if (qs && qs.quickSlots) settings.quickSlots = qs.quickSlots;
     }
+    /* Autocast lives on player_state.settings.autocast for signed-in
+       adventurers. Guests keep Profile.autocast in the local save only. */
+    if (!forCloud || isPermanentUser()) {
+      var P = global.Profile || {};
+      var ac = P.autocast || (P.settings && P.settings.autocast) || null;
+      if (ac) settings.autocast = ac;
+      else settings.autocast = null;
+    }
+    return settings;
+  }
+
+  function localPayload() {
+    var P = global.Profile || {};
+    var js = localJadStats();
+    var settings = collectPlayerSettings(true);
     var raw = {};
     try { raw = JSON.parse(localStorage.getItem("kellenscape-profile") || "null") || {}; } catch (e) { raw = {}; }
     var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
@@ -559,6 +572,23 @@
       jadBestScore: P.jadBestScore || raw.jadBestScore || js.bestScore,
       settings: settings
     }, cloudProfile);
+  }
+
+  function applyAutocastFromCloud(p) {
+    var P = global.Profile;
+    if (!P) return;
+    var requested = null;
+    if (p && p.settings && p.settings.autocast) requested = p.settings.autocast;
+    else if (p && p.autocast) requested = p.autocast;
+    else if (P.autocast) requested = P.autocast;
+    /* Keep the stored pick even if no staff is equipped right now.
+       Attack time and the chip still go through resolvedAutocast. */
+    P.autocast = requested || null;
+    if (!P.settings || typeof P.settings !== "object") P.settings = {};
+    P.settings.autocast = P.autocast;
+    if (typeof global.refreshSpellChip === "function") {
+      try { global.refreshSpellChip(); } catch (e) {}
+    }
   }
 
   function applyCloudProfile(p, opts) {
@@ -603,6 +633,7 @@
     if (p.settings && Array.isArray(p.settings.quickSlots) && global.XscapeSupplies && XscapeSupplies.loadLayout) {
       try { XscapeSupplies.loadLayout(p.settings.quickSlots); } catch (e) {}
     }
+    applyAutocastFromCloud(p);
     if (typeof global.normalizeContainers === "function") {
       try { global.normalizeContainers(); } catch (e) {}
     }
@@ -2477,19 +2508,7 @@
   async function pushStateOnce() {
     if (!session) return;
     var P = global.Profile || {};
-    var settings = {};
-    try {
-      settings.muted = localStorage.getItem("kellenscape-muted") === "1";
-      settings.tutorial = localStorage.getItem("kellenscape-tutorial-seen") === "1";
-      settings.intro = localStorage.getItem("kellenscape-intro-seen") === "1";
-      settings.raidBrief = localStorage.getItem("kellenscape-raid-brief-seen") === "1";
-      settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
-      settings.widowBrief = localStorage.getItem("kellenscape-widow-brief-seen") === "1";
-    } catch (e) {}
-    if (global.XscapeSupplies && typeof XscapeSupplies.settingsSlice === "function") {
-      var qs = XscapeSupplies.settingsSlice();
-      if (qs && qs.quickSlots) settings.quickSlots = qs.quickSlots;
-    }
+    var settings = collectPlayerSettings(true);
     var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
     var res = await rpc("save_player_state", {
       p_payload: filterAlcoveMidsFromPayload({

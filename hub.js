@@ -1814,7 +1814,12 @@
 
   function itemLabel(id) {
     var it = (global.ITEMS && ITEMS[id]) || (global.LAB_ITEMS && LAB_ITEMS[id]);
-    return it && it.name ? it.name : id;
+    if (it && it.name) return it.name;
+    if (global.XscapeCombat && XscapeCombat.RUNES && XscapeCombat.RUNES[id] && XscapeCombat.RUNES[id].name) {
+      return XscapeCombat.RUNES[id].name;
+    }
+    if (typeof global.runeItemName === "function") return runeItemName(id);
+    return id;
   }
 
   var bankQtyMode = "1";
@@ -1870,11 +1875,15 @@
       }).join("");
     }
     if (invEl) {
-      var inv = (typeof inventoryList === "function" ? inventoryList() : ((Profile.inventory) || []));
+      var inv = (typeof inventoryDisplaySlots === "function")
+        ? inventoryDisplaySlots()
+        : (typeof inventoryList === "function" ? inventoryList() : ((Profile.inventory) || [])).map(function (id) { return { id: id, qty: 1 }; });
       var slots = [];
       for (var i = 0; i < 28; i++) {
-        var id = inv[i];
-        if (id) slots.push('<button type="button" class="osrs-slot" data-deposit="' + escapeHtml(id) + '" title="' + escapeHtml(itemLabel(id)) + '"></button>');
+        var cell = inv[i];
+        var id = cell && (cell.id || cell);
+        var qty = cell && cell.qty ? cell.qty : 1;
+        if (id) slots.push('<button type="button" class="osrs-slot" data-deposit="' + escapeHtml(id) + '" data-qty="' + qty + '" title="' + escapeHtml(itemLabel(id)) + (qty > 1 ? (" ×" + qty) : "") + '"></button>');
         else slots.push('<div class="osrs-slot empty"></div>');
       }
       invEl.innerHTML = slots.join("");
@@ -1900,17 +1909,23 @@
   function renderInv() {
     var el = $("hub-inv-grid");
     if (!el) return;
-    var inv = (typeof inventoryList === "function" ? inventoryList() : ((Profile.inventory) || []));
+    var raw = (typeof inventoryList === "function" ? inventoryList() : ((Profile.inventory) || []));
+    var inv = (typeof inventoryDisplaySlots === "function")
+      ? inventoryDisplaySlots(raw)
+      : raw.map(function (id) { return { id: id, qty: 1 }; });
     var slots = [];
     for (var i = 0; i < 28; i++) {
-      var id = inv[i];
-      if (id) slots.push('<button type="button" class="osrs-slot" data-equip="' + escapeHtml(id) + '" title="' + escapeHtml(itemLabel(id)) + '"></button>');
+      var cell = inv[i];
+      var id = cell && (cell.id || cell);
+      var qty = cell && cell.qty ? cell.qty : 1;
+      if (id) slots.push('<button type="button" class="osrs-slot" data-equip="' + escapeHtml(id) + '" data-qty="' + qty + '" title="' + escapeHtml(itemLabel(id)) + (qty > 1 ? (" ×" + qty) : "") + '"></button>');
       else slots.push('<div class="osrs-slot empty"></div>');
     }
     el.innerHTML = slots.join("");
     if (global.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(el);
     var title = $("hub-inv-title");
-    if (title) title.textContent = "Inventory " + inv.length + "/28";
+    var used = (typeof uniqueInventorySlots === "function") ? uniqueInventorySlots() : raw.length;
+    if (title) title.textContent = "Inventory " + used + "/28";
   }
 
   function openInventory() {
