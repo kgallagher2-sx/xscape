@@ -372,13 +372,16 @@
     if (isMelee) {
       applyBoltHit(dest, dmg);
     } else {
+      if (G._playerBoltTick === G.ticks) return false;
+      G._playerBoltTick = G.ticks;
+      G.bolts = (G.bolts || []).filter(function (b) { return b && b.t > 0 && b.t < (b.dur || 0); });
       const tip = (typeof global.playerBowTip === "function") ? playerBowTip() : { x: 10, y: -20 };
       const L = global.L || { sP: 1 };
       const cssW = global.cssW || 390, cssH = global.cssH || 480;
       G.bolts.push({
         t: 0, dur: (global.BOLT_TRAVEL || 0.16), dmg: dmg, dest: dest,
         kind: isMagic ? "magic" : "bolt",
-      spellId: isMagic ? spellId : undefined,
+        spellId: isMagic ? spellId : undefined,
         from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
         to: { x: dest.x, y: dest.y }
       });

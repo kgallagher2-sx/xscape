@@ -582,6 +582,9 @@
       ? combatVsMonster(dest.monId, style, isMagic ? { spellId: spellId } : undefined)
       : { maxHit: 20, chance: 0.5 };
     const dmg = (typeof global.rollHit === "function") ? rollHit(vs.maxHit, vs.chance) : irand(0, vs.maxHit);
+    if (G._playerBoltTick === G.ticks) return false;
+    G._playerBoltTick = G.ticks;
+    G.bolts = (G.bolts || []).filter(function (b) { return b && b.t > 0 && b.t < (b.dur || 0); });
     const tip = (typeof global.playerBowTip === "function") ? playerBowTip() : { x: -12, y: -20 };
     const L = global.L || { sP: 1 };
     const cssW = global.cssW || 390, cssH = global.cssH || 480;

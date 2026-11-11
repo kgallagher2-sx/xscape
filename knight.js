@@ -370,6 +370,9 @@
       max = global.meleeSetMaxHit(max);
     }
     const dmg = (typeof global.rollHit === "function") ? rollHit(max, vs.chance) : irand(0, max);
+    if (G._playerBoltTick === G.ticks) return false;
+    G._playerBoltTick = G.ticks;
+    G.bolts = (G.bolts || []).filter(function (b) { return b && b.t > 0 && b.t < (b.dur || 0); });
     const tip = (typeof global.playerBowTip === "function") ? playerBowTip() : { x: 0, y: 0 };
     const L = global.L || { sP: 1 };
     const cssW = (global.canvas && canvas.width) || 390;

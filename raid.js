@@ -1641,10 +1641,72 @@
     var tt = targetTile(t);
     return tileManhattan(st.player.col, st.player.row, tt.col, tt.row) <= reach;
   }
+  function raidViewSize(W, H) {
+    if (W > 0 && H > 0) return { w: W, h: H };
+    var canvas = global.canvas || (global.document && document.getElementById("arena"));
+    return {
+      w: (canvas && canvas.clientWidth) || 390,
+      h: (canvas && canvas.clientHeight) || 480
+    };
+  }
+  function currentTargetTile(st) {
+    var t = currentTarget(st);
+    if (t && t.ref) {
+      return { col: t.ref.col != null ? t.ref.col : 2, row: t.ref.row != null ? t.ref.row : 0 };
+    }
+    if (st && st.boss && st.boss.hp > 0) {
+      return { col: st.boss.col != null ? st.boss.col : 2, row: st.boss.row != null ? st.boss.row : 0 };
+    }
+    return null;
+  }
+  /* Face the live target with arena-combat's helper, then sync G.player so
+     combatPlayerDrawFacing / combatRaidMuzzleOffset see the raid tile pose. */
+  function syncRaidCombatFacing(st, W, H) {
+    if (!st || !st.player) return "back";
+    var size = raidViewSize(W, H);
+    W = size.w;
+    H = size.h;
+    var from = tilePos(st.player.col, st.player.row, W, H);
+    var tt = currentTargetTile(st);
+    var to = tt ? tilePos(tt.col, tt.row, W, H) : from;
+    var facing = "back";
+    if (typeof global.combatAttackFacing === "function") {
+      facing = global.combatAttackFacing(from, to);
+    }
+    st.player.facing = facing;
+    if (typeof global.G !== "undefined" && global.G) {
+      if (!global.G.player) global.G.player = {};
+      if (W > 0 && H > 0) {
+        global.G.player.x = from.x / W;
+        global.G.player.y = from.y / H;
+      }
+      global.G.player.tileCol = st.player.col;
+      global.G.player.tileRow = st.player.row;
+    }
+    return facing;
+  }
+  function raidMuzzleForFacing(facing) {
+    var AC = global.XscapeArenaCombat;
+    var sP = (global.L && global.L.sP) || 1;
+    if (AC && typeof AC.playerWeaponTipLocal === "function") {
+      var tip = AC.playerWeaponTipLocal(facing || "back");
+      return { x: tip.x * sP, y: tip.y * sP };
+    }
+    if (typeof global.combatRaidMuzzleOffset === "function") return global.combatRaidMuzzleOffset();
+    return { x: 0, y: -24 };
+  }
+  function fighterFacing(st, p, W, H) {
+    if (!p) return "back";
+    var size = raidViewSize(W, H);
+    var from = tilePos(p.col, p.row, size.w, size.h);
+    var tt = currentTargetTile(st);
+    var to = tt ? tilePos(tt.col, tt.row, size.w, size.h) : from;
+    if (typeof global.combatAttackFacing === "function") return global.combatAttackFacing(from, to);
+    return p.facing || "back";
+  }
   function syncRaidDebugTile(st) {
-    if (typeof global.G === "undefined" || !global.G || !global.G.player || !st || !st.player) return;
-    global.G.player.tileCol = st.player.col;
-    global.G.player.tileRow = st.player.row;
+    if (!st || !st.player) return;
+    syncRaidCombatFacing(st);
     if (typeof global.updateDebugCombat === "function") {
       try { global.updateDebugCombat(); } catch (e) {}
     }
@@ -1672,6 +1734,7 @@
   function playerAttack(st) {
     const t = currentTarget(st);
     if (!t) return;
+    if (st._playerAttackTick === st.ticks) return;
     const eq = fighterGear(st.player);
     const style = playerStyleFrom(eq);
     const vsStyle = vsStyleOf(style);
@@ -1706,13 +1769,17 @@
       }
       spellId = cast.spell && cast.spell.id;
     }
+    st._playerAttackTick = st.ticks;
     st.player.atkCd = playerSpeedFrom(eq);
-    syncRaidDebugTile(st);
+    var facing = syncRaidCombatFacing(st);
+    st.player.facing = facing;
+    var muzzle = raidMuzzleForFacing(facing);
     if (isMagic) sfx(st, "wind");
     else if (!isMelee) sfx(st, "crossbow");
     const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0, st.player.hp, spellId);
     if (!isMelee) {
-      st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt", spellId: isMagic ? spellId : undefined });
+      st.bolts = (st.bolts || []).filter(function (b) { return b && b.t > 0 && b.t < (b.dur || 0); });
+      st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt", spellId: isMagic ? spellId : undefined, facing: facing, muzzle: muzzle });
     }
     applyPlayerDamage(st, t, roll);
   }
@@ -2763,8 +2830,9 @@
       || (P && P.equipment)
       || {};
     if (typeof drawPlayerFacing === "function") {
+      var face = (isSelf && st.player && st.player.facing) || fighterFacing(st, p, W, H);
       drawPlayerFacing(ctx, t, {
-        facing: "back",
+        facing: face || "back",
         equipment: eq,
         showCape: true,
         shot: shot,
@@ -2800,15 +2868,21 @@
     ctx.restore();
   }
   function drawBolts(st, ctx, W, H, dt) {
+    syncRaidCombatFacing(st, W, H);
     for (let i = 0; i < st.bolts.length; i++) {
       const b = st.bolts[i];
       b.t += dt;
       const u = clamp(b.t / b.dur, 0, 1);
       const a = tilePos(b.fromC, b.fromR, W, H);
       const z = tilePos(b.toC, b.toR, W, H);
-      var muzzle = (typeof global.combatRaidMuzzleOffset === "function")
-        ? global.combatRaidMuzzleOffset()
-        : { x: 0, y: -24 };
+      var boltFacing = b.facing;
+      if (!boltFacing && typeof global.combatAttackFacing === "function") {
+        boltFacing = global.combatAttackFacing(a, z);
+      }
+      var muzzle = b.muzzle;
+      if (!muzzle || muzzle.x == null || muzzle.y == null) {
+        muzzle = raidMuzzleForFacing(boltFacing || (st.player && st.player.facing) || "back");
+      }
       const x = lerp(a.x + (muzzle.x || 0), z.x, u);
       const y = lerp(a.y + (muzzle.y != null ? muzzle.y : -24), z.y - 40, u);
       const spellId = b.spellId || b.spell;
@@ -3213,6 +3287,7 @@
       var hpBefore = R.boss ? R.boss.hp : null;
       var cdBefore = R.player.atkCd;
       var colBefore = R.player.col;
+      R._playerAttackTick = null;
       playerAttack(R);
       var res = {
         weapon: eq && eq.weapon,
@@ -3868,10 +3943,9 @@
     if (typeof global.G !== "undefined" && global.G && global.G.player && R.player) {
       global.G.player.hp = R.player.hp;
       global.G.player.prayerPts = R.player.prayerPts;
-      global.G.player.tileCol = R.player.col;
-      global.G.player.tileRow = R.player.row;
       global.G.prayer = R.prayer;
     }
+    syncRaidCombatFacing(R);
   }
   let hostAcc = 0, hostLast = 0;
   function hostFrame(ts, ctx, W, H, dpr) {
@@ -3895,6 +3969,7 @@
     if (ctx) {
       if (dpr) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
+      if (R) syncRaidCombatFacing(R, W, H);
       draw(R, ctx, W, H, ts / 1000, dt);
       if (typeof global.drawClickMarks === "function") drawClickMarks(dt);
     }
