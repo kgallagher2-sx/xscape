@@ -3518,21 +3518,110 @@
     });
     if (bits.length) flash(st, bits.join(" · "), "#ffe44a");
   }
-  function completeSoloRaid(st) {
+  function hideRaidResultOverlays() {
+    var win = document.getElementById("overlay-win");
+    var lose = document.getElementById("overlay-lose");
+    var err = document.getElementById("overlay-raid-claim");
+    if (win) win.classList.add("hidden");
+    if (lose) lose.classList.add("hidden");
+    if (err) err.classList.add("hidden");
+  }
+  function hideRaidClaimError() {
+    var err = document.getElementById("overlay-raid-claim");
+    if (err) err.classList.add("hidden");
+  }
+  function ensureRaidClaimOverlay() {
+    var el = document.getElementById("overlay-raid-claim");
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = "overlay-raid-claim";
+    el.className = "overlay hidden";
+    el.innerHTML =
+      '<div class="share-card">' +
+        '<div class="win-title" id="raid-claim-title">Could not claim loot</div>' +
+        '<div class="result-grid" id="raid-claim-msg"></div>' +
+        '<div class="share-hint" id="raid-claim-hint">Nothing has been awarded.</div>' +
+      "</div>" +
+      '<button class="btn" id="btn-raid-claim-retry" type="button">RETRY</button>' +
+      '<button class="btn secondary" id="btn-raid-claim-title" type="button">Title screen</button>';
+    var hostEl = (document.getElementById("overlay-win") && document.getElementById("overlay-win").parentNode) || document.body;
+    hostEl.appendChild(el);
+    var retry = document.getElementById("btn-raid-claim-retry");
+    var title = document.getElementById("btn-raid-claim-title");
+    if (retry) {
+      retry.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (retry.disabled) return;
+        var st = R;
+        if (!st) return;
+        if (st.group) attemptGroupClaim(st);
+        else attemptSoloClaim(st);
+      });
+    }
+    if (title) {
+      title.addEventListener("click", function (e) {
+        e.preventDefault();
+        hideRaidResultOverlays();
+        try { api.stop(); } catch (err) {}
+        if (typeof global.showTitle === "function") global.showTitle();
+      });
+    }
+    return el;
+  }
+  function setRaidClaimRetryBusy(busy) {
+    var retry = document.getElementById("btn-raid-claim-retry");
+    if (!retry) return;
+    retry.disabled = !!busy;
+    retry.textContent = busy ? "RETRYING…" : "RETRY";
+  }
+  function showRaidClaimError(st, message) {
+    hideRaidResultOverlays();
+    var el = ensureRaidClaimOverlay();
+    var msg = document.getElementById("raid-claim-msg");
+    if (msg) {
+      var text = message || "Could not claim loot";
+      msg.innerHTML = '<div class="k">Error</div><div class="v"></div>';
+      var v = msg.querySelector(".v");
+      if (v) v.textContent = text;
+    }
+    setRaidClaimRetryBusy(false);
+    el.classList.remove("hidden");
+  }
+  function wrapHideAllOverlays() {
+    if (wrapHideAllOverlays._done) return;
+    if (typeof global.hideAllOverlays !== "function") return;
+    wrapHideAllOverlays._done = true;
+    var orig = global.hideAllOverlays;
+    global.hideAllOverlays = function () {
+      orig.apply(this, arguments);
+      hideRaidClaimError();
+    };
+  }
+  function attemptSoloClaim(st) {
     if (!st || st.group) return;
-    if (st.completing) {
-      if (st.completed && host && host.onWin) host.onWin(resultOf(st, true));
+    if (st.completed) {
+      hideRaidClaimError();
+      if (host && host.onWin) host.onWin(resultOf(st, true));
       return;
     }
+    if (st.completing) return;
     st.completing = true;
+    setRaidClaimRetryBusy(true);
     if (!st.soloNonce) st.soloNonce = makeRaidNonce();
     var score = computeRaidScore(st.player);
     var cloud = global.XscapeCloud;
     var finish = function (res) {
-      st.completed = true;
-      if (res && res.ok) applyGroupReward(st, res);
-      else if (res && res.error) flash(st, res.error, "#ff8a70");
-      if (host && host.onWin) host.onWin(resultOf(st, true));
+      st.completing = false;
+      if (res && res.ok) {
+        st.completed = true;
+        applyGroupReward(st, res);
+        hideRaidClaimError();
+        if (host && host.onWin) host.onWin(resultOf(st, true));
+        return;
+      }
+      var message = (res && res.error) || "Could not claim loot";
+      flash(st, message, "#ff8a70");
+      showRaidClaimError(st, message);
     };
     if (!cloud || typeof cloud.recordRaidClear !== "function") {
       finish({ ok: false, error: "Sign in to claim raid loot" });
@@ -3544,21 +3633,34 @@
       finish({ ok: false, error: (err && err.message) || "Could not claim loot" });
     });
   }
-  function completeGroupRaid(st) {
-    if (!st || !st.group || st.group.completing) {
-      if (st && host && host.onWin && st.group && st.group.completed) host.onWin(resultOf(st, true));
+  function completeSoloRaid(st) {
+    attemptSoloClaim(st);
+  }
+  function attemptGroupClaim(st) {
+    if (!st || !st.group) return;
+    if (st.group.completed) {
+      hideRaidClaimError();
+      if (host && host.onWin) host.onWin(resultOf(st, true));
       return;
     }
+    if (st.group.completing) return;
     st.group.completing = true;
+    setRaidClaimRetryBusy(true);
     var cloud = global.XscapeCloud;
     var finish = function (res) {
-      st.group.completed = true;
-      if (res && res.ok) applyGroupReward(st, res);
-      else if (res && res.error && typeof global.flashMsg === "function") {
-        flash(st, res.error, "#ff8a70");
+      st.group.completing = false;
+      if (res && res.ok) {
+        st.group.completed = true;
+        applyGroupReward(st, res);
+        hideRaidClaimError();
+        if (st.group && st.group.isLeader) broadcastRaidState(st);
+        if (host && host.onWin) host.onWin(resultOf(st, true));
+        return;
       }
+      var message = (res && res.error) || "Could not claim loot";
+      flash(st, message, "#ff8a70");
       if (st.group && st.group.isLeader) broadcastRaidState(st);
-      if (host && host.onWin) host.onWin(resultOf(st, true));
+      showRaidClaimError(st, message);
     };
     if (!cloud || typeof cloud.completeRaidRun !== "function" || !st.group.runId) {
       finish({ ok: false, error: "Could not reach the vault" });
@@ -3577,6 +3679,9 @@
     };
     if (st.group.isLeader) reportGroupDeaths(st);
     attempt(12);
+  }
+  function completeGroupRaid(st) {
+    attemptGroupClaim(st);
   }
   function attachGroupClock(st) {
     if (!st || !st.group) return;
@@ -3664,6 +3769,7 @@
     }
   }
   function showRaidResult(kind, result) {
+    hideRaidResultOverlays();
     const win = document.getElementById("overlay-win");
     const lose = document.getElementById("overlay-lose");
     const titleW = document.querySelector("#overlay-win .win-title");
@@ -3894,6 +4000,7 @@
     remigrateHostBank();
     installFoundSupplySlots();
     hookXscape();
+    wrapHideAllOverlays();
     api.installHubButton();
     api.updateRaidLock();
     if (typeof global.Scenes !== "undefined") {

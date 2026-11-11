@@ -10,5 +10,3 @@ One line per claim, in this format:
 - If a claim is more than a few hours old, ask the bot who wrote it before taking the file over. Do not delete a stale claim or start editing the file as if it were free.
 
 ## Active claims
-
-- `raid.js` | Boss Mechanics | 2026-11-11 11:22 America/New_York | Fix raid-clear 403 and claim-error retry UI
