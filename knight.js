@@ -619,6 +619,7 @@
     draw(ts / 1000, ctx, cssW, cssH);
     ctx.restore();
     const dt = Math.min(0.05, 1 / 60);
+    if (typeof global.drawClickMarks === "function") drawClickMarks(dt);
     tickFloatMsg(dt);
     if (G.mode === "playing" && typeof global.updateHud === "function") updateHud();
     return true;

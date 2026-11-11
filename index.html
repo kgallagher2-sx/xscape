@@ -6633,6 +6633,9 @@ function enterScene(id) {
     }
     prev.exit();
   }
+  // Stale OSRS click X markers must not carry into the next scene
+  // (they used to flush all at once onto the bank/hub canvas).
+  if (G.scene !== id) G.clickMarks = [];
   G.scene = id;
   next.enter();
   if (typeof checkXscapeVersion === "function") checkXscapeVersion();
