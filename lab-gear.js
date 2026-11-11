@@ -1796,14 +1796,38 @@ function heroHands(facing, opt) {
     const lash = shot.lash || 0;
     const guard = shot.guard || 0;
     // Weapon hand: pull back on windup, extend toward the target on the strike.
-    // As the strike extends, slide the hand inward onto the body center line so
-    // the poke / lash travels straight at the target instead of off the right shoulder.
-    const reach = Math.max(0, Math.min(1, (kind === "whip") ? lash : thrust));
-    const ext = (kind === "whip") ? (lash * 9.0 - pull * 5) : (thrust * 11);
-    const inward = reach * reach;
-    right.x *= (1 - inward * 0.92);
-    right.x += fwd.x * ext;
-    right.y += fwd.y * ext;
+    if (kind === "whip") {
+      // Keep the right hand out at the shoulder / side. A previous inward
+      // slide (right.x *= 1 - reach^2 * 0.92) parked the fist on the
+      // midline in front and back lashes. The lash still aims along
+      // facingForward from this side, toward the target.
+      const ext = lash * 9.0 - pull * 5;
+      if (facing === "left" || facing === "right") {
+        // Modest reach along the facing; the lash itself aims at the
+        // target. The full lash*9 extension pushed the right-facing tip
+        // past +42, and pulled the left-facing far hand through the torso.
+        right.x += fwd.x * (lash * 2.0 - pull * 5);
+      } else {
+        right.x += fwd.x * ext;
+        right.y += fwd.y * ext;
+      }
+      // Never cross the body midline. On a side lunge the far (left-facing)
+      // right hand may come forward, but it stays on its own side of x = 0
+      // so it still reads as the right arm, not a mid-body fist.
+      if (facing === "front" && right.x > -6) right.x = -6;
+      if (facing === "back" && right.x < 6) right.x = 6;
+      if (facing === "right" && right.x < 2.5) right.x = 2.5;
+      if (facing === "left" && right.x < 0.8) right.x = 0.8;
+    } else {
+      // Sword / spear: as the thrust extends, slide the hand inward so
+      // the poke travels straight at the target.
+      const reach = Math.max(0, Math.min(1, thrust));
+      const ext = thrust * 11;
+      const inward = reach * reach;
+      right.x *= (1 - inward * 0.92);
+      right.x += fwd.x * ext;
+      right.y += fwd.y * ext;
+    }
     // Shield / off-hand stays up in the left hand during a sword stab.
     if (kind === "sword") {
       left.y -= 5.5 * guard;

@@ -2338,9 +2338,9 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
     ctx.save();
-    // Frame budget ±42, y -76..+42 (fits sword stab, axe follow, soles, front/back
-    // whip). Canvas is 182×254; scale stays 2.15 so the body is the same size
-    // as before in canvas pixels. Origin was h*0.88 (bottom crop ≈ +10).
+    // Frame budget ±42, y -76..+56 (fits sword stab, axe follow, soles, and the
+    // full front/back whip lash at maxY ≈ +52, with a little margin). Canvas is
+    // 182×284; scale stays 2.15 so the body is the same size in canvas pixels.
     var GEAR_SCALE = 2.15, GEAR_TOP = 76;
     ctx.translate(w * 0.5, GEAR_TOP * GEAR_SCALE);
     ctx.scale(GEAR_SCALE, GEAR_SCALE);
