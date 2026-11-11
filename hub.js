@@ -1840,10 +1840,15 @@
     var guest = isRestrictedGuest();
     var raidBtn = $("btn-boss-raid");
     var kreeBtn = $("btn-boss-kree");
+    var widowBtn = $("btn-boss-widow");
     var note = $("boss-raid-note");
     if (kreeBtn) {
       kreeBtn.classList.toggle("locked", guest);
       kreeBtn.disabled = guest;
+    }
+    if (widowBtn) {
+      widowBtn.classList.toggle("locked", guest);
+      widowBtn.disabled = guest;
     }
     if (raidBtn) {
       var locked = guest || reason === "no-cape";
@@ -1851,7 +1856,7 @@
       raidBtn.disabled = locked;
     }
     if (note) {
-      if (guest) note.textContent = "Guests can fight TzTok-Jad in starter gear. Sign in to unlock Kree'arra and Gloamhold.";
+      if (guest) note.textContent = "Guests can fight TzTok-Jad in starter gear. Sign in to unlock Kree'arra, the Widow Queen, and Gloamhold.";
       else if (reason === "no-cape") note.textContent = "Requires a Fire cape — defeat TzTok-Jad.";
       else if (reason === "not-equipped") note.textContent = "Equip your Fire cape to enter Gloamhold.";
       else note.textContent = "Solo, or form a group with friends in the bank.";
@@ -1868,6 +1873,13 @@
     if (typeof enterScene === "function") enterScene("kree");
     else if (global.XscapeKree && XscapeKree.tryEnter) XscapeKree.tryEnter();
     else if (global.XscapeKree && XscapeKree.startFight) XscapeKree.startFight({});
+  }
+
+  function startWidow() {
+    closeSheet("overlay-boss");
+    if (typeof enterScene === "function") enterScene("widow");
+    else if (global.XscapeWidow && XscapeWidow.tryEnter) XscapeWidow.tryEnter();
+    else if (global.XscapeWidow && XscapeWidow.startFight) XscapeWidow.startFight({});
   }
 
   function chooseGloamhold() {
@@ -2496,6 +2508,7 @@
       boss._bound = true;
       if ($("btn-boss-jad")) $("btn-boss-jad").addEventListener("click", startJad);
       if ($("btn-boss-kree")) $("btn-boss-kree").addEventListener("click", startKree);
+      if ($("btn-boss-widow")) $("btn-boss-widow").addEventListener("click", startWidow);
       if ($("btn-boss-raid")) $("btn-boss-raid").addEventListener("click", chooseGloamhold);
       if ($("btn-boss-solo")) $("btn-boss-solo").addEventListener("click", startGloamSolo);
       if ($("btn-boss-group")) $("btn-boss-group").addEventListener("click", startGloamGroup);
@@ -2506,6 +2519,10 @@
       if ($("btn-info-boss-kree")) $("btn-info-boss-kree").addEventListener("click", function (e) {
         e.stopPropagation();
         if (typeof showKreeBriefing === "function") showKreeBriefing({ fromHub: true });
+      });
+      if ($("btn-info-boss-widow")) $("btn-info-boss-widow").addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (typeof showWidowBriefing === "function") showWidowBriefing({ fromHub: true });
       });
       if ($("btn-info-boss-raid")) $("btn-info-boss-raid").addEventListener("click", function (e) {
         e.stopPropagation();

@@ -1458,7 +1458,7 @@ function drawSpineGrip(c, facing, opt) {
   const sk = (typeof skinPal === "function") ? skinPal() : { skin: "#c4a07a" };
   let x, y;
   if (facing === "front") { x = 12.0; y = -8.8 - raise * 13.5; }
-  else if (facing === "right") { x = -11.2; y = -8.8 - raise * 13.5; }
+  else if (facing === "right") { x = -8.0; y = -4.0 - raise * 13.5; }
   else { x = -12.0; y = -10.6 - raise * 13; }
   c.fillStyle = sk.skin;
   c.beginPath();

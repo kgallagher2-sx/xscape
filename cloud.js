@@ -126,13 +126,14 @@
   function localHasProgress(payload) {
     var p = payload || localPayload();
     return !!(p && ((p.gp || 0) > 0 || p.hasFireCape || (p.kreeKills || 0) > 0 ||
+      (p.widowKills || 0) > 0 ||
       (p.raidCompletions || 0) > 0 || (p.jadKills || 0) > 0 || p.seenFirstKill));
   }
 
   function cloudHasCharacter(p) {
     p = p || cloudProfile;
     return !!(p && (p.migratedAt || (p.gp || 0) > 0 || p.hasFireCape ||
-      (p.jadKills || 0) > 0 || (p.kreeKills || 0) > 0 || (p.raidCompletions || 0) > 0));
+      (p.jadKills || 0) > 0 || (p.kreeKills || 0) > 0 || (p.widowKills || 0) > 0 || (p.raidCompletions || 0) > 0));
   }
 
   function markLocalMigrated() {
@@ -218,6 +219,7 @@
       settings.intro = localStorage.getItem("kellenscape-intro-seen") === "1";
       settings.raidBrief = localStorage.getItem("kellenscape-raid-brief-seen") === "1";
       settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
+      settings.widowBrief = localStorage.getItem("kellenscape-widow-brief-seen") === "1";
     } catch (e) {}
     if (global.XscapeSupplies && typeof XscapeSupplies.settingsSlice === "function") {
       var qs = XscapeSupplies.settingsSlice();
@@ -240,6 +242,8 @@
       raidBestTicks: P.raidBestTicks || raw.raidBestTicks || null,
       kreeKills: P.kreeKills || Number(raw.kreeKills) || 0,
       kreeBestTicks: P.kreeBestTicks || raw.kreeBestTicks || null,
+      widowKills: P.widowKills || Number(raw.widowKills) || 0,
+      widowBestTicks: P.widowBestTicks || raw.widowBestTicks || null,
       jadKills: P.jadKills || Number(raw.jadKills) || js.kills || 0,
       jadBestTicks: P.jadBestTicks || raw.jadBestTicks || js.bestTicks,
       jadBestScore: P.jadBestScore || raw.jadBestScore || js.bestScore,
@@ -296,6 +300,8 @@
     if (p.raidBestTicks != null) P.raidBestTicks = p.raidBestTicks;
     if (typeof p.kreeKills === "number") P.kreeKills = p.kreeKills;
     if (p.kreeBestTicks != null) P.kreeBestTicks = p.kreeBestTicks;
+    if (typeof p.widowKills === "number") P.widowKills = p.widowKills;
+    if (p.widowBestTicks != null) P.widowBestTicks = p.widowBestTicks;
     if (typeof p.jadKills === "number") P.jadKills = p.jadKills;
     if (p.jadBestTicks != null) P.jadBestTicks = p.jadBestTicks;
     lastKreeKills = P.kreeKills || 0;
@@ -1944,6 +1950,7 @@
       global.showWinCard._cloud = true;
     }
     hookKreeEntry();
+    hookWidowEntry();
   }
 
   function hookKreeEntry() {
@@ -1961,6 +1968,27 @@
       var rawStart = api.startFight;
       api.startFight = function () {
         if (requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return;
+        return rawStart.apply(this, arguments);
+      };
+      api.startFight._cloud = true;
+    }
+  }
+
+  function hookWidowEntry() {
+    var api = global.XscapeWidow;
+    if (!api) return;
+    if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
+      var rawTry = api.tryEnter;
+      api.tryEnter = function () {
+        if (requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return false;
+        return rawTry.apply(this, arguments);
+      };
+      api.tryEnter._cloud = true;
+    }
+    if (typeof api.startFight === "function" && !api.startFight._cloud) {
+      var rawStart = api.startFight;
+      api.startFight = function () {
+        if (requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return;
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
@@ -2125,6 +2153,7 @@
       settings.intro = localStorage.getItem("kellenscape-intro-seen") === "1";
       settings.raidBrief = localStorage.getItem("kellenscape-raid-brief-seen") === "1";
       settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
+      settings.widowBrief = localStorage.getItem("kellenscape-widow-brief-seen") === "1";
     } catch (e) {}
     if (global.XscapeSupplies && typeof XscapeSupplies.settingsSlice === "function") {
       var qs = XscapeSupplies.settingsSlice();
@@ -2155,18 +2184,10 @@
   var lastOwnItems = [];
   function maybeRecordProgress() {
     var P = global.Profile || {};
-    var kree = P.kreeKills || 0;
     var raid = P.raidCompletions || 0;
-    if (session && !isAnonymousUser(session.user) && kree > lastKreeKills) {
-      lastKreeKills = kree;
-      var items = (lastOwnItems || []).filter(function (id) {
-        return /^armadyl_/.test(id);
-      });
-      lastOwnItems = [];
-      rpc("record_kree_kill", { p_ticks: P.kreeBestTicks || null, p_item_ids: items }).then(function (res) {
-        if (res.ok && res.profile) applyCloudProfile(res.profile);
-      });
-    }
+    // Kree and Widow kills are recorded by their fight modules via
+    // record_kree_kill / record_widow_kill. Do not re-award from a local bump.
+    if (typeof P.kreeKills === "number") lastKreeKills = P.kreeKills;
     if (session && !isAnonymousUser(session.user) && raid > lastRaidClears) {
       // Solo and group clears are claimed by record_raid_clear / complete_raid_run
       // with a per-run nonce. Do not re-award from a local completion bump.
@@ -2206,7 +2227,7 @@
     injectStyles();
     hookFunctions();
     hookOwnItem();
-    setTimeout(hookKreeEntry, 0);
+    setTimeout(function () { hookKreeEntry(); hookWidowEntry(); }, 0);
     if (page === "hub") {
       ensureLoginUi();
       ensureHubChrome();

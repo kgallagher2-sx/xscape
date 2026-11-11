@@ -683,9 +683,9 @@
       c.rotate(0.04);
       drawBookEdgeOn(c, st, pulse);
     } else if (facing === "right") {
-      // Far / book's own side — full cover faces the camera, hanging behind the hip
-      c.translate(-11.2, -8.8 - raise * 13.5);
-      c.scale(-1, 1);
+      // Far hip: spine in the fist at the robe's back edge, cover into the torso
+      // so the body occludes most of it and only a sliver peeks out.
+      c.translate(-8.0, -4.0 - raise * 13.5);
       c.rotate(0.02);
       drawBookCoverFace(c, st, pulse);
     } else {

@@ -449,6 +449,16 @@
     else if (id === "armadyl_helmet") drawHelm(ctx, pal.armadyl);
     else if (id === "armadyl_chestplate") drawChestplate(ctx, pal.armadyl);
     else if (id === "armadyl_chainskirt") drawSkirt(ctx, pal.armadyl);
+    else if (String(id).indexOf("widow_weaver_") === 0 && global.XscapeWidowArt && XscapeWidowArt.drawItemIcon) {
+      ctx.restore();
+      ended = true;
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      var is = Math.min(w, h) / 48;
+      ctx.scale(is, is);
+      XscapeWidowArt.drawItemIcon(ctx, id, null, (opts && opts.t) || 0);
+      ctx.restore();
+    }
     else if (id === "veilhide_body" || id === "veilhide-body") drawBody(ctx, pal.veil);
     else if (id === "veilhide_chaps" || id === "veilhide-chaps") drawChaps(ctx, pal.veil);
     else if (id === "veilhide_vambs" || id === "veilhide-vambs") drawVambs(ctx, pal.veil);

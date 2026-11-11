@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111024848-194fd39";</script>
+  <script>window.XSCAPE_BUILD = "20261111030345-0748fe1";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -319,7 +319,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -488,12 +488,12 @@
       font-family: inherit; padding: 0;
     }
     #btn-raid-help.visible { display: inline-flex; align-items: center; justify-content: center; }
-    #btn-kree-help {
+    #btn-kree-help, #btn-widow-help {
       display: none; width: 28px; height: 28px; border-radius: 50%;
       background: #2a2430; border: 1px solid #c9a24a; color: #ffe44a;
       font-weight: 700; font-size: 16px; cursor: pointer;
     }
-    #btn-kree-help.visible { display: inline-flex; align-items: center; justify-content: center; }
+    #btn-kree-help.visible, #btn-widow-help.visible { display: inline-flex; align-items: center; justify-content: center; }
     .sheet-card,
     .tut-card.brief-card,
     #overlay-tut .tut-card,
@@ -622,7 +622,7 @@
     #app.hub-world #quick-bar,
     #app.hub-world #top-hud { display: none; }
     #app.hub-world #btn-raid-help,
-    #app.hub-world #btn-kree-help { display: none; }
+    #app.hub-world #btn-kree-help, #app.hub-world #btn-widow-help { display: none; }
     #app.hub-world #osrs-chat { bottom: calc(52px + var(--hud-bottom)); }
     #overlay-hub.is-world {
       background: transparent; pointer-events: none;
@@ -860,7 +860,7 @@
     #app.fight-world.hub-world #prayers,
     #app.fight-world.hub-world #top-hud { display: revert !important; }
     #app.fight-world.hub-world #btn-raid-help,
-    #app.fight-world.hub-world #btn-kree-help { display: revert !important; }
+    #app.fight-world.hub-world #btn-kree-help, #app.fight-world.hub-world #btn-widow-help { display: revert !important; }
 
     #app.duel-world #overlay-hub,
     #app.duel-world #mid,
@@ -869,7 +869,7 @@
     #app.duel-world #top-hud { display: none; }
     #app.duel-world #prayers { display: flex; }
     #app.duel-world #btn-raid-help,
-    #app.duel-world #btn-kree-help { display: none; }
+    #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help { display: none; }
     #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-stake .sheet-card,
     #overlay-stake-confirm .sheet-card,
@@ -911,7 +911,7 @@
     #btn-duel-forfeit.hidden { display: none; }
     #stake-actions .btn, #confirm-actions .btn { margin: 0 4px 0 0; }
 
-    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help { display: none; }
+    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help { display: none; }
 
     @media (max-height: 750px) {
       .pray-btn { height: 82px; }
@@ -959,6 +959,7 @@
       </div>
       <button id="btn-raid-help" type="button" aria-label="Gloamhold instructions">?</button>
       <button id="btn-kree-help" type="button" aria-label="Kree'arra instructions">?</button>
+      <button id="btn-widow-help" type="button" aria-label="Widow Queen instructions">?</button>
     </div>
     <div id="mid">
       <div class="bars">
@@ -1038,7 +1039,7 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 1.5–3M GP — Tier 2 is recommended. Spend GP in the Shop, or earn more in Gloamhold.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 1.5–3M GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. Spend GP in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
@@ -1056,6 +1057,14 @@
             <span class="hint">Recommended: Tier 2 gear</span>
           </button>
           <button class="mode-info" id="btn-info-kree" type="button" aria-label="Kree'arra guide">i</button>
+        </div>
+        <div class="mode-row">
+          <button class="btn mode-btn" id="btn-mode-widow" type="button">
+            Widow Queen
+            <span class="sub">The Widow's Nest · Cave</span>
+            <span class="hint">Recommended: magic gear</span>
+          </button>
+          <button class="mode-info" id="btn-info-widow" type="button" aria-label="Widow Queen guide">i</button>
         </div>
         <div class="mode-row">
           <button class="btn mode-btn locked" id="btn-mode-raid" type="button" disabled aria-disabled="true">
@@ -1313,7 +1322,7 @@
         <button class="overlay-x" data-close="boss" type="button" aria-label="Close">×</button>
         <h2>Kael the Warden</h2>
         <div class="sheet-scroll">
-          <p class="lead">Choose a fight. Jad and Kree'arra are solo. Gloamhold can be solo or a group.</p>
+          <p class="lead">Choose a fight. Jad, Kree'arra, and the Widow Queen are solo. Gloamhold can be solo or a group.</p>
           <div class="boss-choice">
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-jad">TzTok-Jad<span class="sub">Arcade Fight Caves · Wave 63</span></button>
@@ -1322,6 +1331,10 @@
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-kree">Kree'arra<span class="sub">Armadyl's Eyrie · God Wars</span><span class="hint">Recommended: Tier 2 gear</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-kree" aria-label="Kree'arra guide">i</button>
+            </div>
+            <div class="boss-row">
+              <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span><span class="hint">Recommended: magic gear</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-widow" aria-label="Widow Queen guide">i</button>
             </div>
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-raid">Gloamhold<span class="sub">The Unsleeping · Raid</span></button>
@@ -1422,7 +1435,7 @@
         <p><b>Tornadoes:</b> he marks your tile with a swirling gale. Walk off before it lands — prayer will not save you from this one.</p>
         <p><b>Bodyguards:</b> Wingman Skree (Magic), Flockleader Geerin (Missiles), and Flight Kilisa (Melee). They have little HP. Killing them first makes the fight cleaner; you can ignore them and go straight for Kree'arra if you prefer.</p>
         <p><b>Supplies:</b> bring food and potions from the bank provisioner — there are no free supplies here. Use the quick slots (pencil to edit). Each bite or sip delays your next shot. F / P / R, or the on-screen buttons.</p>
-        <p><b>Loot:</b> every kill pays 1.5–3M pretend GP. Armadyl helmet, chestplate, and chainskirt are about 1/12 each; the Armadyl crossbow is about 1/25. This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
+        <p><b>Loot:</b> every kill pays 1.5–3M pretend GP. Armadyl helmet, chestplate, chainskirt, and the Armadyl crossbow are a <b>1/6</b> unique roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, a random piece still drops (already owned). This is the only way to get that kit — it is never sold. Uniques go to your bank. Wear them from Equipment.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
         <div class="tut-actions sheet-actions">
@@ -1440,6 +1453,39 @@
       </div>
       <button class="btn" id="btn-kree-again" type="button">FIGHT AGAIN</button>
       <button class="btn secondary" id="btn-kree-title" type="button">Title screen</button>
+    </div>
+
+    <div class="overlay hidden" id="overlay-widow-tut">
+      <div class="tut-card brief-card sheet-card">
+        <button class="overlay-x" id="btn-widow-tut-x" type="button" aria-label="Close">×</button>
+        <h2>Widow Queen</h2>
+        <div class="tut-scroll sheet-scroll">
+        <p>Deep in a web-choked cave, the <b>Widow Queen</b> (Arachne) hunts anything that wanders in. She is a solo fight — about level 520, with 600 Hitpoints and a 3×3 footprint. Bring food and potions from the bank provisioner; there are no free supplies here.</p>
+        <p><b>Move and attack.</b> The cave is a 5×5 grid. Tap the Queen, a baby spider, or a skeleton to set your target (a red X). Tap a floor tile to walk (yellow X). Keyboard A/D/W/S or arrows also work. Magic and ranged both hit her. The Widow Weaver wand and spellbook are built for this fight.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Listen for the tell.</p>
+        <p><b>Melee:</b> when you stand next to her, her front legs lunge (up to 30). Protect from Melee blocks it.</p>
+        <p><b>Magic:</b> from range she spits a venom bolt (up to 28). Protect from Magic blocks the hit. About 1 in 4 successful hits poisons you (starts at 6, then ticks down the usual way). Prayer does not block the poison itself — sip an antipoison or wait it out.</p>
+        <p><b>Web shot:</b> about every 20 ticks she fires a web into the ceiling. A shadow marks the landing tile 3 ticks ahead — walk off it. If you are still there when it lands, you are stuck for 4 ticks (you can still eat and pray, but you cannot move or attack). Then 4–6 baby spiders drop and each bite hits 0–8 through prayer.</p>
+        <p><b>Below 50%:</b> webs come a little faster (every 16 ticks). Every two or three specials she raises the dead: 2–4 skeletons of eaten victims crawl in from the edges, walk slowly, and shatter in one hit — but if one reaches you it hits up to 25 through prayer.</p>
+        <p><b>Below 20%:</b> she enrages and drops two webs at once.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Widow Weaver uniques (hood, robe top, robe bottom, wand, and spellbook) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, a random piece still drops (already owned). Uniques go to your bank. Wear them from Equipment. This kit is never sold.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
+        </div>
+        <div class="tut-actions sheet-actions">
+          <button class="btn" id="btn-widow-tut-ok" type="button">GOT IT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-widow-loot">
+      <div class="share-card" id="widow-loot-card">
+        <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
+        <div class="win-title" id="widow-loot-title">WIDOW QUEEN DEFEATED</div>
+        <div class="result-grid" id="widow-loot-stats"></div>
+        <div class="share-hint">Screenshot this card and share your drop</div>
+      </div>
+      <button class="btn" id="btn-widow-again" type="button">FIGHT AGAIN</button>
+      <button class="btn secondary" id="btn-widow-title" type="button">Title screen</button>
     </div>
 
     <div class="overlay hidden" id="overlay-win">
@@ -1489,6 +1535,7 @@
 <script src="partyhat-img.js"></script>
 <script src="whip-img.js"></script>
 <script src="sprites.js"></script>
+<script src="widow-sprites.js"></script>
 <script src="lab-gear.js"></script>
 <script src="kree-sprites.js"></script>
 <script src="stats.js"></script>
@@ -1562,7 +1609,8 @@ const STORAGE = {
   profile: "kellenscape-profile",
   intro: "kellenscape-intro-seen",
   raidBrief: "kellenscape-raid-brief-seen",
-  kreeBrief: "kellenscape-kree-brief-seen"
+  kreeBrief: "kellenscape-kree-brief-seen",
+  widowBrief: "kellenscape-widow-brief-seen"
 };
 
 function computeScore(result) {
@@ -1668,6 +1716,7 @@ function b(partial) { return Object.assign(emptyBonuses(), partial); }
     1 starter  — green d'hide + rune crossbow + mithril bolts (always owned)
     2          — black d'hide + rune bolts + amulet of glory (Shop, pretend GP)
     armadyl    — Kree'arra drop only; never sold in the Shop
+    widow      — Widow Queen drop only; never sold in the Shop
     unique     — Gloamhold vault uniques (tier 4)
   Attack/defence bonuses follow public OSRS figures. Mithril bolt ranged
   strength is arcade-tuned so a starter Jad kill lands near 1:45–2:00
@@ -1704,6 +1753,13 @@ const ITEMS = {
   armadyl_chestplate: { id: "armadyl_chestplate", name: "Armadyl chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
   armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Armadyl chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
   armadyl_crossbow:   { id: "armadyl_crossbow", name: "Armadyl crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
+
+  /* Widow Queen drop only — never listed in the Shop. Not unique:true (that flag blocks trading). */
+  widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow", bonuses: b({ amagic: 10, mdmg: 2, dmagic: 10 }) },
+  widow_weaver_top:    { id: "widow_weaver_top", name: "Widow Weaver robe top", slot: "body", tier: "widow", kind: "widow", bonuses: b({ amagic: 35, mdmg: 2, dmagic: 30 }) },
+  widow_weaver_bottom: { id: "widow_weaver_bottom", name: "Widow Weaver robe bottom", slot: "legs", tier: "widow", kind: "widow", bonuses: b({ amagic: 22, mdmg: 2, dmagic: 22 }) },
+  widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow", twohand: false, speed: 5, magicBase: 30, style: "magic", bonuses: b({ amagic: 80, mdmg: 12, dmagic: 15 }) },
+  widow_weaver_book:   { id: "widow_weaver_book", name: "Widow Weaver spellbook", slot: "shield", tier: "widow", kind: "widow", bonuses: b({ amagic: 20, mdmg: 8, dmagic: 18 }) },
 
   /* The only blue partyhat in the game. Granted server-side; never sold or dropped. Not stakeable. */
   blue_partyhat:      { id: "blue_partyhat", name: "Blue partyhat", slot: "head", tier: "partyhat", unique: true, unstakeable: true, kind: "partyhat", bonuses: b({}) },
@@ -1744,6 +1800,11 @@ const LOADOUTS = {
     weapon: "armadyl_crossbow", body: "armadyl_chestplate", shield: null,
     legs: "armadyl_chainskirt", hands: "black_dhide_vambs", feet: "black_dhide_boots", ring: null
   },
+  widow: {
+    head: "widow_weaver_hood", cape: null, neck: null, ammo: null,
+    weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
+    legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
+  },
   gloamhold: {
     head: "black_dhide_coif", cape: "gloamheart_cape", neck: "unsleeping_stole", ammo: "hollow_bolts",
     weapon: "hollowbolt_xbow", body: "veilhide_body", shield: null,
@@ -1770,9 +1831,9 @@ const SHOP_BUNDLE = {
 function itemIsHidden(it) {
   if (!it) return false;
   if (it.tier === "legacy") return true;
-  // Armadyl is earned from Kree'arra and should show in the bank once owned.
+  // Armadyl / Widow Weaver are earned from bosses and should show in the bank once owned.
   // The Shop is a fixed list, so these are never sold.
-  if (it.tier === "armadyl") return false;
+  if (it.tier === "armadyl" || it.tier === "widow") return false;
   return !!it.hidden;
 }
 
@@ -2178,6 +2239,27 @@ const MONSTERS = {
     hitpoints: 28, attack: 120, strength: 80, defence: 40, magic: 20, ranged: 20,
     flying: true, bonuses: b({ str: 20 }), defBonuses: b({ drange: 10 }),
     maxHit: { melee: 10 }, attackSpeed: 7
+  },
+  "widow-queen": {
+    id: "widow-queen", name: "Widow Queen",
+    hitpoints: 600, attack: 400, strength: 300, defence: 220,
+    osrsDefence: 220, magic: 300, ranged: 80,
+    bonuses: b({ amagic: 40, str: 40 }),
+    defBonuses: b({ dmagic: 20, drange: 40, dstab: 40, dslash: 40, dcrush: 40 }),
+    maxHit: { mage: 28, melee: 30 },
+    attackSpeed: 5
+  },
+  "widow-baby": {
+    id: "widow-baby", name: "Baby spider",
+    hitpoints: 8, attack: 40, strength: 20, defence: 10, magic: 1, ranged: 1,
+    bonuses: b({ str: 8 }), defBonuses: b({ dmagic: 0, drange: 0 }),
+    maxHit: { melee: 8 }, attackSpeed: 3
+  },
+  "widow-skel": {
+    id: "widow-skel", name: "Risen victim",
+    hitpoints: 1, attack: 80, strength: 80, defence: 1, magic: 1, ranged: 1,
+    bonuses: b({ str: 40 }), defBonuses: b({}),
+    maxHit: { melee: 25 }, attackSpeed: 4
   }
 };
 
@@ -2259,7 +2341,9 @@ function combatVsMonster(monsterId, style, opts) {
   } else if (style === "mage" || style === "magic") {
     atkLevel = effectivePlayerLevel(combatSkillLevel("magic", useBase), 1, stance);
     atkBonus = pb.amagic;
-    max = 0; // no player mage kit yet
+    var wep = (typeof itemInSlot === "function") ? itemInSlot("weapon") : (ITEMS[(Profile.equipment && Profile.equipment.weapon)] || null);
+    var base = (wep && wep.magicBase) || 0;
+    max = Math.floor(base * (1 + (pb.mdmg || 0) / 100));
   } else {
     atkLevel = effectivePlayerLevel(combatSkillLevel("attack", useBase), 1, stance);
     atkBonus = styleAttackBonus(pb, style);
@@ -2488,6 +2572,7 @@ function queueMoveTo(col, row) {
   if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.clickTile) { window.XscapeDuel.clickTile(col, row == null ? 0 : row); return true; }
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.clickTile(col, row == null ? 0 : row); return true; }
   if (!G.player || G.mode !== "playing" || G.player.hp <= 0) return false;
+  if (G.player.stuckTicks > 0) return false;
   ensurePlayerTile();
   const c = clamp(col, 0, TILE.cols - 1);
   const r = clamp(row == null ? G.player.tileRow : row, 0, Math.max(0, TILE.rows - 1));
@@ -2518,6 +2603,12 @@ function setRunning(on) {
 
 function processMovement() {
   if (!G.player) return false;
+  if (G.player.stuckTicks > 0) {
+    G.player.movedThisTick = false;
+    G.player.destCol = null;
+    G.player.destRow = null;
+    return false;
+  }
   ensurePlayerTile();
   const destC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
   const destR = (G.player.destRow != null) ? G.player.destRow : G.player.tileRow;
@@ -2647,8 +2738,13 @@ function drawArenaTiles(t) {
       const stand = G.player && G.player.tileCol === c && G.player.tileRow === r;
       ctx.save();
       ctx.globalAlpha = stand ? 0.42 : 0.22;
-      ctx.fillStyle = stand ? "#5a3c24" : "#3a2618";
-      ctx.strokeStyle = "#c4a06a";
+      if (G.scene === "widow") {
+        ctx.fillStyle = stand ? "#3a1820" : "#241018";
+        ctx.strokeStyle = "#8a7880";
+      } else {
+        ctx.fillStyle = stand ? "#5a3c24" : "#3a2618";
+        ctx.strokeStyle = "#c4a06a";
+      }
       ctx.lineWidth = 1.2;
       const rr = 4;
       ctx.beginPath();
@@ -2731,7 +2827,7 @@ function setPlayingChrome(on) {
 }
 
 function updateConsumableChrome() {
-  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "raid");
+  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "widow" || G.scene === "raid");
   const rangeBtn = $("btn-range-pot");
   const brewBtn = $("btn-brew");
   if (rangeBtn) rangeBtn.classList.toggle("hidden", !playing);
@@ -2777,6 +2873,8 @@ function refreshGearViews() {
 function gearTierClass(tier) {
   if (tier === "unique") return "unique";
   if (tier === "jad") return "jad";
+  if (tier === "armadyl") return "armadyl";
+  if (tier === "widow") return "widow";
   if (tier === "tier2" || tier === "upgrade") return "tier2";
   if (tier === "mid") return "mid";
   if (tier === "starter" || tier === "tier1") return "tier1";
@@ -2791,6 +2889,7 @@ function gearTierLabel(it) {
   if (t === "tier2" || t === "upgrade") return "Tier 2";
   if (t === "mid") return "Gloamhold mid";
   if (t === "armadyl") return "Tier 3 · Armadyl";
+  if (t === "widow") return "Widow Queen · Widow Weaver";
   if (t === "partyhat") return "Unique · the only one";
   return "Tier 1 · Starter";
 }
@@ -2800,12 +2899,23 @@ function renderEquipmentOverlay() {
   const bonusEl = $("gear-bonuses");
   if (bonusEl) {
     const pb = playerBonuses();
-    const vs = combatVsMonster("tztok-jad", "ranged");
-    bonusEl.innerHTML =
-      "<span>Ranged atk <b>+" + pb.arange + "</b></span>" +
-      "<span>Ranged str <b>+" + pb.rstr + "</b></span>" +
-      "<span>Def (range) <b>+" + pb.drange + "</b></span>" +
-      "<span>vs Jad <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
+    const wep = (typeof itemInSlot === "function") ? itemInSlot("weapon") : null;
+    const mage = !!(wep && (wep.magicBase || wep.style === "magic"));
+    if (mage) {
+      const vs = combatVsMonster("widow-queen", "magic");
+      bonusEl.innerHTML =
+        "<span>Magic atk <b>+" + pb.amagic + "</b></span>" +
+        "<span>Magic dmg <b>+" + (pb.mdmg || 0) + "%</b></span>" +
+        "<span>Def (magic) <b>+" + pb.dmagic + "</b></span>" +
+        "<span>vs Queen <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
+    } else {
+      const vs = combatVsMonster("tztok-jad", "ranged");
+      bonusEl.innerHTML =
+        "<span>Ranged atk <b>+" + pb.arange + "</b></span>" +
+        "<span>Ranged str <b>+" + pb.rstr + "</b></span>" +
+        "<span>Def (range) <b>+" + pb.drange + "</b></span>" +
+        "<span>vs Jad <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
+    }
   }
   if (worn) {
     const eq = Profile.equipment || cloneLoadout("starter");
@@ -3037,6 +3147,8 @@ function allowsMenuScroll(target) {
 function gearSlotColor(tier) {
   if (tier === "unique") return "#4a2a6a";
   if (tier === "jad") return "#8a3a10";
+  if (tier === "armadyl") return "#3a4858";
+  if (tier === "widow") return "#4a1018";
   if (tier === "tier2" || tier === "upgrade") return "#2a2a38";
   if (tier === "mid") return "#3a5a28";
   if (tier === "starter" || tier === "tier1") return "#2a4a1c";
@@ -3171,7 +3283,7 @@ function updateRaidLock() {
   }
 }
 
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0 };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0, widowKills: 0 };
 
 function loadProfile() {
   try {
@@ -3187,6 +3299,9 @@ function loadProfile() {
       Profile.raidCompletions = Number(raw.raidCompletions) || 0;
       Profile.raidBestTicks = raw.raidBestTicks || null;
       Profile.kreeKills = Number(raw.kreeKills) || 0;
+      Profile.kreeBestTicks = raw.kreeBestTicks || null;
+      Profile.widowKills = Number(raw.widowKills) || 0;
+      Profile.widowBestTicks = raw.widowBestTicks || null;
       Profile.bank = migrateOwned(raw.bank, Profile.equipment, Profile.unlockedItems);
       Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
     } else {
@@ -3212,6 +3327,7 @@ function loadProfile() {
     Profile.inventory = [];
   }
   if (!Profile.kreeKills) Profile.kreeKills = Profile.kreeKills || 0;
+  if (!Profile.widowKills) Profile.widowKills = Profile.widowKills || 0;
   migrateLegacyStarter();
   maybeGrantLegacyFireCape();
   if (!Array.isArray(Profile.inventory)) Profile.inventory = [];
@@ -3236,7 +3352,10 @@ function saveProfile() {
       inventory: Profile.inventory || [],
       raidCompletions: Profile.raidCompletions || 0,
       raidBestTicks: Profile.raidBestTicks || null,
-      kreeKills: Profile.kreeKills || 0
+      kreeKills: Profile.kreeKills || 0,
+      kreeBestTicks: Profile.kreeBestTicks || null,
+      widowKills: Profile.widowKills || 0,
+      widowBestTicks: Profile.widowBestTicks || null
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
   } catch (e) {}
@@ -4245,6 +4364,7 @@ function boltTarget() {
 function applyBoltHit(target, dmg) {
   if (G.mode !== "playing") return;
   if (window.XscapeKree && XscapeKree.applyBoltHit && XscapeKree.applyBoltHit(target, dmg)) return;
+  if (window.XscapeWidow && XscapeWidow.applyBoltHit && XscapeWidow.applyBoltHit(target, dmg)) return;
   if (target.kind === "jad" && G.jad && G.jad.hp > 0) {
     G.jad.hp = clamp(G.jad.hp - dmg, 0, JAD_MAX_HP);
     G.jad.hurt = 0.2;
@@ -4347,6 +4467,7 @@ function tickHealers() {
 function gameTick() {
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.hostTick(); return; }
   if (G.scene === "kree" && window.XscapeKree) { window.XscapeKree.hostTick(); return; }
+  if (G.scene === "widow" && window.XscapeWidow) { window.XscapeWidow.hostTick(); return; }
   if (G.mode !== "playing") return;
   G.ticks++;
 
@@ -4664,6 +4785,7 @@ function endWin() {
 function endLose() {
   if (G.mode !== "playing") return;
   if (G.scene === "kree" && window.XscapeKree && XscapeKree.lose) { XscapeKree.lose(); return; }
+  if (G.scene === "widow" && window.XscapeWidow && XscapeWidow.lose) { XscapeWidow.lose(); return; }
   setPlayingChrome(false);
   G.mode = "lose";
   G.player.hp = 0;
@@ -5325,13 +5447,28 @@ function drawBolts(dt) {
     const ang = Math.atan2(y2 - y1, x2 - x1);
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(ang);
-    ctx.fillStyle = "#c8b080";
-    ctx.fillRect(-7, -1.5, 12, 3);
-    ctx.fillStyle = "#6a3a14";
-    ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-2, -4); ctx.lineTo(-2, 4); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#888";
-    ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-11, -3); ctx.lineTo(-11, 3); ctx.closePath(); ctx.fill();
+    if (b.kind === "magic") {
+      const Art = window.XscapeWidowArt;
+      if (Art && Art.drawVenom) {
+        ctx.scale(1.35, 1.35);
+        Art.drawVenom(ctx, { t: b.t });
+      } else {
+        const grd = ctx.createRadialGradient(0, 0, 1, 0, 0, 9);
+        grd.addColorStop(0, "#ff8a90");
+        grd.addColorStop(0.4, "#c00818");
+        grd.addColorStop(1, "rgba(80,0,10,0)");
+        ctx.fillStyle = grd;
+        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+      }
+    } else {
+      ctx.rotate(ang);
+      ctx.fillStyle = "#c8b080";
+      ctx.fillRect(-7, -1.5, 12, 3);
+      ctx.fillStyle = "#6a3a14";
+      ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-2, -4); ctx.lineTo(-2, 4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#888";
+      ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-11, -3); ctx.lineTo(-11, 3); ctx.closePath(); ctx.fill();
+    }
     ctx.restore();
     if (b.t >= b.dur) applyBoltHit(b.dest, b.dmg);
     else keep.push(b);
@@ -5553,6 +5690,10 @@ function frame(ts) {
     window.XscapeKree.hostFrame(ts, ctx, cssW, cssH, dpr);
     return;
   }
+  if (G.scene === "widow" && window.XscapeWidow) {
+    window.XscapeWidow.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
 
   if (G.mode === "playing") {
     G.elapsedMs = ts - G.startMs;
@@ -5652,6 +5793,9 @@ window.addEventListener("keydown", (e) => {
   if (G.scene === "kree" && window.XscapeKree) {
     if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
   }
+  if (G.scene === "widow" && window.XscapeWidow) {
+    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
+  }
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
   if (e.key === "3") setPrayer("melee");
@@ -5665,6 +5809,8 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); queueMoveBy(-1, 0); }
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); queueMoveBy(1, 0); }
+  if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); queueMoveBy(0, 1); }
+  if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { e.preventDefault(); queueMoveBy(0, -1); }
   if (e.key === "r" || e.key === "R") {
     if (G.mode === "playing") sipRangePot();
     else setRunning(!G.running);
@@ -5695,6 +5841,12 @@ canvas.addEventListener("pointerdown", (e) => {
     audio.unlock();
     const pt = eventToArena(e);
     window.XscapeKree.clickPx(pt.x, pt.y, cssW, cssH);
+    return;
+  }
+  if (G.scene === "widow" && window.XscapeWidow) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeWidow.clickPx(pt.x, pt.y, cssW, cssH);
     return;
   }
   if (G.mode === "intro") {
@@ -5841,7 +5993,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -5948,6 +6100,7 @@ function enterScene(id) {
 function showTitle() {
   loadProfile();
   G._retryKree = false;
+  G._retryWidow = false;
   if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
   // Test modes skip the sign-in screen so ?test= URLs still jump into a fight.
   if (typeof testFlag === "function" && testFlag()) {
@@ -6517,6 +6670,10 @@ function applyTestQuery() {
     window.XscapeKree.startFight({ fromQuery: true, skipBrief: true, loot: test === "kree-loot" });
     return;
   }
+  if ((test === "widow" || test === "widow-loot") && window.XscapeWidow) {
+    window.XscapeWidow.startFight({ fromQuery: true, skipBrief: true, loot: test === "widow-loot" });
+    return;
+  }
   if (test === "intro") {
     resetFight();
     startIntro({ force: true });
@@ -6736,6 +6893,58 @@ window.kreeBriefSeen = kreeBriefSeen;
 window.markKreeBriefSeen = markKreeBriefSeen;
 window.closeKreeBriefing = closeKreeBriefing;
 
+function widowBriefSeen() {
+  try { return localStorage.getItem(STORAGE.widowBrief) === "1"; } catch (e) { return false; }
+}
+function markWidowBriefSeen() {
+  try { localStorage.setItem(STORAGE.widowBrief, "1"); } catch (e) {}
+}
+let widowBriefReturn = { start: false, opts: null, fromHub: false };
+function showWidowBriefing(opts) {
+  opts = opts || {};
+  widowBriefReturn = { start: !!opts.start, opts: opts.startOpts || null, fromHub: !!opts.fromHub };
+  audio.unlock();
+  hideAllOverlays();
+  $("overlay-widow-tut").classList.remove("hidden");
+  if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
+}
+function closeWidowBriefing(opts) {
+  const el = $("overlay-widow-tut");
+  if (!el || el.classList.contains("hidden")) return;
+  markWidowBriefSeen();
+  el.classList.add("hidden");
+  const cancel = !!(opts && opts.cancel);
+  if (!cancel && widowBriefReturn.start) {
+    const startOpts = Object.assign({}, widowBriefReturn.opts || {}, { skipBrief: true });
+    widowBriefReturn = { start: false, opts: null };
+    if (window.XscapeWidow && XscapeWidow.startFight) XscapeWidow.startFight(startOpts);
+    return;
+  }
+  widowBriefReturn = { start: false, opts: null };
+  if (G.scene === "widow" && G.mode === "playing") return;
+  swallowNextTaps();
+  showTitle();
+}
+function closeWidowLoot() {
+  const el = $("overlay-widow-loot");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  swallowNextTaps();
+  showTitle();
+}
+if ($("btn-info-widow")) bindTap($("btn-info-widow"), (e) => { if (e && e.stopPropagation) e.stopPropagation(); showWidowBriefing({ fromHub: true }); });
+if ($("btn-widow-tut-ok")) bindTap($("btn-widow-tut-ok"), () => { audio.unlock(); closeWidowBriefing(); });
+if ($("btn-widow-tut-x")) bindTap($("btn-widow-tut-x"), () => { audio.unlock(); closeWidowBriefing({ cancel: true }); });
+if ($("overlay-widow-tut")) bindBackdropClose($("overlay-widow-tut"), () => { audio.unlock(); closeWidowBriefing({ cancel: true }); });
+if ($("btn-widow-help")) bindTap($("btn-widow-help"), () => { showWidowBriefing({ fromHub: false }); });
+if ($("btn-widow-again")) bindTap($("btn-widow-again"), () => { audio.unlock(); if (window.XscapeWidow) XscapeWidow.startFight({ skipBrief: true }); });
+if ($("btn-widow-title")) bindTap($("btn-widow-title"), () => { audio.unlock(); closeWidowLoot(); });
+window.showWidowBriefing = showWidowBriefing;
+window.widowBriefSeen = widowBriefSeen;
+window.markWidowBriefSeen = markWidowBriefSeen;
+window.closeWidowBriefing = closeWidowBriefing;
+window.closeWidowLoot = closeWidowLoot;
+
 function closeHowToPlay() {
   const el = $("overlay-tut");
   if (!el || el.classList.contains("hidden")) return;
@@ -6759,6 +6968,8 @@ function dismissTopOverlay() {
   if (overlayIsOpen("overlay-raid-tut")) { audio.unlock(); closeRaidBriefing(); return true; }
   if (overlayIsOpen("overlay-kree-tut")) { audio.unlock(); closeKreeBriefing({ cancel: true }); return true; }
   if (overlayIsOpen("overlay-kree-loot")) { audio.unlock(); closeKreeLoot(); return true; }
+  if (overlayIsOpen("overlay-widow-tut")) { audio.unlock(); closeWidowBriefing({ cancel: true }); return true; }
+  if (overlayIsOpen("overlay-widow-loot")) { audio.unlock(); closeWidowLoot(); return true; }
   return false;
 }
 bindTap($("btn-tut-ok"), closeHowToPlay);
@@ -6767,11 +6978,13 @@ bindBackdropClose($("overlay-tut"), closeHowToPlay);
 $("btn-again-win").addEventListener("click", () => {
   audio.unlock();
   if ((G.scene === "kree" || G._retryKree) && window.XscapeKree) { XscapeKree.startFight({ skipBrief: true }); return; }
+  if ((G.scene === "widow" || G._retryWidow) && window.XscapeWidow) { XscapeWidow.startFight({ skipBrief: true }); return; }
   startPlaying();
 });
 $("btn-again-lose").addEventListener("click", () => {
   audio.unlock();
   if ((G.scene === "kree" || G._retryKree) && window.XscapeKree) { XscapeKree.startFight({ skipBrief: true }); return; }
+  if ((G.scene === "widow" || G._retryWidow) && window.XscapeWidow) { XscapeWidow.startFight({ skipBrief: true }); return; }
   startPlaying();
 });
 $("btn-title-win").addEventListener("click", () => { showTitle(); });
@@ -6914,6 +7127,7 @@ window.G = G;
 window.Profile = Profile;
 window.Scenes = Scenes;
 window.audio = audio;
+window.TILE = TILE;
 window.ITEMS = ITEMS;
 window.LOADOUTS = LOADOUTS;
 window.MONSTERS = MONSTERS;
@@ -6940,6 +7154,7 @@ window.tryEnterGloamhold = tryEnterGloamhold;
 <script src="raid-sprites.js"></script>
 <script src="raid.js"></script>
 <script src="kree.js"></script>
+<script src="widow.js"></script>
 <script src="hub.js"></script>
 <script src="duel.js"></script>
 <script>
@@ -6951,6 +7166,11 @@ if (window.XscapeKree) {
   XscapeKree.install();
   if (window.Xscape) window.Xscape.kree = XscapeKree;
   if (window.KellenScape) window.KellenScape.kree = XscapeKree;
+}
+if (window.XscapeWidow) {
+  XscapeWidow.install();
+  if (window.Xscape) window.Xscape.widow = XscapeWidow;
+  if (window.KellenScape) window.KellenScape.widow = XscapeWidow;
 }
 if (window.XscapeHub) {
   XscapeHub.install();
@@ -6967,6 +7187,7 @@ if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
 $("top-hud").appendChild($("sound-btn"));
 if ($("btn-raid-help")) $("top-hud").appendChild($("btn-raid-help"));
 if ($("btn-kree-help")) $("top-hud").appendChild($("btn-kree-help"));
+if ($("btn-widow-help")) $("top-hud").appendChild($("btn-widow-help"));
 resize();
 showTitle();
 refreshTitleBest();

@@ -19,11 +19,12 @@
   const RANGE_POT_TICKS = 80;
   const GP_MIN = 1500000;
   const GP_MAX = 3000000;
+  const UNIQUE_RATE = 6;
   const DROP = [
-    { id: "armadyl_helmet", rate: 12 },
-    { id: "armadyl_chestplate", rate: 12 },
-    { id: "armadyl_chainskirt", rate: 12 },
-    { id: "armadyl_crossbow", rate: 25 }
+    { id: "armadyl_helmet" },
+    { id: "armadyl_chestplate" },
+    { id: "armadyl_chainskirt" },
+    { id: "armadyl_crossbow" }
   ];
   const MINIONS = [
     { id: "wingman-skree", kind: "skree", name: "Wingman Skree", style: "mage", maxHit: 8 },
@@ -599,13 +600,17 @@
 
   function rollLoot(force) {
     const items = [];
-    for (let i = 0; i < DROP.length; i++) {
-      const d = DROP[i];
-      const hit = force && force.indexOf(d.id) !== -1 ? true : (Math.random() < 1 / d.rate);
-      if (hit) items.push(d.id);
+    if (force && force.length) {
+      for (let i = 0; i < force.length; i++) items.push(force[i]);
+    } else if (Math.random() < 1 / UNIQUE_RATE) {
+      const pool = DROP.map(function (d) { return d.id; });
+      const unowned = pool.filter(function (id) {
+        return !(typeof global.isOwned === "function" && isOwned(id));
+      });
+      const pick = unowned.length ? unowned : pool;
+      items.push(pick[Math.floor(Math.random() * pick.length)]);
     }
-    const gp = irand(GP_MIN, GP_MAX);
-    return { items: items, gp: gp };
+    return { items: items, gp: irand(GP_MIN, GP_MAX) };
   }
 
   function grantLoot(loot) {
@@ -670,15 +675,23 @@
     ov.classList.remove("hidden");
   }
 
+  function awardedFrom(items, alreadySet) {
+    const set = alreadySet || [];
+    return (items || []).map(function (id) {
+      return {
+        id: id,
+        name: (global.ITEMS && ITEMS[id] && ITEMS[id].name) || id,
+        already: set.indexOf(id) !== -1
+      };
+    });
+  }
+
   function win() {
     const G = g();
     if (G.mode !== "playing") return;
     G.kree.hp = 0;
     if (typeof global.setPlayingChrome === "function") setPlayingChrome(false);
     G.mode = "win";
-    const loot = rollLoot(G._forceKreeLoot || null);
-    G._forceKreeLoot = null;
-    const awarded = grantLoot(loot);
     const result = {
       name: (global.Profile && Profile.name) || "Adventurer",
       bossName: "Kree'arra",
@@ -689,7 +702,36 @@
     };
     if (audio && audio.stopAmbient) audio.stopAmbient();
     if (audio && audio.win) audio.win();
-    showLoot(loot, awarded, result);
+    const force = G._forceKreeLoot || null;
+    G._forceKreeLoot = null;
+    const already = ((global.Profile && Profile.unlockedItems) || []).slice();
+    const cloud = global.XscapeCloud;
+    const finish = function (loot, awarded) {
+      showLoot(loot, awarded, result);
+    };
+    if (!force && cloud && typeof cloud.rpc === "function") {
+      Promise.resolve(cloud.rpc("record_kree_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
+        if (res && res.ok) {
+          const items = Array.isArray(res.items) ? res.items : [];
+          if (res.profile && typeof cloud.applyProfile === "function") {
+            cloud.applyProfile(res.profile, { fromAward: true });
+          }
+          finish({ items: items, gp: res.gpAwarded || 0 }, awardedFrom(items, already));
+        } else if (res && res.error === "offline") {
+          const loot = rollLoot(null);
+          finish(loot, grantLoot(loot));
+        } else {
+          if (typeof global.flashMsg === "function") flashMsg((res && res.error) || "Could not record the kill", "#ff8a70");
+          finish({ items: [], gp: 0 }, []);
+        }
+      }).catch(function () {
+        if (typeof global.flashMsg === "function") flashMsg("Could not record the kill", "#ff8a70");
+        finish({ items: [], gp: 0 }, []);
+      });
+      return;
+    }
+    const loot = rollLoot(force);
+    finish(loot, grantLoot(loot));
   }
 
   function lose() {
