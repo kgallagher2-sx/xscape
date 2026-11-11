@@ -1034,23 +1034,6 @@
     ctx.restore();
   }
 
-  function drawNameTag(ctx, x, y, name) {
-    if (!name) return;
-    ctx.save();
-    ctx.font = "bold 11px Trebuchet MS, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#000";
-    ctx.fillStyle = "#ffff00";
-    var tw = ctx.measureText(name).width;
-    var maxX = (state.layout && state.layout.cssW) ? state.layout.cssW - 6 : 384;
-    x = Math.max(tw / 2 + 6, Math.min(maxX - tw / 2, x));
-    ctx.strokeText(name, x, y);
-    ctx.fillText(name, x, y);
-    ctx.restore();
-  }
-
   function spriteScale(lay) {
     return (lay.tw / 42) * 0.92;
   }

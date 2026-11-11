@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111192702-e1edef1";</script>
+  <script>window.XSCAPE_BUILD = "20261111192834-f2c0dde";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -3776,25 +3776,63 @@ function rollJadGp() {
 }
 
 /** First kill while the profile does not own a Fire cape: cape + 0 GP.
-    Every later kill (cape already owned): random 2M–3M GP. */
+    Every later kill (cape already owned): random 2M–3M GP.
+    Signed-in awards are credited only by record_jad_kill; the card waits for
+    that server amount instead of a local roll. */
 function awardJadWinReward() {
   const firstCape = (typeof ownsFireCape === "function") ? !ownsFireCape() : !((Profile && (Profile.hasFireCape || (Profile.equipment && Profile.equipment.cape === "fire_cape"))) || (typeof isOwned === "function" && isOwned("fire_cape")));
   let gpAwarded = 0;
+  const signedIn = window.XscapeCloud && typeof XscapeCloud.hasSession === "function" && XscapeCloud.hasSession();
   if (firstCape) {
     if (typeof awardFireCape === "function") awardFireCape();
-  } else {
+  } else if (!signedIn) {
     gpAwarded = rollJadGp();
     awardGp(gpAwarded);
   }
   return { firstCape: !!firstCape, gpAwarded: gpAwarded };
 }
 
+function fmtGpExact(n) {
+  n = Math.floor(Number(n) || 0);
+  return n.toLocaleString("en-US");
+}
+
 function setWinTitle(firstCape, gpAwarded) {
   const el = $("win-title");
   if (!el) return;
   if (firstCape) el.textContent = "FIRE CAPE OBTAINED!";
-  else el.textContent = "+" + gpStyle(gpAwarded).text + " GP";
+  else el.textContent = "+" + fmtGpExact(gpAwarded) + " GP";
 }
+
+/** Apply the server-credited Magmor award to the pending/open win card. */
+function applyServerJadAward(res) {
+  if (!res || !res.ok) return;
+  const gp = res.gpAwarded != null ? Number(res.gpAwarded) : null;
+  if (gp == null || isNaN(gp)) return;
+  const total = (res.profile && res.profile.gp != null) ? Number(res.profile.gp)
+    : ((typeof Profile !== "undefined" && Profile.gp != null) ? Number(Profile.gp) : null);
+  const firstCape = !!(res.firstCape || res.first_cape);
+  if (G._pendingWin) {
+    G._pendingWin.gpAwarded = gp;
+    if (firstCape) G._pendingWin.firstCape = true;
+    if (G._pendingWin.result) {
+      G._pendingWin.result.gpAwarded = gp;
+      if (total != null && !isNaN(total)) G._pendingWin.result.gpTotal = total;
+      if (firstCape) G._pendingWin.result.firstCape = true;
+    }
+  }
+  const overlay = $("overlay-win");
+  if (overlay && !overlay.classList.contains("hidden")) {
+    setWinTitle(firstCape || (G._pendingWin && G._pendingWin.firstCape), gp);
+    const grid = $("win-stats");
+    const pending = G._pendingWin;
+    if (grid && pending && pending.result) {
+      fillResultGrid(grid, pending.result, pending.packed && pending.packed.score, true);
+    }
+  }
+}
+window.applyServerJadAward = applyServerJadAward;
+window.fmtGpExact = fmtGpExact;
 
 const audio = {
   ctx: null,
@@ -5187,10 +5225,8 @@ function fillResultGrid(el, result, score, survived) {
         rows.push(["GP total", total.text, total.class]);
       }
     } else if (result.gpAwarded) {
-      const earned = gpStyle(result.gpAwarded);
-      const total = gpStyle(result.gpTotal);
-      rows.push(["GP earned", "+" + earned.text, earned.class]);
-      rows.push(["GP total", total.text, total.class]);
+      rows.push(["GP earned", "+" + fmtGpExact(result.gpAwarded), "gold"]);
+      if (result.gpTotal != null) rows.push(["GP total", fmtGpExact(result.gpTotal), "gold"]);
     }
   }
   el.innerHTML = rows.map(([k, v, cls]) => {
@@ -5214,7 +5250,7 @@ function endWin() {
   if (!Profile.seenFirstKill) startFirstKill();
   else {
     G.mode = "win";
-    showWinCard();
+    showWinCardWhenReady();
   }
 }
 
@@ -6972,6 +7008,17 @@ function presentFkLine() {
 function finishFirstKill() {
   showCutsceneLayer(false);
   G.cs = null;
+  showWinCardWhenReady();
+}
+
+async function showWinCardWhenReady() {
+  const cloud = window.XscapeCloud;
+  if (cloud && typeof cloud.hasSession === "function" && cloud.hasSession() && typeof cloud.flushJadRecord === "function") {
+    try {
+      const res = await cloud.flushJadRecord();
+      if (typeof applyServerJadAward === "function") applyServerJadAward(res);
+    } catch (e) {}
+  }
   showWinCard();
 }
 
@@ -7004,8 +7051,7 @@ function showWinCard() {
   audio.win();
   if (pending.firstCape) flashMsg("Fire cape obtained!", "#ffe44a");
   else if (pending.gpAwarded) {
-    const gs = gpStyle(pending.gpAwarded);
-    flashMsg("+" + gs.text + " GP!", gs.color);
+    flashMsg("+" + fmtGpExact(pending.gpAwarded) + " GP!", "#ffe44a");
   }
   G._pendingWin = null;
 }

@@ -1657,9 +1657,9 @@
       return;
     }
     board.className = "";
-    var uid = session && session.user && session.user.id;
+    var me = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "";
     board.innerHTML = rows.slice(0, 25).map(function (r, i) {
-      var you = uid && r.id === uid ? " (you)" : "";
+      var you = me && r.username && r.username === me ? " (you)" : "";
       var kc, detail;
       if (view.id === "overall") {
         kc = boardTotalKills(r);
@@ -1680,7 +1680,7 @@
     bindBoardNav();
     boardLoadInFlight = true;
     var q = await sb.from("leaderboard").select(
-      "id,username,jad_kills,kree_kills,widow_kills,knight_kills,gorehorn_kills,colossus_kills,raid_completions," +
+      "username,jad_kills,kree_kills,widow_kills,knight_kills,gorehorn_kills,colossus_kills,raid_completions," +
       "jad_best_ticks,kree_best_ticks,widow_best_ticks,knight_best_ticks,gorehorn_best_ticks,colossus_best_ticks,raid_best_ticks"
     ).limit(200);
     try {
@@ -2532,7 +2532,13 @@
     // Batch award + submitScore on the same turn, then flush immediately.
     pendingJad.timer = setTimeout(function () { flushJadRecord(); }, 0);
   }
+  var flushJadPromise = null;
   async function flushJadRecord() {
+    if (flushJadPromise) return flushJadPromise;
+    flushJadPromise = flushJadRecordBody().finally(function () { flushJadPromise = null; });
+    return flushJadPromise;
+  }
+  async function flushJadRecordBody() {
     if (pendingJad.timer) { clearTimeout(pendingJad.timer); pendingJad.timer = null; }
     if (!session) return { ok: false, error: "offline" };
     if (!pendingJad.dirty) return { ok: true, skipped: true };
@@ -2551,6 +2557,9 @@
       if (res && res.ok && res.profile) {
         clearPendingJad();
         applyCloudProfile(res.profile, { fromAward: true });
+        if (typeof global.applyServerJadAward === "function") {
+          try { global.applyServerJadAward(res); } catch (e) {}
+        }
         return res;
       }
       pendingJad.dirty = true;
@@ -2806,6 +2815,7 @@
     client: function () { return sb; },
     rpc: rpc,
     reloadLeaderboard: loadLeaderboard,
+    flushJadRecord: flushJadRecord,
     startLobby: startLobby,
     awaySince: function () { return awaySince; },
     isHidden: isDocumentHidden,
