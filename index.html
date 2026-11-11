@@ -1759,11 +1759,12 @@
         <h2>The Hollow Knight-King</h2>
         <div class="tut-scroll sheet-scroll">
         <p>In a throne room flooding with shadow, the <b>Hollow Knight-King</b> still sits in his rusted crown. He is a solo fight — about level 520, with 600 Hitpoints. Bring food and potions from the bank provisioner; there are no free supplies here.</p>
-        <p><b>Move and attack.</b> The hall is a 5×5 grid. Tap the king or a spectral knight to set your target. Tap a floor tile to walk. Keyboard A/D/W/S or arrows also work. Melee and ranged both hit him.</p>
+        <p><b>Move and attack.</b> The hall is a 5×5 grid. Tap the king or a spectral knight to set your target. Tap a floor tile to walk. Keyboard A/D/W/S or arrows also work. Melee and ranged both hit him. He walks toward you and only swings his basic attack when he is next to you (up to 28). Protect from Melee blocks that hit.</p>
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons.</p>
         <p><b>Greatsword sweep:</b> glowing tiles mark a 3-tile cone, then he slashes (up to 30). Walk off the marks. Protect from Melee blocks the hit if you are still on a marked tile.</p>
+        <p><b>Crownfall:</b> a plus of five tiles lights on the floor, then slams (up to 36). Walk off the marks — a single step is not enough; take a diagonal or two steps. Prayer does not block this hit.</p>
         <p><b>Raise the guard:</b> he plants his sword and a ring of spectral knights closes in. They are frail — kill them before they reach you, or Protect from Melee to block their hits (up to 12).</p>
-        <p><b>Shattered armour:</b> around half health (or after enough specials) he breaks his own plate. He attacks faster, but takes 50% more damage.</p>
+        <p><b>Shattered armour:</b> around half health (or after enough specials) he breaks his own plate. He attacks faster, but takes 50% more damage. After it shatters, his crown and blade glow blue for a short beat, then a magic bolt flies (up to 28). Protect from Magic blocks it.</p>
         <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Kingsguard uniques (crowned full helm, platebody, platelegs, one-handed sword, and kiteshield) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. Uniques go to your bank. This kit is never sold.</p>
         <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
         </div>
@@ -6349,8 +6350,8 @@ canvas.addEventListener("pointerdown", (e) => {
   if (G.scene === "raid" && window.XscapeRaid) {
     audio.unlock();
     const pt = eventToArena(e);
+    // clickPx already queues the single OSRS click-X (npc or ground).
     window.XscapeRaid.clickPx(pt.x, pt.y, cssW, cssH);
-    if (typeof addClickMark === "function") addClickMark(pt.x, pt.y, "ground");
     return;
   }
   if (G.scene === "kree" && window.XscapeKree) {

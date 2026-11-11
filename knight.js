@@ -10,6 +10,14 @@
   const SWEEP_MAX = 30;
   const ADD_MAX = 12;
   const ADD_HP = 18;
+  const CROWNFALL_MAX = 36;
+  const CROWNFALL_TEL = 3;
+  const CROWNFALL_EVERY = 12;
+  const JUDGEMENT_MAX = 28;
+  const JUDGEMENT_TEL = 2;
+  const JUDGEMENT_EVERY = 16;
+  const JUDGEMENT_CHANCE = 0.80;
+  const JUDGEMENT_TRAVEL = 0.20;
   const GP_MIN = 150000;
   const GP_MAX = 400000;
   const SET_BONUS_MIN = 2000000;
@@ -35,6 +43,82 @@
   function clamp(n, a, b) { return n < a ? a : n > b ? b : n; }
   function irand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
   function audio() { return global.audio; }
+
+  function chebyshev(c1, r1, c2, r2) {
+    return Math.max(Math.abs((c1 || 0) - (c2 || 0)), Math.abs((r1 || 0) - (r2 || 0)));
+  }
+  function isMeleeAdjacent(a, b) {
+    if (!a || !b) return false;
+    const ac = a.tileCol != null ? a.tileCol : a.c;
+    const ar = a.tileRow != null ? a.tileRow : a.r;
+    const bc = b.tileCol != null ? b.tileCol : b.c;
+    const br = b.tileRow != null ? b.tileRow : b.r;
+    if (ac == null || ar == null || bc == null || br == null) return false;
+    return chebyshev(ac, ar, bc, br) <= 1;
+  }
+  function gridSize() {
+    return {
+      cols: (global.TILE && TILE.cols) || 5,
+      rows: (global.TILE && TILE.rows) || TILE_ROWS
+    };
+  }
+  function kingPos() {
+    const G = g();
+    const k = G && G.knight;
+    if (k && k.tileCol != null && k.tileRow != null && typeof global.tileCenter === "function") {
+      return tileCenter(k.tileCol, k.tileRow);
+    }
+    return bossCenter();
+  }
+  function syncKingPos() {
+    const G = g();
+    const k = G && G.knight;
+    if (!k) return;
+    const pos = kingPos();
+    k.x = pos.x;
+    k.y = pos.y;
+  }
+  // Chebyshev king-step, same as Spectral knights: one tile per tick, both
+  // axes at once, stop at Chebyshev <= 1, never occupy the player's tile.
+  function stepTowardPlayer(ent, p) {
+    if (!ent || !p) return false;
+    const grid = gridSize();
+    const ec = ent.tileCol;
+    const er = ent.tileRow;
+    if (ec == null || er == null) return false;
+    const dc = p.tileCol - ec;
+    const dr = p.tileRow - er;
+    if (Math.max(Math.abs(dc), Math.abs(dr)) <= 1) return false;
+    let nc = clamp(ec + (dc ? (dc > 0 ? 1 : -1) : 0), 0, grid.cols - 1);
+    let nr = clamp(er + (dr ? (dr > 0 ? 1 : -1) : 0), 0, grid.rows - 1);
+    if (nc === p.tileCol && nr === p.tileRow) return false;
+    ent.tileCol = nc;
+    ent.tileRow = nr;
+    return true;
+  }
+  function crownfallPending() {
+    const G = g();
+    if ((G.tileHazards || []).some(function (h) { return h && h.kind === "crownfall"; })) return true;
+    if (G.knight && G.knight._crownfallLeap) return true;
+    return false;
+  }
+  function judgementLive() {
+    const G = g();
+    const k = G && G.knight;
+    if (k && k.phase === "judgement") return true;
+    if ((G.knightShots || []).some(function (s) { return s && s.t < s.dur; })) return true;
+    return false;
+  }
+  function plusTiles(col, row) {
+    const grid = gridSize();
+    const tiles = [{ c: col, r: row }];
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (let i = 0; i < dirs.length; i++) {
+      const c = col + dirs[i][0], r = row + dirs[i][1];
+      if (c >= 0 && c < grid.cols && r >= 0 && r < grid.rows) tiles.push({ c: c, r: r });
+    }
+    return tiles;
+  }
 
   function claimTiles() {
     if (!global.TILE || tileOwned) return;
@@ -105,11 +189,13 @@
     G.knight = {
       hp: KNIGHT_HP, maxHp: KNIGHT_HP, phase: "idle", style: "melee",
       telLeft: 0, recLeft: 1, telLen: KNIGHT_TEL, hurt: 0,
-      x: bc.x, y: bc.y, shattered: false, plant: 0,
-      nextSpecial: 10, specials: 0, raiseEvery: 2
+      x: bc.x, y: bc.y, tileCol: 2, tileRow: 3, shattered: false, plant: 0,
+      nextSpecial: 10, specials: 0, raiseEvery: 2,
+      nextCrownfall: 8, nextJudgement: null
     };
     G.knightAdds = [];
     G.knightCones = [];
+    G.knightShots = [];
     G.minions = [];
     G.widow = null;
     G.kree = null;
@@ -248,19 +334,31 @@
       if (typeof global.spawnSplat === "function") spawnSplat(p.x, p.y - 0.08, 0, "blue");
       return 0;
     }
-    const prayed = !opts.force && G.prayer === (style === "mage" || style === "magic" ? "mage" : "melee");
+    const typeless = !!(opts.typeless || opts.ignorePrayer);
+    const mageStyle = style === "mage" || style === "magic";
+    const prayed = !opts.force && !typeless && G.prayer === (mageStyle ? "mage" : "melee");
     G.prayerChecks++;
     if (prayed) G.perfectPrayers++;
     if (prayed) {
       if (typeof global.spawnSplat === "function") spawnSplat(p.x + (Math.random() - 0.5) * 0.06, p.y - 0.08, 0, "blue");
       return 0;
     }
+    if (typeless) {
+      const maxT = opts.max || CROWNFALL_MAX;
+      const dmgT = irand(1, maxT);
+      p.hp = clamp(p.hp - dmgT, 0, global.PLAYER_MAX_HP || 99);
+      G.damageTaken += dmgT;
+      if (typeof global.spawnSplat === "function") spawnSplat(p.x + (Math.random() - 0.5) * 0.06, p.y - 0.08, dmgT, "red");
+      if (p.hp <= 0) lose();
+      return dmgT;
+    }
     const monId = "hollow-knight-king";
     const vs = (typeof global.monsterVsPlayer === "function")
-      ? monsterVsPlayer(monId, style === "mage" ? "mage" : "melee")
+      ? monsterVsPlayer(monId, mageStyle ? "mage" : "melee")
       : { maxHit: opts.max || BASIC_MAX, chance: 0.8 };
     const max = opts.max || vs.maxHit || BASIC_MAX;
-    const dmg = opts.force ? Math.max(1, opts.max || max) : ((typeof global.rollHit === "function") ? rollHit(max, vs.chance == null ? 0.85 : vs.chance) : irand(0, max));
+    const chance = opts.chance != null ? opts.chance : (vs.chance == null ? 0.85 : vs.chance);
+    const dmg = opts.force ? Math.max(1, opts.max || max) : ((typeof global.rollHit === "function") ? rollHit(max, chance) : irand(0, max));
     if (dmg <= 0) {
       if (typeof global.spawnSplat === "function") spawnSplat(p.x, p.y - 0.08, 0, "blue");
       return 0;
@@ -304,7 +402,7 @@
     G.knight.hp = clamp(G.knight.hp - dealt, 0, KNIGHT_HP);
     G.knight.hurt = 0.4;
     if (typeof global.spawnSplat === "function") {
-      const bc = bossCenter();
+      const bc = kingPos();
       spawnSplat(bc.x, bc.y - 0.12, dealt, dealt > 0 ? "red" : "blue");
     }
     if (G.knight.hp <= 0) win();
@@ -427,6 +525,154 @@
     });
   }
 
+  function launchCrownfall() {
+    const G = g();
+    const k = G && G.knight;
+    const p = G && G.player;
+    if (!k || !p) return null;
+    const center = { c: p.tileCol, r: p.tileRow };
+    const tiles = plusTiles(center.c, center.r);
+    k._crownfallLeap = center;
+    k.crownfallTiles = tiles;
+    if (typeof global.launchTileAttack === "function") {
+      tiles.forEach(function (t) {
+        launchTileAttack({
+          kind: "crownfall",
+          col: t.c,
+          row: t.r,
+          delayTicks: CROWNFALL_TEL,
+          prayer: null,
+          source: "knight",
+          damage: function () {
+            if (G.knightGod) return 0;
+            return irand(1, CROWNFALL_MAX);
+          }
+        });
+      });
+    }
+    return tiles;
+  }
+
+  function finishCrownfallIfResolved() {
+    const G = g();
+    const k = G && G.knight;
+    if (!k || !k._crownfallLeap) return;
+    if ((G.tileHazards || []).some(function (h) { return h && h.kind === "crownfall"; })) return;
+    const c = k._crownfallLeap;
+    k.tileCol = c.c;
+    k.tileRow = c.r;
+    syncKingPos();
+    k._crownfallLeap = null;
+    k.crownfallTiles = null;
+    if (k.phase === "idle" || k.phase === "recover") {
+      k.phase = "recover";
+      k.recLeft = Math.max(k.recLeft || 0, 1);
+      k.plant = Math.max(k.plant || 0, 1);
+    }
+  }
+
+  function maybeCrownfall() {
+    const G = g();
+    const k = G && G.knight;
+    if (!k || k.hp <= 0) return;
+    if (crownfallPending()) return;
+    if (k.nextCrownfall > 0) k.nextCrownfall--;
+    if (k.nextCrownfall > 0) return;
+    if (judgementLive()) return;
+    launchCrownfall();
+    k.nextCrownfall = CROWNFALL_EVERY + irand(0, 2);
+  }
+
+  function startJudgement() {
+    const G = g();
+    const k = G && G.knight;
+    if (!k) return;
+    k.phase = "judgement";
+    k.style = "mage";
+    k.telLeft = JUDGEMENT_TEL;
+    k.telLen = JUDGEMENT_TEL;
+    if (audio() && audio().tell) audio().tell("mage");
+  }
+
+  function fireJudgement() {
+    const G = g();
+    const k = G && G.knight;
+    const p = G && G.player;
+    if (!k) return;
+    k.phase = "recover";
+    k.recLeft = Math.max(1, k.recLeft || 0);
+    if (!p || p.hp <= 0) {
+      k.style = "melee";
+      return;
+    }
+    if (!G.knightShots) G.knightShots = [];
+    G.knightShots.push({
+      kind: "judgement",
+      style: "mage",
+      t: 0,
+      dur: JUDGEMENT_TRAVEL,
+      from: { x: k.x, y: k.y - 0.04 },
+      to: { x: p.x, y: p.y - 0.04 }
+    });
+    if (audio() && audio().wind) audio().wind();
+  }
+
+  function maybeJudgement() {
+    const G = g();
+    const k = G && G.knight;
+    if (!k || k.hp <= 0 || !k.shattered) return;
+    if (k.nextJudgement == null) k.nextJudgement = JUDGEMENT_EVERY + irand(0, 2);
+    if (judgementLive()) return;
+    if (k.nextJudgement > 0) k.nextJudgement--;
+    if (k.nextJudgement > 0) return;
+    if (crownfallPending()) return;
+    startJudgement();
+    k.nextJudgement = JUDGEMENT_EVERY + irand(0, 2);
+  }
+
+  function tickKnightShots(dt, ctx, cssW, cssH) {
+    const G = g();
+    if (!G.knightShots) return;
+    const keep = [];
+    for (let i = 0; i < G.knightShots.length; i++) {
+      const s = G.knightShots[i];
+      s.t += dt;
+      const k = Math.max(0, Math.min(1, s.t / (s.dur || JUDGEMENT_TRAVEL)));
+      if (ctx && isFinite(cssW) && isFinite(cssH)) {
+        const x = (s.from.x + (s.to.x - s.from.x) * k) * cssW;
+        const y = (s.from.y + (s.to.y - s.from.y) * k) * cssH - Math.sin(k * Math.PI) * 16;
+        ctx.save();
+        const rad = 10 + (1 - k) * 4;
+        const grd = ctx.createRadialGradient(x, y, 1, x, y, rad);
+        grd.addColorStop(0, "#f4fbff");
+        grd.addColorStop(0.35, "#80d0ff");
+        grd.addColorStop(1, "rgba(40,80,200,0)");
+        ctx.fillStyle = grd;
+        ctx.globalAlpha = 0.95;
+        ctx.beginPath();
+        ctx.arc(x, y, rad, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      if (s.t >= s.dur) {
+        applyKingHit("mage", { max: JUDGEMENT_MAX, chance: JUDGEMENT_CHANCE, kind: "judgement" });
+        const kk = G.knight;
+        if (kk && kk.style === "mage" && kk.phase !== "judgement") kk.style = "melee";
+      } else keep.push(s);
+    }
+    G.knightShots = keep;
+  }
+
+  function kingCanWalk() {
+    const G = g();
+    const k = G && G.knight;
+    if (!k || k.hp <= 0) return false;
+    if (crownfallPending()) return false;
+    if (k.phase === "sweep" || k.phase === "plant" || k.phase === "shatter" || k.phase === "judgement") return false;
+    if (k.phase === "recover" && k.recLeft > 0) return false;
+    return true;
+  }
+
   function pickSpecial() {
     const G = g();
     const k = G.knight;
@@ -469,14 +715,22 @@
       if (k.phase === "idle" || (k.phase === "recover" && k.recLeft <= 0) || (k.phase === "shatter" && k.recLeft <= 0) || (k.phase === "plant" && k.recLeft <= 0)) {
         k.phase = "idle";
         k.recLeft = 0;
-        k.nextSpecial--;
+      }
+      if (kingCanWalk()) stepTowardPlayer(k, G.player);
+      syncKingPos();
+      if (k.phase === "idle") {
+        const busy = crownfallPending() || judgementLive();
         const speed = k.shattered ? SHATTER_SPEED : KNIGHT_SPEED;
-        if (k.nextSpecial <= 0) {
+        if (!busy) k.nextSpecial--;
+        if (!busy && k.nextSpecial <= 0) {
           pickSpecial();
           k.nextSpecial = speed + irand(0, 2);
-        } else if ((G.ticks % speed) === 0) {
+        } else if (!busy && k.phase === "idle" && (G.ticks % speed) === 0 && isMeleeAdjacent(k, G.player)) {
           applyKingHit("melee", { max: BASIC_MAX, kind: "basic" });
         }
+      } else if (k.phase === "judgement") {
+        k.telLeft--;
+        if (k.telLeft <= 0) fireJudgement();
       } else if (k.phase === "sweep") {
         k.telLeft--;
         if (G.knightCones[0]) G.knightCones[0].tel = k.telLeft;
@@ -484,11 +738,16 @@
       } else if (k.phase === "recover" || k.phase === "shatter" || k.phase === "plant") {
         k.recLeft--;
       }
+      syncKingPos();
     }
 
     tickAdds();
+    maybeCrownfall();
+    maybeJudgement();
     if (typeof global.processMovement === "function") processMovement();
     if (typeof global.tickTileAttacks === "function") tickTileAttacks();
+    finishCrownfallIfResolved();
+    if (k) syncKingPos();
 
     G.player.atkCd--;
     if (G.player.atkCd < 0) G.player.atkCd = 0;
@@ -537,6 +796,24 @@
       });
     });
 
+    // Crownfall plus — gold/shadow floor marks, no word callouts
+    (G.tileHazards || []).forEach(function (h) {
+      if (!h || h.kind !== "crownfall") return;
+      const rec = (typeof global.tileRect === "function") ? tileRect(h.col, h.row) : null;
+      const pulse = 0.30 + 0.24 * Math.sin(((t || 0) * 9) + (h.delay || 0));
+      ctx.save();
+      if (rec && isFinite(rec.x) && isFinite(rec.w)) {
+        ctx.fillStyle = "rgba(40,24,12," + (0.22 + pulse * 0.35) + ")";
+        ctx.fillRect(rec.x, rec.y, rec.w, rec.h);
+        ctx.fillStyle = "rgba(232,208,80," + pulse + ")";
+        ctx.fillRect(rec.x + 2, rec.y + 2, rec.w - 4, rec.h - 4);
+        ctx.strokeStyle = "rgba(255,230,140,0.95)";
+        ctx.lineWidth = 2.2;
+        ctx.strokeRect(rec.x + 1, rec.y + 1, rec.w - 2, rec.h - 2);
+      }
+      ctx.restore();
+    });
+
     // Adds
     (G.knightAdds || []).forEach(function (add) {
       if (!add.alive && !(add.dying > 0 || add.fade > 0)) return;
@@ -551,23 +828,36 @@
 
     // King
     if (G.knight && G.knight.hp > 0) {
-      const bc = bossCenter();
+      const bc = kingPos();
       ctx.save();
       ctx.translate(bc.x * cssW, bc.y * cssH);
       const sc = kingScale();
+      if (G.knight.phase === "judgement") {
+        const pulse = 0.40 + 0.30 * Math.sin((t || 0) * 10);
+        const grd = ctx.createRadialGradient(0, -18, 4, 0, -8, 48);
+        grd.addColorStop(0, "rgba(180,230,255," + pulse + ")");
+        grd.addColorStop(0.45, "rgba(60,140,255,0.35)");
+        grd.addColorStop(1, "rgba(20,40,120,0)");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(0, -8, 48, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.scale(sc, sc);
       if (art && art.drawKing) {
         art.drawKing(ctx, t, {
           shattered: G.knight.shattered,
           hurt: G.knight.hurt,
           plant: G.knight.plant > 0 || G.knight.phase === "plant",
-          sweep: G.knight.phase === "sweep" ? (1 - (G.knight.telLeft / (G.knight.telLen || 3))) : 0
+          sweep: G.knight.phase === "sweep" ? (1 - (G.knight.telLeft / (G.knight.telLen || 3))) : 0,
+          mage: G.knight.phase === "judgement"
         });
       }
       ctx.restore();
     }
 
     const dt = Math.min(0.05, 1 / 60);
+    tickKnightShots(dt, ctx, cssW, cssH);
     if (typeof global.drawPlayer === "function") drawPlayer(t);
     if (typeof global.drawBolts === "function") drawBolts(dt);
     if (typeof global.drawSplats === "function") drawSplats(dt);
@@ -993,8 +1283,12 @@
       return DROP.map(function (d) { return d.id; });
     },
     launchSweep: function (tiles) { return launchSweep(tiles); },
+    launchCrownfall: function () { return launchCrownfall(); },
+    startJudgement: function () { startJudgement(); return "judgement"; },
+    tickShots: function (dt) { tickKnightShots(dt == null ? 1 : dt); },
     raiseKnights: function () { raiseKnights(); return (g().knightAdds || []).length; },
     shatterArmor: function () { shatterArmor(); return !!(g().knight && g().knight.shattered); },
+    isMeleeAdjacent: isMeleeAdjacent,
     testHit: function (style, opts) { return applyKingHit(style || "melee", opts || { force: true, max: 30 }); },
     freeze: function (on) { const G = g(); if (G) G.knightFrozen = !!on; return !!(G && G.knightFrozen); },
     killAdds: function () {

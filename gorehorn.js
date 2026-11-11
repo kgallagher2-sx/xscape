@@ -50,6 +50,61 @@
   function irand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
   function audio() { return global.audio; }
 
+  function chebyshev(c1, r1, c2, r2) {
+    return Math.max(Math.abs((c1 || 0) - (c2 || 0)), Math.abs((r1 || 0) - (r2 || 0)));
+  }
+  function isMeleeAdjacent(a, b) {
+    if (!a || !b) return false;
+    const ac = a.tileCol != null ? a.tileCol : a.c;
+    const ar = a.tileRow != null ? a.tileRow : a.r;
+    const bc = b.tileCol != null ? b.tileCol : b.c;
+    const br = b.tileRow != null ? b.tileRow : b.r;
+    if (ac == null || ar == null || bc == null || br == null) return false;
+    return chebyshev(ac, ar, bc, br) <= 1;
+  }
+  function gorePos() {
+    const G = g();
+    const k = G && G.gorehorn;
+    if (k && k.tileCol != null && k.tileRow != null && typeof global.tileCenter === "function") {
+      return tileCenter(k.tileCol, k.tileRow);
+    }
+    return bossCenter();
+  }
+  function syncGorePos() {
+    const G = g();
+    const k = G && G.gorehorn;
+    if (!k) return;
+    const pos = gorePos();
+    k.x = pos.x;
+    k.y = pos.y;
+  }
+  // Chebyshev king-step: one tile per tick, stop at <= 1, never occupy the player.
+  function stepTowardPlayer(ent, p) {
+    if (!ent || !p) return false;
+    const cols = (global.TILE && TILE.cols) || 5;
+    const rows = (global.TILE && TILE.rows) || TILE_ROWS;
+    if (ent.tileCol == null || ent.tileRow == null) return false;
+    const dc = p.tileCol - ent.tileCol;
+    const dr = p.tileRow - ent.tileRow;
+    if (Math.max(Math.abs(dc), Math.abs(dr)) <= 1) return false;
+    let nc = clamp(ent.tileCol + (dc ? (dc > 0 ? 1 : -1) : 0), 0, cols - 1);
+    let nr = clamp(ent.tileRow + (dr ? (dr > 0 ? 1 : -1) : 0), 0, rows - 1);
+    if (nc === p.tileCol && nr === p.tileRow) return false;
+    ent.tileCol = nc;
+    ent.tileRow = nr;
+    return true;
+  }
+  function goreCanWalk() {
+    const G = g();
+    const k = G && G.gorehorn;
+    if (!k || k.hp <= 0) return false;
+    if (k.stunned || k.phase === "stun") return false;
+    if (k.phase === "charge" || k.charging) return false;
+    if (k.phase === "stomp") return false;
+    if (k.phase === "recover" && k.recLeft > 0) return false;
+    return true;
+  }
+
   function claimTiles() {
     if (!global.TILE || tileOwned) return;
     savedTileRows = TILE.rows || 1;
@@ -119,7 +174,8 @@
     G.gorehorn = {
       hp: GOREHORN_HP, maxHp: GOREHORN_HP, phase: "idle", style: "melee",
       telLeft: 0, recLeft: 1, telLen: GOREHORN_TEL, hurt: 0,
-      x: bc.x, y: bc.y, stunned: false, shattered: false, charging: false, stomp: 0,
+      x: bc.x, y: bc.y, tileCol: 2, tileRow: 3,
+      stunned: false, shattered: false, charging: false, stomp: 0,
       nextSpecial: 8, specials: 0
     };
     G.gorehornRocks = [];
@@ -332,7 +388,7 @@
     G.gorehorn.hp = clamp(G.gorehorn.hp - dealt, 0, GOREHORN_HP);
     G.gorehorn.hurt = 0.4;
     if (typeof global.spawnSplat === "function") {
-      const bc = bossCenter();
+      const bc = gorePos();
       spawnSplat(bc.x, bc.y - 0.12, dealt, dealt > 0 ? "red" : "blue");
     }
     if (G.gorehorn.hp <= 0) win();
@@ -483,16 +539,19 @@
       } else if (k.phase === "idle" || (k.phase === "recover" && k.recLeft <= 0)) {
         k.phase = "idle";
         k.recLeft = 0;
+        if (goreCanWalk()) stepTowardPlayer(k, G.player);
+        syncGorePos();
         k.nextSpecial--;
         if (k.nextSpecial <= 0) {
           pickSpecial();
           k.nextSpecial = GOREHORN_SPEED + irand(0, 2);
-        } else if ((G.ticks % GOREHORN_SPEED) === 0) {
+        } else if ((G.ticks % GOREHORN_SPEED) === 0 && isMeleeAdjacent(k, G.player)) {
           applyGoreHit("melee", { max: BASIC_MAX, kind: "basic" });
         }
       } else if (k.phase === "recover") {
         k.recLeft--;
       }
+      syncGorePos();
     }
 
     tickRocks();
@@ -569,7 +628,7 @@
     });
 
     if (G.gorehorn && G.gorehorn.hp > 0) {
-      const bc = bossCenter();
+      const bc = gorePos();
       ctx.save();
       ctx.translate(bc.x * cssW, bc.y * cssH);
       const sc = goreScale();
@@ -662,7 +721,7 @@
       }
     }
     if (!hit && G.gorehorn && G.gorehorn.hp > 0) {
-      const bc = bossCenter();
+      const bc = gorePos();
       const dx = (nx - bc.x) * cssW, dy = (ny - bc.y) * cssH;
       const rx = 64 * sc, ry = 80 * sc;
       if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
