@@ -525,12 +525,23 @@
       max = maxHitFrom(effectivePlayerLevel(combatSkillLevel("strength", useBase), 1, stance), pb.str);
     }
     const atkRoll = maxRoll(atkLevel, atkBonus);
-    const defRoll = maxRoll(effectiveNpcLevel(mon.defence), styleDefenceBonus(mon.defBonuses || emptyBonuses(), style));
+    // Default (FLAGS.npcMagicDefUsesMagicLevel = false): identical to the
+    // historical path — general defence level for every style, including magic.
+    var npcDefLevel = mon.defence;
+    var npcDefBonus = styleDefenceBonus(mon.defBonuses || emptyBonuses(), style);
+    if ((style === "mage" || style === "magic") && FLAGS && FLAGS.npcMagicDefUsesMagicLevel) {
+      var flagStats = npcStats(mon);
+      npcDefLevel = (flagStats.levels && flagStats.levels.magic != null)
+        ? flagStats.levels.magic
+        : (mon.magic != null ? mon.magic : mon.defence);
+      npcDefBonus = styleDefenceBonus(flagStats.def || mon.defBonuses || emptyBonuses(), "magic");
+    }
+    const defRoll = maxRoll(effectiveNpcLevel(npcDefLevel), npcDefBonus);
     const chance = hitChance(atkRoll, defRoll);
     return {
       style, maxHit: max, chance, atkRoll, defRoll,
-      atkLevel, atkBonus, defLevel: mon.defence,
-      defBonus: styleDefenceBonus(mon.defBonuses || emptyBonuses(), style),
+      atkLevel, atkBonus, defLevel: npcDefLevel,
+      defBonus: npcDefBonus,
       expected: expectedDamage(max, chance)
     };
   }
@@ -601,6 +612,370 @@
     return max;
   }
 
+
+
+  /* ---------- NPC STATS (Combat Balance, 2026-11-11) ----------
+     Approved refactor (Gameboy / Kellen): bosses use the same stat system
+     as players; players are always level 99. This block is additive.
+     MONSTERS data and boss/raid files are not migrated here — helpers
+     accept both the current legacy shape (hand-set maxHit, defence /
+     defBonuses) and the new shape Boss Mechanics will move each entry to:
+
+       { name, hp, levels:{attack,strength,defence,magic,ranged},
+         atk:{astab,aslash,acrush,amagic,arange,str,rstr,mdmg},
+         def:{dstab,dslash,dcrush,dmagic,drange},
+         attacks:[{style, speed, magicBase?, maxHit?, overrideReason?,
+                   reach?, special?, accuracy?}],
+         phases?:[{levels?,atk?,def?}], weakness?, groupHpScale:true }
+
+     A special attack (special: true) carries a fixed accuracy in 0..1 and
+     a fixed maxHit. npcHitChance / npcMaxHit return those values directly.
+     Specials are an allowed category, not an exception — no overrideReason
+     and no warning.
+
+     A non-special attack.maxHit is a formula override and should set
+     overrideReason (console.warn if missing).
+
+     FLAGS.npcMagicDefUsesMagicLevel defaults to false, which keeps today's
+     player-vs-monster magic accuracy (NPC general defence level). When
+     true, the magic defence roll is (magic+9)*(dmagic+64). */
+  const FLAGS = {
+    npcMagicDefUsesMagicLevel: false
+  };
+  const NPC_PLAYER_LEVEL = 99;
+
+  function normalizeNpcStyle(style) {
+    if (style === "range" || style === "ranged") return "ranged";
+    if (style === "mage" || style === "magic") return "magic";
+    if (style === "slash" || style === "stab" || style === "crush") return style;
+    if (style === "melee") return "crush";
+    return style || "crush";
+  }
+
+  function isNpcSpecialAttack(attack) {
+    return !!(attack && attack.special === true);
+  }
+
+  function emptyNpcLevels() {
+    return { attack: 1, strength: 1, defence: 1, magic: 1, ranged: 1 };
+  }
+
+  function isNewNpcShape(mon) {
+    return !!(mon && mon.levels && typeof mon.levels === "object");
+  }
+
+  function npcPhasePartial(mon, phaseIdx) {
+    if (!mon || mon.phases == null || phaseIdx == null || phaseIdx === false) return null;
+    const phases = mon.phases;
+    if (Array.isArray(phases)) {
+      if (phases[phaseIdx]) return phases[phaseIdx];
+      if (phaseIdx >= 1 && phases[phaseIdx - 1]) return phases[phaseIdx - 1];
+      return null;
+    }
+    if (typeof phases === "object") {
+      if (phases[phaseIdx]) return phases[phaseIdx];
+      if (phaseIdx >= 1 && phases[phaseIdx - 1]) return phases[phaseIdx - 1];
+    }
+    return null;
+  }
+
+  function npcStats(mon, phaseIdx) {
+    mon = mon || {};
+    let levels, atk, def, attacks, legacy;
+    if (isNewNpcShape(mon)) {
+      levels = Object.assign(emptyNpcLevels(), mon.levels);
+      atk = Object.assign(emptyBonuses(), mon.atk || mon.bonuses || {});
+      def = Object.assign(emptyBonuses(), mon.def || mon.defBonuses || {});
+      attacks = Array.isArray(mon.attacks) ? mon.attacks.slice() : [];
+      legacy = false;
+    } else {
+      levels = {
+        attack: mon.attack != null ? mon.attack : 1,
+        strength: mon.strength != null ? mon.strength : 1,
+        defence: mon.defence != null ? mon.defence : 1,
+        magic: mon.magic != null ? mon.magic : 1,
+        ranged: mon.ranged != null ? mon.ranged : 1
+      };
+      atk = Object.assign(emptyBonuses(), mon.bonuses || {});
+      def = Object.assign(emptyBonuses(), mon.defBonuses || {});
+      attacks = [];
+      if (mon.maxHit && typeof mon.maxHit === "object" && !Array.isArray(mon.maxHit)) {
+        const keys = Object.keys(mon.maxHit);
+        for (let i = 0; i < keys.length; i++) {
+          const k = keys[i];
+          attacks.push({
+            style: k === "mage" ? "magic" : k,
+            maxHit: mon.maxHit[k],
+            speed: mon.attackSpeed || mon.speed,
+            overrideReason: "legacy hand-set maxHit"
+          });
+        }
+      }
+      legacy = true;
+    }
+    const out = {
+      name: mon.name || null,
+      id: mon.id || null,
+      hp: (mon.hp != null ? mon.hp : mon.hitpoints),
+      levels: levels,
+      atk: atk,
+      def: def,
+      attacks: attacks,
+      phases: mon.phases,
+      weakness: mon.weakness,
+      groupHpScale: mon.groupHpScale,
+      legacy: legacy,
+      osrsDefence: mon.osrsDefence,
+      flying: mon.flying
+    };
+    const partial = npcPhasePartial(mon, phaseIdx);
+    if (partial) {
+      if (partial.levels) out.levels = Object.assign({}, out.levels, partial.levels);
+      if (partial.atk) out.atk = Object.assign({}, out.atk, partial.atk);
+      if (partial.def) out.def = Object.assign({}, out.def, partial.def);
+      if (partial.hp != null) out.hp = partial.hp;
+    }
+    return out;
+  }
+
+  function resolveNpcAttack(mon, attack) {
+    if (attack && typeof attack === "object") return attack;
+    const style = normalizeNpcStyle(attack || "ranged");
+    const stats = npcStats(mon);
+    if (stats.attacks && stats.attacks.length) {
+      for (let i = 0; i < stats.attacks.length; i++) {
+        if (normalizeNpcStyle(stats.attacks[i].style) === style) return stats.attacks[i];
+      }
+    }
+    if (mon && mon.maxHit && typeof mon.maxHit === "object") {
+      const key = (style === "magic") ? "mage" : style;
+      const mh = mon.maxHit[key] != null ? mon.maxHit[key]
+        : (mon.maxHit.melee != null ? mon.maxHit.melee : mon.maxHit.ranged);
+      if (mh != null) {
+        return { style: style, maxHit: mh, overrideReason: "legacy hand-set maxHit" };
+      }
+    }
+    return { style: style };
+  }
+
+  function npcMaxHit(mon, attack, phaseIdx) {
+    attack = resolveNpcAttack(mon, attack);
+    if (isNpcSpecialAttack(attack)) {
+      return attack.maxHit != null ? attack.maxHit : 0;
+    }
+    if (attack.maxHit != null) {
+      if (!attack.overrideReason) {
+        try {
+          if (typeof console !== "undefined" && console.warn) {
+            console.warn("npcMaxHit: attack.maxHit override is missing overrideReason",
+              (mon && (mon.id || mon.name)) || "?", attack.style || "");
+          }
+        } catch (e) {}
+      }
+      return attack.maxHit;
+    }
+    const stats = npcStats(mon, phaseIdx);
+    const style = normalizeNpcStyle(attack.style);
+    if (style === "ranged") {
+      return maxHitFrom(effectiveNpcLevel(stats.levels.ranged), stats.atk.rstr || 0);
+    }
+    if (style === "magic") {
+      const base = attack.magicBase != null ? attack.magicBase : 0;
+      return spellMaxHitFrom(base, stats.atk.mdmg || 0);
+    }
+    return maxHitFrom(effectiveNpcLevel(stats.levels.strength), stats.atk.str || 0);
+  }
+
+  function npcPlayerDefenceLevel(style, stanceDef) {
+    stanceDef = stanceDef || 0;
+    if (normalizeNpcStyle(style) === "magic") {
+      return Math.floor(0.7 * NPC_PLAYER_LEVEL + 0.3 * NPC_PLAYER_LEVEL) + 8 + stanceDef;
+    }
+    return NPC_PLAYER_LEVEL + 8 + stanceDef;
+  }
+
+  function npcHitChance(mon, attack, playerEq, phaseIdx) {
+    attack = resolveNpcAttack(mon, attack);
+    if (isNpcSpecialAttack(attack)) {
+      const acc = Number(attack.accuracy);
+      if (!isFinite(acc)) return 0;
+      if (acc < 0) return 0;
+      if (acc > 1) return 1;
+      return acc;
+    }
+    const stats = npcStats(mon, phaseIdx);
+    const style = normalizeNpcStyle(attack.style);
+    let atkLevel;
+    if (style === "ranged") atkLevel = stats.levels.ranged;
+    else if (style === "magic") atkLevel = stats.levels.magic;
+    else atkLevel = stats.levels.attack;
+    const atkBonus = styleAttackBonus(stats.atk, style);
+    const atkRoll = maxRoll(effectiveNpcLevel(atkLevel), atkBonus);
+    const pb = playerBonuses(playerEq);
+    const defLevel = npcPlayerDefenceLevel(style, attack.stanceDef || 0);
+    const defBonus = styleDefenceBonus(pb, style);
+    const defRoll = maxRoll(defLevel, defBonus);
+    return hitChance(atkRoll, defRoll);
+  }
+
+  // Solve level / bonus pairs that reproduce a legacy hand-set max hit or a
+  // target hit chance. Used by /workspace/xscape-balance/solve-npc.js.
+  // opts: { target: "maxHit"|"hitChance", style, maxHit?, chance?,
+  //         playerEq?, defRoll?, preferLevel?, preferBonus?,
+  //         maxLevel?, maxBonus? }
+  function solveNpcLevel(opts) {
+    opts = opts || {};
+    const style = normalizeNpcStyle(opts.style || "crush");
+    const maxLevel = opts.maxLevel != null ? opts.maxLevel : 2000;
+    const maxBonus = opts.maxBonus != null ? opts.maxBonus : 300;
+    const preferLevel = opts.preferLevel;
+    const preferBonus = opts.preferBonus;
+    const out = { target: opts.target, style: style, exact: [], preferred: null, closest: null };
+
+    function considerMaxHit(level, bonus, computed) {
+      const want = opts.maxHit;
+      const err = Math.abs(computed - want);
+      const rec = { level: level, bonus: bonus, computed: computed, error: err, exact: computed === want };
+      if (computed === want) out.exact.push(rec);
+      if (!out.closest || err < out.closest.error) out.closest = rec;
+      return rec;
+    }
+
+    if (opts.target === "maxHit") {
+      const want = opts.maxHit;
+      if (style === "magic") {
+        // floor(base * (1+mdmg/100)) = want. Enumerate mdmg 0..100 and base.
+        for (let mdmg = 0; mdmg <= 100; mdmg++) {
+          for (let base = 0; base <= Math.max(want * 2, 200); base++) {
+            const computed = spellMaxHitFrom(base, mdmg);
+            considerMaxHit(base, mdmg, computed);
+          }
+        }
+        // preferred: prefer mdmg matching preferBonus, else mdmg 0 with base=want
+        const exact = out.exact.slice();
+        function pickMagic(pred) {
+          for (let i = 0; i < exact.length; i++) if (pred(exact[i])) return exact[i];
+          return null;
+        }
+        out.preferred = pickMagic(function (r) { return r.level === want && r.bonus === 0; })
+          || (preferBonus != null ? pickMagic(function (r) { return r.bonus === preferBonus; }) : null)
+          || (preferLevel != null ? pickMagic(function (r) { return r.level === preferLevel; }) : null)
+          || (exact.length ? exact.reduce(function (a, b) {
+            const sa = a.bonus * 1000 + a.level, sb = b.bonus * 1000 + b.level;
+            return sa <= sb ? a : b;
+          }) : out.closest);
+        // For magic, level is magicBase and bonus is mdmg%.
+        out.units = { level: "magicBase", bonus: "mdmg" };
+      } else {
+        // floor(0.5 + (level+9)*(bonus+64)/640) = want
+        if (preferLevel != null) {
+          for (let bonus = 0; bonus <= maxBonus; bonus++) {
+            considerMaxHit(preferLevel, bonus, maxHitFrom(effectiveNpcLevel(preferLevel), bonus));
+          }
+        }
+        if (preferBonus != null) {
+          for (let level = 1; level <= maxLevel; level++) {
+            considerMaxHit(level, preferBonus, maxHitFrom(effectiveNpcLevel(level), preferBonus));
+          }
+        }
+        for (let bonus = 0; bonus <= maxBonus; bonus++) {
+          // Invert: want <= 0.5 + eff*(bonus+64)/640 < want+1
+          // (want-0.5)*640 <= eff*(b+64) < (want+0.5)*640
+          const lo = (want - 0.5) * 640;
+          const hi = (want + 0.5) * 640;
+          const denom = bonus + 64;
+          const effLo = Math.ceil(lo / denom);
+          const effHi = Math.ceil(hi / denom) - 1; // last eff with product < hi
+          for (let eff = Math.max(10, effLo); eff <= Math.min(maxLevel + 9, effHi); eff++) {
+            const level = eff - 9;
+            if (level < 1) continue;
+            considerMaxHit(level, bonus, maxHitFrom(eff, bonus));
+          }
+        }
+        const exact = out.exact.slice();
+        function pick(pred) {
+          for (let i = 0; i < exact.length; i++) if (pred(exact[i])) return exact[i];
+          return null;
+        }
+        out.preferred = (preferLevel != null && preferBonus != null
+            ? pick(function (r) { return r.level === preferLevel && r.bonus === preferBonus; }) : null)
+          || (preferLevel != null ? pick(function (r) { return r.level === preferLevel; }) : null)
+          || (preferBonus != null ? pick(function (r) { return r.bonus === preferBonus; }) : null)
+          || (exact.length ? exact.reduce(function (a, b) {
+            // Prefer modest bonuses, then levels close to preferLevel or mid-range.
+            if (a.bonus !== b.bonus) return a.bonus < b.bonus ? a : b;
+            return a.level <= b.level ? a : b;
+          }) : out.closest);
+        out.units = { level: (style === "ranged" ? "ranged" : "strength"), bonus: (style === "ranged" ? "rstr" : "str") };
+      }
+      return out;
+    }
+
+    if (opts.target === "hitChance") {
+      const want = opts.chance;
+      let defRoll = opts.defRoll;
+      if (defRoll == null) {
+        const pb = playerBonuses(opts.playerEq || null);
+        defRoll = maxRoll(npcPlayerDefenceLevel(style, 0), styleDefenceBonus(pb, style));
+      }
+      out.defRoll = defRoll;
+      function chanceOf(level, bonus) {
+        return hitChance(maxRoll(effectiveNpcLevel(level), bonus), defRoll);
+      }
+      function considerChance(level, bonus) {
+        const computed = chanceOf(level, bonus);
+        const err = Math.abs(computed - want);
+        const rec = { level: level, bonus: bonus, computed: computed, error: err, exact: computed === want };
+        if (computed === want) out.exact.push(rec);
+        else if (err < 1e-12) {
+          rec.exact = true;
+          rec.error = 0;
+          out.exact.push(rec);
+        }
+        if (!out.closest || err < out.closest.error) out.closest = rec;
+        return rec;
+      }
+      if (preferLevel != null) {
+        for (let bonus = 0; bonus <= maxBonus; bonus++) considerChance(preferLevel, bonus);
+      }
+      if (preferBonus != null) {
+        for (let level = 1; level <= maxLevel; level++) considerChance(level, preferBonus);
+      }
+      // Coarse scan then refine around the closest.
+      for (let bonus = 0; bonus <= maxBonus; bonus += 1) {
+        for (let level = 1; level <= maxLevel; level += (level < 200 ? 1 : 5)) {
+          considerChance(level, bonus);
+        }
+      }
+      // Densify 1-step around closest if we stepped by 5.
+      if (out.closest) {
+        const c = out.closest;
+        for (let level = Math.max(1, c.level - 10); level <= Math.min(maxLevel, c.level + 10); level++) {
+          for (let bonus = Math.max(0, c.bonus - 10); bonus <= Math.min(maxBonus, c.bonus + 10); bonus++) {
+            considerChance(level, bonus);
+          }
+        }
+      }
+      const exact = out.exact.slice();
+      function pick(pred) {
+        for (let i = 0; i < exact.length; i++) if (pred(exact[i])) return exact[i];
+        return null;
+      }
+      out.preferred = (preferLevel != null && preferBonus != null
+          ? pick(function (r) { return r.level === preferLevel && r.bonus === preferBonus; }) : null)
+        || (preferLevel != null ? pick(function (r) { return r.level === preferLevel; }) : null)
+        || (preferBonus != null ? pick(function (r) { return r.bonus === preferBonus; }) : null)
+        || (exact.length ? exact.reduce(function (a, b) {
+          if (a.bonus !== b.bonus) return a.bonus < b.bonus ? a : b;
+          return a.level <= b.level ? a : b;
+        }) : out.closest);
+      out.units = { level: (style === "ranged" ? "ranged" : (style === "magic" ? "magic" : "attack")), bonus: (style === "ranged" ? "arange" : (style === "magic" ? "amagic" : "styleAtk")) };
+      return out;
+    }
+
+    out.error = "unknown target";
+    return out;
+  }
 
   /* ---------- SPELLBOOK (Combat Balance, 2026-11-11) ----------
      Approved via Gameboy, 11 Nov 2026: Ember spark 8 / arc 12 / flare 16 /
@@ -825,7 +1200,15 @@
     spellMaxHit: spellMaxHit,
     canCast: canCast,
     consumeRunes: consumeRunes,
-    tryCastSpell: tryCastSpell
+    tryCastSpell: tryCastSpell,
+    FLAGS: FLAGS,
+    npcStats: npcStats,
+    npcMaxHit: npcMaxHit,
+    npcHitChance: npcHitChance,
+    solveNpcLevel: solveNpcLevel,
+    npcPlayerDefenceLevel: npcPlayerDefenceLevel,
+    normalizeNpcStyle: normalizeNpcStyle,
+    isNpcSpecialAttack: isNpcSpecialAttack
   };
   var k;
   for (k in api) {

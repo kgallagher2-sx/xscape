@@ -11,4 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
-- `combat.js` | Combat Balance | 2026-11-11 11:14 America/New_York | NPC stat-system helpers (legacy-compatible)
+- `raid.js` | Boss Mechanics | 2026-11-11 11:22 America/New_York | Fix raid-clear 403 and claim-error retry UI
