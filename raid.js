@@ -561,16 +561,43 @@
     });
     return names;
   }
+  function callCloudRpc(name, args) {
+    var cloud = global.XscapeCloud;
+    if (!cloud) return Promise.resolve({ ok: false, error: "offline" });
+    if (typeof cloud.rpc === "function") return Promise.resolve(cloud.rpc(name, args || {}));
+    return Promise.resolve({ ok: false, error: "offline" });
+  }
+  function callStartSoloRaidRun() {
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.startSoloRaidRun === "function") {
+      return Promise.resolve(cloud.startSoloRaidRun());
+    }
+    return callCloudRpc("start_solo_raid_run", {});
+  }
+  function beginSignedInSoloRun(st) {
+    if (!st || isGroup(st) || isLocalAlcoveMode()) return;
+    if (st.soloRunId || st._soloRunStart) return;
+    st._soloRunStart = callStartSoloRaidRun().then(function (res) {
+      if (res && res.ok && (res.runId || res.run_id)) {
+        st.soloRunId = res.runId || res.run_id;
+      } else if (res && res.error) {
+        flash(st, res.error, "#ff8a70");
+      }
+      return res;
+    }).catch(function (err) {
+      flash(st, (err && err.message) || "Could not start raid", "#ff8a70");
+      return { ok: false };
+    });
+  }
   function callClaimAlcoveMidRpc(runId, room, nonce) {
     var cloud = global.XscapeCloud;
-    // Preferred: Gameboy adds XscapeCloud.claimAlcoveMid (see note at bottom).
     if (cloud && typeof cloud.claimAlcoveMid === "function") {
       return Promise.resolve(cloud.claimAlcoveMid(runId, room, nonce));
     }
-    return Promise.resolve({
-      ok: false,
-      error: "Alcove claim RPC is not wired on the cloud client",
-      items: []
+    return callCloudRpc("claim_alcove_mid", {
+      p_run: runId || null,
+      p_room: room || null,
+      p_nonce: nonce || null
     });
   }
   function requestAlcoveClaim(st, room, cb) {
@@ -579,10 +606,11 @@
     st._alcoveClaim = st._alcoveClaim || {};
     if (st._alcoveClaim[room] === "done" || st._alcoveClaim[room] === "inflight") return;
     st._alcoveClaim[room] = "inflight";
-    var runId = st.group && st.group.runId ? st.group.runId : null;
-    if (!st.soloNonce && !runId) st.soloNonce = makeRaidNonce();
-    var nonce = runId ? null : (st.soloNonce || null);
-    callClaimAlcoveMidRpc(runId, room, nonce).then(function (res) {
+    var ready = st._soloRunStart || Promise.resolve();
+    Promise.resolve(ready).then(function () {
+      var runId = (st.group && st.group.runId) ? st.group.runId : (st.soloRunId || null);
+      return callClaimAlcoveMidRpc(runId, room, null);
+    }).then(function (res) {
       var items = (res && res.items) || [];
       if (typeof items === "string") {
         try { items = JSON.parse(items); } catch (e) { items = []; }
@@ -1229,6 +1257,35 @@
     else if (id.indexOf("chest") === 0) setupChest(st, id);
     if (!keepSnap) st.snapshot = snapshotRoom(st);
     // Room name is already on the map strip and in the HUD — don't flash it over the boss plate.
+    if (id === "throne") refreshRaidDebugCombat();
+    else clearBossPlate();
+  }
+  function clearBossPlate() {
+    if (typeof global.reportBossPlate === "function") {
+      try { global.reportBossPlate(null); } catch (e) {}
+    }
+    try {
+      var el = global.document && document.getElementById("float-msg");
+      if (el) el.style.top = "";
+    } catch (e) {}
+  }
+  function refreshRaidDebugCombat() {
+    if (typeof global.updateDebugCombat === "function") {
+      try { global.updateDebugCombat(); } catch (e) {}
+    }
+  }
+  function reportDrawnBossPlate(cx, by, s, plateY) {
+    if (typeof global.reportBossPlate !== "function") return;
+    var bw = 124, h = 22;
+    try {
+      global.reportBossPlate({
+        left: cx + (-bw / 2 - 4) * s,
+        top: by + plateY * s,
+        width: (bw + 8) * s,
+        height: h * s,
+        bottom: by + (plateY + h) * s
+      });
+    } catch (e) {}
   }
   function snapshotRoom(st) {
     return { room: st.room, hp: st.player.hp, prayerPts: st.player.prayerPts, inv: deep(st.inv), loadout: deep(st.player.loadout), rangingLeft: st.player.rangingLeft };
@@ -2327,6 +2384,7 @@
       }
       if (typeof drawBossPlate === "function") drawBossPlate(ctx, "Morvane", b.hp, b.hpMax, plateY);
       ctx.restore();
+      if (b.hp > 0) reportDrawnBossPlate(cx, by, s, plateY);
     } else if (st.boss && st.boss.kind === "warden") {
       const b = st.boss;
       const telProg = b.phase === "telegraph" ? (1 - (b.telLeft - prog) / Math.max(1, b.telLen)) : 0;
@@ -2340,6 +2398,7 @@
       if (typeof drawPaleWarden === "function") drawPaleWarden(ctx, t, { style: b.style, pose: pose, hurt: b.hurt, dead: b.hp <= 0 });
       if (typeof drawBossPlate === "function") drawBossPlate(ctx, "Pale Warden", b.hp, b.hpMax, plateY);
       ctx.restore();
+      if (b.hp > 0) reportDrawnBossPlate(cx, by, s, plateY);
     } else if (st.room === "loot" || (st.room && st.room.indexOf("chest") === 0)) {
       const rs = st.roomState;
       const p = tilePos(rs.chestCol || 2, rs.chestRow || 0, W, H);
@@ -2450,11 +2509,13 @@
   function start(opts) {
     registerItems();
     loadRaidProfile();
+    clearBossPlate();
     R = newState(opts || {});
     if (opts && opts.group) initGroupState(R, opts);
     if (global.PlayerStats && PlayerStats.reset) PlayerStats.reset();
     enterRoom(R, R.room);
     R.mode = "playing";
+    beginSignedInSoloRun(R);
     acc = 0; lastTs = 0; running = true;
     raidAudio.setEnrage(false);
     try { raidAudio.startMusic(); } catch (e) {}
