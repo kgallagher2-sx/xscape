@@ -300,8 +300,8 @@
     else c.translate(9.6, -9.8);
     if (facing === "front") c.rotate(-0.55);
     else if (facing === "back") c.rotate(0.55);
-    else if (facing === "left") c.rotate(0.55);
-    else c.rotate(-0.55);
+    else if (facing === "left") c.rotate(-0.55); // blade up and forward (screen-left)
+    else c.rotate(0.55); // blade up and forward (screen-right)
     // Local drawing has the grip around y=8; put that at the hand.
     c.translate(0, -8);
     c.fillStyle = pal.steelLt;

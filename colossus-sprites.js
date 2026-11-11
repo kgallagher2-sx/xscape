@@ -287,8 +287,8 @@
     else c.translate(9.6, -9.8);
     if (facing === "front") c.rotate(-0.55);
     else if (facing === "back") c.rotate(0.55);
-    else if (facing === "left") c.rotate(0.55);
-    else c.rotate(-0.55);
+    else if (facing === "left") c.rotate(-0.55); // tip up and forward (screen-left)
+    else c.rotate(0.55); // tip up and forward (screen-right)
     c.translate(0, -6);
     c.fillStyle = pal.bronze;
     c.fillRect(-1.1, -16, 2.2, 28);

@@ -1669,29 +1669,29 @@ function heroHands(facing, opt) {
 function twoHandPose(facing, opt) {
   const raise = (opt && opt.shot && opt.shot.raise) || 0;
   const lift = raise * 13.5;
-  // After rotate(ang) + translate(0,-6), the lower grip is at the origin and the
-  // blade lies along local -y. A point `dist` along the haft toward the blade:
+  // After rotate(ang), the lower grip is at the origin and the haft lies along
+  // local -y. A point `dist` along the haft toward the head:
   function along(origin, ang, dist) {
     return {
       x: origin.x + dist * Math.sin(ang),
       y: origin.y - dist * Math.cos(ang)
     };
   }
-  const dist = 8.5;
+  const dist = 10.2;
   if (facing === "front") {
     const w = { x: -5.5, y: -6.5 - lift };
-    return { weapon: w, right: w, left: along(w, -0.55, dist) };
+    return { weapon: w, right: w, left: along(w, -0.4, dist) };
   }
   if (facing === "back") {
     const w = { x: 5.5, y: -8.0 - lift };
-    return { weapon: w, right: w, left: along(w, 0.55, dist) };
+    return { weapon: w, right: w, left: along(w, 0.4, dist) };
   }
   if (facing === "right") {
     const w = { x: 7.0, y: -7.0 - lift };
-    return { weapon: w, right: w, left: along(w, -0.7, dist) };
+    return { weapon: w, right: w, left: along(w, -0.35, dist) };
   }
   const w = { x: -7.0, y: -7.0 - lift };
-  return { weapon: w, right: w, left: along(w, 0.7, dist) };
+  return { weapon: w, right: w, left: along(w, 0.35, dist) };
 }
 
 function heroShoulder(facing, side) {
@@ -1821,7 +1821,7 @@ function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase, hand) {
     c.rotate(Math.PI - 0.65 + recoil * 0.2);
     c.translate(0, -8.2);
   } else if (facing === "left") {
-    // Far (right) hand, behind the body; muzzle down and toward the back.
+    // Far (right) hand, behind the body; muzzle down and ahead (screen-left).
     c.rotate(-(Math.PI - 0.65 + recoil * 0.2));
     c.translate(0, -8.2);
   } else {

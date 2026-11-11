@@ -5,7 +5,9 @@
     bronze: "#8a5a28", bronzeLt: "#c48a40", bronzeDk: "#4a2c12",
     blood: "#8a1020", bloodLt: "#c02030", hide: "#3a2418",
     horn: "#e8d0a0", hornDk: "#8a6a40", stone: "#3a3834", stoneLt: "#5a564e",
-    eye: "#e8c040", steel: "#6a6460"
+    eye: "#e8c040", steel: "#9aa0a8", steelLt: "#e8e6e0", steelMid: "#c4c8ce",
+    steelDk: "#3a3e44", wood: "#6a3e18", woodLt: "#c49a58", woodDk: "#2a1608",
+    wrap: "#5a3418"
   };
   function ellipse(c, x, y, rx, ry) { c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fill(); }
   function fillPoly(c, pts) {
@@ -128,11 +130,10 @@
       c.fillStyle = pal.bronze; c.fillRect(-12, -14, 10, 28); c.fillRect(2, -14, 10, 28);
       c.fillStyle = pal.blood; c.fillRect(-12, 0, 10, 3); c.fillRect(2, 0, 10, 3);
     } else if (id === "gorehorn_axe") {
-      c.rotate(-0.5);
-      c.fillStyle = pal.bronzeDk; c.fillRect(-2, -8, 4, 26);
-      c.fillStyle = pal.bronzeLt;
-      fillPoly(c, [-16, -16, 16, -16, 14, 0, 0, 6, -14, 0]);
-      c.fillStyle = pal.blood; c.fillRect(-12, -14, 24, 2);
+      c.translate(1, 2);
+      c.rotate(-0.55);
+      c.scale(1.15, 1.15);
+      drawWarAxe(c, "icon");
     }
     c.restore();
   }
@@ -173,25 +174,168 @@
     c.fillRect(0.8, 6, 5.4, 1.4);
     c.restore();
   }
+  /* War axe in local space: lower grip at (0,0), haft along -Y, head at the top.
+     Front/back/icon: double-bit steel head, blades in ±X.
+     Side views: large forward crescent + smaller rear bit, blade toward +X;
+     the caller flips/rotates so +X is the direction the character faces. */
+  function drawHaft(c) {
+    // Wooden pole, butt cap below the lower hand, eye at y≈-24.
+    const g = c.createLinearGradient(-1.6, 0, 1.6, 0);
+    g.addColorStop(0, pal.woodDk);
+    g.addColorStop(0.28, pal.wood);
+    g.addColorStop(0.5, pal.woodLt);
+    g.addColorStop(0.78, pal.wood);
+    g.addColorStop(1, pal.woodDk);
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(-1.45, 9.2);
+    c.lineTo(-1.25, -24.5);
+    c.lineTo(1.25, -24.5);
+    c.lineTo(1.45, 9.2);
+    c.closePath();
+    c.fill();
+    // bronze butt cap
+    c.fillStyle = pal.bronzeDk;
+    c.fillRect(-1.8, 8.2, 3.6, 3.2);
+    c.fillStyle = pal.bronzeLt;
+    c.fillRect(-1.8, 8.2, 3.6, 0.8);
+    c.fillStyle = pal.bronze;
+    ellipse(c, 0, 11.0, 1.7, 1.1);
+    // leather wraps: lower grip (right hand) and mid-haft (left hand)
+    function wrap(y0, h) {
+      c.fillStyle = pal.wrap;
+      c.fillRect(-1.7, y0, 3.4, h);
+      c.strokeStyle = "rgba(20,10,4,0.55)";
+      c.lineWidth = 0.45;
+      for (let i = 0; i < 4; i++) {
+        const y = y0 + 0.6 + i * (h / 4);
+        c.beginPath(); c.moveTo(-1.7, y); c.lineTo(1.7, y + 0.6); c.stroke();
+      }
+    }
+    wrap(0.2, 5.2);
+    wrap(-10.6, 4.4);
+  }
+
+  function drawCrescent(c, dir, scale, y, bloody) {
+    // Flared double-bit: narrow at the eye, pointed toes, curved cutting edge.
+    // dir = 1 draws to +X, -1 to -X. scale > 1 enlarges the forward side-view bit.
+    const s = scale || 1;
+    c.save();
+    c.scale(dir, 1);
+    c.translate(0, y);
+    c.scale(s, s);
+    function bitPath(inset) {
+      const i = inset || 0;
+      c.beginPath();
+      c.moveTo(1.2 + i, -5.0 + i * 0.3);
+      c.lineTo(7.6 - i * 0.2, -8.3 + i * 0.4);           // top toe
+      c.quadraticCurveTo(13.6 - i, -6.6, 15.8 - i, -1.2); // upper cutting edge
+      c.quadraticCurveTo(16.0 - i, 2.2, 13.4 - i, 5.6);   // mid edge
+      c.quadraticCurveTo(10.0, 8.0 - i * 0.3, 7.2, 7.6 - i * 0.3); // bottom toe
+      c.lineTo(1.2 + i, 3.6 - i * 0.3);
+      c.closePath();
+    }
+    c.fillStyle = pal.steelDk;
+    bitPath(0);
+    c.fill();
+    c.strokeStyle = "#1a1c20";
+    c.lineWidth = 0.55;
+    bitPath(0);
+    c.stroke();
+    c.fillStyle = pal.steel;
+    bitPath(0.7);
+    c.fill();
+    // honed rim along the cutting edge
+    c.strokeStyle = pal.steelLt;
+    c.lineWidth = 0.85;
+    c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(7.8, -8.0);
+    c.quadraticCurveTo(14.2, -6.2, 15.6, -1.0);
+    c.quadraticCurveTo(15.6, 2.4, 13.2, 5.4);
+    c.quadraticCurveTo(10.0, 7.6, 7.4, 7.4);
+    c.stroke();
+    c.fillStyle = pal.steelLt;
+    c.globalAlpha = 0.55;
+    c.beginPath();
+    c.moveTo(8.0, -7.2);
+    c.quadraticCurveTo(13.0, -5.8, 14.6, -1.4);
+    c.lineTo(13.2, -1.6);
+    c.quadraticCurveTo(12.0, -5.0, 8.0, -6.2);
+    c.closePath();
+    c.fill();
+    c.globalAlpha = 1;
+    if (bloody) {
+      c.fillStyle = pal.blood;
+      c.beginPath();
+      c.moveTo(6.0, 5.8);
+      c.quadraticCurveTo(11.2, 5.0, 13.6, 2.6);
+      c.quadraticCurveTo(10.4, 7.0, 6.6, 7.2);
+      c.closePath();
+      c.fill();
+      c.fillStyle = pal.bloodLt;
+      ellipse(c, 9.4, 6.2, 1.3, 0.55);
+    }
+    c.restore();
+  }
+
+  function drawAxeHeadFront(c) {
+    // Socket / eye around the top of the haft
+    c.fillStyle = pal.bronzeDk;
+    c.fillRect(-2.5, -27.2, 5.0, 9.4);
+    c.fillStyle = pal.bronze;
+    c.fillRect(-2.1, -26.6, 4.2, 8.2);
+    c.fillStyle = pal.bronzeLt;
+    c.fillRect(-2.1, -26.6, 4.2, 1.3);
+    c.fillStyle = pal.blood;
+    c.fillRect(-2.1, -20.2, 4.2, 1.0);
+    // pins
+    c.fillStyle = pal.steelDk;
+    ellipse(c, 0, -24.8, 0.7, 0.7);
+    ellipse(c, 0, -20.6, 0.7, 0.7);
+    drawCrescent(c, -1, 1, -22.4, true);
+    drawCrescent(c,  1, 1, -22.4, true);
+  }
+
+  function drawAxeHeadSide(c, dir) {
+    // dir: 1 = blade toward +X (character's front when facing right, after rotation)
+    c.fillStyle = pal.bronzeDk;
+    c.fillRect(-2.4, -27.4, 4.8, 9.8);
+    c.fillStyle = pal.bronze;
+    c.fillRect(-2.0, -26.8, 4.0, 8.6);
+    c.fillStyle = pal.bronzeLt;
+    c.fillRect(-2.0, -26.8, 4.0, 1.3);
+    c.fillStyle = pal.steelDk;
+    ellipse(c, 0, -24.8, 0.7, 0.7);
+    ellipse(c, 0, -20.6, 0.7, 0.7);
+    // Smaller rear bit, larger forward bit so it reads as a double-bit that "points" forward.
+    drawCrescent(c, -dir, 0.72, -22.6, false);
+    drawCrescent(c,  dir, 1.18, -22.2, true);
+  }
+
+  function drawWarAxe(c, view) {
+    drawHaft(c);
+    if (view === "right") drawAxeHeadSide(c, 1);
+    else if (view === "left") drawAxeHeadSide(c, -1);
+    else drawAxeHeadFront(c);
+  }
+
+  function axeHoldAngle(facing) {
+    if (facing === "front") return -0.4;
+    if (facing === "back") return 0.4;
+    if (facing === "left") return 0.35;
+    return -0.35; // right: blade up and forward
+  }
+
   function drawAxeHeld(c, t, facing, hand) {
     c.save();
     if (hand) c.translate(hand.x, hand.y);
-    else if (facing === "front") c.translate(-2, -8);
-    else if (facing === "back") c.translate(2, -9.5);
-    else if (facing === "left") c.translate(-5.5, -9);
-    else c.translate(5.5, -9);
-    if (facing === "front") c.rotate(-0.55);
-    else if (facing === "back") c.rotate(0.55);
-    else if (facing === "left") c.rotate(0.7);
-    else c.rotate(-0.7);
-    // Lower grip sits at the origin (right hand); blade is up the haft.
-    c.translate(0, -6);
-    c.fillStyle = pal.bronzeDk;
-    c.fillRect(-1.4, -14, 2.8, 24);
-    c.fillStyle = pal.bronzeLt;
-    fillPoly(c, [-10, -16, 10, -16, 9, -6, 0, -3, -9, -6]);
-    c.fillStyle = pal.blood;
-    c.fillRect(-8, -15, 16, 1.2);
+    else if (facing === "front") c.translate(-5.5, -6.5);
+    else if (facing === "back") c.translate(5.5, -8.0);
+    else if (facing === "left") c.translate(-7.0, -7.0);
+    else c.translate(7.0, -7.0);
+    c.rotate(axeHoldAngle(facing));
+    drawWarAxe(c, facing);
     c.restore();
   }
   global.XscapeGorehornArt = {
