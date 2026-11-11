@@ -1477,9 +1477,244 @@
   function advanceTalk() {
     if (!state.talk) return false;
     state.talk.i += 1;
+    if (state.talk.tour && state.talk.i >= state.talk.lines.length) {
+      finishHubTour(true);
+      return true;
+    }
     speakCurrent();
+    if (state.talk && state.talk.tour) syncHubTourArrow();
     return true;
   }
+
+  /* ---------- First-time hub tour (Fast Kill77) ---------- */
+  var HUB_TOUR_KEY = "kellenscape-hub-tour-seen";
+  var HUB_TOUR_SPEAKER = "Fast Kill77";
+  var HUB_TOUR_STEPS = [
+    { target: null, text: "Welcome to the West Bank, adventurer. I'll show you the ropes." },
+    { target: "npc:aenor", text: "Bankers'll look after your items. Nothing real is ever charged." },
+    { target: "npc:veldan", text: "You can buy gear here." },
+    { target: "npc:oswin", text: "Food and potions are over here. Magmor feeds you for free; pack for the rest." },
+    { target: "portal", text: "That portal leads to the Duel Arena. Long-press a player there to challenge them." },
+    { target: "dock:online", text: "Tap Online to see who's about, and to check the leaderboard." },
+    { target: "npc:kael", text: "Talk to Kael to go fight. He'll send you to Magmor — and later, the other bosses and Gloamhold." },
+    { target: "npc:kael", text: "Think you can handle it? Come earn a fire cape. I'll be waiting." }
+  ];
+
+  function tourQuery() {
+    try { return (new URLSearchParams(location.search).get("tour") || "").toLowerCase(); }
+    catch (e) { return ""; }
+  }
+
+  function testBlocksHubTour() {
+    try {
+      var q = new URLSearchParams(location.search);
+      if ((q.get("tour") || "").toLowerCase() === "1") return false;
+      if (q.get("test")) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function isHubTourActive() {
+    return !!(state.tour && state.tour.active);
+  }
+
+  function localTourDone() {
+    try { return localStorage.getItem(HUB_TOUR_KEY) === "1"; } catch (e) { return false; }
+  }
+
+  function shouldStartHubTour(opts) {
+    opts = opts || {};
+    if (opts.force) return true;
+    if (tourQuery() === "1") {
+      if (localTourDone()) return false;
+      var cloud = global.XscapeCloud;
+      if (cloud && typeof cloud.isHubTourDone === "function" && cloud.isHubTourDone()) return false;
+      if (cloud && typeof cloud.shouldShowHubTour === "function") return !!cloud.shouldShowHubTour();
+      return !localTourDone();
+    }
+    if (testBlocksHubTour()) return false;
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.shouldShowHubTour === "function") return !!cloud.shouldShowHubTour();
+    if (localTourDone()) return false;
+    return true;
+  }
+
+  function markHubTourDoneLocal() {
+    var cloud = global.XscapeCloud;
+    if (cloud && typeof cloud.markHubTourDone === "function") {
+      try { cloud.markHubTourDone(); return; } catch (e) {}
+    }
+    try { localStorage.setItem(HUB_TOUR_KEY, "1"); } catch (e) {}
+    if (global.Profile) {
+      if (!Profile.settings || typeof Profile.settings !== "object") Profile.settings = {};
+      Profile.settings.tutorialDone = true;
+    }
+    if (typeof global.saveProfile === "function") {
+      try { global.saveProfile(); } catch (e2) {}
+    }
+  }
+
+  function ensureTourArrow() {
+    var el = $("hub-tour-arrow");
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = "hub-tour-arrow";
+    el.className = "hidden";
+    el.setAttribute("aria-hidden", "true");
+    var host = $("overlay-hub") || $("app") || document.body;
+    host.appendChild(el);
+    return el;
+  }
+
+  function hideTourArrow() {
+    var el = $("hub-tour-arrow");
+    if (el) el.classList.add("hidden");
+  }
+
+  function tourTargetPoint(target) {
+    if (!target) return null;
+    var app = $("app");
+    var appRect = app ? app.getBoundingClientRect() : { left: 0, top: 0, width: 390, height: 844 };
+    function canvasToApp(pt) {
+      var canvas = $("arena");
+      if (!canvas || !app) return pt;
+      var cRect = canvas.getBoundingClientRect();
+      var lay = state.layout || layout(cssWSafe(), cssHSafe());
+      var cw = lay.cssW || cssWSafe() || cRect.width || 1;
+      var ch = lay.cssH || cssHSafe() || cRect.height || 1;
+      return {
+        x: (cRect.left - appRect.left) + pt.x * (cRect.width / cw),
+        y: (cRect.top - appRect.top) + pt.y * (cRect.height / ch)
+      };
+    }
+    if (target.indexOf("npc:") === 0) {
+      var id = target.slice(4);
+      var npc = null;
+      for (var i = 0; i < NPCS.length; i++) if (NPCS[i].id === id) { npc = NPCS[i]; break; }
+      if (!npc) return null;
+      var lay = state.layout || layout(cssWSafe(), cssHSafe());
+      var p = tilePx(npc.col, npc.row, lay);
+      var headY = p.y - spriteScale(lay) * 26;
+      return canvasToApp({ x: p.x, y: headY });
+    }
+    if (target === "portal") {
+      var portal = bankPortal();
+      var lay2 = state.layout || layout(cssWSafe(), cssHSafe());
+      var tw = lay2.tw;
+      var cx = lay2.x0 + portal.col * tw + tw / 2;
+      var cy = lay2.y0 + portal.row * tw + tw * 0.18;
+      return canvasToApp({ x: cx, y: cy });
+    }
+    if (target.indexOf("dock:") === 0) {
+      var act = target.slice(5);
+      var btn = document.querySelector('#hub-dock [data-dock="' + act + '"]');
+      if (!btn) return null;
+      var r = btn.getBoundingClientRect();
+      return { x: r.left - appRect.left + r.width / 2, y: r.top - appRect.top - 2 };
+    }
+    return null;
+  }
+
+  function syncHubTourArrow() {
+    if (!isHubTourActive() || !state.talk || !state.talk.tour) {
+      hideTourArrow();
+      return;
+    }
+    var step = HUB_TOUR_STEPS[state.talk.i];
+    var el = ensureTourArrow();
+    if (!step || !step.target) {
+      el.classList.add("hidden");
+      return;
+    }
+    var pt = tourTargetPoint(step.target);
+    if (!pt) {
+      el.classList.add("hidden");
+      return;
+    }
+    var app = $("app");
+    var W = (app && app.clientWidth) || 390;
+    var H = (app && app.clientHeight) || 844;
+    var x = Math.max(16, Math.min(W - 16, pt.x));
+    var y = Math.max(28, Math.min(H - 80, pt.y));
+    el.style.left = Math.round(x) + "px";
+    el.style.top = Math.round(y) + "px";
+    el.classList.remove("hidden");
+  }
+
+  function setTourSkipVisible(on) {
+    var skip = $("btn-skip-cs");
+    if (!skip) return;
+    skip.classList.toggle("hidden", !on);
+    skip.classList.toggle("hub-tour-skip", !!on);
+  }
+
+  function restoreHubTourUi() {
+    if (!isHubTourActive() || !state.talk || !state.talk.tour) return;
+    beginChatLayer();
+    setTourSkipVisible(true);
+    var app = $("app");
+    if (app) app.classList.add("hub-tour-on");
+    speakCurrent();
+    syncHubTourArrow();
+  }
+
+  function startHubTour(opts) {
+    opts = opts || {};
+    if (!state.active) return false;
+    if (state.area === "arena") setArea("bank");
+    if (isHubTourActive() && !opts.force) return true;
+    state.tour = { active: true };
+    var app = $("app");
+    if (app) app.classList.add("hub-tour-on");
+    hideCtx();
+    beginChatLayer();
+    setTourSkipVisible(true);
+    state.talk = {
+      lines: HUB_TOUR_STEPS.map(function (s) {
+        return { name: HUB_TOUR_SPEAKER, text: s.text, portrait: "fk77" };
+      }),
+      i: 0,
+      after: null,
+      tour: true
+    };
+    speakCurrent();
+    syncHubTourArrow();
+    return true;
+  }
+
+  function finishHubTour(markDone) {
+    if (!state.tour && !(state.talk && state.talk.tour)) {
+      hideTourArrow();
+      setTourSkipVisible(false);
+      return;
+    }
+    state.tour = null;
+    if (state.talk && state.talk.tour) state.talk = null;
+    hideTourArrow();
+    setTourSkipVisible(false);
+    var app = $("app");
+    if (app) app.classList.remove("hub-tour-on");
+    endChatLayer();
+    if (markDone) markHubTourDoneLocal();
+  }
+
+  function skipHubTour() {
+    finishHubTour(true);
+  }
+
+  function scheduleHubTour() {
+    if (state._tourTimer) {
+      clearTimeout(state._tourTimer);
+      state._tourTimer = null;
+    }
+    state._tourTimer = setTimeout(function () {
+      state._tourTimer = null;
+      if (!state.active || isHubTourActive()) return;
+      if (!shouldStartHubTour()) return;
+      startHubTour();
+    }, 450);
+  }
+
 
   /* ---------- Public hub chat ---------- */
   var CHAT_LIFE = 5;
@@ -2388,6 +2623,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
     drawWorld(ctx, ts / 1000, cssW, cssH);
+    if (isHubTourActive()) syncHubTourArrow();
     if (typeof drawClickMarks === "function") drawClickMarks(dt);
     paintGearCharacter(ts);
     refreshGpChip();
@@ -2508,12 +2744,13 @@
 
   function enter() {
     var wasActive = state.active;
+    var resumeTour = isHubTourActive();
     state.active = true;
     state.acc = 0;
     state.lastTs = 0;
     state.path = [];
     state.pending = null;
-    state.talk = null;
+    if (!resumeTour) state.talk = null;
     setArea(state.area === "arena" ? "arena" : "bank");
     if (!wasActive) {
       applySpawn(pickSpawnTile());
@@ -2533,7 +2770,7 @@
       app.classList.add("hub-world");
     }
     hideCtx();
-    endChatLayer();
+    if (!resumeTour) endChatLayer();
     if (typeof fitViewport === "function") fitViewport();
     else if (typeof resizeCanvas === "function") resizeCanvas();
     refreshHubChrome();
@@ -2560,7 +2797,15 @@
         resolveSpawnCollision();
         publishPresence();
         refreshGpChip();
-      }).catch(function () {});
+        if (resumeTour) restoreHubTourUi();
+        else scheduleHubTour();
+      }).catch(function () {
+        if (resumeTour) restoreHubTourUi();
+        else scheduleHubTour();
+      });
+    } else {
+      if (resumeTour) restoreHubTourUi();
+      else scheduleHubTour();
     }
   }
 
@@ -2586,6 +2831,7 @@
     state.active = false;
     state.justSpawned = false;
     unhookSharedTicks();
+    finishHubTour(false);
     state.talk = null;
     hideCtx();
     endChatLayer();
@@ -2755,6 +3001,16 @@
         if (state.talk) advanceTalk();
       }, true);
     }
+    var skip = $("btn-skip-cs");
+    if (skip && !skip._hubTour) {
+      skip._hubTour = true;
+      skip.addEventListener("pointerdown", function (e) {
+        if (!isHubTourActive()) return;
+        e.preventDefault();
+        e.stopPropagation();
+        skipHubTour();
+      }, true);
+    }
   }
 
   function dismiss() {
@@ -2811,6 +3067,10 @@
     getParty: function () { return partyState; },
     advanceTalk: advanceTalk,
     startTalk: startTalk,
+    startHubTour: startHubTour,
+    skipHubTour: skipHubTour,
+    isHubTourActive: isHubTourActive,
+    hubTourSteps: function () { return HUB_TOUR_STEPS.slice(); },
     onHubChat: onHubChat,
     sendHubChat: sendHubChat,
     appendTradeWish: appendTradeWish,

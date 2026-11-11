@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111194258-464b22e";</script>
+  <script>window.XSCAPE_BUILD = "20261111200615-fe056b1";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -659,6 +659,25 @@
     #app.hub-world #btn-raid-help,
     #app.hub-world #btn-kree-help, #app.hub-world #btn-widow-help, #app.hub-world #btn-knight-help, #app.hub-world #btn-gorehorn-help, #app.hub-world #btn-colossus-help { display: none; }
     #app.hub-world #osrs-chat { bottom: calc(52px + var(--hud-bottom)); }
+    #app.hub-world.hub-tour-on #osrs-chat { bottom: calc(96px + var(--hud-bottom)); }
+    #hub-tour-arrow {
+      position: absolute; z-index: 40; pointer-events: none;
+      width: 0; height: 0; margin: 0;
+      border-left: 11px solid transparent; border-right: 11px solid transparent;
+      border-top: 20px solid #ffe44a;
+      filter: drop-shadow(0 0 2px #000) drop-shadow(0 2px 0 #000);
+      transform: translate(-50%, -100%);
+      animation: hub-tour-bounce 0.7s ease-in-out infinite;
+    }
+    #hub-tour-arrow.hidden { display: none; }
+    @keyframes hub-tour-bounce {
+      0%, 100% { transform: translate(-50%, -100%); }
+      50% { transform: translate(-50%, calc(-100% - 12px)); }
+    }
+    #btn-skip-cs.hub-tour-skip {
+      top: calc(var(--hud-top) + 58px);
+      right: var(--hud-right);
+    }
     #overlay-hub.is-world {
       background: transparent; pointer-events: none;
       padding: 0; justify-content: flex-start; overflow: hidden;
@@ -1991,7 +2010,8 @@ const STORAGE = {
   widowBrief: "kellenscape-widow-brief-seen",
   knightBrief: "kellenscape-knight-brief-seen",
   gorehornBrief: "kellenscape-gorehorn-brief-seen",
-  colossusBrief: "kellenscape-colossus-brief-seen"
+  colossusBrief: "kellenscape-colossus-brief-seen",
+  hubTour: "kellenscape-hub-tour-seen"
 };
 
 function computeScore(result) {

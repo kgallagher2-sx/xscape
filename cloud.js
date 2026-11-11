@@ -163,6 +163,81 @@
     } catch (e) { return false; }
   }
 
+  var HUB_TOUR_KEY = "kellenscape-hub-tour-seen";
+
+  function readLocalHubTourDone() {
+    try { return localStorage.getItem(HUB_TOUR_KEY) === "1"; } catch (e) { return false; }
+  }
+
+  function writeLocalHubTourDone() {
+    try { localStorage.setItem(HUB_TOUR_KEY, "1"); } catch (e) {}
+    var P = global.Profile;
+    if (P) {
+      if (!P.settings || typeof P.settings !== "object") P.settings = {};
+      P.settings.tutorialDone = true;
+    }
+    if (cloudProfile) {
+      if (!cloudProfile.settings || typeof cloudProfile.settings !== "object") cloudProfile.settings = {};
+      cloudProfile.settings.tutorialDone = true;
+    }
+  }
+
+  function isHubTourDoneFlag() {
+    if (readLocalHubTourDone()) return true;
+    if (cloudProfile && cloudProfile.settings && cloudProfile.settings.tutorialDone) return true;
+    if (global.Profile && global.Profile.settings && global.Profile.settings.tutorialDone) return true;
+    return false;
+  }
+
+  // Existing accounts must never see the tour. "New" means the flag is missing
+  // and the character has no kills, cape, raid clears, first-kill, or GP.
+  // Do not use migratedAt — claiming a name can set that on a brand-new account.
+  function hasHubTourProgress() {
+    function prog(p) {
+      if (!p) return false;
+      return !!(p.hasFireCape || p.seenFirstKill ||
+        (p.gp || 0) > 0 ||
+        (p.jadKills || 0) > 0 || (p.kreeKills || 0) > 0 || (p.widowKills || 0) > 0 ||
+        (p.knightKills || 0) > 0 || (p.gorehornKills || 0) > 0 || (p.colossusKills || 0) > 0 ||
+        (p.raidCompletions || 0) > 0);
+    }
+    if (prog(global.Profile) || prog(cloudProfile)) return true;
+    try {
+      var raw = JSON.parse(localStorage.getItem("kellenscape-profile") || "null");
+      if (prog(raw)) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function shouldShowHubTour() {
+    if (isHubTourDoneFlag()) return false;
+    if (hasHubTourProgress()) return false;
+    if (isLegacyLocal()) return false;
+    return true;
+  }
+
+  function markHubTourDone() {
+    writeLocalHubTourDone();
+    if (typeof global.saveProfile === "function") {
+      try { global.saveProfile(); } catch (e) {}
+    }
+  }
+
+  function applyHubTourFromCloud(p) {
+    if (p && p.settings && p.settings.tutorialDone) writeLocalHubTourDone();
+  }
+
+  // Carry a finished guest tour onto a newly signed-in account.
+  function syncHubTourFromLocal() {
+    if (!readLocalHubTourDone() && !(global.Profile && global.Profile.settings && global.Profile.settings.tutorialDone)) return;
+    writeLocalHubTourDone();
+    if (session && typeof scheduleStateSave === "function") {
+      try { scheduleStateSave(); } catch (e) {}
+    } else if (typeof global.saveProfile === "function") {
+      try { global.saveProfile(); } catch (e2) {}
+    }
+  }
+
   var STARTER_IDS = {
     green_dhide_coif: 1, green_dhide_body: 1, green_dhide_chaps: 1,
     green_dhide_vambs: 1, green_dhide_boots: 1, rune_crossbow: 1, mithril_bolts: 1
@@ -538,6 +613,7 @@
       if (ac) settings.autocast = ac;
       else settings.autocast = null;
     }
+    settings.tutorialDone = !!isHubTourDoneFlag();
     return settings;
   }
 
@@ -634,6 +710,7 @@
       try { XscapeSupplies.loadLayout(p.settings.quickSlots); } catch (e) {}
     }
     applyAutocastFromCloud(p);
+    applyHubTourFromCloud(p);
     if (typeof global.normalizeContainers === "function") {
       try { global.normalizeContainers(); } catch (e) {}
     }
@@ -923,6 +1000,7 @@
   }
 
   function showSignedInHub() {
+    try { syncHubTourFromLocal(); } catch (e) {}
     hideAuthMsg();
     if (page !== "hub") return;
     if (inActiveTestFight()) {
@@ -2835,6 +2913,10 @@
       var n = Number(rev);
       if (!isNaN(n)) saveRevision = n;
     },
+    shouldShowHubTour: shouldShowHubTour,
+    markHubTourDone: markHubTourDone,
+    isHubTourDone: isHubTourDoneFlag,
+    syncHubTourFromLocal: syncHubTourFromLocal,
     canHubChat: canHubChat,
     setPresenceExtra: setPresenceExtra,
     getPresenceExtra: function () { return Object.assign({}, presenceExtra); },
