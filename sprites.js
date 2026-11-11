@@ -64,6 +64,139 @@ function mageCastAnimAt(shotT, attackTicks) {
   return z;
 }
 
+function _animClamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
+function _animSmooth(u) { u = _animClamp01(u); return u * u * (3 - 2 * u); }
+function _animBase(shotT, kind) {
+  return {
+    raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1,
+    shotT: shotT, kind: kind || "bow",
+    thrust: 0, pull: 0, guard: 0, swing: 0, lunge: 0, lash: 0, lean: 0,
+    phase: "idle"
+  };
+}
+
+// Windup lives at the end of the attack cycle (just before the next hit).
+// Strike / follow-through start at shotT = 0, which is when the hit lands
+// and atkCd resets. Jumping from windup (shotT ≈ speed) to strike (0) is
+// continuous if both sides set the same pose at the boundary.
+function _attackPhase(shotT, speed, windupLen, afterLen) {
+  speed = speed || 4;
+  if (shotT == null || shotT < 0 || shotT > speed + 0.08) return { phase: "idle", u: 0 };
+  if (shotT <= afterLen) return { phase: "after", u: shotT / Math.max(0.001, afterLen) };
+  if (shotT >= speed - windupLen) return { phase: "windup", u: (shotT - (speed - windupLen)) / Math.max(0.001, windupLen) };
+  return { phase: "idle", u: 0 };
+}
+
+function stabAnimAt(shotT, attackTicks) {
+  // Kingsguard / one-handed sword: pull the blade back, then thrust it
+  // straight at the target. Shield stays up. 4-tick weapon.
+  const speed = attackTicks || 4;
+  const z = _animBase(shotT, "sword");
+  const ph = _attackPhase(shotT, speed, 0.55, 1.25);
+  z.phase = ph.phase;
+  z.guard = 0;
+  if (ph.phase === "windup") {
+    const u = _animSmooth(ph.u);
+    z.pull = u;
+    z.thrust = -0.75 * u;
+    z.guard = u;
+  } else if (ph.phase === "after") {
+    const t = ph.u * 1.25; // ticks since hit
+    z.guard = 1;
+    z.snap = t < 0.45 ? 1 : 0;
+    if (t < 0.28) {
+      const u = _animSmooth(t / 0.28);
+      z.thrust = -0.75 + 1.75 * u; // -0.75 → 1
+      z.pull = 0.75 * (1 - u);
+    } else if (t < 0.55) {
+      z.thrust = 1;
+    } else {
+      const u = _animSmooth((t - 0.55) / 0.70);
+      z.thrust = 1 - u;
+      z.guard = 1 - u * 0.85;
+    }
+  }
+  return z;
+}
+
+function axeSwingAnimAt(shotT, attackTicks) {
+  // Gorehorn 2h axe: slow raise over/behind the head, then a heavy chop
+  // down in front. Timed for a 7-tick weapon.
+  const speed = attackTicks || 7;
+  const z = _animBase(shotT, "axe");
+  const ph = _attackPhase(shotT, speed, 1.85, 2.4);
+  z.phase = ph.phase;
+  if (ph.phase === "windup") {
+    // Ease in slowly, hold at the top for the last fifth.
+    const u = ph.u < 0.8 ? _animSmooth(ph.u / 0.8) : 1;
+    z.swing = u;
+    z.lean = -0.2 * u;
+  } else if (ph.phase === "after") {
+    const t = ph.u * 2.4;
+    if (t < 0.55) {
+      // Fast, heavy chop: 1 (raised) → -0.45 (past rest, down in front)
+      const u = _animSmooth(t / 0.55);
+      z.swing = 1 - 1.45 * u;
+      z.lean = -0.2 + 0.9 * u;
+      z.snap = 1;
+      z.recoil = Math.sin(u * Math.PI) * 0.55;
+    } else if (t < 1.5) {
+      const u = _animSmooth((t - 0.55) / 0.95);
+      z.swing = -0.45 * (1 - u);
+      z.lean = 0.7 * (1 - u);
+      z.recoil = 0.15 * (1 - u);
+    } else {
+      const u = _animSmooth((t - 1.5) / 0.90);
+      z.swing = 0;
+      z.lean = 0;
+    }
+  }
+  return z;
+}
+
+function whipAnimAt(shotT, attackTicks) {
+  // Abyssal / tentacle whip: lunge forward, arm snaps out, the lash
+  // extends at the target and recoils. 4-tick weapon.
+  const speed = attackTicks || 4;
+  const z = _animBase(shotT, "whip");
+  const ph = _attackPhase(shotT, speed, 0.42, 1.15);
+  z.phase = ph.phase;
+  if (ph.phase === "windup") {
+    const u = _animSmooth(ph.u);
+    z.pull = u;
+    z.lunge = 0.12 * u;
+    z.lean = -0.15 * u;
+  } else if (ph.phase === "after") {
+    const t = ph.u * 1.15;
+    z.snap = t < 0.4 ? 1 : 0;
+    if (t < 0.22) {
+      const u = _animSmooth(t / 0.22);
+      z.pull = 1 - u;
+      z.lunge = 0.12 + 0.88 * u;
+      z.lash = u;
+      z.lean = -0.15 + 0.85 * u;
+    } else if (t < 0.40) {
+      z.lunge = 1;
+      z.lash = 1;
+      z.lean = 0.7;
+    } else {
+      const u = _animSmooth((t - 0.40) / 0.75);
+      z.lunge = 1 - u;
+      z.lash = 1 - u;
+      z.lean = 0.7 * (1 - u);
+    }
+  }
+  return z;
+}
+
+function weaponAnimAt(shotT, attackTicks, kind) {
+  if (kind === "wand" || kind === "widow") return mageCastAnimAt(shotT, attackTicks || 5);
+  if (kind === "sword") return stabAnimAt(shotT, attackTicks || 4);
+  if (kind === "axe") return axeSwingAnimAt(shotT, attackTicks || 7);
+  if (kind === "whip") return whipAnimAt(shotT, attackTicks || 4);
+  return shotAnimAt(shotT, attackTicks || 4);
+}
+
 function drawHeldCrossbow(c, anim) {
   anim = anim || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
   const flex = (anim.flex || 0) * 2.6;

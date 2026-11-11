@@ -1192,7 +1192,13 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
   ctx.fill();
 
   ctx.save();
-  ctx.translate(0, -bob + (shot.recoil || 0) * 6);
+  const lunge = shot.lunge || 0;
+  const lean = shot.lean || 0;
+  const fwd = facingForward(facing);
+  ctx.translate(
+    fwd.x * (lunge * 6.2 + lean * 2.0),
+    -bob + (shot.recoil || 0) * 6 + fwd.y * (lunge * 5.0 + lean * 1.8)
+  );
 
   function cape(f) { drawHeroCape(ctx, t, eq, packed, f); }
   function legs(f) { drawHeroLegs(ctx, eq.legs, f, stride); }
@@ -1641,9 +1647,30 @@ function isTwoHandedWeapon(id) {
   return weaponKind(id) === "axe";
 }
 
+function facingForward(facing) {
+  if (facing === "right") return { x: 1, y: 0 };
+  if (facing === "left") return { x: -1, y: 0 };
+  if (facing === "back") return { x: 0, y: -1 };
+  return { x: 0, y: 1 }; // front: toward the camera
+}
+
+function shotForWeapon(weaponId, shotT) {
+  const kind = weaponKind(weaponId);
+  const it = (typeof ITEMS !== "undefined" && ITEMS[weaponId])
+    || (typeof LAB_ITEMS !== "undefined" && LAB_ITEMS[weaponId])
+    || labItem(weaponId);
+  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" ? 5 : kind === "axe" ? 7 : 4);
+  if (typeof weaponAnimAt === "function") return weaponAnimAt(shotT, speed, kind);
+  if ((kind === "wand" || kind === "widow") && typeof mageCastAnimAt === "function") return mageCastAnimAt(shotT, speed);
+  return (typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise: 0 };
+}
+
 function heroHands(facing, opt) {
-  const raise = (opt && opt.shot && opt.shot.raise) || 0;
-  const lift = raise * 13.5;
+  const shot = (opt && opt.shot) || {};
+  const kind = shot.kind;
+  const melee = kind === "sword" || kind === "whip";
+  const raise = shot.raise || 0;
+  const lift = melee ? 0 : raise * 13.5;
   const s = (opt && opt._stride) || 0;
   let right, left;
   if (facing === "front") {
@@ -1663,17 +1690,33 @@ function heroHands(facing, opt) {
     right = { x:  1.6, y: -9.8 - s * 0.15 }; // far, centered, slight back; blade still peeks
     left  = { x: -7.6, y: -5.0 + s * 0.20 }; // near, at the front hip
   }
-  return {
-    right: { x: right.x, y: right.y - lift },
-    left:  { x: left.x,  y: left.y  - lift }
-  };
+  right = { x: right.x, y: right.y - lift };
+  left  = { x: left.x,  y: left.y  - lift };
+  if (melee) {
+    const fwd = facingForward(facing);
+    const thrust = shot.thrust || 0;
+    const pull = shot.pull || 0;
+    const lash = shot.lash || 0;
+    const guard = shot.guard || 0;
+    // Weapon hand: pull back on windup, extend toward the target on the strike.
+    const ext = (kind === "whip") ? (lash * 8.5 - pull * 5) : (thrust * 11);
+    right.x += fwd.x * ext;
+    right.y += fwd.y * ext - (kind === "whip" ? 2 * lash : 1.5 * Math.abs(thrust));
+    // Shield / off-hand stays up in the left hand during a sword stab.
+    if (kind === "sword") {
+      left.y -= 5.5 * guard;
+      left.x += fwd.x * 1.2 * guard;
+    }
+  }
+  return { right: right, left: left };
 }
 
 function twoHandPose(facing, opt) {
-  const raise = (opt && opt.shot && opt.shot.raise) || 0;
-  const lift = raise * 13.5;
-  // After rotate(ang), the lower grip is at the origin and the haft lies along
-  // local -y. A point `dist` along the haft toward the head:
+  const shot = (opt && opt.shot) || {};
+  const raise = shot.raise || 0;
+  const swing = shot.swing || 0;
+  // Axe uses swing (not a generic raise) so the haft stays in both hands.
+  const lift = (shot.kind === "axe") ? 0 : raise * 13.5;
   function along(origin, ang, dist) {
     return {
       x: origin.x + dist * Math.sin(ang),
@@ -1681,20 +1724,29 @@ function twoHandPose(facing, opt) {
     };
   }
   const dist = 8.6;
-  if (facing === "front") {
-    const w = { x: -5.5, y: -6.5 - lift };
-    return { weapon: w, right: w, left: along(w, -0.36, dist) };
+  let rest;
+  if (facing === "front") rest = { x: -5.5, y: -6.5 - lift };
+  else if (facing === "back") rest = { x: 5.5, y: -8.0 - lift };
+  else if (facing === "right") rest = { x: 6.5, y: -7.0 - lift };
+  else rest = { x: -6.5, y: -7.0 - lift };
+  const w = { x: rest.x, y: rest.y };
+  if (shot.kind === "axe" && swing) {
+    const fwd = facingForward(facing);
+    if (swing > 0) {
+      // Raise: grip travels up and slightly behind the head.
+      w.x += -fwd.x * 4.5 * swing + (facing === "front" ? -1.2 * swing : facing === "back" ? 1.2 * swing : 0);
+      w.y += -fwd.y * 3.0 * swing - 15.5 * swing;
+    } else {
+      const u = -swing;
+      // Follow-through: grip comes down and forward.
+      w.x += fwd.x * 6.5 * u;
+      w.y += fwd.y * 3.0 * u + 7.0 * u;
+    }
   }
-  if (facing === "back") {
-    const w = { x: 5.5, y: -8.0 - lift };
-    return { weapon: w, right: w, left: along(w, 0.36, dist) };
-  }
-  if (facing === "right") {
-    const w = { x: 6.5, y: -7.0 - lift };
-    return { weapon: w, right: w, left: along(w, 0.58, dist) };
-  }
-  const w = { x: -6.5, y: -7.0 - lift };
-  return { weapon: w, right: w, left: along(w, -0.58, dist) };
+  const ang = (window.XscapeGorehornArt && XscapeGorehornArt.axeAttackAngle)
+    ? XscapeGorehornArt.axeAttackAngle(facing, shot)
+    : (facing === "front" ? -0.36 : facing === "back" ? 0.36 : facing === "right" ? 0.58 : -0.58);
+  return { weapon: w, right: w, left: along(w, ang, dist) };
 }
 
 function heroShoulder(facing, side) {
@@ -1769,8 +1821,10 @@ function drawProfilePart(c, facing, fn) {
   }
 }
 
-function drawHeroWhip(c, t, st, facing, hand) {
+function drawHeroWhip(c, t, st, facing, hand, shot) {
   const sway = Math.sin((t || 0) * 3.2) * 0.08;
+  const lash = (shot && shot.lash) || 0;
+  const pull = (shot && shot.pull) || 0;
   c.save();
   if (hand) c.translate(hand.x, hand.y);
   else if (facing === "front") c.translate(-12.4, -9.6);
@@ -1781,17 +1835,18 @@ function drawHeroWhip(c, t, st, facing, hand) {
     // Character's right hand = screen-left. Mirror the hang so the lash falls
     // outward (further left), not across the torso.
     c.scale(-1, 1);
-    c.rotate(0.35 + sway);
+    c.rotate(0.35 + sway - 0.85 * lash + 0.2 * pull);
   } else if (facing === "right") {
-    c.rotate(0.95 + sway);
+    c.rotate(0.95 + sway - 1.05 * lash + 0.25 * pull);
   } else if (facing === "left") {
     // Mirror the right-facing hang so the lash drops down and forward
     // (screen-left) now that the far hand sits on the body center line.
     c.scale(-1, 1);
-    c.rotate(0.95 + sway);
+    c.rotate(0.95 + sway - 1.05 * lash + 0.25 * pull);
   } else {
-    c.rotate(0.35 + sway);
+    c.rotate(0.35 + sway - 0.85 * lash + 0.2 * pull);
   }
+  if (lash > 0) c.scale(1, 1 + 0.48 * lash);
   if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: (st && st.scale) || 1 });
   else {
     c.strokeStyle = (st && st.main) || "#1a0c10";
@@ -1876,16 +1931,16 @@ function drawHeroWeapon(c, t, eq, opt, facing, hand) {
   const pos = hand || (two ? twoHandPose(facing, opt).weapon : heroHands(facing, opt).right);
   if (kind === "whip") {
     // Tentacle whip keeps its own id/name/stats but uses the abyssal whip sprite.
-    drawHeroWhip(c, t, labStyle("abyssal_whip"), facing, pos);
+    drawHeroWhip(c, t, labStyle("abyssal_whip"), facing, pos, opt && opt.shot);
   }
   else if (kind === "wand") {
     if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
       XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t, false, opt && opt.shot, pos);
     }
   } else if (kind === "sword" && window.XscapeKnightArt && XscapeKnightArt.drawSwordHeld) {
-    XscapeKnightArt.drawSwordHeld(c, t, facing, pos);
+    XscapeKnightArt.drawSwordHeld(c, t, facing, pos, opt && opt.shot);
   } else if (kind === "axe" && window.XscapeGorehornArt && XscapeGorehornArt.drawAxeHeld) {
-    XscapeGorehornArt.drawAxeHeld(c, t, facing, pos);
+    XscapeGorehornArt.drawAxeHeld(c, t, facing, pos, opt && opt.shot);
   } else if (kind === "spear" && window.XscapeColossusArt && XscapeColossusArt.drawSpearHeld) {
     XscapeColossusArt.drawSpearHeld(c, t, facing, pos);
   } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase, pos);
@@ -2828,6 +2883,8 @@ window.LAB_SLOTS = LAB_SLOTS;
 window.LAB_DEFAULTS = LAB_DEFAULTS;
 window.LAB_TIER_ORDER = LAB_TIER_ORDER;
 window.LAB_TIER_LABEL = LAB_TIER_LABEL;
+window.shotForWeapon = shotForWeapon;
+window.facingForward = facingForward;
 window.drawLabPlayer = drawLabPlayer;
 window.drawLabPlayerBack = drawLabPlayerBack;
 window.drawPlayerFacing = drawPlayerFacing;

@@ -320,20 +320,30 @@
     return 0.58; // right: haft up and forward, blade on +X continues forward
   }
 
-  function drawAxeHeld(c, t, facing, hand) {
+  function axeAttackAngle(facing, shot) {
+    const rest = axeHoldAngle(facing);
+    const swing = (shot && shot.swing) || 0;
+    // swing 0 = rest, 1 = raised over/behind the head, negative = chopped down in front.
+    const dir = (facing === "left" || facing === "front") ? -1 : 1;
+    const offset = swing >= 0 ? -1.28 * swing * dir : -0.90 * swing * dir;
+    return rest + offset;
+  }
+
+  function drawAxeHeld(c, t, facing, hand, shot) {
     c.save();
     if (hand) c.translate(hand.x, hand.y);
     else if (facing === "front") c.translate(-5.5, -6.5);
     else if (facing === "back") c.translate(5.5, -8.0);
     else if (facing === "left") c.translate(-6.5, -7.0);
     else c.translate(6.5, -7.0);
-    c.rotate(axeHoldAngle(facing));
+    c.rotate(axeAttackAngle(facing, shot));
     drawWarAxe(c, facing);
     c.restore();
   }
   global.XscapeGorehornArt = {
     pal: pal, drawGorehorn: drawGorehorn, drawLabyrinth: drawLabyrinth,
     drawRock: drawRock, drawChargeGlow: drawChargeGlow, drawItemIcon: drawItemIcon,
-    drawHelm: drawHelm, drawPlate: drawPlate, drawLegs: drawLegs, drawAxeHeld: drawAxeHeld
+    drawHelm: drawHelm, drawPlate: drawPlate, drawLegs: drawLegs, drawAxeHeld: drawAxeHeld,
+    axeHoldAngle: axeHoldAngle, axeAttackAngle: axeAttackAngle
   };
 })(typeof window !== "undefined" ? window : globalThis);

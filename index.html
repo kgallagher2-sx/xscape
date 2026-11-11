@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111072541-7cc0ede";</script>
+  <script>window.XSCAPE_BUILD = "20261111073351-02e4834";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -5483,14 +5483,17 @@ function drawHealers(t) {
 
 function playerShotAnim() {
   const w = (typeof itemInSlot === "function") ? itemInSlot("weapon") : null;
-  const mage = !!(w && (
-    (typeof weaponKind === "function" && weaponKind(w.id) === "wand")
-    || w.magicBase
-    || w.style === "magic"
-    || (w.id && String(w.id).indexOf("widow_weaver_wand") !== -1)
-  ));
-  const speed = (w && w.speed) || (mage ? 5 : (typeof PLAYER_ATTACK_TICKS === "number" ? PLAYER_ATTACK_TICKS : 4));
-  const idle = mage && typeof mageCastAnimAt === "function" ? mageCastAnimAt(99, speed) : shotAnimAt(99);
+  const kind = (w && typeof weaponKind === "function") ? weaponKind(w.id) : null;
+  const mage = !!(kind === "wand" || kind === "widow" || (w && (
+    w.magicBase || w.style === "magic" || (w.id && String(w.id).indexOf("widow_weaver_wand") !== -1)
+  )));
+  const speed = (w && w.speed) || (mage ? 5 : (kind === "axe" ? 7 : (typeof PLAYER_ATTACK_TICKS === "number" ? PLAYER_ATTACK_TICKS : 4)));
+  const anim = (typeof weaponAnimAt === "function")
+    ? function (st) { return weaponAnimAt(st, speed, mage ? "wand" : kind); }
+    : (mage && typeof mageCastAnimAt === "function")
+      ? function (st) { return mageCastAnimAt(st, speed); }
+      : function (st) { return shotAnimAt(st, speed); };
+  const idle = anim(99);
   if (!G.player) return idle;
   let shotT;
   if (G._shotAnimT != null) shotT = G._shotAnimT;
@@ -5499,8 +5502,7 @@ function playerShotAnim() {
     const remain = Math.max(0, (G.player.atkCd || 0) - tickProgress());
     shotT = speed - remain;
   }
-  if (mage && typeof mageCastAnimAt === "function") return mageCastAnimAt(shotT, speed);
-  return shotAnimAt(shotT, speed);
+  return anim(shotT);
 }
 
 function playerBowTip() {

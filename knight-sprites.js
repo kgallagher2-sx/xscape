@@ -291,17 +291,23 @@
     c.restore();
   }
 
-  function drawSwordHeld(c, t, facing, hand) {
+  function drawSwordHeld(c, t, facing, hand, shot) {
     c.save();
     if (hand) c.translate(hand.x, hand.y);
     else if (facing === "front") c.translate(-12.4, -9.6);
     else if (facing === "back") c.translate(11.6, -12.4);
-    else if (facing === "left") c.translate(8.0, -9.8);
-    else c.translate(9.6, -9.8);
-    if (facing === "front") c.rotate(-0.55);
-    else if (facing === "back") c.rotate(0.55);
-    else if (facing === "left") c.rotate(-0.55); // blade up and forward (screen-left)
-    else c.rotate(0.55); // blade up and forward (screen-right)
+    else if (facing === "left") c.translate(1.6, -9.8);
+    else c.translate(7.6, -9.8);
+    const thrust = (shot && shot.thrust) || 0;
+    const pull = (shot && shot.pull) || 0;
+    // Rest: blade up-forward. Pull: more vertical / cocked back.
+    // Thrust: flatten toward the target so the stab reads clearly.
+    let ang;
+    if (facing === "front") ang = -0.55 - 0.50 * Math.max(0, thrust) + 0.22 * pull;
+    else if (facing === "back") ang = 0.55 + 0.50 * Math.max(0, thrust) - 0.22 * pull;
+    else if (facing === "left") ang = -0.55 - 0.62 * Math.max(0, thrust) + 0.28 * pull;
+    else ang = 0.55 + 0.62 * Math.max(0, thrust) - 0.28 * pull;
+    c.rotate(ang);
     // Local drawing has the grip around y=8; put that at the hand.
     c.translate(0, -8);
     c.fillStyle = pal.steelLt;

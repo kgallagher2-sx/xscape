@@ -2169,9 +2169,16 @@
     const sP = (typeof L !== "undefined" && L.sP) ? L.sP : clamp(Math.min(W, H) / 390 * 0.9, 0.68, 1.15);
     ctx.scale(sP, sP);
     const remain = p.atkCd;
+    const wepId = (p && (p.equipment || p.loadout) && (p.equipment || p.loadout).weapon);
+    const wep = (typeof ITEMS !== "undefined" && ITEMS[wepId]) || {};
+    const kind = (typeof weaponKind === "function") ? weaponKind(wepId) : null;
+    const speed = wep.speed || (kind === "axe" ? 7 : kind === "wand" ? 5 : 4);
     let shotT = 99;
-    if (remain >= 0 && remain < 4) shotT = 4 - remain - prog;
-    const shot = (typeof shotAnimAt === "function") ? shotAnimAt(shotT, 4) : { raise:0, recoil:0 };
+    if (remain >= 0 && remain < speed) shotT = speed - remain - prog;
+    const shot = (typeof shotForWeapon === "function")
+      ? shotForWeapon(wepId, shotT)
+      : ((typeof weaponAnimAt === "function") ? weaponAnimAt(shotT, speed, kind)
+        : ((typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise:0, recoil:0 }));
     const P = profileObj();
     const recoilBase = (p.atkCd >= 3) ? -0.12 : 0;
     const eq = (p && (p.equipment || p.loadout))

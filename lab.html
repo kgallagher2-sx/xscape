@@ -651,15 +651,23 @@ function refreshJson() {
 function paintPreview(t) {
   const paused = document.getElementById("pause").checked;
   const eq = LabGear.equipment || {};
-  const mage = (typeof weaponKind === "function" && weaponKind(eq.weapon) === "wand")
-    || (eq.weapon && String(eq.weapon).indexOf("widow_weaver_wand") !== -1);
+  const kind = (typeof weaponKind === "function") ? weaponKind(eq.weapon) : null;
+  const it = (typeof LAB_ITEMS !== "undefined" && LAB_ITEMS[eq.weapon])
+    || (typeof ITEMS !== "undefined" && ITEMS[eq.weapon]);
+  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" ? 5 : kind === "axe" ? 7 : 4);
+  const animAt = (typeof shotForWeapon === "function")
+    ? function (st) { return shotForWeapon(eq.weapon, st); }
+    : (typeof weaponAnimAt === "function")
+      ? function (st) { return weaponAnimAt(st, speed, kind); }
+      : function (st) { return shotAnimAt(st, speed); };
   let shot;
   if (paused) {
-    shot = mage && typeof mageCastAnimAt === "function" ? mageCastAnimAt(99, 5) : shotAnimAt(99);
-  } else if (mage && typeof mageCastAnimAt === "function") {
-    shot = ((t / TICK) % 8 < 3) ? mageCastAnimAt(99, 5) : mageCastAnimAt((t / TICK) % 5, 5);
+    shot = animAt(99);
   } else {
-    shot = shotAnimAt(((t / TICK) % 8 < 4) ? 99 : ((t / TICK) % 4), 4);
+    // A few ticks of rest, then one full attack cycle (windup at the end, strike at 0).
+    const period = speed + 3;
+    const u = (t / TICK) % period;
+    shot = (u < 3) ? animAt(99) : animAt(u - 3);
   }
   const focus = LabGear.facing || "back";
   for (const view of previewCanvases) {
