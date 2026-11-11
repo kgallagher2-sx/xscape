@@ -6759,15 +6759,17 @@ function showTitle() {
   G._retryGorehorn = false;
   G._retryColossus = false;
   if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
-  // After the initial ?test= boot, returning to the title/hub leaves test mode.
-  if (typeof _bootTestPending !== "undefined" && !_bootTestPending && typeof clearTestMode === "function") {
-    clearTestMode();
-  }
   // Test modes skip the sign-in screen so ?test= URLs still jump into a fight.
+  // Check the latch BEFORE clearing it: closing a loot overlay must land on
+  // the hub (enterScene("hub") then clears test mode) instead of login.
   if (typeof testFlag === "function" && testFlag()) {
     if (Profile.name) enterScene("hub");
     else enterScene("login");
     return;
+  }
+  // After the initial ?test= boot, returning to the title/hub leaves test mode.
+  if (typeof _bootTestPending !== "undefined" && !_bootTestPending && typeof clearTestMode === "function") {
+    clearTestMode();
   }
   // Let the cloud client decide once it is ready. Until then, stay on the
   // sign-in screen even if a local name exists (legacy players are prompted
