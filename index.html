@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111202010-adb2216";</script>
+  <script>window.XSCAPE_BUILD = "20261111224507-090c8ec";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -560,10 +560,23 @@
       text-shadow: 0 2px 0 #000;
     }
     #gear-bonuses {
-      margin: 4px 0 8px; font-size: 11px; color: #d8c48a;
-      display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center;
+      margin: 4px 0 8px; color: #d8c48a;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 8px;
     }
-    #gear-bonuses b { color: var(--gold); }
+    #gear-bonuses .bonus-group {
+      background: rgba(16,10,6,0.45); border: 1px solid #5a4630;
+      border-radius: 4px; padding: 4px 6px 5px; min-width: 0;
+    }
+    #gear-bonuses .bonus-h {
+      color: #d4a84a; font-size: 9px; font-weight: 700; letter-spacing: 0.02em;
+      margin-bottom: 3px; text-transform: uppercase;
+    }
+    #gear-bonuses .bonus-row {
+      display: flex; justify-content: space-between; gap: 4px;
+      color: #d8c48a; font-size: 10px; line-height: 1.28;
+    }
+    #gear-bonuses .bonus-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #gear-bonuses .bonus-row b { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
     #gear-worn { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 10px; }
     .slot-btn {
       display: grid; grid-template-columns: 58px 1fr auto; gap: 8px; align-items: center;
@@ -1017,10 +1030,12 @@
       background: #2a1810; color: #f0e0b0; font: 700 12px/1 "Trebuchet MS", sans-serif; cursor: pointer;
     }
     #gear-facing button.on { background: #5a3a10; border-color: #ffcf3a; color: #ffe44a; }
-    /* Compact equipment: worn + full 28-slot inventory must fit on phone portrait without scrolling. */
+    /* Compact equipment: worn slots + full OSRS bonus panel must fit on
+       phone portrait (390x844) above the HUD and action bar with no scroll.
+       Inventory lives on the Inventory tab; tapping a worn slot opens a picker. */
     #overlay-gear .gear-card { padding: 8px 10px 8px; }
     #overlay-gear .gear-card h2 { font-size: 22px; margin: 0 0 4px; }
-    #overlay-gear .gear-scroll { overflow-y: auto; }
+    #overlay-gear .gear-scroll { overflow: hidden; }
     #overlay-gear .gear-top {
       display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 8px;
       align-items: start; margin: 0 0 4px;
@@ -1035,22 +1050,60 @@
     }
     #overlay-gear #gear-worn .slot-btn {
       padding: 2px 4px; gap: 4px; font-size: 10px;
-      grid-template-columns: 32px 22px minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) 22px;
     }
-    #overlay-gear #gear-worn .slot-btn .k { font-size: 9px; }
-    #overlay-gear #gear-worn .slot-btn .tier { font-size: 8px; margin-top: 0; }
-    #overlay-gear #gear-worn .slot-btn .act { font-size: 8px; }
+    #overlay-gear #gear-worn .slot-btn .k { font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #overlay-gear #gear-worn .slot-btn canvas.osrs-slot-icon { width: 22px; height: 22px; flex: 0 0 22px; }
-    #overlay-gear #gear-bonuses { margin: 2px 0 4px; font-size: 10px; gap: 2px 8px; }
+    #overlay-gear #gear-bonuses { margin: 6px 0 4px; gap: 6px 8px; }
     #overlay-gear .gear-sec { margin: 4px 0 3px; font-size: 11px; }
-    #overlay-gear #gear-inventory.osrs-grid { gap: 3px; }
-    #overlay-gear #gear-inventory .osrs-slot { min-height: 38px; padding: 2px; }
-    #overlay-gear #gear-inventory .osrs-slot canvas.osrs-slot-icon { width: 28px; height: 28px; }
-    #overlay-gear .gear-foot { font-size: 9px; margin-top: 4px; line-height: 1.25; }
+    #overlay-gear .gear-foot { font-size: 9px; margin-top: 6px; line-height: 1.25; }
     #overlay-gear .gear-actions { margin-top: 6px; padding-top: 6px; }
     #overlay-gear .gear-card {
-      max-height: calc(var(--app-height) - 16px);
+      max-height: calc(var(--app-height) - var(--hud-top) - var(--hud-bottom) - 16px);
     }
+    #equip-picker {
+      position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+      width: auto; max-width: none; z-index: 160;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(8,4,2,0.72);
+      padding: 16px 12px;
+      box-sizing: border-box;
+    }
+    #equip-picker.hidden, #equip-picker[hidden] { display: none !important; }
+    #equip-picker-card {
+      width: 100%;
+      max-width: 300px;
+      min-width: 0;
+      max-height: min(520px, calc(var(--app-height) - var(--hud-top) - var(--hud-bottom) - 48px));
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      background: linear-gradient(#3a2c1c, #24180e);
+      border: 3px solid #c9a24a;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+      padding: 10px 10px 8px;
+      box-sizing: border-box;
+    }
+    #equip-picker-title {
+      color: #ffe9a0; font-weight: 800; font-size: 14px; text-align: center;
+      margin-bottom: 6px; text-shadow: 0 1px 0 #000;
+    }
+    #equip-picker-list {
+      flex: 1 1 auto; min-height: 48px; max-height: 280px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    #equip-picker-empty { color: #8a7a50; font-size: 12px; text-align: center; padding: 16px 8px; }
+    #equip-picker-list .slot-btn {
+      grid-template-columns: 36px minmax(0, 1fr);
+      width: 100%; max-width: 100%; min-width: 0;
+    }
+    #equip-picker-list .slot-btn .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #equip-picker-actions { display: flex; gap: 6px; margin-top: 8px; min-width: 0; }
+    #equip-picker-actions .btn {
+      flex: 1 1 0; min-width: 0; width: auto; margin: 0;
+      height: 44px; font-size: 15px; padding: 0 8px;
+    }
+    #equip-picker-remove.hidden, #equip-picker-remove[hidden] { display: none !important; }
     @media (max-height: 720px) {
       #overlay-gear .gear-card { padding: 6px 8px 6px; }
       #overlay-gear .gear-card h2 { font-size: 18px; margin: 0 0 2px; }
@@ -1059,17 +1112,15 @@
       #overlay-gear #gear-worn { gap: 2px; }
       #overlay-gear #gear-worn .slot-btn {
         padding: 1px 3px; gap: 3px; font-size: 9px;
-        grid-template-columns: 28px 18px minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) 18px;
       }
       #overlay-gear #gear-worn .slot-btn .k { font-size: 8px; }
-      #overlay-gear #gear-worn .slot-btn .tier { font-size: 7px; }
-      #overlay-gear #gear-worn .slot-btn .act { font-size: 7px; }
       #overlay-gear #gear-worn .slot-btn canvas.osrs-slot-icon { width: 18px; height: 18px; flex: 0 0 18px; }
-      #overlay-gear #gear-bonuses { margin: 1px 0 2px; font-size: 9px; gap: 1px 6px; }
-      #overlay-gear #gear-inventory.osrs-grid { gap: 2px; }
-      #overlay-gear #gear-inventory .osrs-slot { min-height: 26px; padding: 1px; }
-      #overlay-gear #gear-inventory .osrs-slot canvas.osrs-slot-icon { width: 20px; height: 20px; }
-      #overlay-gear .gear-foot { font-size: 8px; margin-top: 2px; line-height: 1.2; }
+      #overlay-gear #gear-bonuses { margin: 4px 0 2px; gap: 4px 6px; }
+      #overlay-gear #gear-bonuses .bonus-h { font-size: 8px; margin-bottom: 2px; }
+      #overlay-gear #gear-bonuses .bonus-row { font-size: 9px; line-height: 1.22; }
+      #overlay-gear #gear-bonuses .bonus-group { padding: 3px 4px 4px; }
+      #overlay-gear .gear-foot { font-size: 8px; margin-top: 4px; line-height: 1.2; }
       #overlay-gear .gear-actions { margin-top: 4px; padding-top: 4px; }
     }
     .boss-row { display: flex; gap: 8px; align-items: stretch; width: 100%; }
@@ -1382,14 +1433,22 @@
         </div>
         </div>
         <div id="gear-bonuses"></div>
-        <div class="gear-sec">Inventory</div>
-        <div id="gear-inventory" class="osrs-grid"></div>
-        <div class="gear-foot">Tap an inventory item to wear it. Tap a worn item to unequip it into your inventory. Your bank is only at a bank booth or banker — it is not listed here. Starter kit is always yours; better pieces come from Gloamhold chests and the vault.</div>
+        <div class="gear-foot">Tap a worn slot to choose an item from your inventory.</div>
         </div>
         <div class="sheet-actions gear-actions">
           <button class="btn" id="btn-gear-close" type="button">CLOSE</button>
         </div>
       </div>
+        <div id="equip-picker" class="hidden" hidden>
+          <div id="equip-picker-card" role="dialog" aria-modal="true" aria-labelledby="equip-picker-title">
+            <div id="equip-picker-title">Choose item</div>
+            <div id="equip-picker-list"></div>
+            <div id="equip-picker-actions">
+              <button class="btn" type="button" id="equip-picker-remove">Remove</button>
+              <button class="btn" type="button" id="equip-picker-close">Close</button>
+            </div>
+          </div>
+        </div>
     </div>
 
     <div class="overlay hidden" id="overlay-shop">
@@ -3103,28 +3162,58 @@ function gearTierLabel(it) {
   return "Tier 1 · Starter";
 }
 
+function fmtEquipBonus(n, suffix) {
+  n = Number(n) || 0;
+  return (n < 0 ? "" : "+") + n + (suffix || "");
+}
+function equipBonusRow(label, value, suffix) {
+  return '<div class="bonus-row"><span>' + label + "</span><b>" + fmtEquipBonus(value, suffix) + "</b></div>";
+}
+function wornPrayerBonus(pb) {
+  if (pb && pb.pray != null && isFinite(Number(pb.pray))) return Number(pb.pray);
+  if (pb && pb.prayer != null && isFinite(Number(pb.prayer))) return Number(pb.prayer);
+  const eq = (typeof Profile !== "undefined" && Profile && Profile.equipment) || {};
+  let found = false;
+  let sum = 0;
+  for (let i = 0; i < EQUIP_SLOTS.length; i++) {
+    const it = ITEMS[eq[EQUIP_SLOTS[i]]];
+    if (!it || !it.bonuses) continue;
+    const v = (it.bonuses.pray != null) ? it.bonuses.pray : it.bonuses.prayer;
+    if (v != null && isFinite(Number(v))) {
+      found = true;
+      sum += Number(v);
+    }
+  }
+  return found ? sum : null;
+}
+
 function renderEquipmentOverlay() {
   const worn = $("gear-worn");
   const bonusEl = $("gear-bonuses");
   if (bonusEl) {
     const pb = playerBonuses();
-    const wep = (typeof itemInSlot === "function") ? itemInSlot("weapon") : null;
-    const mage = !!(wep && (wep.magicBase || wep.style === "magic"));
-    if (mage) {
-      const vs = combatVsMonster("widow-queen", "magic");
-      bonusEl.innerHTML =
-        "<span>Magic atk <b>+" + pb.amagic + "</b></span>" +
-        "<span>Magic dmg <b>+" + (pb.mdmg || 0) + "%</b></span>" +
-        "<span>Def (magic) <b>+" + pb.dmagic + "</b></span>" +
-        "<span>vs Queen <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
-    } else {
-      const vs = combatVsMonster("tztok-jad", "ranged");
-      bonusEl.innerHTML =
-        "<span>Ranged atk <b>+" + pb.arange + "</b></span>" +
-        "<span>Ranged str <b>+" + pb.rstr + "</b></span>" +
-        "<span>Def (range) <b>+" + pb.drange + "</b></span>" +
-        "<span>vs Magmor <b>" + Math.round(vs.chance * 100) + "% / " + vs.maxHit + " max</b></span>";
-    }
+    const pray = wornPrayerBonus(pb);
+    bonusEl.innerHTML =
+      '<div class="bonus-group"><div class="bonus-h">Attack bonuses</div>' +
+        equipBonusRow("Stab", pb.astab) +
+        equipBonusRow("Slash", pb.aslash) +
+        equipBonusRow("Crush", pb.acrush) +
+        equipBonusRow("Magic", pb.amagic) +
+        equipBonusRow("Ranged", pb.arange) +
+      "</div>" +
+      '<div class="bonus-group"><div class="bonus-h">Defence bonuses</div>' +
+        equipBonusRow("Stab", pb.dstab) +
+        equipBonusRow("Slash", pb.dslash) +
+        equipBonusRow("Crush", pb.dcrush) +
+        equipBonusRow("Magic", pb.dmagic) +
+        equipBonusRow("Ranged", pb.drange) +
+      "</div>" +
+      '<div class="bonus-group"><div class="bonus-h">Other bonuses</div>' +
+        equipBonusRow("Melee str", pb.str) +
+        equipBonusRow("Ranged str", pb.rstr) +
+        equipBonusRow("Magic dmg", pb.mdmg, "%") +
+        (pray != null ? equipBonusRow("Prayer", pray) : "") +
+      "</div>";
   }
   if (worn) {
     const eq = Profile.equipment || cloneLoadout("starter");
@@ -3132,43 +3221,97 @@ function renderEquipmentOverlay() {
       const it = eq[s] && ITEMS[eq[s]];
       const name = it ? it.name : "Empty";
       const klass = "slot-btn" + (it ? " " + gearTierClass(it.tier) : " empty");
-      const act = it ? "Unequip" : "";
       const icon = it ? '<canvas class="osrs-slot-icon" width="44" height="44" data-item-id="' + eq[s] + '"></canvas>' : '<span></span>';
       return '<button type="button" class="' + klass + '" data-slot="' + s + '" data-item-id="' + (eq[s] || "") + '" title="' + name + '">' +
         '<span class="k">' + SLOT_LABELS[s] + "</span>" +
-        icon +
-        "<span>" + (it ? '<span class="tier">' + gearTierLabel(it) + "</span>" : "Empty") + "</span>" +
-        '<span class="act">' + act + "</span></button>";
+        icon + "</button>";
     }).join("");
-  }
-  const invEl = $("gear-inventory");
-  if (invEl) {
-    const items = inventoryDisplaySlots();
-    const slots = [];
-    for (let i = 0; i < 28; i++) {
-      const cell = items[i];
-      const id = cell && cell.id;
-      const it = id && (ITEMS[id] || (isRuneItem(id) && { name: runeItemName(id) }));
-      if (it) {
-        const qty = cell.qty || 1;
-        const title = it.name + (qty > 1 ? (" ×" + qty) : "");
-        slots.push('<button type="button" class="osrs-slot" data-inv-item="' + id + '" data-qty="' + qty + '" title="' + title + '"></button>');
-      } else {
-        slots.push('<div class="osrs-slot empty"></div>');
-      }
-    }
-    invEl.innerHTML = slots.join("");
-    if (window.XscapeSupplies && XscapeSupplies.decorateContainer) XscapeSupplies.decorateContainer(invEl);
     if (window.XscapeIcons) {
-      if (worn) {
-        worn.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
-          XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
-        });
-      }
-      if (XscapeIcons.bindExamine) XscapeIcons.bindExamine(document.getElementById("overlay-gear"));
+      worn.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
+        XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
+      });
     }
   }
-  // Bank contents belong only in overlay-bank (booth / banker).
+  if (equipPickerSlot && $("equip-picker") && !$("equip-picker").hidden && !$("equip-picker").classList.contains("hidden")) {
+    renderEquipPicker();
+  }
+}
+
+let equipPickerSlot = null;
+
+function inventoryItemsForSlot(slot) {
+  const seen = {};
+  const out = [];
+  const list = (typeof inventoryList === "function") ? inventoryList() : (Profile.inventory || []);
+  for (let i = 0; i < list.length; i++) {
+    const id = list[i];
+    if (!id || seen[id]) continue;
+    const it = ITEMS[id];
+    if (it && it.slot === slot) {
+      seen[id] = true;
+      out.push(id);
+    }
+  }
+  return out;
+}
+
+function closeEquipPicker() {
+  equipPickerSlot = null;
+  const el = $("equip-picker");
+  if (!el) return;
+  el.classList.add("hidden");
+  el.hidden = true;
+}
+
+function renderEquipPicker() {
+  const slot = equipPickerSlot;
+  if (!slot) return;
+  const title = $("equip-picker-title");
+  if (title) title.textContent = (SLOT_LABELS[slot] || slot);
+  const removeBtn = $("equip-picker-remove");
+  const eq = (Profile && Profile.equipment) || {};
+  const wornId = eq[slot];
+  if (removeBtn) {
+    if (wornId) {
+      removeBtn.classList.remove("hidden");
+      removeBtn.hidden = false;
+    } else {
+      removeBtn.classList.add("hidden");
+      removeBtn.hidden = true;
+    }
+  }
+  const listEl = $("equip-picker-list");
+  if (!listEl) return;
+  const ids = inventoryItemsForSlot(slot);
+  if (!ids.length) {
+    const label = ((SLOT_LABELS[slot] || slot) + "").toLowerCase();
+    listEl.innerHTML = '<div id="equip-picker-empty">No ' + label + " items in your inventory.</div>";
+    return;
+  }
+  listEl.innerHTML = ids.map(function (id) {
+    const it = ITEMS[id];
+    const name = it ? it.name : id;
+    const two = (it && it.twohand) ? '<span class="tier"> · Two-handed</span>' : "";
+    const klass = "slot-btn" + (it ? " " + gearTierClass(it.tier) : "");
+    return '<button type="button" class="' + klass + '" data-inv-item="' + id + '" data-item-id="' + id + '" title="' + name + '">' +
+      '<canvas class="osrs-slot-icon" width="44" height="44" data-item-id="' + id + '"></canvas>' +
+      '<span class="nm">' + name + two + "</span></button>";
+  }).join("");
+  if (window.XscapeIcons) {
+    listEl.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
+      XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
+    });
+  }
+}
+
+function openEquipPicker(slot) {
+  if (!isEquipSlot(slot)) return;
+  equipPickerSlot = slot;
+  renderEquipPicker();
+  const el = $("equip-picker");
+  if (!el) return;
+  el.classList.remove("hidden");
+  el.hidden = false;
 }
 
 function openEquipmentView() {
@@ -3180,6 +3323,7 @@ function openEquipmentView() {
 function closeEquipmentView() {
   const el = $("overlay-gear");
   if (!el || el.classList.contains("hidden")) return;
+  if (typeof closeEquipPicker === "function") closeEquipPicker();
   el.classList.add("hidden");
   swallowNextTaps();
   if (inHubScene()) $("overlay-hub").classList.remove("hidden");
@@ -7448,10 +7592,36 @@ if ($("gear-worn")) {
     const btn = e.target.closest && e.target.closest("[data-slot]");
     if (!btn) return;
     audio.unlock();
-    unequipSlot(btn.getAttribute("data-slot"));
+    openEquipPicker(btn.getAttribute("data-slot"));
   };
   $("gear-worn").addEventListener("click", onWorn);
   $("gear-worn").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onWorn(e); });
+}
+if ($("equip-picker")) {
+  bindTap($("equip-picker-close"), () => { audio.unlock(); closeEquipPicker(); });
+  bindTap($("equip-picker-remove"), () => {
+    audio.unlock();
+    const slot = equipPickerSlot;
+    if (slot) unequipSlot(slot);
+    closeEquipPicker();
+  });
+  $("equip-picker").addEventListener("click", (e) => {
+    if (e.target === $("equip-picker")) { audio.unlock(); closeEquipPicker(); }
+  });
+  const listEl = $("equip-picker-list");
+  if (listEl) {
+    const onPick = (e) => {
+      if (typeof itemInspectConsumed === "function" && itemInspectConsumed()) return;
+      const btn = e.target.closest && e.target.closest("[data-inv-item]");
+      if (!btn || !listEl.contains(btn)) return;
+      audio.unlock();
+      const id = btn.getAttribute("data-inv-item");
+      if (id && !equipItem(id)) return;
+      closeEquipPicker();
+    };
+    listEl.addEventListener("click", onPick);
+    listEl.addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onPick(e); });
+  }
 }
 if ($("gear-bank")) {
   const onBank = (e) => {
@@ -7465,28 +7635,7 @@ if ($("gear-bank")) {
   $("gear-bank").addEventListener("click", onBank);
   $("gear-bank").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onBank(e); });
 }
-if ($("gear-inventory")) {
-  let lastInvTap = 0;
-  const onInv = (e) => {
-    if (typeof itemInspectConsumed === "function" && itemInspectConsumed()) return;
-    const btn = e.target.closest && e.target.closest("[data-inv-item]");
-    if (!btn) return;
-    const nowMs = Date.now();
-    if (nowMs - lastInvTap < 350) return;
-    lastInvTap = nowMs;
-    audio.unlock();
-    const id = btn.getAttribute("data-inv-item");
-    if (!canWearItem(id)) {
-      if (typeof flashMsg === "function") {
-        flashMsg(itemIsConsumable(id) ? "Use this during a fight" : "You can't wear that", "#ffe9a0");
-      }
-      return;
-    }
-    equipItem(id);
-  };
-  $("gear-inventory").addEventListener("click", onInv);
-  $("gear-inventory").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onInv(e); });
-}
+
 
 let raidBriefReturn = { start: false, opts: null };
 
@@ -7816,6 +7965,7 @@ function closeHowToPlay() {
 function dismissTopOverlay() {
   if (typeof itemInspectOpen !== "undefined" && itemInspectOpen) { audio.unlock(); hideItemInspect(); return true; }
   if (window.XscapeHub && XscapeHub.dismiss && XscapeHub.dismiss()) { audio.unlock(); return true; }
+  if ($("equip-picker") && !$("equip-picker").hidden && !$("equip-picker").classList.contains("hidden")) { audio.unlock(); closeEquipPicker(); return true; }
   if (overlayIsOpen("overlay-gear")) { audio.unlock(); closeEquipmentView(); return true; }
   if (overlayIsOpen("overlay-shop")) { audio.unlock(); closeShop(); return true; }
   if (overlayIsOpen("overlay-help")) { closeHubHelp(); return true; }
