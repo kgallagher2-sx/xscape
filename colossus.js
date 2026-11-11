@@ -51,6 +51,17 @@
     return false;
   }
 
+  // Planted mooring: he does not walk. Basics only from this tile.
+  const COLO_TILE_COL = 2;
+  const COLO_TILE_ROW = 3;
+  function coloChebyshev(p) {
+    if (!p) return 99;
+    return Math.max(Math.abs((p.tileCol || 0) - COLO_TILE_COL), Math.abs((p.tileRow || 0) - COLO_TILE_ROW));
+  }
+  function coloInMeleeRange(p) {
+    return coloChebyshev(p) <= 1;
+  }
+
   function claimTiles() {
     if (!global.TILE || tileOwned) return;
     savedTileRows = TILE.rows || 1;
@@ -509,7 +520,7 @@
         if (k.nextSpecial <= 0) {
           pickSpecial();
           k.nextSpecial = COLOSSUS_SPEED + irand(0, 2);
-        } else if ((G.ticks % COLOSSUS_SPEED) === 0) {
+        } else if ((G.ticks % COLOSSUS_SPEED) === 0 && coloInMeleeRange(G.player)) {
           applyColoHit("melee", { max: BASIC_MAX, kind: "basic" });
         }
       } else if (k.phase === "recover") {

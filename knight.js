@@ -575,10 +575,11 @@
     const G = g();
     const k = G && G.knight;
     if (!k || k.hp <= 0) return;
-    if (crownfallPending()) return;
+    // Independent clock: reset at launch and keep decrementing during the
+    // 3-tick tell. Do not launch a second plus while one is still live.
     if (k.nextCrownfall > 0) k.nextCrownfall--;
     if (k.nextCrownfall > 0) return;
-    if (judgementLive()) return;
+    if (crownfallPending() || judgementLive()) return;
     launchCrownfall();
     k.nextCrownfall = CROWNFALL_EVERY + irand(0, 2);
   }
@@ -626,6 +627,9 @@
     if (k.nextJudgement > 0) k.nextJudgement--;
     if (k.nextJudgement > 0) return;
     if (crownfallPending()) return;
+    // Do not start if a Crownfall is due within the 2-tick tell + fire tick,
+    // or the Crownfall clock would hold at 0 and stretch past a 12-14 gap.
+    if (k.nextCrownfall <= JUDGEMENT_TEL) return;
     startJudgement();
     k.nextJudgement = JUDGEMENT_EVERY + irand(0, 2);
   }
