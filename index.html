@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111082753-71f4153";</script>
+  <script>window.XSCAPE_BUILD = "20261111083104-340eb55";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -3218,22 +3218,86 @@ function debugEnabled() {
   } catch (e) { return false; }
 }
 
+function debugCombatMonsterId() {
+  const scene = (typeof G !== "undefined" && G && G.scene) || "";
+  if (scene === "kree") return "kree-arra";
+  if (scene === "widow") return "widow-queen";
+  if (scene === "knight") return "hollow-knight-king";
+  if (scene === "gorehorn") return "gorehorn-the-minotaur";
+  if (scene === "colossus") return "drowned-colossus";
+  if (scene === "raid") {
+    try {
+      const api = window.XscapeRaid;
+      const st = api && ((typeof api.getState === "function" && api.getState()) || (typeof api.state === "function" && api.state()));
+      const kind = st && st.boss && (st.boss.id || st.boss.kind);
+      if (kind && MONSTERS[kind]) return kind;
+    } catch (e) {}
+  }
+  return "tztok-jad";
+}
+function debugCombatShortName(mon) {
+  if (!mon) return "Jad";
+  if (mon.id === "tztok-jad") return "Jad";
+  if (mon.id === "kree-arra") return "Kree";
+  if (mon.id === "widow-queen") return "Widow Queen";
+  if (mon.id === "hollow-knight-king") return "Knight-King";
+  if (mon.id === "gorehorn-the-minotaur") return "Gorehorn";
+  if (mon.id === "drowned-colossus") return "Colossus";
+  return mon.name || mon.id || "Jad";
+}
+function debugCombatStyleLabel(style) {
+  if (style === "mage" || style === "magic") return "magic";
+  if (style === "range" || style === "ranged") return "ranged";
+  if (style === "melee" || style === "slash" || style === "stab" || style === "crush") return style;
+  return style || "ranged";
+}
+function debugIncomingStyle(monsterId) {
+  let s = null;
+  if (typeof G !== "undefined" && G) {
+    if (G.scene === "kree" && G.kree && G.kree.style) s = G.kree.style;
+    else if (G.scene === "widow" && G.widow && G.widow.style) s = G.widow.style;
+    else if (G.scene === "knight" && G.knight && G.knight.style) s = G.knight.style;
+    else if (G.scene === "gorehorn" && G.gorehorn && G.gorehorn.style) s = G.gorehorn.style;
+    else if (G.scene === "colossus" && G.colossus && G.colossus.style) s = G.colossus.style;
+    else if ((G.scene === "jad" || !G.scene) && G.jad && G.jad.style) s = G.jad.style;
+  }
+  if (s === "range") s = "ranged";
+  if (s === "magic") s = "mage";
+  if (s) return s;
+  if (monsterId === "widow-queen") return "mage";
+  if (monsterId === "hollow-knight-king" || monsterId === "gorehorn-the-minotaur" || monsterId === "drowned-colossus") return "melee";
+  return "ranged";
+}
+function debugStyleBonusesLine(pb, style, weapon) {
+  const name = weapon ? weapon.name : "unarmed";
+  const lab = debugCombatStyleLabel(style);
+  if (lab === "magic") return "mAtk +" + pb.amagic + "  mDmg +" + (pb.mdmg || 0) + "%  " + name;
+  if (lab === "slash") return "slash +" + pb.aslash + "  str +" + pb.str + "  " + name;
+  if (lab === "stab") return "stab +" + pb.astab + "  str +" + pb.str + "  " + name;
+  if (lab === "crush") return "crush +" + pb.acrush + "  str +" + pb.str + "  " + name;
+  return "rAtk +" + pb.arange + "  rStr +" + pb.rstr + "  " + name;
+}
 function updateDebugCombat() {
   const el = $("debug-combat");
   if (!el) return;
   const show = debugEnabled();
   el.classList.toggle("hidden", !show);
   if (!show) return;
-  const vs = combatVsMonster("tztok-jad", "ranged");
-  const def = monsterVsPlayer("tztok-jad", "ranged");
+  const monId = debugCombatMonsterId();
+  const mon = MONSTERS[monId] || MONSTERS["tztok-jad"];
+  const style = (typeof playerStyle === "function") ? playerStyle() : "ranged";
+  const vs = combatVsMonster(mon.id, style);
+  const inStyle = debugIncomingStyle(mon.id);
+  const def = monsterVsPlayer(mon.id, inStyle);
   const pb = playerBonuses();
   const tile = playerTile();
   const weapon = itemInSlot("weapon");
+  const boss = debugCombatShortName(mon);
   el.textContent = [
-    "vs Jad  acc " + Math.round(vs.chance * 1000) / 10 + "%  max " + vs.maxHit,
+    "vs " + boss + " (" + debugCombatStyleLabel(style) + ")  acc " + Math.round(vs.chance * 1000) / 10 + "%  max " + vs.maxHit,
     "atkRoll " + vs.atkRoll + "  defRoll " + vs.defRoll,
-    "rAtk +" + pb.arange + "  rStr +" + pb.rstr + "  " + (weapon ? weapon.name : "unarmed"),
-    "Jad hits you  acc " + Math.round(def.chance * 1000) / 10 + "%  max " + def.maxHit,
+    debugStyleBonusesLine(pb, style, weapon),
+    boss + " hits you (" + debugCombatStyleLabel(inStyle) + ")  acc " + Math.round(def.chance * 1000) / 10 + "%  max " + def.maxHit,
     "tile " + tile.col + "," + tile.row + (G.running ? "  RUN" : "  walk")
   ].join("\n");
 }
