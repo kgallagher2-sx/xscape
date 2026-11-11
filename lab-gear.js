@@ -1680,21 +1680,21 @@ function twoHandPose(facing, opt) {
       y: origin.y - dist * Math.cos(ang)
     };
   }
-  const dist = 10.2;
+  const dist = 8.6;
   if (facing === "front") {
-    const w = { x: -6.2, y: -6.5 - lift };
-    return { weapon: w, right: w, left: along(w, -0.48, dist) };
+    const w = { x: -5.5, y: -6.5 - lift };
+    return { weapon: w, right: w, left: along(w, -0.36, dist) };
   }
   if (facing === "back") {
-    const w = { x: 6.2, y: -8.0 - lift };
-    return { weapon: w, right: w, left: along(w, 0.48, dist) };
+    const w = { x: 5.5, y: -8.0 - lift };
+    return { weapon: w, right: w, left: along(w, 0.36, dist) };
   }
   if (facing === "right") {
-    const w = { x: 7.0, y: -7.0 - lift };
-    return { weapon: w, right: w, left: along(w, -0.35, dist) };
+    const w = { x: 6.5, y: -7.0 - lift };
+    return { weapon: w, right: w, left: along(w, 0.58, dist) };
   }
-  const w = { x: -7.0, y: -7.0 - lift };
-  return { weapon: w, right: w, left: along(w, 0.35, dist) };
+  const w = { x: -6.5, y: -7.0 - lift };
+  return { weapon: w, right: w, left: along(w, -0.58, dist) };
 }
 
 function heroShoulder(facing, side) {

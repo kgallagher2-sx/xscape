@@ -131,9 +131,9 @@
       c.fillStyle = pal.blood; c.fillRect(-12, 0, 10, 3); c.fillRect(2, 0, 10, 3);
     } else if (id === "gorehorn_axe") {
       // Shift and scale so the single-bit head stays inside the 44px cell.
-      c.translate(1, 7);
+      c.translate(0, 4);
       c.rotate(-0.55);
-      c.scale(0.82, 0.82);
+      c.scale(1.05, 1.05);
       drawWarAxe(c, "icon");
     }
     c.restore();
@@ -176,12 +176,15 @@
     c.restore();
   }
   /* War axe in local space: lower grip at (0,0), haft along -Y, head at the top.
-     Single-bit only — one crescent, no rear bit — so the head never covers
-     the wearer's face. dir = 1 draws the blade toward +X, -1 toward -X.
+     Single-bit only — one crescent, no rear bit. The haft is short enough
+     that a forward side-view lean puts the blade in front of the face,
+     clear of the helm/horns, and the whole axe stays inside ±26 of origin
+     (lab cell ±27.5, gear-char canvas ±32.6).
+     dir = 1 draws the blade toward +X, -1 toward -X.
      Front: blade on the outer (screen-left) side. Back: outer (screen-right).
      Side views: blade toward the facing direction. Icon: blade on +X. */
   function drawHaft(c) {
-    // Wooden pole, butt cap below the lower hand, eye at y≈-24.
+    // Wooden pole, butt cap below the lower hand, eye at y≈-18.5.
     const g = c.createLinearGradient(-1.6, 0, 1.6, 0);
     g.addColorStop(0, pal.woodDk);
     g.addColorStop(0.28, pal.wood);
@@ -190,19 +193,19 @@
     g.addColorStop(1, pal.woodDk);
     c.fillStyle = g;
     c.beginPath();
-    c.moveTo(-1.45, 9.2);
-    c.lineTo(-1.25, -24.5);
-    c.lineTo(1.25, -24.5);
-    c.lineTo(1.45, 9.2);
+    c.moveTo(-1.45, 8.4);
+    c.lineTo(-1.25, -18.5);
+    c.lineTo(1.25, -18.5);
+    c.lineTo(1.45, 8.4);
     c.closePath();
     c.fill();
     // bronze butt cap
     c.fillStyle = pal.bronzeDk;
-    c.fillRect(-1.8, 8.2, 3.6, 3.2);
+    c.fillRect(-1.8, 7.4, 3.6, 3.0);
     c.fillStyle = pal.bronzeLt;
-    c.fillRect(-1.8, 8.2, 3.6, 0.8);
+    c.fillRect(-1.8, 7.4, 3.6, 0.8);
     c.fillStyle = pal.bronze;
-    ellipse(c, 0, 11.0, 1.7, 1.1);
+    ellipse(c, 0, 10.0, 1.7, 1.1);
     // leather wraps: lower grip (right hand) and mid-haft (left hand)
     function wrap(y0, h) {
       c.fillStyle = pal.wrap;
@@ -214,8 +217,8 @@
         c.beginPath(); c.moveTo(-1.7, y); c.lineTo(1.7, y + 0.6); c.stroke();
       }
     }
-    wrap(0.2, 5.2);
-    wrap(-10.6, 4.4);
+    wrap(0.2, 4.8);
+    wrap(-8.0, 4.0);
   }
 
   function drawCrescent(c, dir, scale, y, bloody) {
@@ -282,36 +285,39 @@
   }
 
   function drawAxeHead(c, dir, scale) {
-    // Single-bit head: bronze socket on the haft, one big steel crescent.
+    // Single-bit head: bronze socket on the shorter haft, one steel crescent.
     c.fillStyle = pal.bronzeDk;
-    c.fillRect(-2.5, -27.2, 5.0, 9.4);
+    c.fillRect(-2.4, -21.0, 4.8, 8.4);
     c.fillStyle = pal.bronze;
-    c.fillRect(-2.1, -26.6, 4.2, 8.2);
+    c.fillRect(-2.0, -20.4, 4.0, 7.2);
     c.fillStyle = pal.bronzeLt;
-    c.fillRect(-2.1, -26.6, 4.2, 1.3);
+    c.fillRect(-2.0, -20.4, 4.0, 1.2);
     c.fillStyle = pal.blood;
-    c.fillRect(-2.1, -20.2, 4.2, 1.0);
+    c.fillRect(-2.0, -14.8, 4.0, 0.9);
     c.fillStyle = pal.steelDk;
-    ellipse(c, 0, -24.8, 0.7, 0.7);
-    ellipse(c, 0, -20.6, 0.7, 0.7);
-    drawCrescent(c, dir, scale || 1.18, -22.2, true);
+    ellipse(c, 0, -18.8, 0.65, 0.65);
+    ellipse(c, 0, -15.2, 0.65, 0.65);
+    drawCrescent(c, dir, scale || 0.82, -16.5, true);
   }
 
   function drawWarAxe(c, view) {
     drawHaft(c);
     // Blade on the outer side (away from the face) in front/back;
     // forward in side views; +X for the inventory icon.
-    if (view === "front") drawAxeHead(c, -1, 1.18);
-    else if (view === "back") drawAxeHead(c, 1, 1.18);
-    else if (view === "left") drawAxeHead(c, -1, 1.22);
-    else drawAxeHead(c, 1, 1.22); // right + icon
+    if (view === "front") drawAxeHead(c, -1, 0.82);
+    else if (view === "back") drawAxeHead(c, 1, 0.82);
+    else if (view === "left") drawAxeHead(c, -1, 0.76);
+    else drawAxeHead(c, 1, 0.76); // right + icon
   }
 
   function axeHoldAngle(facing) {
-    if (facing === "front") return -0.48;
-    if (facing === "back") return 0.48;
-    if (facing === "left") return 0.35;
-    return -0.35; // right: haft tips slightly back, blade on +X faces forward
+    // Front/back: modest outward lean, blade clear of the face and the
+    // ±27.5 sprite frame. Side views: haft leans FORWARD so the blade
+    // sits in front of the helm, not over it.
+    if (facing === "front") return -0.36;
+    if (facing === "back") return 0.36;
+    if (facing === "left") return -0.58;
+    return 0.58; // right: haft up and forward, blade on +X continues forward
   }
 
   function drawAxeHeld(c, t, facing, hand) {
@@ -319,8 +325,8 @@
     if (hand) c.translate(hand.x, hand.y);
     else if (facing === "front") c.translate(-5.5, -6.5);
     else if (facing === "back") c.translate(5.5, -8.0);
-    else if (facing === "left") c.translate(-7.0, -7.0);
-    else c.translate(7.0, -7.0);
+    else if (facing === "left") c.translate(-6.5, -7.0);
+    else c.translate(6.5, -7.0);
     c.rotate(axeHoldAngle(facing));
     drawWarAxe(c, facing);
     c.restore();
