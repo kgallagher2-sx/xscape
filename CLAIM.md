@@ -11,4 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
-- `colossus.js`, `gorehorn.js`, `knight.js`, `kree.js`, `widow.js`, `raid.js` | Boss Mechanics | 2026-11-11 11:08 America/New_York | Hook spellbook API into boss/raid attacks; set Morvane HP to 720
+(none)
