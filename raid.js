@@ -573,9 +573,11 @@
         bumpInv(st.inv, fam, 1);
       }
     }
+    installFoundSupplySlots();
     if (global.XscapeSupplies && XscapeSupplies.refresh) {
       try { XscapeSupplies.refresh(); } catch (e) {}
     }
+    paintFoundQuickSlots();
   }
   function rollLocalAlcoveLoot(st, room) {
     var rng = st && st.rng ? st.rng : Math.random;
@@ -1337,6 +1339,7 @@
     else if (id.indexOf("chest") === 0) setupChest(st, id);
     if (!keepSnap) st.snapshot = snapshotRoom(st);
     // Room name is already on the map strip and in the HUD — don't flash it over the boss plate.
+    syncRaidDebugTile(st);
     if (id === "throne") refreshRaidDebugCombat();
     else clearBossPlate();
   }
@@ -1447,6 +1450,7 @@
       const step = p.path.shift();
       p.col = step.c; p.row = step.r;
       p.stepping = true;
+      syncRaidDebugTile(st);
       moved = true;
     }
     if (moved) p.stillTicks = 0;
@@ -1523,8 +1527,17 @@
     var tt = targetTile(t);
     return tileManhattan(st.player.col, st.player.row, tt.col, tt.row) <= reach;
   }
+  function syncRaidDebugTile(st) {
+    if (typeof global.G === "undefined" || !global.G || !global.G.player || !st || !st.player) return;
+    global.G.player.tileCol = st.player.col;
+    global.G.player.tileRow = st.player.row;
+    if (typeof global.updateDebugCombat === "function") {
+      try { global.updateDebugCombat(); } catch (e) {}
+    }
+  }
   function pathTowardReach(st, t, reach) {
     if (!st || !st.player) return;
+    if (st._holdPosition) return;
     var tt = targetTile(t);
     var bestC = null, bestR = null, bestPd = 99, bestD = 99;
     for (var r = 0; r < ROWS; r++) {
@@ -1558,10 +1571,12 @@
           flash(st, "Too far", "#ff8a70");
         }
         if (!st.player.path || !st.player.path.length) pathTowardReach(st, t, reach);
+        syncRaidDebugTile(st);
         return;
       }
     }
     st.player.atkCd = playerSpeedFrom(eq);
+    syncRaidDebugTile(st);
     if (isMagic) sfx(st, "wind");
     else if (!isMelee) sfx(st, "crossbow");
     const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0, st.player.hp);
@@ -3028,7 +3043,47 @@
     showRaidResult: showRaidResult,
     meleeReachFor: meleeReachFor,
     inMeleeReach: inMeleeReach,
+    probeAttack: function (opts) {
+      opts = opts || {};
+      if (!R || !R.player) return null;
+      if (opts.col != null) R.player.col = opts.col | 0;
+      if (opts.row != null) R.player.row = opts.row | 0;
+      if (opts.hold !== false) R._holdPosition = true;
+      R.player.path = [];
+      R.player.atkCd = 0;
+      syncRaidDebugTile(R);
+      var t = currentTarget(R);
+      var eq = fighterGear(R.player);
+      var style = vsStyleOf(playerStyleFrom(eq));
+      var isMelee = style !== "magic" && style !== "mage" && style !== "ranged";
+      var reach = isMelee ? meleeReachFor(eq) : null;
+      var inReach = !t || !isMelee ? true : inMeleeReach(R, t, reach);
+      var hpBefore = R.boss ? R.boss.hp : null;
+      var cdBefore = R.player.atkCd;
+      var colBefore = R.player.col;
+      playerAttack(R);
+      var res = {
+        weapon: eq && eq.weapon,
+        style: style,
+        isMelee: isMelee,
+        reach: reach,
+        inReach: inReach,
+        colBefore: colBefore,
+        colAfter: R.player.col,
+        bossCol: R.boss && R.boss.col,
+        hpBefore: hpBefore,
+        hpAfter: R.boss ? R.boss.hp : null,
+        atkCdBefore: cdBefore,
+        atkCdAfter: R.player.atkCd,
+        swung: (R.player.atkCd || 0) > 0,
+        float: R.float && R.float.text,
+        debugTile: (typeof global.playerTile === "function") ? playerTile() : null
+      };
+      R._holdPosition = false;
+      return res;
+    },
     HOST_UNIQUES: HOST_UNIQUES,
+    installFoundSupplySlots: installFoundSupplySlots,
     raidAudio: raidAudio,
     testFlag: function () {
       try { return (new URLSearchParams(global.location.search).get("test") || "").toLowerCase(); }
@@ -3621,7 +3676,7 @@
           bits.push('<span class="loot-with-icon"><canvas class="loot-icon" width="44" height="44" data-item-id="' + id + '"></canvas><span>' + lootLabel(id) + "</span></span>");
         } else bits.push(lootLabel(id));
       });
-      lootTxt = bits.join(" · ") || "—";
+      lootTxt = bits.join("<br>") || "—";
     }
     const gpTxt = loot && loot.gp
       ? (typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : String(loot.gp)) + " GP"
@@ -3694,6 +3749,7 @@
     if (pad) pad.classList.add("visible");
     if (typeof global.setRaidHelpVisible === "function") global.setRaidHelpVisible(true);
     ensureRaidConsumables();
+    installFoundSupplySlots();
     bindHost({
       flashMsg: function (t, c) { if (typeof global.flashMsg === "function") global.flashMsg(t, c); },
       updateHud: hostUpdateHud,
@@ -3718,7 +3774,94 @@
   function ensureRaidConsumables() {
     // Legacy brew button is no longer injected; supplies live on the 8-slot quick bar.
     if (global.XscapeSupplies && XscapeSupplies.startBroughtSupplies) XscapeSupplies.startBroughtSupplies();
+    installFoundSupplySlots();
     if (global.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh();
+  }
+  function foundSupplyFamilies(st) {
+    var out = [];
+    if (!st || !st.found) return out;
+    Object.keys(st.found).forEach(function (fam) {
+      if ((st.found[fam] || 0) > 0) out.push(fam);
+    });
+    return out;
+  }
+  function installFoundSupplySlots() {
+    var S = global.XscapeSupplies;
+    if (!S || typeof S.layoutForFight !== "function") {
+      if (!installFoundSupplySlots._retry) {
+        installFoundSupplySlots._retry = true;
+        setTimeout(function () {
+          installFoundSupplySlots._retry = false;
+          installFoundSupplySlots();
+          if (global.XscapeSupplies && XscapeSupplies.refresh) {
+            try { XscapeSupplies.refresh(); } catch (e) {}
+          }
+        }, 0);
+      }
+      return false;
+    }
+    if (S._foundFillWrapped) return true;
+    S._foundFillWrapped = true;
+    var orig = S.layoutForFight;
+    S.layoutForFight = function () {
+      var slots = orig.apply(this, arguments);
+      var st = (global.XscapeRaid && typeof XscapeRaid.state === "function") ? XscapeRaid.state() : null;
+      var families = foundSupplyFamilies(st);
+      if (!slots || !families.length) return slots;
+      var used = {};
+      slots.forEach(function (s) { if (s && s.type === "item" && s.id) used[s.id] = true; });
+      var fi = 0;
+      for (var i = 0; i < slots.length && fi < families.length; i++) {
+        if (slots[i]) continue;
+        while (fi < families.length && used[families[fi]]) fi++;
+        if (fi >= families.length) break;
+        slots[i] = { type: "item", id: families[fi] };
+        used[families[fi]] = true;
+        fi++;
+      }
+      return slots;
+    };
+    if (typeof S.refresh === "function" && !S._foundRefreshWrapped) {
+      S._foundRefreshWrapped = true;
+      var origRefresh = S.refresh;
+      S.refresh = function () {
+        var out = origRefresh.apply(this, arguments);
+        paintFoundQuickSlots();
+        return out;
+      };
+    }
+    return true;
+  }
+  function paintFoundQuickSlots() {
+    var S = global.XscapeSupplies;
+    var doc = global.document;
+    var grid = doc && doc.getElementById("quick-grid");
+    if (!S || !grid || typeof S.layoutForFight !== "function") return;
+    var slots = S.layoutForFight();
+    var btns = grid.querySelectorAll(".quick-slot");
+    for (var i = 0; i < slots.length; i++) {
+      var btn = btns[i], slot = slots[i];
+      if (!btn || !slot || slot.type !== "item") continue;
+      btn.classList.remove("empty");
+      btn.classList.toggle("dimmed", typeof S.available === "function" && S.available(slot.id) <= 0);
+      var lab = btn.querySelector(".q-lab");
+      var qty = btn.querySelector(".q-qty");
+      var name = (typeof S.labelFor === "function") ? S.labelFor(slot) : slot.id;
+      if (lab) lab.textContent = name || slot.id;
+      if (qty) {
+        var n = (typeof S.available === "function") ? S.available(slot.id) : 0;
+        qty.textContent = String(n);
+        qty.classList.remove("hidden");
+      }
+      var cv = btn.querySelector("canvas");
+      if (cv && typeof S.drawItemIcon === "function") {
+        try { S.drawItemIcon(cv, slot); } catch (e) {}
+      }
+      if (typeof S.available === "function") {
+        var playing = typeof global.G !== "undefined" && global.G && global.G.mode === "playing";
+        btn.disabled = !playing || S.available(slot.id) <= 0;
+      }
+    }
   }
   function remigrateHostBank() {
     if (typeof global.migrateOwned === "function" && typeof global.Profile !== "undefined") {
@@ -3730,6 +3873,7 @@
   function installIntoGame() {
     registerItems();
     remigrateHostBank();
+    installFoundSupplySlots();
     hookXscape();
     api.installHubButton();
     api.updateRaidLock();

@@ -2361,6 +2361,15 @@ function tileAt(nx, ny) {
 }
 
 function playerTile() {
+  if (G && G.scene === "raid" && window.XscapeRaid && typeof XscapeRaid.state === "function") {
+    const rst = XscapeRaid.state();
+    if (rst && rst.player) {
+      return {
+        col: rst.player.col != null ? rst.player.col : 0,
+        row: rst.player.row != null ? rst.player.row : 0
+      };
+    }
+  }
   if (!G.player) return { col: Math.floor(TILE.cols / 2), row: 0 };
   return {
     col: G.player.tileCol != null ? G.player.tileCol : Math.floor(TILE.cols / 2),
