@@ -1,7 +1,7 @@
 {
   "name": "Xscape",
   "short_name": "Xscape",
-  "description": "A portrait, tick-based fight game in the style of Old School RuneScape.",
+  "description": "A portrait, classic tick-based bossing game.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -472,9 +472,8 @@
       font-size: 13px; cursor: pointer; flex: 0 0 auto; line-height: 1;
     }
     .float-msg {
-      /* Sit below the boss name/HP plate. left:50% without a width only
-         has the right half of the arena to wrap in, which made long
-         banners tall enough to cover the plate. */
+      /* Fallback only. JS places this below the live boss plate rect.
+         Full-width wrap so long banners don't stack in the right half. */
       position: absolute; left: 0; right: 0;
       top: clamp(128px, 23%, 152px);
       transform: none;
@@ -2154,8 +2153,11 @@ function normalizeLevels(raw) {
 }
 
 function normalizeEquipment(raw) {
-  const e = cloneLoadout("starter");
-  if (!raw || typeof raw !== "object") return e;
+  // No equipment object at all is a brand-new (or pre-gear) save: starter kit.
+  // A real equipment object must not fill missing or empty slots with gear
+  // the player did not have equipped.
+  if (!raw || typeof raw !== "object") return cloneLoadout("starter");
+  const e = emptyEquipment();
   for (let i = 0; i < EQUIP_SLOTS.length; i++) {
     const s = EQUIP_SLOTS[i];
     if (!Object.prototype.hasOwnProperty.call(raw, s)) continue;
@@ -2164,7 +2166,7 @@ function normalizeEquipment(raw) {
     const it = ITEMS[id];
     if (it && it.slot === s) e[s] = id;
     else if (!it && typeof id === "string") e[s] = id; // keep until raid items register
-    else if (id == null || id === "") e[s] = null;
+    else e[s] = null;
   }
   return e;
 }
@@ -2375,7 +2377,10 @@ function bankStacks() {
 function normalizeContainers() {
   const inv = [];
   (Profile.inventory || []).forEach((id) => {
-    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id])) return;
+    if (!id) return;
+    const it = ITEMS[id];
+    // Keep unknown ids: supplies.js registers potions after the first load.
+    if (it && itemIsHidden(it)) return;
     if (inv.length >= INVENTORY_CAP) return;
     inv.push(id);
   });
@@ -2383,7 +2388,9 @@ function normalizeContainers() {
   const counts = {};
   const order = [];
   (Profile.bank || []).forEach((id) => {
-    if (!id || !ITEMS[id] || itemIsHidden(ITEMS[id])) return;
+    if (!id) return;
+    const it = ITEMS[id];
+    if (it && itemIsHidden(it)) return;
     if (!counts[id]) {
       counts[id] = 0;
       order.push(id);
@@ -3234,6 +3241,7 @@ function debugEnabled() {
 
 function debugCombatMonsterId() {
   const scene = (typeof G !== "undefined" && G && G.scene) || "";
+  if (scene === "jad") return "tztok-jad";
   if (scene === "kree") return "kree-arra";
   if (scene === "widow") return "widow-queen";
   if (scene === "knight") return "hollow-knight-king";
@@ -3247,7 +3255,7 @@ function debugCombatMonsterId() {
       if (kind && MONSTERS[kind]) return kind;
     } catch (e) {}
   }
-  return "tztok-jad";
+  return null;
 }
 function debugCombatShortName(mon) {
   if (!mon) return "Magmor";
@@ -3298,13 +3306,18 @@ function updateDebugCombat() {
   el.classList.toggle("hidden", !show);
   if (!show) return;
   const monId = debugCombatMonsterId();
-  const mon = MONSTERS[monId] || MONSTERS["tztok-jad"];
+  const tile = playerTile();
+  const tileLine = "tile " + tile.col + "," + tile.row + (G.running ? "  RUN" : "  walk");
+  if (!monId || !MONSTERS[monId]) {
+    el.textContent = "no target\n" + tileLine;
+    return;
+  }
+  const mon = MONSTERS[monId];
   const style = (typeof playerStyle === "function") ? playerStyle() : "ranged";
   const vs = combatVsMonster(mon.id, style);
   const inStyle = debugIncomingStyle(mon.id);
   const def = monsterVsPlayer(mon.id, inStyle);
   const pb = playerBonuses();
-  const tile = playerTile();
   const weapon = itemInSlot("weapon");
   const boss = debugCombatShortName(mon);
   el.textContent = [
@@ -3312,7 +3325,7 @@ function updateDebugCombat() {
     "atkRoll " + vs.atkRoll + "  defRoll " + vs.defRoll,
     debugStyleBonusesLine(pb, style, weapon),
     boss + " hits you (" + debugCombatStyleLabel(inStyle) + ")  acc " + Math.round(def.chance * 1000) / 10 + "%  max " + def.maxHit,
-    "tile " + tile.col + "," + tile.row + (G.running ? "  RUN" : "  walk")
+    tileLine
   ].join("\n");
 }
 
@@ -3648,7 +3661,6 @@ function migrateLegacyStarter() {
     if (mapped) { eq[s] = mapped; changed = true; }
   }
   const ids = starterOwnedIds();
-  for (let i = 0; i < ids.length; i++) ownItem(ids[i]);
   if (Array.isArray(Profile.bank)) {
     const next = [];
     const present = {};
@@ -5191,12 +5203,38 @@ function burst(x, y, color, n) {
     G.particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 20, t: 0, life: 0.35 + Math.random()*0.25, color });
   }
 }
+function reportBossPlate(rect) {
+  if (typeof G !== "undefined" && G) G._bossPlate = rect || null;
+  if (typeof placeFloatBanner === "function") placeFloatBanner();
+}
+function placeFloatBanner() {
+  const el = $("float-msg");
+  if (!el) return;
+  const plate = (typeof G !== "undefined" && G && G._bossPlate) || null;
+  const wrap = $("arena-wrap");
+  const canvas = $("arena");
+  if (!plate || plate.bottom == null || !wrap || !canvas) return;
+  const c = canvas.getBoundingClientRect();
+  const w = wrap.getBoundingClientRect();
+  if (!c.height || !w.height) return;
+  const cssH = canvas.clientHeight || c.height;
+  const scale = c.height / Math.max(1, cssH);
+  const bottomInWrap = (c.top - w.top) + plate.bottom * scale;
+  let topPx = Math.round(bottomInWrap + 6);
+  const bannerH = Math.max(36, el.offsetHeight || 36);
+  const maxTop = Math.max(8, wrap.clientHeight - bannerH - 8);
+  if (topPx > maxTop) topPx = maxTop;
+  if (topPx < 8) topPx = 8;
+  el.style.top = topPx + "px";
+}
+
 function flashMsg(text, color) {
   floatText = text; floatColor = color || "#ffe44a"; floatT = 0.9;
   const el = $("float-msg");
   el.textContent = text;
   el.style.color = floatColor;
   el.style.opacity = "1";
+  if (typeof placeFloatBanner === "function") placeFloatBanner();
 }
 
 function liveScore() {
@@ -5568,6 +5606,15 @@ function drawJad(t) {
     ctx.font = "bold 10px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("Magmor, the Molten Titan  " + j.hp + "/" + JAD_MAX_HP, 0, barY + 9);
+    if (typeof reportBossPlate === "function") {
+      reportBossPlate({
+        left: x - bw / 2 - 4,
+        top: y + poseY + barY,
+        width: bw + 8,
+        height: 22,
+        bottom: y + poseY + barY + 22
+      });
+    }
   } else if (showPlate) {
     ctx.fillStyle = "#ffe44a";
     ctx.font = "bold 11px Trebuchet MS, sans-serif";
@@ -6281,6 +6328,7 @@ function frame(ts) {
   if (floatT > 0) {
     floatT -= dt;
     $("float-msg").style.opacity = String(clamp(floatT * 1.4, 0, 1));
+    if (typeof placeFloatBanner === "function") placeFloatBanner();
   }
 
   if (G.mode === "playing") updateHud();
@@ -6684,6 +6732,9 @@ const Scenes = {
 };
 
 function enterScene(id) {
+  if ((id === "hub" || id === "login") && typeof _bootTestPending !== "undefined" && !_bootTestPending) {
+    if (typeof clearTestMode === "function") clearTestMode();
+  }
   const next = Scenes[id];
   if (!next || next.locked) return;
   const prev = G.scene && Scenes[G.scene];
@@ -6708,6 +6759,10 @@ function showTitle() {
   G._retryGorehorn = false;
   G._retryColossus = false;
   if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
+  // After the initial ?test= boot, returning to the title/hub leaves test mode.
+  if (typeof _bootTestPending !== "undefined" && !_bootTestPending && typeof clearTestMode === "function") {
+    clearTestMode();
+  }
   // Test modes skip the sign-in screen so ?test= URLs still jump into a fight.
   if (typeof testFlag === "function" && testFlag()) {
     if (Profile.name) enterScene("hub");
@@ -6753,10 +6808,33 @@ function beginFight() {
 
 
 /* ----- Cutscenes (intro + first-kill) ----- */
-function testFlag() {
+const HUB_ONLY_TEST = { hub: 1, bank: 1, hubchat: 1 };
+let _testFlagOverride = null; // null = read the URL; "" = cleared; "widow" = latched
+let _bootTestPending = true;
+
+function readTestQuery() {
   try { return (new URLSearchParams(location.search).get("test") || "").toLowerCase(); }
   catch (e) { return ""; }
 }
+function testFlag() {
+  if (_testFlagOverride !== null) return _testFlagOverride;
+  return readTestQuery();
+}
+function isFightTestMode() {
+  const t = testFlag();
+  return !!(t && !HUB_ONLY_TEST[t]);
+}
+function clearTestMode() {
+  _testFlagOverride = "";
+  try {
+    const q = new URLSearchParams(location.search);
+    if (!q.has("test")) return;
+    q.delete("test");
+    const search = q.toString();
+    history.replaceState({}, "", location.pathname + (search ? "?" + search : "") + (location.hash || ""));
+  } catch (e) {}
+}
+
 
 function introSeen() {
   try { return localStorage.getItem(STORAGE.intro) === "1"; } catch (e) { return false; }
@@ -7253,58 +7331,70 @@ function applyOpenQuery() {
 
 function applyTestQuery() {
   const test = testFlag();
-  if (!test) return;
-  try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
-  if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
-  if (test === "hub" || test === "bank" || test === "hubchat") {
-    if (test === "hubchat") {
-      try {
-        const who = new URLSearchParams(location.search).get("who");
-        if (who) { Profile.name = who; saveProfile(); }
-      } catch (e) {}
+  try {
+    if (!test) return;
+    try { localStorage.setItem(STORAGE.tutorial, "1"); } catch (e) {}
+    if (!Profile.name) { Profile.name = "Kellen"; saveProfile(); }
+    if (test === "hub" || test === "bank" || test === "hubchat") {
+      if (test === "hubchat") {
+        try {
+          const who = new URLSearchParams(location.search).get("who");
+          if (who) { Profile.name = who; saveProfile(); }
+        } catch (e) {}
+      }
+      enterScene("hub");
+      return;
     }
-    enterScene("hub");
-    return;
-  }
-  hideAllOverlays();
-  if (test.indexOf("raid") === 0 && window.XscapeRaid) {
-    if (window.XscapeRaid.installIntoGame) window.XscapeRaid.installIntoGame();
-    window.XscapeRaid.startRaidInGame({ fromQuery: true });
-    return;
-  }
-  if ((test === "kree" || test === "kree-loot") && window.XscapeKree) {
-    window.XscapeKree.startFight({ fromQuery: true, skipBrief: true, loot: test === "kree-loot" });
-    return;
-  }
-  if ((test === "widow" || test === "widow-loot") && window.XscapeWidow) {
-    window.XscapeWidow.startFight({ fromQuery: true, skipBrief: true, loot: test === "widow-loot" });
-    return;
-  }
-  if ((test === "knight" || test === "knight-loot") && window.XscapeKnight) {
-    window.XscapeKnight.startFight({ fromQuery: true, skipBrief: true, loot: test === "knight-loot" });
-    return;
-  }
-  if ((test === "gorehorn" || test === "gorehorn-loot") && window.XscapeGorehorn) {
-    window.XscapeGorehorn.startFight({ fromQuery: true, skipBrief: true, loot: test === "gorehorn-loot" });
-    return;
-  }
-  if ((test === "colossus" || test === "colossus-loot") && window.XscapeColossus) {
-    window.XscapeColossus.startFight({ fromQuery: true, skipBrief: true, loot: test === "colossus-loot" });
-    return;
-  }
-  if (test === "intro") {
-    resetFight();
-    startIntro({ force: true });
-  } else if (test === "firstkill") {
-    resetFight();
-    startFirstKill({ force: true });
-  } else if (test === "cape") {
-    awardFireCape();
-    startPlaying();
-  } else if (test === "fireball") {
-    try { localStorage.setItem(STORAGE.intro, "1"); } catch (e) {}
-    startPlaying();
-    setTimeout(function () { testFireball({ delayTicks: 4, damage: 40 }); }, 800);
+    hideAllOverlays();
+    if (test.indexOf("raid") === 0 && window.XscapeRaid) {
+      if (window.XscapeRaid.installIntoGame) window.XscapeRaid.installIntoGame();
+      window.XscapeRaid.startRaidInGame({ fromQuery: true });
+      return;
+    }
+    if (test === "jad" || test === "magmor") {
+      startPlaying();
+      return;
+    }
+    if ((test === "kree" || test === "kree-loot") && window.XscapeKree) {
+      window.XscapeKree.startFight({ fromQuery: true, skipBrief: true, loot: test === "kree-loot" });
+      return;
+    }
+    if ((test === "widow" || test === "widow-loot") && window.XscapeWidow) {
+      window.XscapeWidow.startFight({ fromQuery: true, skipBrief: true, loot: test === "widow-loot" });
+      return;
+    }
+    if ((test === "knight" || test === "knight-loot") && window.XscapeKnight) {
+      window.XscapeKnight.startFight({ fromQuery: true, skipBrief: true, loot: test === "knight-loot" });
+      return;
+    }
+    if ((test === "gorehorn" || test === "gorehorn-loot") && window.XscapeGorehorn) {
+      window.XscapeGorehorn.startFight({ fromQuery: true, skipBrief: true, loot: test === "gorehorn-loot" });
+      return;
+    }
+    if ((test === "colossus" || test === "colossus-loot") && window.XscapeColossus) {
+      window.XscapeColossus.startFight({ fromQuery: true, skipBrief: true, loot: test === "colossus-loot" });
+      return;
+    }
+    if (test === "intro") {
+      resetFight();
+      startIntro({ force: true });
+    } else if (test === "firstkill") {
+      resetFight();
+      startFirstKill({ force: true });
+    } else if (test === "cape") {
+      awardFireCape();
+      startPlaying();
+    } else if (test === "fireball") {
+      try { localStorage.setItem(STORAGE.intro, "1"); } catch (e) {}
+      startPlaying();
+      setTimeout(function () { testFireball({ delayTicks: 4, damage: 40 }); }, 800);
+    }
+  } finally {
+    // Hub-only flags are one-shot and must not leave isTestMode() true.
+    // Fight tests stay latched until the player returns to the hub or title.
+    if (!test || HUB_ONLY_TEST[test]) clearTestMode();
+    else _testFlagOverride = test;
+    _bootTestPending = false;
   }
 }
 

@@ -65,14 +65,13 @@
   function fitFloatMsg() {
     const el = $("float-msg");
     if (!el || !el.textContent) return;
-    // Let .float-msg CSS place and wrap the banner below the name/HP plate.
     el.style.whiteSpace = "";
     el.style.left = "";
     el.style.right = "";
     el.style.transform = "";
     el.style.maxWidth = "";
-    el.style.top = "";
     el.style.fontSize = "";
+    if (typeof global.placeFloatBanner === "function") global.placeFloatBanner();
   }
   function tickFloatMsg(dt) {
     const el = $("float-msg");
@@ -560,6 +559,9 @@
       ctx.font = "bold 11px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("Hollow Knight-King  " + G.knight.hp + " / " + KNIGHT_HP, x + w / 2, y - 4);
+      if (typeof global.reportBossPlate === "function") {
+        global.reportBossPlate({ left: x - 2, top: y - 16, width: w + 4, height: h + 20, bottom: y + h + 2 });
+      }
     }
   }
 

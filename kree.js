@@ -545,7 +545,17 @@
       }
       ctx.restore();
       if (G.kree.hp > 0 && typeof global.drawKreeHpBar === "function") {
-        drawKreeHpBar(ctx, G.kree.x * cssW, G.kree.y * cssH - 92 * sc, G.kree.hp / G.kree.maxHp, "Vaelkor the Stormwing", 132);
+        const barY = G.kree.y * cssH - 92 * sc;
+        drawKreeHpBar(ctx, G.kree.x * cssW, barY, G.kree.hp / G.kree.maxHp, "Vaelkor the Stormwing", 132);
+        if (typeof global.reportBossPlate === "function") {
+          global.reportBossPlate({
+            left: G.kree.x * cssW - 66,
+            top: barY - 16,
+            width: 136,
+            height: 26,
+            bottom: barY + 10
+          });
+        }
       }
       if (G.target === "kree" && G.kree.hp > 0 && typeof global.drawOsrsCross === "function") {
         drawOsrsCross(ctx, G.kree.x * cssW, G.kree.y * cssH, "#ff1a1a", 1.2, 0, 0.8);
@@ -606,6 +616,7 @@
     if (fm && fm.style.opacity && Number(fm.style.opacity) > 0) {
       const o = Math.max(0, Number(fm.style.opacity) - Math.min(0.05, 1 / 60) * 1.4);
       fm.style.opacity = String(o);
+      if (typeof global.placeFloatBanner === "function") global.placeFloatBanner();
     }
     if (G.mode === "playing" && typeof global.updateHud === "function") updateHud();
   }

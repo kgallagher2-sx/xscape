@@ -1941,30 +1941,32 @@
     var gorehornBtn = $("btn-boss-gorehorn");
     var colossusBtn = $("btn-boss-colossus");
     var note = $("boss-raid-note");
+    // Keep the locked look for guests, but leave the buttons enabled so a
+    // tap can show the sign-in prompt (disabled buttons swallow the click).
     if (kreeBtn) {
       kreeBtn.classList.toggle("locked", guest);
-      kreeBtn.disabled = guest;
+      kreeBtn.disabled = false;
     }
     if (widowBtn) {
       widowBtn.classList.toggle("locked", guest);
-      widowBtn.disabled = guest;
+      widowBtn.disabled = false;
     }
     if (knightBtn) {
       knightBtn.classList.toggle("locked", guest);
-      knightBtn.disabled = guest;
+      knightBtn.disabled = false;
     }
     if (gorehornBtn) {
       gorehornBtn.classList.toggle("locked", guest);
-      gorehornBtn.disabled = guest;
+      gorehornBtn.disabled = false;
     }
     if (colossusBtn) {
       colossusBtn.classList.toggle("locked", guest);
-      colossusBtn.disabled = guest;
+      colossusBtn.disabled = false;
     }
     if (raidBtn) {
       var locked = guest || reason === "no-cape";
       raidBtn.classList.toggle("locked", locked);
-      raidBtn.disabled = locked;
+      raidBtn.disabled = !guest && reason === "no-cape";
     }
     if (note) {
       if (guest) note.textContent = "Guests can fight Magmor, the Molten Titan in starter gear. Sign in to unlock Vaelkor the Stormwing, the Widow Queen, the Hollow Knight-King, Gorehorn, the Drowned Colossus, and Gloamhold.";

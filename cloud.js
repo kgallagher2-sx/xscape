@@ -35,8 +35,17 @@
     else on(el, "click", fn);
   }
   function isTestMode() {
-    try { return !!(new URLSearchParams(location.search).get("test") || "").trim(); }
-    catch (e) { return false; }
+    // Fight tests latch in index.html and clear on hub/title. Hub-only
+    // flags (?test=hub) must not skip guest gates.
+    if (typeof global.isFightTestMode === "function") return !!global.isFightTestMode();
+    if (typeof global.testFlag === "function") {
+      var t = String(global.testFlag() || "").toLowerCase();
+      return !!(t && t !== "hub" && t !== "bank" && t !== "hubchat");
+    }
+    try {
+      var raw = (new URLSearchParams(location.search).get("test") || "").trim().toLowerCase();
+      return !!(raw && raw !== "hub" && raw !== "bank" && raw !== "hubchat");
+    } catch (e) { return false; }
   }
   function isDevLogin() {
     try {
@@ -1922,12 +1931,16 @@
     }
     if (typeof global.enterScene === "function" && !global.enterScene._cloud) {
       var rawEnter = global.enterScene;
+      var GATED_SCENES = {
+        kree: "Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.",
+        widow: "Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.",
+        knight: "Sign in to fight the Hollow Knight-King. Guests can only fight Magmor, the Molten Titan in starter gear.",
+        gorehorn: "Sign in to fight Gorehorn. Guests can only fight Magmor, the Molten Titan in starter gear.",
+        colossus: "Sign in to fight the Drowned Colossus. Guests can only fight Magmor, the Molten Titan in starter gear.",
+        raid: "Sign in to enter Gloamhold. Guests can only fight Magmor, the Molten Titan in starter gear."
+      };
       global.enterScene = function (id) {
-        if ((id === "kree" || id === "raid") && requireSignIn(
-          id === "kree"
-            ? "Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear."
-            : "Sign in to enter Gloamhold. Guests can only fight Magmor, the Molten Titan in starter gear."
-        )) return;
+        if (GATED_SCENES[id] && !isTestMode() && requireSignIn(GATED_SCENES[id])) return;
         return rawEnter.apply(this, arguments);
       };
       global.enterScene._cloud = true;
@@ -1971,17 +1984,15 @@
       };
       global.showWinCard._cloud = true;
     }
-    hookKreeEntry();
-    hookWidowEntry();
+    hookAllBossEntries();
   }
 
-  function hookKreeEntry() {
-    var api = global.XscapeKree;
+  function hookBossEntry(api, message) {
     if (!api) return;
     if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
       var rawTry = api.tryEnter;
       api.tryEnter = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.")) return false;
+        if (!isTestMode() && requireSignIn(message)) return false;
         return rawTry.apply(this, arguments);
       };
       api.tryEnter._cloud = true;
@@ -1989,33 +2000,22 @@
     if (typeof api.startFight === "function" && !api.startFight._cloud) {
       var rawStart = api.startFight;
       api.startFight = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.")) return;
+        if (!isTestMode() && requireSignIn(message)) return;
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
     }
   }
 
-  function hookWidowEntry() {
-    var api = global.XscapeWidow;
-    if (!api) return;
-    if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
-      var rawTry = api.tryEnter;
-      api.tryEnter = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.")) return false;
-        return rawTry.apply(this, arguments);
-      };
-      api.tryEnter._cloud = true;
-    }
-    if (typeof api.startFight === "function" && !api.startFight._cloud) {
-      var rawStart = api.startFight;
-      api.startFight = function () {
-        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.")) return;
-        return rawStart.apply(this, arguments);
-      };
-      api.startFight._cloud = true;
-    }
+  function hookAllBossEntries() {
+    hookBossEntry(global.XscapeKree, "Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.");
+    hookBossEntry(global.XscapeWidow, "Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.");
+    hookBossEntry(global.XscapeKnight, "Sign in to fight the Hollow Knight-King. Guests can only fight Magmor, the Molten Titan in starter gear.");
+    hookBossEntry(global.XscapeGorehorn, "Sign in to fight Gorehorn. Guests can only fight Magmor, the Molten Titan in starter gear.");
+    hookBossEntry(global.XscapeColossus, "Sign in to fight the Drowned Colossus. Guests can only fight Magmor, the Molten Titan in starter gear.");
   }
+  function hookKreeEntry() { hookAllBossEntries(); }
+  function hookWidowEntry() { hookAllBossEntries(); }
 
   var PENDING_JAD_KEY = "xscape-pending-jad";
   var pendingJad = { ticks: null, score: null, nonce: null, timer: null, dirty: false, retries: 0 };
@@ -2249,7 +2249,7 @@
     injectStyles();
     hookFunctions();
     hookOwnItem();
-    setTimeout(function () { hookKreeEntry(); hookWidowEntry(); }, 0);
+    setTimeout(function () { hookAllBossEntries(); }, 0);
     if (page === "hub") {
       ensureLoginUi();
       ensureHubChrome();

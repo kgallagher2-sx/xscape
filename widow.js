@@ -85,14 +85,13 @@
   function fitFloatMsg() {
     const el = $("float-msg");
     if (!el || !el.textContent) return;
-    // Let .float-msg CSS place and wrap the banner below the name/HP plate.
     el.style.whiteSpace = "";
     el.style.left = "";
     el.style.right = "";
     el.style.transform = "";
     el.style.maxWidth = "";
-    el.style.top = "";
     el.style.fontSize = "";
+    if (typeof global.placeFloatBanner === "function") global.placeFloatBanner();
   }
 
   function resetState() {
@@ -794,13 +793,26 @@
       }
       ctx.restore();
       if (G.widow.hp > 0 && typeof global.drawKreeHpBar === "function") {
-        drawKreeHpBar(ctx, G.widow.x * cssW, G.widow.y * cssH - 78 * sc, G.widow.hp / G.widow.maxHp, "Widow Queen", 140);
+        const barY = G.widow.y * cssH - 78 * sc;
+        drawKreeHpBar(ctx, G.widow.x * cssW, barY, G.widow.hp / G.widow.maxHp, "Widow Queen", 140);
+        if (typeof global.reportBossPlate === "function") {
+          global.reportBossPlate({
+            left: G.widow.x * cssW - 70,
+            top: barY - 16,
+            width: 144,
+            height: 26,
+            bottom: barY + 10
+          });
+        }
       } else if (G.widow.hp > 0) {
         const bx = G.widow.x * cssW, by = G.widow.y * cssH - 78 * sc;
         ctx.fillStyle = "#1a0808";
         ctx.fillRect(bx - 70, by, 140, 8);
         ctx.fillStyle = "#c00818";
         ctx.fillRect(bx - 70, by, 140 * (G.widow.hp / G.widow.maxHp), 8);
+        if (typeof global.reportBossPlate === "function") {
+          global.reportBossPlate({ left: bx - 70, top: by - 16, width: 140, height: 26, bottom: by + 10 });
+        }
       }
       if (G.target === "widow" && G.widow.hp > 0 && typeof global.drawOsrsCross === "function") {
         drawOsrsCross(ctx, G.widow.x * cssW, G.widow.y * cssH, "#ff1a1a", 1.35, 0, 0.8);

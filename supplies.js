@@ -1342,6 +1342,9 @@
   function init() {
     registerItems();
     migrateCarried();
+    if (typeof global.normalizeContainers === "function") {
+      try { global.normalizeContainers(); } catch (e) {}
+    }
     patchContainers();
     bindUi();
   }
