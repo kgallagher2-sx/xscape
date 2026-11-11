@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111040706-90efa3d";</script>
+  <script>window.XSCAPE_BUILD = "20261111042216-4c630bb";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -319,7 +319,7 @@
     #overlay-hub, #overlay-login { justify-content: flex-start; }
     #overlay-hub > *, #overlay-login > * { flex-shrink: 0; }
     /* Sheet modals keep the card (and its X / CLOSE) pinned; only the inner list scrolls. */
-    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
+    #overlay-gear, #overlay-shop, #overlay-supply-shop, #overlay-quick-edit, #overlay-hotkeys, #overlay-chat-history, #overlay-trade, #overlay-trade-history, #overlay-tut, #overlay-raid-tut, #overlay-kree-tut, #overlay-kree-loot, #overlay-widow-tut, #overlay-widow-loot, #overlay-knight-tut, #overlay-knight-loot, #overlay-help, #overlay-bank, #overlay-boss, #overlay-raid-choice, #overlay-party, #overlay-online, #overlay-inv, #overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     .overlay.hidden { display: none; }
     .btn, .slot-btn, .bank-item, .mode-btn, .mode-info, .overlay-x { touch-action: manipulation; }
     .overlay-x {
@@ -488,12 +488,12 @@
       font-family: inherit; padding: 0;
     }
     #btn-raid-help.visible { display: inline-flex; align-items: center; justify-content: center; }
-    #btn-kree-help, #btn-widow-help {
+    #btn-kree-help, #btn-widow-help, #btn-knight-help {
       display: none; width: 28px; height: 28px; border-radius: 50%;
       background: #2a2430; border: 1px solid #c9a24a; color: #ffe44a;
       font-weight: 700; font-size: 16px; cursor: pointer;
     }
-    #btn-kree-help.visible, #btn-widow-help.visible { display: inline-flex; align-items: center; justify-content: center; }
+    #btn-kree-help.visible, #btn-widow-help.visible, #btn-knight-help.visible { display: inline-flex; align-items: center; justify-content: center; }
     .sheet-card,
     .tut-card.brief-card,
     #overlay-tut .tut-card,
@@ -622,7 +622,7 @@
     #app.hub-world #quick-bar,
     #app.hub-world #top-hud { display: none; }
     #app.hub-world #btn-raid-help,
-    #app.hub-world #btn-kree-help, #app.hub-world #btn-widow-help { display: none; }
+    #app.hub-world #btn-kree-help, #app.hub-world #btn-widow-help, #app.hub-world #btn-knight-help { display: none; }
     #app.hub-world #osrs-chat { bottom: calc(52px + var(--hud-bottom)); }
     #overlay-hub.is-world {
       background: transparent; pointer-events: none;
@@ -944,7 +944,7 @@
     #app.fight-world.hub-world #prayers,
     #app.fight-world.hub-world #top-hud { display: revert !important; }
     #app.fight-world.hub-world #btn-raid-help,
-    #app.fight-world.hub-world #btn-kree-help, #app.fight-world.hub-world #btn-widow-help { display: revert !important; }
+    #app.fight-world.hub-world #btn-kree-help, #app.fight-world.hub-world #btn-widow-help, #app.fight-world.hub-world #btn-knight-help { display: revert !important; }
 
     #app.duel-world #overlay-hub,
     #app.duel-world #mid,
@@ -953,7 +953,7 @@
     #app.duel-world #top-hud { display: none; }
     #app.duel-world #prayers { display: flex; }
     #app.duel-world #btn-raid-help,
-    #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help { display: none; }
+    #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help, #app.duel-world #btn-knight-help { display: none; }
     #overlay-stake, #overlay-stake-confirm, #overlay-duel-result { overflow: hidden; }
     #overlay-stake .sheet-card,
     #overlay-stake-confirm .sheet-card,
@@ -995,7 +995,7 @@
     #btn-duel-forfeit.hidden { display: none; }
     #stake-actions .btn, #confirm-actions .btn { margin: 0 4px 0 0; }
 
-    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help { display: none; }
+    #app.duel-world #btn-raid-help, #app.duel-world #btn-kree-help, #app.duel-world #btn-widow-help, #app.duel-world #btn-knight-help { display: none; }
 
     @media (max-height: 750px) {
       .pray-btn { height: 82px; }
@@ -1044,6 +1044,7 @@
       <button id="btn-raid-help" type="button" aria-label="Gloamhold instructions">?</button>
       <button id="btn-kree-help" type="button" aria-label="Kree'arra instructions">?</button>
       <button id="btn-widow-help" type="button" aria-label="Widow Queen instructions">?</button>
+      <button id="btn-knight-help" type="button" aria-label="Hollow Knight-King instructions">?</button>
     </div>
     <div id="mid">
       <div class="bars">
@@ -1123,7 +1124,7 @@
       <p class="tagline" id="hub-welcome">Welcome</p>
       <div class="gp-line">GP: <span id="hub-gp" class="gp-amt gp-yellow">0</span></div>
       <canvas id="hub-cape" width="80" height="98" style="margin-bottom:8px"></canvas>
-      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
+      <div class="hub-gear-note" id="hub-gear-note">First Jad kill grants a Fire cape (no GP). Later Jad kills pay 2–3M GP. Kree'arra drops Armadyl gear and 150k–400k GP — Tier 2 is recommended. The Widow Queen drops the Widow Weaver magic set and 150k–400k GP. The Hollow Knight-King drops the Kingsguard tank set and 150k–400k GP. If you already have the full unique set, a 1/6 unique roll pays a 2–4M GP bonus instead of a duplicate. Spend GP in the Shop, or earn more in Gloamhold.</div>
       <button class="btn secondary" id="btn-equipment" type="button">Equipment</button>
       <button class="btn secondary" id="btn-shop" type="button">Shop</button>
       <div class="mode-list">
@@ -1442,6 +1443,8 @@
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span><span class="hint">Recommended: magic gear</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-widow" aria-label="Widow Queen guide">i</button>
+              <button class="btn mode-btn" type="button" id="btn-boss-knight">Hollow Knight-King<span class="sub">The Throne Room · Shadow</span><span class="hint">Recommended: melee or ranged</span></button>
+              <button class="mode-info" type="button" id="btn-info-boss-knight" aria-label="Hollow Knight-King guide">i</button>
             </div>
             <div class="boss-row">
               <button class="btn mode-btn" type="button" id="btn-boss-raid">Gloamhold<span class="sub">The Unsleeping · Raid</span></button>
@@ -1595,6 +1598,39 @@
       <button class="btn secondary" id="btn-widow-title" type="button">Title screen</button>
     </div>
 
+
+    <div class="overlay hidden" id="overlay-knight-tut">
+      <div class="tut-card brief-card sheet-card">
+        <button class="overlay-x" id="btn-knight-tut-x" type="button" aria-label="Close">×</button>
+        <h2>The Hollow Knight-King</h2>
+        <div class="tut-scroll sheet-scroll">
+        <p>In a throne room flooding with shadow, the <b>Hollow Knight-King</b> still sits in his rusted crown. He is a solo fight — about level 520, with 600 Hitpoints. Bring food and potions from the bank provisioner; there are no free supplies here.</p>
+        <p><b>Move and attack.</b> The hall is a 5×5 grid. Tap the king or a spectral knight to set your target. Tap a floor tile to walk. Keyboard A/D/W/S or arrows also work. Melee and ranged both hit him.</p>
+        <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons.</p>
+        <p><b>Greatsword sweep:</b> glowing tiles mark a 3-tile cone, then he slashes (up to 30). Walk off the marks. Protect from Melee blocks the hit if you are still on a marked tile.</p>
+        <p><b>Raise the guard:</b> he plants his sword and a ring of spectral knights closes in. They are frail — kill them before they reach you, or Protect from Melee to block their hits (up to 12).</p>
+        <p><b>Shattered armour:</b> around half health (or after enough specials) he breaks his own plate. He attacks faster, but takes 50% more damage.</p>
+        <p><b>Loot:</b> every kill pays 150k–400k pretend GP. The five Kingsguard uniques (crowned full helm, platebody, platelegs, one-handed sword, and kiteshield) are a <b>1/6</b> roll per kill. If you already own a piece, the drop rerolls to one you do not. If you have the full set, the unique roll pays a 2–4M GP bonus instead of a duplicate piece. Uniques go to your bank. This kit is never sold.</p>
+        <p style="text-align:center;color:#c9a24a;font-size:12px">1 / 2 / 3 prayers · F food · P pot · R range pot</p>
+        </div>
+        <div class="tut-actions sheet-actions">
+          <button class="btn" id="btn-knight-tut-ok" type="button">GOT IT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="overlay-knight-loot">
+      <div class="share-card" id="knight-loot-card">
+        <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
+        <div class="win-title" id="knight-loot-title">HOLLOW KNIGHT-KING DEFEATED</div>
+        <div class="result-grid" id="knight-loot-stats"></div>
+        <div id="knight-loot-items"></div>
+        <div class="share-hint">Screenshot this card and share your drop</div>
+      </div>
+      <button class="btn" id="btn-knight-again" type="button">FIGHT AGAIN</button>
+      <button class="btn secondary" id="btn-knight-title" type="button">Title screen</button>
+    </div>
+
     <div class="overlay hidden" id="overlay-win">
       <div class="share-card" id="share-card">
         <canvas class="logo-canvas" width="720" height="348" aria-label="Xscape"></canvas>
@@ -1643,6 +1679,7 @@
 <script src="whip-img.js"></script>
 <script src="sprites.js"></script>
 <script src="widow-sprites.js"></script>
+<script src="knight-sprites.js"></script>
 <script src="lab-gear.js"></script>
 <script src="kree-sprites.js"></script>
 <script src="stats.js"></script>
@@ -1717,7 +1754,8 @@ const STORAGE = {
   intro: "kellenscape-intro-seen",
   raidBrief: "kellenscape-raid-brief-seen",
   kreeBrief: "kellenscape-kree-brief-seen",
-  widowBrief: "kellenscape-widow-brief-seen"
+  widowBrief: "kellenscape-widow-brief-seen",
+  knightBrief: "kellenscape-knight-brief-seen"
 };
 
 function computeScore(result) {
@@ -1868,6 +1906,13 @@ const ITEMS = {
   widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow", twohand: false, speed: 5, magicBase: 30, style: "magic", bonuses: b({ amagic: 80, mdmg: 12, dmagic: 15 }) },
   widow_weaver_book:   { id: "widow_weaver_book", name: "Widow Weaver spellbook", slot: "shield", tier: "widow", kind: "widow", bonuses: b({ amagic: 20, mdmg: 8, dmagic: 18 }) },
 
+  kingsguard_helm:    { id: "kingsguard_helm", name: "Kingsguard full helm", slot: "head", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 33, dslash: 35, dcrush: 32, dmagic: -3, drange: 31, str: 1 }) },
+  kingsguard_plate:   { id: "kingsguard_plate", name: "Kingsguard platebody", slot: "body", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 82, dslash: 80, dcrush: 72, dmagic: -6, drange: 80, str: 2 }) },
+  kingsguard_legs:    { id: "kingsguard_legs", name: "Kingsguard platelegs", slot: "legs", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 51, dslash: 49, dcrush: 47, dmagic: -4, drange: 49, str: 1 }) },
+  kingsguard_sword:   { id: "kingsguard_sword", name: "Kingsguard sword", slot: "weapon", tier: "kingsguard", kind: "sword", twohand: false, speed: 4, style: "slash", bonuses: b({ astab: 20, aslash: 58, acrush: 8, str: 55 }) },
+  kingsguard_kite:    { id: "kingsguard_kite", name: "Kingsguard kiteshield", slot: "shield", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 48, dslash: 52, dcrush: 50, dmagic: -2, drange: 50 }) },
+
+
   /* The only blue partyhat in the game. Granted server-side; never sold or dropped. Not stakeable. */
   blue_partyhat:      { id: "blue_partyhat", name: "Blue partyhat", slot: "head", tier: "partyhat", unique: true, unstakeable: true, kind: "partyhat", bonuses: b({}) },
 
@@ -1912,6 +1957,11 @@ const LOADOUTS = {
     weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
     legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
   },
+  kingsguard: {
+    head: "kingsguard_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "kingsguard_sword", body: "kingsguard_plate", shield: "kingsguard_kite",
+    legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
   gloamhold: {
     head: "black_dhide_coif", cape: "gloamheart_cape", neck: "unsleeping_stole", ammo: "hollow_bolts",
     weapon: "hollowbolt_xbow", body: "veilhide_body", shield: null,
@@ -1940,7 +1990,7 @@ function itemIsHidden(it) {
   if (it.tier === "legacy") return true;
   // Armadyl / Widow Weaver are earned from bosses and should show in the bank once owned.
   // The Shop is a fixed list, so these are never sold.
-  if (it.tier === "armadyl" || it.tier === "widow") return false;
+  if (it.tier === "armadyl" || it.tier === "widow" || it.tier === "kingsguard") return false;
   return !!it.hidden;
 }
 
@@ -2414,6 +2464,20 @@ const MONSTERS = {
     hitpoints: 1, attack: 80, strength: 80, defence: 1, magic: 1, ranged: 1,
     bonuses: b({ str: 40 }), defBonuses: b({}),
     maxHit: { melee: 25 }, attackSpeed: 4
+  },
+  "hollow-knight-king": {
+    id: "hollow-knight-king", name: "Hollow Knight-King",
+    combat: 520, hitpoints: 600, attack: 200, strength: 200, defence: 200, magic: 80, ranged: 80, speed: 5,
+    maxHit: { melee: 30, mage: 22, ranged: 1 },
+    bonuses: b({ astab: 40, aslash: 80, acrush: 20 }),
+    defBonuses: b({ dmagic: 40, drange: 80, dstab: 180, dslash: 180, dcrush: 160 })
+  },
+  "spectral-knight": {
+    id: "spectral-knight", name: "Spectral knight",
+    combat: 40, hitpoints: 18, attack: 40, strength: 30, defence: 20, magic: 1, ranged: 1, speed: 4,
+    maxHit: { melee: 12 },
+    bonuses: b({ astab: 0, aslash: 10, acrush: 0 }),
+    defBonuses: b({ dmagic: 0, drange: 0, dstab: 10, dslash: 10, dcrush: 10 })
   }
 };
 
@@ -2570,6 +2634,14 @@ function monsterVsPlayer(monsterId, style) {
   const max = (mon.maxHit && (mon.maxHit[style] || mon.maxHit.melee || mon.maxHit.ranged)) || 1;
   const chance = hitChance(atkRoll, defRoll);
   return { style, maxHit: max, chance, atkRoll, defRoll, expected: expectedDamage(max, chance) };
+}
+
+function meleeSetMaxHit(max) {
+  // Gorehorn (Dharok-style) set: damage rises as Hitpoints fall. Other melee sets may hook in later.
+  if (typeof window.gorehornSetMultiplier === "function") {
+    return Math.max(0, Math.floor(max * window.gorehornSetMultiplier()));
+  }
+  return max;
 }
 
 function estimateKill(monsterId, loadout) {
@@ -2895,6 +2967,9 @@ function drawArenaTiles(t) {
       if (G.scene === "widow") {
         ctx.fillStyle = stand ? "#3a1820" : "#241018";
         ctx.strokeStyle = "#8a7880";
+      } else if (G.scene === "knight") {
+        ctx.fillStyle = stand ? "#3a2a48" : "#1c1428";
+        ctx.strokeStyle = "#8a78a0";
       } else {
         ctx.fillStyle = stand ? "#5a3c24" : "#3a2618";
         ctx.strokeStyle = "#c4a06a";
@@ -2981,7 +3056,7 @@ function setPlayingChrome(on) {
 }
 
 function updateConsumableChrome() {
-  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "widow" || G.scene === "raid");
+  const playing = G && G.mode === "playing" && (G.scene === "jad" || G.scene === "kree" || G.scene === "widow" || G.scene === "knight" || G.scene === "raid");
   const rangeBtn = $("btn-range-pot");
   const brewBtn = $("btn-brew");
   if (rangeBtn) rangeBtn.classList.toggle("hidden", !playing);
@@ -3029,6 +3104,7 @@ function gearTierClass(tier) {
   if (tier === "jad") return "jad";
   if (tier === "armadyl") return "armadyl";
   if (tier === "widow") return "widow";
+  if (tier === "kingsguard") return "kingsguard";
   if (tier === "tier2" || tier === "upgrade") return "tier2";
   if (tier === "mid") return "mid";
   if (tier === "starter" || tier === "tier1") return "tier1";
@@ -3441,7 +3517,7 @@ function updateRaidLock() {
   }
 }
 
-const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0, widowKills: 0 };
+const Profile = { name: "", gp: 0, hasFireCape: false, seenFirstKill: false, levels: defaultLevels(), equipment: cloneLoadout("starter"), unlockedItems: [], bank: starterOwnedIds(), inventory: [], kreeKills: 0, widowKills: 0, knightKills: 0 };
 
 function loadProfile() {
   try {
@@ -3459,6 +3535,8 @@ function loadProfile() {
       Profile.kreeKills = Number(raw.kreeKills) || 0;
       Profile.kreeBestTicks = raw.kreeBestTicks || null;
       Profile.widowKills = Number(raw.widowKills) || 0;
+      Profile.knightKills = Number(raw.knightKills) || 0;
+      if (raw.knightBestTicks != null) Profile.knightBestTicks = raw.knightBestTicks;
       Profile.widowBestTicks = raw.widowBestTicks || null;
       Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
       Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
@@ -3486,6 +3564,7 @@ function loadProfile() {
   }
   if (!Profile.kreeKills) Profile.kreeKills = Profile.kreeKills || 0;
   if (!Profile.widowKills) Profile.widowKills = Profile.widowKills || 0;
+  if (!Profile.knightKills) Profile.knightKills = Profile.knightKills || 0;
   migrateLegacyStarter();
   maybeGrantLegacyFireCape();
   if (!Array.isArray(Profile.inventory)) Profile.inventory = [];
@@ -3513,6 +3592,8 @@ function saveProfile() {
       kreeKills: Profile.kreeKills || 0,
       kreeBestTicks: Profile.kreeBestTicks || null,
       widowKills: Profile.widowKills || 0,
+      knightKills: Profile.knightKills || 0,
+      knightBestTicks: Profile.knightBestTicks || null,
       widowBestTicks: Profile.widowBestTicks || null
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
@@ -4523,6 +4604,7 @@ function applyBoltHit(target, dmg) {
   if (G.mode !== "playing") return;
   if (window.XscapeKree && XscapeKree.applyBoltHit && XscapeKree.applyBoltHit(target, dmg)) return;
   if (window.XscapeWidow && XscapeWidow.applyBoltHit && XscapeWidow.applyBoltHit(target, dmg)) return;
+  if (window.XscapeKnight && XscapeKnight.applyBoltHit && XscapeKnight.applyBoltHit(target, dmg)) return;
   if (target.kind === "jad" && G.jad && G.jad.hp > 0) {
     G.jad.hp = clamp(G.jad.hp - dmg, 0, JAD_MAX_HP);
     G.jad.hurt = 0.2;
@@ -4626,6 +4708,7 @@ function gameTick() {
   if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.hostTick(); return; }
   if (G.scene === "kree" && window.XscapeKree) { window.XscapeKree.hostTick(); return; }
   if (G.scene === "widow" && window.XscapeWidow) { window.XscapeWidow.hostTick(); return; }
+  if (G.scene === "knight" && window.XscapeKnight) { window.XscapeKnight.hostTick(); return; }
   if (G.mode !== "playing") return;
   G.ticks++;
 
@@ -4944,6 +5027,7 @@ function endLose() {
   if (G.mode !== "playing") return;
   if (G.scene === "kree" && window.XscapeKree && XscapeKree.lose) { XscapeKree.lose(); return; }
   if (G.scene === "widow" && window.XscapeWidow && XscapeWidow.lose) { XscapeWidow.lose(); return; }
+  if (G.scene === "knight" && window.XscapeKnight && XscapeKnight.lose) { XscapeKnight.lose(); return; }
   setPlayingChrome(false);
   G.mode = "lose";
   G.player.hp = 0;
@@ -5852,6 +5936,10 @@ function frame(ts) {
     window.XscapeWidow.hostFrame(ts, ctx, cssW, cssH, dpr);
     return;
   }
+  if (G.scene === "knight" && window.XscapeKnight) {
+    window.XscapeKnight.hostFrame(ts, ctx, cssW, cssH, dpr);
+    return;
+  }
 
   if (G.mode === "playing") {
     G.elapsedMs = ts - G.startMs;
@@ -5954,6 +6042,9 @@ window.addEventListener("keydown", (e) => {
   if (G.scene === "widow" && window.XscapeWidow) {
     if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
   }
+  if (G.scene === "knight" && window.XscapeKnight) {
+    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
+  }
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
   if (e.key === "3") setPrayer("melee");
@@ -6005,6 +6096,12 @@ canvas.addEventListener("pointerdown", (e) => {
     audio.unlock();
     const pt = eventToArena(e);
     window.XscapeWidow.clickPx(pt.x, pt.y, cssW, cssH);
+    return;
+  }
+  if (G.scene === "knight" && window.XscapeKnight) {
+    audio.unlock();
+    const pt = eventToArena(e);
+    window.XscapeKnight.clickPx(pt.x, pt.y, cssW, cssH);
     return;
   }
   if (G.mode === "intro") {
@@ -6151,7 +6248,7 @@ function teardownHubForFight(scene) {
 }
 
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Kree'arra / Jad / Gloamhold.
@@ -6259,6 +6356,7 @@ function showTitle() {
   loadProfile();
   G._retryKree = false;
   G._retryWidow = false;
+  G._retryKnight = false;
   if (typeof PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
   // Test modes skip the sign-in screen so ?test= URLs still jump into a fight.
   if (typeof testFlag === "function" && testFlag()) {
@@ -6832,6 +6930,10 @@ function applyTestQuery() {
     window.XscapeWidow.startFight({ fromQuery: true, skipBrief: true, loot: test === "widow-loot" });
     return;
   }
+  if ((test === "knight" || test === "knight-loot") && window.XscapeKnight) {
+    window.XscapeKnight.startFight({ fromQuery: true, skipBrief: true, loot: test === "knight-loot" });
+    return;
+  }
   if (test === "intro") {
     resetFight();
     startIntro({ force: true });
@@ -7103,6 +7205,58 @@ window.markWidowBriefSeen = markWidowBriefSeen;
 window.closeWidowBriefing = closeWidowBriefing;
 window.closeWidowLoot = closeWidowLoot;
 
+function knightBriefSeen() {
+  try { return localStorage.getItem(STORAGE.knightBrief) === "1"; } catch (e) { return false; }
+}
+function markKnightBriefSeen() {
+  try { localStorage.setItem(STORAGE.knightBrief, "1"); } catch (e) {}
+}
+let knightBriefReturn = { start: false, opts: null, fromHub: false };
+function showKnightBriefing(opts) {
+  opts = opts || {};
+  knightBriefReturn = { start: !!opts.start, opts: opts.startOpts || null, fromHub: !!opts.fromHub };
+  audio.unlock();
+  hideAllOverlays();
+  $("overlay-knight-tut").classList.remove("hidden");
+  if (typeof paintAllXscapeLogos === "function") paintAllXscapeLogos();
+}
+function closeKnightBriefing(opts) {
+  const el = $("overlay-knight-tut");
+  if (!el || el.classList.contains("hidden")) return;
+  markKnightBriefSeen();
+  el.classList.add("hidden");
+  const cancel = !!(opts && opts.cancel);
+  if (!cancel && knightBriefReturn.start) {
+    const startOpts = Object.assign({}, knightBriefReturn.opts || {}, { skipBrief: true });
+    knightBriefReturn = { start: false, opts: null };
+    if (window.XscapeKnight && XscapeKnight.startFight) XscapeKnight.startFight(startOpts);
+    return;
+  }
+  knightBriefReturn = { start: false, opts: null };
+  if (G.scene === "knight" && G.mode === "playing") return;
+  swallowNextTaps();
+  showTitle();
+}
+function closeKnightLoot() {
+  const el = $("overlay-knight-loot");
+  if (!el || el.classList.contains("hidden")) return;
+  el.classList.add("hidden");
+  swallowNextTaps();
+  showTitle();
+}
+if ($("btn-info-boss-knight")) bindTap($("btn-info-boss-knight"), (e) => { if (e && e.stopPropagation) e.stopPropagation(); showKnightBriefing({ fromHub: true }); });
+if ($("btn-knight-tut-ok")) bindTap($("btn-knight-tut-ok"), () => { audio.unlock(); closeKnightBriefing(); });
+if ($("btn-knight-tut-x")) bindTap($("btn-knight-tut-x"), () => { audio.unlock(); closeKnightBriefing({ cancel: true }); });
+if ($("overlay-knight-tut")) bindBackdropClose($("overlay-knight-tut"), () => { audio.unlock(); closeKnightBriefing({ cancel: true }); });
+if ($("btn-knight-help")) bindTap($("btn-knight-help"), () => { showKnightBriefing({ fromHub: false }); });
+if ($("btn-knight-again")) bindTap($("btn-knight-again"), () => { audio.unlock(); if (window.XscapeKnight) XscapeKnight.startFight({ skipBrief: true }); });
+if ($("btn-knight-title")) bindTap($("btn-knight-title"), () => { audio.unlock(); closeKnightLoot(); });
+window.showKnightBriefing = showKnightBriefing;
+window.knightBriefSeen = knightBriefSeen;
+window.markKnightBriefSeen = markKnightBriefSeen;
+window.closeKnightBriefing = closeKnightBriefing;
+window.closeKnightLoot = closeKnightLoot;
+
 function closeHowToPlay() {
   const el = $("overlay-tut");
   if (!el || el.classList.contains("hidden")) return;
@@ -7128,6 +7282,8 @@ function dismissTopOverlay() {
   if (overlayIsOpen("overlay-kree-loot")) { audio.unlock(); closeKreeLoot(); return true; }
   if (overlayIsOpen("overlay-widow-tut")) { audio.unlock(); closeWidowBriefing({ cancel: true }); return true; }
   if (overlayIsOpen("overlay-widow-loot")) { audio.unlock(); closeWidowLoot(); return true; }
+  if (overlayIsOpen("overlay-knight-tut")) { audio.unlock(); closeKnightBriefing({ cancel: true }); return true; }
+  if (overlayIsOpen("overlay-knight-loot")) { audio.unlock(); closeKnightLoot(); return true; }
   return false;
 }
 bindTap($("btn-tut-ok"), closeHowToPlay);
@@ -7137,12 +7293,14 @@ $("btn-again-win").addEventListener("click", () => {
   audio.unlock();
   if ((G.scene === "kree" || G._retryKree) && window.XscapeKree) { XscapeKree.startFight({ skipBrief: true }); return; }
   if ((G.scene === "widow" || G._retryWidow) && window.XscapeWidow) { XscapeWidow.startFight({ skipBrief: true }); return; }
+  if ((G.scene === "knight" || G._retryKnight) && window.XscapeKnight) { XscapeKnight.startFight({ skipBrief: true }); return; }
   startPlaying();
 });
 $("btn-again-lose").addEventListener("click", () => {
   audio.unlock();
   if ((G.scene === "kree" || G._retryKree) && window.XscapeKree) { XscapeKree.startFight({ skipBrief: true }); return; }
   if ((G.scene === "widow" || G._retryWidow) && window.XscapeWidow) { XscapeWidow.startFight({ skipBrief: true }); return; }
+  if ((G.scene === "knight" || G._retryKnight) && window.XscapeKnight) { XscapeKnight.startFight({ skipBrief: true }); return; }
   startPlaying();
 });
 $("btn-title-win").addEventListener("click", () => { showTitle(); });
@@ -7316,6 +7474,7 @@ window.tryEnterGloamhold = tryEnterGloamhold;
 <script src="raid.js"></script>
 <script src="kree.js"></script>
 <script src="widow.js"></script>
+<script src="knight.js"></script>
 <script src="hub.js"></script>
 <script src="duel.js"></script>
 <script>
@@ -7333,6 +7492,11 @@ if (window.XscapeWidow) {
   if (window.Xscape) window.Xscape.widow = XscapeWidow;
   if (window.KellenScape) window.KellenScape.widow = XscapeWidow;
 }
+if (window.XscapeKnight) {
+  XscapeKnight.install();
+  if (window.Xscape) window.Xscape.knight = XscapeKnight;
+  if (window.KellenScape) window.KellenScape.knight = XscapeKnight;
+}
 if (window.XscapeHub) {
   XscapeHub.install();
   if (window.Xscape) window.Xscape.hub = XscapeHub;
@@ -7349,6 +7513,7 @@ $("top-hud").appendChild($("sound-btn"));
 if ($("btn-raid-help")) $("top-hud").appendChild($("btn-raid-help"));
 if ($("btn-kree-help")) $("top-hud").appendChild($("btn-kree-help"));
 if ($("btn-widow-help")) $("top-hud").appendChild($("btn-widow-help"));
+if ($("btn-knight-help")) $("top-hud").appendChild($("btn-knight-help"));
 resize();
 showTitle();
 refreshTitleBest();

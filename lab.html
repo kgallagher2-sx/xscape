@@ -181,10 +181,11 @@
 <body>
 <header>
   <h1>Xscape sprite lab</h1>
-  <div class="sub">Loads <code>sprites.js</code>, <code>lab-gear.js</code>, and <code>widow-sprites.js</code> (same drawings the bank, equipment view, and fights use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
+  <div class="sub">Loads <code>sprites.js</code>, <code>lab-gear.js</code>, <code>widow-sprites.js</code>, and <code>knight-sprites.js</code> (same drawings the bank, equipment view, and fights use). 1x = real phone game scale; 4x = nearest-neighbour zoom of the 1x pixels.</div>
   <nav class="jump">
     <a href="#gear">Gear</a>
     <a href="#widow">Widow Queen</a>
+    <a href="#knight">Hollow Knight-King</a>
     <a href="#sprites">Sprites</a>
   </nav>
 </header>
@@ -235,6 +236,9 @@
       <button type="button" data-preset="tier2">Tier 2</button>
       <button type="button" data-preset="armadyl">Armadyl</button>
       <button type="button" data-preset="widow">Widow Weaver</button>
+      <button type="button" data-preset="kingsguard">Kingsguard</button>
+      <button type="button" data-preset="kingsguard_widow_mix">Helm + Widow</button>
+      <button type="button" data-preset="kingsguard_whip_mix">Kite + whip</button>
       <button type="button" data-preset="gloamhold">Gloamhold</button>
     </div>
     <label class="cape-toggle"><input type="checkbox" id="show-cape" checked> Show cape (turn off to see the body)</label>
@@ -358,11 +362,26 @@
 </section>
 
 <div class="grid" id="grid"></div>
+
+<section class="gear-sec" id="knight">
+  <h2>Hollow Knight-King</h2>
+  <div class="sub">Throne-room king, spectral knights, and the Kingsguard tank set. Check helm over hair, legs under the body, and the kiteshield over the off-hand arm. Mix presets above combine the crowned helm with Widow robes, and the kite with an abyssal whip.</div>
+  <div class="preview-wrap" style="background:#140c1c">
+    <canvas id="knight-king" width="360" height="280"></canvas>
+  </div>
+  <div class="widow-fx">
+    <div class="preview-cell"><canvas id="knight-spectral" width="160" height="160"></canvas><span>Spectral knight</span></div>
+    <div class="preview-cell"><canvas id="knight-cone" width="120" height="120"></canvas><span>Cone telegraph</span></div>
+    <div class="preview-cell"><canvas id="knight-shatter" width="160" height="200"></canvas><span>Shattered armour</span></div>
+  </div>
+</section>
+
 <script src="partyhat-img.js?v=35-5"></script>
 <script src="whip-img.js?v=35-5"></script>
 <script src="sprites.js?v=35-5"></script>
 <script src="widow-sprites.js?v=35-5"></script>
-<script src="lab-gear.js?v=35-5"></script>
+<script src="knight-sprites.js?v=37"></script>
+<script src="lab-gear.js?v=37"></script>
 <script>
 "use strict";
 if (navigator.serviceWorker) {
@@ -435,7 +454,7 @@ function zoom(src, dst) {
 }
 
 /* ---- Gear UI ---- */
-const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Armadyl", widow: "Widow Weaver", gloamhold: "Gloamhold", custom: "Custom" };
+const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Armadyl", widow: "Widow Weaver", kingsguard: "Kingsguard", kingsguard_widow_mix: "Helm + Widow", kingsguard_whip_mix: "Kite + whip", gloamhold: "Gloamhold", custom: "Custom" };
 const PREVIEW_VIEWS = [
   { id: "gear-preview-front", facing: "front", walk: false },
   { id: "gear-preview-back", facing: "back", walk: false },
@@ -882,6 +901,38 @@ window.XscapeLab = {
   sync: syncGearUi
 };
 requestAnimationFrame(frame);
+</script>
+<script>
+(function paintKnightLab(){
+  function paint(){
+    const Art = window.XscapeKnightArt;
+    if (!Art) return;
+    function fit(id, fn){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const c = el.getContext("2d");
+      c.clearRect(0,0,el.width,el.height);
+      c.save();
+      c.translate(el.width/2, el.height*0.62);
+      c.scale(3.2, 3.2);
+      fn(c);
+      c.restore();
+    }
+    fit("knight-king", (c) => Art.drawKing(c, 0, { shattered:false }));
+    fit("knight-shatter", (c) => Art.drawKing(c, 0, { shattered:true }));
+    fit("knight-spectral", (c) => Art.drawSpectral(c, 0, { fade:1 }));
+    const cone = document.getElementById("knight-cone");
+    if (cone) {
+      const c = cone.getContext("2d");
+      c.clearRect(0,0,cone.width,cone.height);
+      c.save(); c.translate(cone.width/2, cone.height*0.7); c.scale(3,3);
+      Art.drawConeGlow(c, 0.4);
+      c.restore();
+    }
+  }
+  paint();
+  setInterval(paint, 600);
+})();
 </script>
 </body>
 </html>

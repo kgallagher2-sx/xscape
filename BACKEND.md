@@ -142,3 +142,6 @@ A “Saved to cloud” line appears on the hub when a named character is signed 
 - This is a friends game: GP and loot go through capped RPCs, but a determined client can still lie about a kill. Combat will need a server authority later if that starts to matter.
 - Duel stakes are not escrowed until combat exists, so nobody can lose GP in the lobby.
 - `localStorage` remains the offline cache. Clearing the site data also clears the Supabase session (the game would ask them to sign in again, then restore from the cloud).
+
+## Hollow Knight-King
+`record_knight_kill(p_ticks)` awards 150k–400k GP per kill (same band as Kree/Widow). A 1/6 unique roll picks an unowned Kingsguard piece (`kingsguard_helm`, `kingsguard_plate`, `kingsguard_legs`, `kingsguard_sword`, `kingsguard_kite`); if the set is already complete, the unique roll pays a 2–4M GP bonus instead of a duplicate. 20-second rate limit; `p_ticks` must be null or >= 20. Profile fields: `knightKills`, `knightBestTicks`.

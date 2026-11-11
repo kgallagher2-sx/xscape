@@ -41,6 +41,12 @@ const LAB_ITEMS = {
   widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow" },
   widow_weaver_book:   { id: "widow_weaver_book", name: "Widow Weaver spellbook", slot: "shield", tier: "widow", kind: "widow" },
 
+  kingsguard_helm:    { id: "kingsguard_helm", name: "Kingsguard full helm", slot: "head", tier: "kingsguard", kind: "kingsguard" },
+  kingsguard_plate:   { id: "kingsguard_plate", name: "Kingsguard platebody", slot: "body", tier: "kingsguard", kind: "kingsguard" },
+  kingsguard_legs:    { id: "kingsguard_legs", name: "Kingsguard platelegs", slot: "legs", tier: "kingsguard", kind: "kingsguard" },
+  kingsguard_sword:   { id: "kingsguard_sword", name: "Kingsguard sword", slot: "weapon", tier: "kingsguard", kind: "sword" },
+  kingsguard_kite:    { id: "kingsguard_kite", name: "Kingsguard kiteshield", slot: "shield", tier: "kingsguard", kind: "kingsguard" },
+
   hollowbolt_xbow:    { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", kind: "hollow" },
   hollow_bolts:       { id: "hollow_bolts", name: "Hollow bolts", slot: "ammo", tier: "unique", kind: "hollow" },
   veilhide_body:      { id: "veilhide_body", name: "Veilhide body", slot: "body", tier: "unique", kind: "veilhide" },
@@ -79,16 +85,32 @@ const LAB_LOADOUTS = {
     head: "widow_weaver_hood", cape: null, neck: null, ammo: null,
     weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
     legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
+  },
+  kingsguard: {
+    head: "kingsguard_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "kingsguard_sword", body: "kingsguard_plate", shield: "kingsguard_kite",
+    legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  kingsguard_widow_mix: {
+    head: "kingsguard_helm", cape: null, neck: null, ammo: null,
+    weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
+    legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
+  },
+  kingsguard_whip_mix: {
+    head: "black_dhide_coif", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
+    weapon: "abyssal_whip", body: "kingsguard_plate", shield: "kingsguard_kite",
+    legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
   }
 };
 
-const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "unique", "other"];
+const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "unique", "other"];
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
   tier2: "Tier 2 — black d'hide",
   jad: "Jad",
   armadyl: "Armadyl — Kree'arra",
   widow: "Widow Weaver — Widow Queen",
+  kingsguard: "Kingsguard — Hollow Knight-King",
   unique: "Gloamhold uniques",
   other: "Other (kept if owned)"
 };
@@ -129,6 +151,11 @@ const LAB_DEFAULTS = {
   widow_weaver_bottom: { main: "#161014", trim: "#e01828", scale: 1 },
   widow_weaver_wand:   { main: "#161014", trim: "#ff3040", scale: 1 },
   widow_weaver_book:   { main: "#161014", trim: "#e01828", scale: 1 },
+  kingsguard_helm:    { main: "#5a6570", trim: "#d4b24a", scale: 1 },
+  kingsguard_plate:   { main: "#5a6570", trim: "#d4b24a", scale: 1 },
+  kingsguard_legs:    { main: "#5a6570", trim: "#d4b24a", scale: 1 },
+  kingsguard_sword:   { main: "#9aa4ae", trim: "#d4b24a", scale: 1 },
+  kingsguard_kite:    { main: "#5a6570", trim: "#d4b24a", scale: 1 },
 
   hollowbolt_xbow:    { main: "#3a3048", trim: "#c8b890", scale: 1 },
   hollow_bolts:       { main: "#c8c0e0", trim: "#3a3048", scale: 1 },
@@ -307,6 +334,9 @@ function drawLabLegs(c, id) {
     if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBottom) {
       XscapeWidowArt.drawBottom(c, st, "back");
       return;
+    } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawLegs) {
+      XscapeKnightArt.drawLegs(c, "back");
+      return;
     }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
@@ -429,6 +459,9 @@ function drawLabBody(c, id) {
     if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawTop) {
       XscapeWidowArt.drawTop(c, st, "back");
       return;
+    } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawPlate) {
+      XscapeKnightArt.drawPlate(c, "back");
+      return;
     }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
@@ -518,6 +551,9 @@ function drawLabHead(c, id) {
   withScale(c, 0, -26, st.scale, () => {
     if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawHood) {
       XscapeWidowArt.drawHood(c, st, "back");
+      return;
+    } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawHelm) {
+      XscapeKnightArt.drawHelm(c, "back");
       return;
     }
     if (kind === "armadyl") {
@@ -1235,6 +1271,10 @@ function drawLabItemIcon(c, id, t) {
     XscapeWidowArt.drawItemIcon(c, id, st, t);
     c.restore();
     return;
+  } else if ((kind === "kingsguard" || kind === "sword") && window.XscapeKnightArt && XscapeKnightArt.drawItemIcon && String(id).indexOf("kingsguard_") === 0) {
+    XscapeKnightArt.drawItemIcon(c, id, 44, 44);
+    c.restore();
+    return;
   }
   if (slot === "ammo") {
     drawBoltBundle(c, st, kind);
@@ -1394,6 +1434,8 @@ function weaponKind(id) {
   if (String(id).indexOf("whip") !== -1) return "whip";
   if (it && it.kind === "widow") return "wand";
   if (String(id).indexOf("widow_weaver_wand") !== -1) return "wand";
+  if (it && (it.kind === "sword" || it.kind === "axe" || it.kind === "spear")) return it.kind;
+  if (String(id).indexOf("kingsguard_sword") !== -1) return "sword";
   return "bow";
 }
 
@@ -1476,6 +1518,8 @@ function drawHeroShield(c, t, eq, facing, opt) {
   const it = labItem(id);
   if (it && it.kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBookHeld) {
     XscapeWidowArt.drawBookHeld(c, labStyle(id), facing, t, false, opt && opt.shot);
+  } else if (it && it.kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawKiteHeld) {
+    XscapeKnightArt.drawKiteHeld(c, facing);
   }
 }
 
@@ -1487,6 +1531,12 @@ function drawHeroWeapon(c, t, eq, opt, facing) {
     if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
       XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t, false, opt && opt.shot);
     }
+  } else if (kind === "sword" && window.XscapeKnightArt && XscapeKnightArt.drawSwordHeld) {
+    XscapeKnightArt.drawSwordHeld(c, t, facing);
+  } else if (kind === "axe" && window.XscapeGorehornArt && XscapeGorehornArt.drawAxeHeld) {
+    XscapeGorehornArt.drawAxeHeld(c, t, facing);
+  } else if (kind === "spear" && window.XscapeColossusArt && XscapeColossusArt.drawSpearHeld) {
+    XscapeColossusArt.drawSpearHeld(c, t, facing);
   } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase);
 }
 
@@ -1801,6 +1851,9 @@ function drawHeroLegs(c, id, facing, stride) {
     if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBottom) {
       XscapeWidowArt.drawBottom(c, st, facing === "right" ? "right" : "front");
       return;
+    } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawLegs) {
+      XscapeKnightArt.drawLegs(c, facing === "right" ? "right" : "front");
+      return;
     }
     if (facing === "right") {
       const far = -s * 0.7, near = s * 0.7;
@@ -1881,6 +1934,9 @@ function drawHeroBody(c, id, facing) {
       if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawTop) {
         XscapeWidowArt.drawTop(c, st, "right");
         return;
+      } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawPlate) {
+        XscapeKnightArt.drawPlate(c, "right");
+        return;
       }
       c.fillStyle = p.dark;
       c.beginPath();
@@ -1918,6 +1974,9 @@ function drawHeroBody(c, id, facing) {
     // front chest
     if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawTop) {
       XscapeWidowArt.drawTop(c, st, "front");
+      return;
+    } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawPlate) {
+      XscapeKnightArt.drawPlate(c, "front");
       return;
     }
     if (kind === "armadyl") {
@@ -2130,6 +2189,9 @@ function drawHeroHead(c, id, facing) {
       if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawHood) {
         XscapeWidowArt.drawHood(c, st, "right");
         return;
+      } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawHelm) {
+        XscapeKnightArt.drawHelm(c, "right");
+        return;
       }
       if (kind === "armadyl") {
         c.fillStyle = p.dark;
@@ -2217,6 +2279,9 @@ function drawHeroHead(c, id, facing) {
     // FRONT
     if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawHood) {
       XscapeWidowArt.drawHood(c, st, "front");
+      return;
+    } else if (kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawHelm) {
+      XscapeKnightArt.drawHelm(c, "front");
       return;
     }
     if (kind === "armadyl") {

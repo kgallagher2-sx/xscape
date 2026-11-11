@@ -127,13 +127,15 @@
     var p = payload || localPayload();
     return !!(p && ((p.gp || 0) > 0 || p.hasFireCape || (p.kreeKills || 0) > 0 ||
       (p.widowKills || 0) > 0 ||
+      (p.knightKills || 0) > 0 ||
       (p.raidCompletions || 0) > 0 || (p.jadKills || 0) > 0 || p.seenFirstKill));
   }
 
   function cloudHasCharacter(p) {
     p = p || cloudProfile;
     return !!(p && (p.migratedAt || (p.gp || 0) > 0 || p.hasFireCape ||
-      (p.jadKills || 0) > 0 || (p.kreeKills || 0) > 0 || (p.widowKills || 0) > 0 || (p.raidCompletions || 0) > 0));
+      (p.jadKills || 0) > 0 || (p.kreeKills || 0) > 0 || (p.widowKills || 0) > 0 ||
+      (p.knightKills || 0) > 0 || (p.raidCompletions || 0) > 0));
   }
 
   function markLocalMigrated() {
@@ -243,6 +245,7 @@
       kreeKills: P.kreeKills || Number(raw.kreeKills) || 0,
       kreeBestTicks: P.kreeBestTicks || raw.kreeBestTicks || null,
       widowKills: P.widowKills || Number(raw.widowKills) || 0,
+      knightKills: P.knightKills || Number(raw.knightKills) || 0,
       widowBestTicks: P.widowBestTicks || raw.widowBestTicks || null,
       jadKills: P.jadKills || Number(raw.jadKills) || js.kills || 0,
       jadBestTicks: P.jadBestTicks || raw.jadBestTicks || js.bestTicks,
@@ -301,6 +304,8 @@
     if (typeof p.kreeKills === "number") P.kreeKills = p.kreeKills;
     if (p.kreeBestTicks != null) P.kreeBestTicks = p.kreeBestTicks;
     if (typeof p.widowKills === "number") P.widowKills = p.widowKills;
+    if (typeof p.knightKills === "number") P.knightKills = p.knightKills;
+    if (p.knightBestTicks != null) P.knightBestTicks = p.knightBestTicks;
     if (p.widowBestTicks != null) P.widowBestTicks = p.widowBestTicks;
     if (typeof p.jadKills === "number") P.jadKills = p.jadKills;
     if (p.jadBestTicks != null) P.jadBestTicks = p.jadBestTicks;

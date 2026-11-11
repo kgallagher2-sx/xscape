@@ -459,6 +459,11 @@
       XscapeWidowArt.drawItemIcon(ctx, id, null, (opts && opts.t) || 0);
       ctx.restore();
     }
+    else if (String(id).indexOf("kingsguard_") === 0 && global.XscapeKnightArt && XscapeKnightArt.drawItemIcon) {
+      ctx.restore();
+      ended = true;
+      XscapeKnightArt.drawItemIcon(ctx, id, w, h);
+    }
     else if (id === "veilhide_body" || id === "veilhide-body") drawBody(ctx, pal.veil);
     else if (id === "veilhide_chaps" || id === "veilhide-chaps") drawChaps(ctx, pal.veil);
     else if (id === "veilhide_vambs" || id === "veilhide-vambs") drawVambs(ctx, pal.veil);
