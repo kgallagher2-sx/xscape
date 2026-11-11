@@ -41,7 +41,9 @@
       rune:   { main: "#3a6a8a", shade: "#1a3848", light: "#7ab0c8", metal: "#6a8aaa" },
       mithril:{ main: "#5a6a9a", shade: "#2a3458", light: "#a0b0d8", metal: "#8890b8" },
       bronze: { main: "#8a5a28", shade: "#4a2e10", light: "#c89048", metal: "#b07838" },
-      hollow: { main: "#3a3048", shade: "#181420", light: "#c8b890", metal: "#8a7a60", accent: "#c8c0e0" }
+      hollow: { main: "#3a3048", shade: "#181420", light: "#c8b890", metal: "#8a7a60", accent: "#c8c0e0" },
+      dusk:   { main: "#3a3048", shade: "#16101e", light: "#6a5a78", stitch: "#907850", metal: "#686478" },
+      tempered:{ main: "#3a444c", shade: "#161a20", light: "#7a8a94", metal: "#5c7080" }
     };
   }
 
@@ -295,6 +297,59 @@
     ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(2, -2); ctx.lineTo(-2, -2); ctx.closePath(); ctx.fill();
   }
 
+  function drawStormwingHelmIcon(ctx, pal) {
+    function wing(dir) {
+      ctx.fillStyle = pal.shade;
+      ctx.beginPath();
+      ctx.moveTo(dir * 6, -2);
+      ctx.quadraticCurveTo(dir * 14, -10, dir * 11, -16);
+      ctx.quadraticCurveTo(dir * 8, -10, dir * 7, -4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = pal.light;
+      ctx.beginPath();
+      ctx.moveTo(dir * 6.4, -3);
+      ctx.quadraticCurveTo(dir * 12, -9, dir * 10.2, -14.2);
+      ctx.quadraticCurveTo(dir * 8, -9, dir * 7, -4.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = pal.stitch || "#d8c070";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(dir * 6.5, -3);
+      ctx.quadraticCurveTo(dir * 11, -9, dir * 10, -14);
+      ctx.stroke();
+      // two trailing feathers
+      ctx.fillStyle = pal.main;
+      ctx.beginPath();
+      ctx.moveTo(dir * 6, 0);
+      ctx.quadraticCurveTo(dir * 13, -4, dir * 12, -9);
+      ctx.quadraticCurveTo(dir * 9, -4, dir * 6.5, 1);
+      ctx.closePath();
+      ctx.fill();
+    }
+    wing(-1);
+    wing(1);
+    // skull / bowl — encloses the face; visor is a hole, not a face on top
+    ctx.fillStyle = pal.shade;
+    ctx.beginPath(); ctx.arc(0, 0, 11, Math.PI, 0); ctx.lineTo(11, 7); ctx.lineTo(-11, 7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = pal.main;
+    ctx.beginPath(); ctx.arc(0, 0, 10, Math.PI, 0); ctx.lineTo(10, 6); ctx.lineTo(-10, 6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = pal.light;
+    ctx.beginPath(); ctx.ellipse(-3, -3, 4, 2.4, -0.3, 0, Math.PI * 2); ctx.fill();
+    // visor opening
+    ctx.fillStyle = pal.accent || pal.shade;
+    ctx.fillRect(-6, -1, 12, 3.2);
+    ctx.fillStyle = "#0e1216";
+    ctx.fillRect(-5, -0.4, 10, 2);
+    // gold brow and crest
+    ctx.fillStyle = pal.stitch || "#d8c070";
+    ctx.fillRect(-8, -2.4, 16, 1.4);
+    ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(2, -2); ctx.lineTo(-2, -2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = pal.stitch || "#d8c070";
+    ctx.fillRect(-8, 5, 16, 1.3);
+  }
+
   function drawChestplate(ctx, pal) {
     drawBody(ctx, pal);
     ctx.strokeStyle = pal.stitch || "#d8c070"; ctx.lineWidth = 1.2;
@@ -425,6 +480,9 @@
     else if (id === "black_dhide_chaps") drawChaps(ctx, pal.black);
     else if (id === "black_dhide_vambs") drawVambs(ctx, pal.black);
     else if (id === "black_dhide_boots") drawBoots(ctx, pal.black);
+    else if (id === "duskhide_body" || id === "duskhide-body") drawBody(ctx, pal.dusk);
+    else if (id === "duskhide_chaps" || id === "duskhide-chaps") drawChaps(ctx, pal.dusk);
+    else if (id === "duskhide_vambs" || id === "duskhide-vambs") drawVambs(ctx, pal.dusk);
     else if (id === "leather_cowl") drawCoif(ctx, pal.leather);
     else if (id === "leather_body") drawBody(ctx, pal.leather);
     else if (id === "leather_chaps") drawChaps(ctx, pal.leather);
@@ -434,6 +492,7 @@
     else if (id === "rune_crossbow") drawCrossbow(ctx, pal.rune, false);
     else if (id === "armadyl_crossbow") drawCrossbow(ctx, pal.armadyl, true);
     else if (id === "bronze_crossbow") drawCrossbow(ctx, pal.bronze, false);
+    else if (id === "tempered_xbow" || id === "tempered-xbow") drawCrossbow(ctx, pal.tempered, false);
     else if (id === "hollowbolt_xbow" || id === "hollowbolt-xbow") drawCrossbow(ctx, pal.hollow, true);
     else if (id === "mithril_bolts") drawBolts(ctx, pal.mithril);
     else if (id === "rune_bolts") drawBolts(ctx, pal.rune);
@@ -446,7 +505,7 @@
     else if (id === "avas_accumulator") drawAvas(ctx, pal.green);
     else if (id === "gloamheart_cape" || id === "gloamheart-cape") drawCape(ctx, pal.veil, false);
     else if (id === "archers_ring") drawRing(ctx, { metal: "#c8b060", shade: "#6a5010", light: "#3aaa5a" }, "#3aaa5a");
-    else if (id === "armadyl_helmet") drawHelm(ctx, pal.armadyl);
+    else if (id === "armadyl_helmet") drawStormwingHelmIcon(ctx, pal.armadyl);
     else if (id === "armadyl_chestplate") drawChestplate(ctx, pal.armadyl);
     else if (id === "armadyl_chainskirt") drawSkirt(ctx, pal.armadyl);
     else if (String(id).indexOf("widow_weaver_") === 0 && global.XscapeWidowArt && XscapeWidowArt.drawItemIcon) {
