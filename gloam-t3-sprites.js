@@ -177,11 +177,6 @@
       c.beginPath(); c.ellipse(0, -28.2, 10.6, 11.0, 0, 0, Math.PI * 2); c.fill();
       c.fillStyle = p.main;
       c.beginPath(); c.ellipse(0, -28.4, 9.6, 10.0, 0, 0, Math.PI * 2); c.fill();
-      // rear crest
-      c.fillStyle = p.dark;
-      c.beginPath(); c.moveTo(-2.6, -38); c.lineTo(0, -51.0); c.lineTo(2.6, -38); c.closePath(); c.fill();
-      c.fillStyle = p.trim;
-      c.beginPath(); c.moveTo(-1.3, -38.2); c.lineTo(0, -49.4); c.lineTo(1.3, -38.2); c.closePath(); c.fill();
       glow(c, 0, -36.5, 3.2, p.glow, 0.3);
       blackSun(c, p, 0, -27.2, 2.3);
       return;
@@ -200,9 +195,6 @@
       c.beginPath(); c.arc(2.2, -29.4, 6.4, -2.7, -0.2); c.stroke();
       glow(c, 3.4, -33.5, 2.6, p.glow, 0.35);
       blackSun(c, p, 3.6, -32.8, 1.55);
-      // short rear crest
-      c.fillStyle = p.trim;
-      c.beginPath(); c.moveTo(-3.4, -36.2); c.lineTo(-6.2, -49.5); c.lineTo(-1.2, -36.8); c.closePath(); c.fill();
       return;
     }
     // front
@@ -228,9 +220,6 @@
     c.beginPath(); c.arc(0, -31.4, 7.2, Math.PI * 1.05, Math.PI * -0.05, true); c.stroke();
     glow(c, 0, -35.2, 3.4, p.glow, 0.4);
     blackSun(c, p, 0, -35.0, 2.15);
-    // short rear/top crest peek
-    c.fillStyle = p.trim;
-    c.beginPath(); c.moveTo(-1.8, -38.6); c.lineTo(0, -50.0); c.lineTo(1.8, -38.6); c.closePath(); c.fill();
   }
 
   function drawEclipsePauldron(c, p, side) {
@@ -581,16 +570,16 @@
       c.beginPath(); c.ellipse(0, -28.6, 10.8, 11.6, 0, 0, Math.PI * 2); c.fill();
       c.fillStyle = p.main;
       c.beginPath(); c.ellipse(0, -28.8, 9.6, 10.4, 0, 0, Math.PI * 2); c.fill();
-      // tall crest
+      // shortened crest (about half the old height)
       c.fillStyle = p.dark;
-      c.beginPath(); c.moveTo(-2.6, -38.4); c.lineTo(0, -54.5); c.lineTo(2.6, -38.4); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(-2.4, -38.4); c.lineTo(0, -46.4); c.lineTo(2.4, -38.4); c.closePath(); c.fill();
       c.fillStyle = p.trim;
-      c.beginPath(); c.moveTo(-1.3, -38.6); c.lineTo(0, -52.8); c.lineTo(1.3, -38.6); c.closePath(); c.fill();
-      soulCrack(c, p, 0, -50, 0, -36);
-      // short swept horns
+      c.beginPath(); c.moveTo(-1.2, -38.6); c.lineTo(0, -45.4); c.lineTo(1.2, -38.6); c.closePath(); c.fill();
+      soulCrack(c, p, 0, -44.2, 0, -36);
+      // shortened swept horns
       c.fillStyle = p.light;
-      c.beginPath(); c.moveTo(-8.4, -34); c.lineTo(-16.2, -46); c.lineTo(-6.2, -33); c.closePath(); c.fill();
-      c.beginPath(); c.moveTo(8.4, -34); c.lineTo(16.2, -46); c.lineTo(6.2, -33); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(-8.4, -34); c.lineTo(-12.4, -40.2); c.lineTo(-6.2, -33); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(8.4, -34); c.lineTo(12.4, -40.2); c.lineTo(6.2, -33); c.closePath(); c.fill();
       return;
     }
     if (facing === "right") {
@@ -612,17 +601,17 @@
       // visor rim
       c.strokeStyle = p.trim; c.lineWidth = 0.8;
       c.beginPath(); c.ellipse(5.2, -27.2, 3.2, 4.2, 0.1, -0.6, 1.4); c.stroke();
-      // crest
+      // shortened crest
       c.fillStyle = p.dark;
-      c.beginPath(); c.moveTo(0.2, -36.8); c.lineTo(1.2, -54.0); c.lineTo(3.2, -36.6); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(0.2, -36.8); c.lineTo(1.2, -45.6); c.lineTo(3.2, -36.6); c.closePath(); c.fill();
       c.fillStyle = p.trim;
-      c.beginPath(); c.moveTo(0.8, -37.0); c.lineTo(1.4, -52.4); c.lineTo(2.4, -36.8); c.closePath(); c.fill();
-      soulCrack(c, p, 1.4, -50, 1.4, -37);
-      // forward horn
+      c.beginPath(); c.moveTo(0.8, -37.0); c.lineTo(1.4, -44.6); c.lineTo(2.4, -36.8); c.closePath(); c.fill();
+      soulCrack(c, p, 1.4, -43.6, 1.4, -37);
+      // shortened forward horn
       c.fillStyle = p.light;
-      c.beginPath(); c.moveTo(6.4, -33.4); c.lineTo(14.8, -44.5); c.lineTo(5.0, -31.8); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(6.4, -33.4); c.lineTo(10.6, -39.0); c.lineTo(5.0, -31.8); c.closePath(); c.fill();
       c.strokeStyle = p.glowHard; c.lineWidth = 0.6;
-      c.beginPath(); c.moveTo(6.6, -33.6); c.lineTo(13.6, -43.2); c.stroke();
+      c.beginPath(); c.moveTo(6.6, -33.6); c.lineTo(10.0, -38.2); c.stroke();
       return;
     }
     // front
@@ -646,19 +635,19 @@
     glow(c, 2.1, -27.6, 1.8, p.glow, 0.5);
     c.strokeStyle = p.trim; c.lineWidth = 1.05;
     c.strokeRect(-5.0, -29.8, 10.0, 4.6);
-    // tall central crest
+    // shortened central crest (about half the old height)
     c.fillStyle = p.dark;
-    c.beginPath(); c.moveTo(-2.8, -37.6); c.lineTo(0, -55.0); c.lineTo(2.8, -37.6); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-2.5, -37.6); c.lineTo(0, -46.2); c.lineTo(2.5, -37.6); c.closePath(); c.fill();
     c.fillStyle = p.trim;
-    c.beginPath(); c.moveTo(-1.35, -38.0); c.lineTo(0, -53.4); c.lineTo(1.35, -38.0); c.closePath(); c.fill();
-    soulCrack(c, p, 0, -51.5, 0, -38);
-    // swept horns
+    c.beginPath(); c.moveTo(-1.2, -38.0); c.lineTo(0, -45.2); c.lineTo(1.2, -38.0); c.closePath(); c.fill();
+    soulCrack(c, p, 0, -44.4, 0, -38);
+    // shortened swept horns
     c.fillStyle = p.light;
-    c.beginPath(); c.moveTo(-9.4, -34.4); c.lineTo(-17.6, -47.5); c.lineTo(-7.0, -32.8); c.closePath(); c.fill();
-    c.beginPath(); c.moveTo(9.4, -34.4); c.lineTo(17.6, -47.5); c.lineTo(7.0, -32.8); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-9.4, -34.4); c.lineTo(-13.5, -41.0); c.lineTo(-7.0, -32.8); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(9.4, -34.4); c.lineTo(13.5, -41.0); c.lineTo(7.0, -32.8); c.closePath(); c.fill();
     c.strokeStyle = p.glowHard; c.lineWidth = 0.65;
-    c.beginPath(); c.moveTo(-9.2, -34.6); c.lineTo(-16.4, -46.0); c.stroke();
-    c.beginPath(); c.moveTo(9.2, -34.6); c.lineTo(16.4, -46.0); c.stroke();
+    c.beginPath(); c.moveTo(-9.2, -34.6); c.lineTo(-12.8, -40.2); c.stroke();
+    c.beginPath(); c.moveTo(9.2, -34.6); c.lineTo(12.8, -40.2); c.stroke();
     c.fillStyle = p.trim; c.fillRect(-10.2, -22.4, 20.4, 1.3);
   }
 
@@ -889,46 +878,63 @@
     const shot = (opt && opt.shot) || {};
     const draw = shot.draw || 0;
     const recoil = shot.recoil || 0;
-    // Right (main) hand stays on the riser. Left hangs at idle; draws the string during the attack.
-    let riser, string;
+    // Right (main) hand stays on the riser. Left hangs at idle; reaches back to draw during the attack. No string is drawn.
+    let riser, drawHand;
     if (facing === "front") {
       riser = { x: -11.8, y: -11.0 };
-      // string is toward the body (+x); left hand draws in front of the chest
-      string = { x: -5.6 + draw * 2.2 + recoil * 0.4, y: -11.2 - draw * 0.3 };
+      drawHand = { x: -5.6 + draw * 2.2 + recoil * 0.4, y: -11.2 - draw * 0.3 };
     } else if (facing === "back") {
       riser = { x: 11.4, y: -12.2 };
-      string = { x: 5.4 - draw * 2.2 - recoil * 0.4, y: -12.4 - draw * 0.3 };
+      drawHand = { x: 5.4 - draw * 2.2 - recoil * 0.4, y: -12.4 - draw * 0.3 };
     } else if (facing === "right") {
       riser = { x: 7.8, y: -10.6 };
-      string = { x: 3.0 - draw * 5.4 + recoil * 1.2, y: -11.0 - draw * 0.5 };
+      drawHand = { x: 3.0 - draw * 5.4 + recoil * 1.2, y: -11.0 - draw * 0.5 };
     } else {
       // left: far (right) hand on the riser, behind the body; limbs/wings peek forward
       riser = { x: 1.6, y: -7.4 };
-      string = { x: -2.4 - draw * 3.8 + recoil * 0.8, y: -9.0 - draw * 0.4 };
+      drawHand = { x: -2.4 - draw * 3.8 + recoil * 0.8, y: -9.0 - draw * 0.4 };
     }
-    const left = (draw > 0.08) ? string : hangingLeft(facing, opt);
+    const left = (draw > 0.08) ? drawHand : hangingLeft(facing, opt);
     return { weapon: riser, right: riser, left: left, twoHand: draw > 0.08 };
+  }
+
+  // Canonical pole: grip at y ≈ -9 puts the butt on the feet line (y 12)
+  // and the head clearly above the helm / hood, still inside y -76.
+  const POLE_BUTT = 21.0;
+  const STAFF_HEAD_Y = -47.0;
+  const HALBERD_HEAD_Y = -42.0;
+
+  function poleIdleAngle(facing) {
+    // Near vertical on front/back; a few degrees forward on the sides.
+    if (facing === "front") return -0.06;
+    if (facing === "back") return 0.06;
+    if (facing === "right") return 0.12;
+    return -0.12;
+  }
+
+  function poleIdleGrip(facing) {
+    if (facing === "front") return { x: -11.6, y: -9.0 };
+    if (facing === "back") return { x: 11.4, y: -9.0 };
+    if (facing === "right") return { x: 7.2, y: -9.0 };
+    // left: far hand, nudged forward so the vertical shaft peeks past the body
+    return { x: -2.8, y: -8.4 };
   }
 
   function staffPose(facing, opt) {
     // Always one-handed. Raise lifts only the right / staff hand.
     const shot = (opt && opt.shot) || {};
     const raise = shot.raise || 0;
-    const lift = raise * 11.5;
-    let rest;
-    if (facing === "front") rest = { x: -11.4, y: -8.0 - lift };
-    else if (facing === "back") rest = { x: 11.2, y: -10.0 - lift };
-    else if (facing === "right") rest = { x: 7.6, y: -8.2 - lift };
-    else rest = { x: 2.6, y: -6.4 - lift };
-    return { weapon: rest, right: rest, left: hangingLeft(facing, opt), twoHand: false };
+    const lift = raise * 6.5; // modest, so the long orb stays inside y -76
+    const rest = poleIdleGrip(facing);
+    const w = { x: rest.x, y: rest.y - lift };
+    return { weapon: w, right: w, left: hangingLeft(facing, opt), twoHand: false };
   }
 
   function staffHoldAngle(facing, shot) {
     const raise = (shot && shot.raise) || 0;
-    if (facing === "front") return -0.28 - raise * 0.08;
-    if (facing === "back") return 0.28 + raise * 0.08;
-    if (facing === "right") return 0.32 - raise * 0.05;
-    return -0.72 + raise * 0.05;
+    const base = poleIdleAngle(facing);
+    const sgn = (facing === "front" || facing === "left") ? -1 : 1;
+    return base + sgn * raise * 0.12;
   }
 
   function halberdAttacking(shot) {
@@ -948,43 +954,42 @@
     const two = halberdAttacking(shot);
     let rest;
     if (two) {
-      if (facing === "front") rest = { x: -6.2, y: -7.0 };
-      else if (facing === "back") rest = { x: 6.2, y: -8.2 };
-      else if (facing === "right") rest = { x: 5.8, y: -7.4 };
-      else rest = { x: 1.4, y: -6.0 };
+      // Attack grips stay closer to the body so the longer shaft stays in ±42.
+      if (facing === "front") rest = { x: -7.2, y: -8.0 };
+      else if (facing === "back") rest = { x: 7.2, y: -8.4 };
+      else if (facing === "right") rest = { x: 5.2, y: -8.2 };
+      else rest = { x: 0.6, y: -7.2 };
     } else {
-      if (facing === "front") rest = { x: -11.2, y: -8.6 };
-      else if (facing === "back") rest = { x: 11.0, y: -10.6 };
-      else if (facing === "right") rest = { x: 7.4, y: -8.8 };
-      else rest = { x: 2.8, y: -6.4 };
+      rest = poleIdleGrip(facing);
     }
     const w = { x: rest.x, y: rest.y };
     if (two && kind === "halberd_chop" && swing) {
       if (swing > 0) {
-        if (facing === "front") { w.x -= 2.0 * swing; w.y -= 12.0 * swing; }
-        else if (facing === "back") { w.x += 2.0 * swing; w.y -= 12.0 * swing; }
-        else if (facing === "right") { w.x -= 1.5 * swing; w.y -= 11.0 * swing; }
-        else { w.x += 1.5 * swing; w.y -= 11.0 * swing; }
+        // Windup: small lift, the extra length is spent on tilt instead of height.
+        if (facing === "front") { w.x -= 1.2 * swing; w.y -= 4.0 * swing; }
+        else if (facing === "back") { w.x += 1.2 * swing; w.y -= 4.0 * swing; }
+        else if (facing === "right") { w.x -= 0.8 * swing; w.y -= 3.5 * swing; }
+        else { w.x += 0.8 * swing; w.y -= 3.5 * swing; }
       } else {
         const u = -swing;
-        if (facing === "front") { w.x -= 3.0 * u; w.y += 8.5 * u; }
-        else if (facing === "back") { w.x += 3.0 * u; w.y += 8.5 * u; }
-        else if (facing === "right") { w.x += 1.8 * u; w.y += 8.0 * u; }
-        else { w.x -= 1.2 * u; w.y += 8.0 * u; }
+        if (facing === "front") { w.x -= 2.2 * u; w.y += 6.0 * u; }
+        else if (facing === "back") { w.x += 2.2 * u; w.y += 6.0 * u; }
+        else if (facing === "right") { w.x += 1.2 * u; w.y += 5.5 * u; }
+        else { w.x -= 0.8 * u; w.y += 5.5 * u; }
       }
     } else if (two) {
       if (facing === "front") {
-        w.x -= 2.4 * pull + 1.6 * reach;
-        w.y += 1.6 * pull + 6.2 * reach;
+        w.x -= 1.6 * pull + 1.0 * reach;
+        w.y += 1.2 * pull + 4.4 * reach;
       } else if (facing === "back") {
-        w.x += 2.2 * pull + 1.2 * reach;
-        w.y += 1.4 * pull + 4.0 * reach;
+        w.x += 1.6 * pull + 1.0 * reach;
+        w.y += 1.2 * pull + 4.4 * reach;
       } else if (facing === "right") {
-        w.x += -1.6 * pull + 0.8 * reach;
-        w.y += -0.5 * pull + 0.5 * reach;
+        w.x += -1.2 * pull + 0.5 * reach;
+        w.y += -0.4 * pull + 0.4 * reach;
       } else {
-        w.x += 1.4 * pull + 0.6 * reach;
-        w.y += -0.5 * pull + 0.5 * reach;
+        w.x += 1.0 * pull + 0.4 * reach;
+        w.y += -0.4 * pull + 0.4 * reach;
       }
     }
     const ang = halberdHoldAngle(facing, shot);
@@ -994,40 +999,40 @@
   }
 
   function halberdHoldAngle(facing, shot) {
+    if (!halberdAttacking(shot)) return poleIdleAngle(facing);
     const kind = (shot && shot.kind) || "halberd_thrust";
     const thrust = (shot && shot.thrust) || 0;
     const swing = (shot && shot.swing) || 0;
     const pull = (shot && shot.pull) || 0;
     const reach = Math.max(0, thrust);
-    let base;
-    if (facing === "front") base = -0.42;
-    else if (facing === "back") base = 0.42;
-    else if (facing === "right") base = 0.52;
-    else base = -0.82;
+    const base = poleIdleAngle(facing);
+    // Milder attack tilts than before — the shaft is longer, so a small
+    // angle already carries the head a long way, and must stay in ±42 / y -76.
     if (kind === "halberd_chop") {
+      const wind = 0.55, cut = 0.42;
       if (facing === "front") {
-        if (swing > 0) return base - 0.55 * swing;
-        if (swing < 0) return base - 0.70 * (-swing);
+        if (swing > 0) return base - wind * swing;
+        if (swing < 0) return base - cut * (-swing);
         return base;
       }
       if (facing === "back") {
-        if (swing > 0) return base + 0.55 * swing;
-        if (swing < 0) return base + 0.70 * (-swing);
+        if (swing > 0) return base + wind * swing;
+        if (swing < 0) return base + cut * (-swing);
         return base;
       }
       if (facing === "right") {
-        if (swing > 0) return base - 0.32 * swing;
-        if (swing < 0) return base + 0.32 * (-swing);
+        if (swing > 0) return base - 0.28 * swing;
+        if (swing < 0) return base + 0.28 * (-swing);
         return base;
       }
-      if (swing > 0) return base + 0.32 * swing;
+      if (swing > 0) return base + 0.28 * swing;
       if (swing < 0) return base - 0.22 * (-swing);
       return base;
     }
-    if (facing === "front") return base - 0.22 * pull - 0.32 * reach;
-    if (facing === "back") return base + 0.22 * pull + 0.32 * reach;
-    if (facing === "right") return base - 0.14 * pull + 0.36 * reach;
-    return base + 0.14 * pull - 0.22 * reach;
+    if (facing === "front") return base - 0.16 * pull - 0.36 * reach;
+    if (facing === "back") return base + 0.16 * pull + 0.36 * reach;
+    if (facing === "right") return base - 0.10 * pull + 0.38 * reach;
+    return base + 0.10 * pull - 0.28 * reach;
   }
 
   function t3WeaponPose(facing, opt, kind) {
@@ -1051,80 +1056,71 @@
     const recoil = (shot && shot.recoil) || 0;
     c.save();
     if (pos) c.translate(pos.x, pos.y);
-    // Slight lean; left leans forward so the upper wing peeks past the body.
     if (facing === "front") c.rotate(-0.08);
     else if (facing === "back") c.rotate(0.08);
     else if (facing === "right") c.rotate(0.08 + recoil * 0.08);
     else c.rotate(-0.20 - recoil * 0.08);
 
-    const tip = 19.4, low = 16.2;
+    const tip = 27.0, low = 22.5;
     const flex = draw * 3.6;
-    // String toward the body, arrow shoots away / forward.
     const inward = (facing === "front" || facing === "left") ? 1 : -1;
-    const strX = inward * (6.0 + flex);
+    const nockX = inward * (6.0 + flex);
     const out = -inward;
 
-    // soft gold corona around the limbs
-    c.strokeStyle = p.glow; c.globalAlpha = 0.40; c.lineWidth = 6.2; c.lineCap = "round";
+    // soft gold corona around the longer limbs
+    c.strokeStyle = p.glow; c.globalAlpha = 0.40; c.lineWidth = 6.4; c.lineCap = "round";
     c.beginPath();
     c.moveTo(0, -tip);
-    c.quadraticCurveTo(out * 4.0, -9, 0, 0);
-    c.quadraticCurveTo(out * 3.2, 8, 0, low);
+    c.quadraticCurveTo(out * 4.4, -11, 0, 0);
+    c.quadraticCurveTo(out * 3.6, 11, 0, low);
     c.stroke();
     c.globalAlpha = 1;
 
-    // Recurve / winged limbs — deep crescent, gold-lined
-    c.strokeStyle = p.ink; c.lineWidth = 4.0;
+    // Recurve / winged limbs — deep crescent, gold-lined. No string.
+    c.strokeStyle = p.ink; c.lineWidth = 4.15;
     c.beginPath();
     c.moveTo(0, -tip);
-    c.quadraticCurveTo(out * 5.4, -11.5, 0, -2.4);
-    c.quadraticCurveTo(out * 4.4, 8.4, 0, low);
+    c.quadraticCurveTo(out * 6.0, -14.0, 0, -2.6);
+    c.quadraticCurveTo(out * 5.0, 11.5, 0, low);
     c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 2.4;
+    c.strokeStyle = p.main; c.lineWidth = 2.5;
     c.beginPath();
     c.moveTo(0, -tip + 0.6);
-    c.quadraticCurveTo(out * 4.8, -11.2, 0, -2.4);
-    c.quadraticCurveTo(out * 4.0, 8.2, 0, low - 0.6);
+    c.quadraticCurveTo(out * 5.4, -13.6, 0, -2.6);
+    c.quadraticCurveTo(out * 4.5, 11.2, 0, low - 0.6);
     c.stroke();
 
-    // Upper gold wing (sun-ray)
+    // Upper gold wing
     c.fillStyle = p.trim;
     c.beginPath();
-    c.moveTo(out * 0.2, -tip + 1.6);
-    c.quadraticCurveTo(out * 9.2, -14.8, out * 1.2, -6.0);
-    c.lineTo(out * 0.2, -7.0);
+    c.moveTo(out * 0.2, -tip + 2.0);
+    c.quadraticCurveTo(out * 10.2, -18.4, out * 1.3, -8.0);
+    c.lineTo(out * 0.2, -9.0);
     c.closePath(); c.fill();
     c.fillStyle = p.trimLt;
     c.beginPath();
-    c.moveTo(out * 0.3, -tip + 3.0);
-    c.quadraticCurveTo(out * 7.4, -13.8, out * 1.0, -7.2);
+    c.moveTo(out * 0.3, -tip + 3.6);
+    c.quadraticCurveTo(out * 8.2, -17.2, out * 1.1, -9.2);
     c.closePath(); c.fill();
     // Lower gold wing
     c.fillStyle = p.trim;
     c.beginPath();
-    c.moveTo(out * 0.2, low - 1.4);
-    c.quadraticCurveTo(out * 7.6, 12.4, out * 1.0, 5.2);
-    c.lineTo(out * 0.2, 6.2);
+    c.moveTo(out * 0.2, low - 1.6);
+    c.quadraticCurveTo(out * 8.6, 16.4, out * 1.1, 7.2);
+    c.lineTo(out * 0.2, 8.2);
     c.closePath(); c.fill();
     c.fillStyle = p.trimLt;
     c.beginPath();
-    c.moveTo(out * 0.3, low - 2.6);
-    c.quadraticCurveTo(out * 6.0, 11.0, out * 0.8, 6.0);
+    c.moveTo(out * 0.3, low - 3.0);
+    c.quadraticCurveTo(out * 6.8, 14.6, out * 0.9, 8.0);
     c.closePath(); c.fill();
 
-    // Riser — black sun in a gold corona, bigger
+    // Riser — black sun in a gold corona
     c.fillStyle = p.dark; c.fillRect(-2.3, -6.4, 4.6, 13.0);
     c.fillStyle = p.trim; c.fillRect(-1.7, -5.8, 3.4, 11.8);
     c.fillStyle = p.main; c.fillRect(-1.25, -5.2, 2.5, 10.6);
     glow(c, 0, 0.2, 6.4, p.glow, 0.5);
     blackSun(c, p, 0, 0.2, 2.85);
-
-    // Glowing string
-    c.strokeStyle = p.glow; c.lineWidth = 2.8; c.globalAlpha = 0.55;
-    c.beginPath(); c.moveTo(0, -tip + 0.6); c.lineTo(strX, 0.3); c.lineTo(0, low - 0.4); c.stroke();
-    c.globalAlpha = 1;
-    c.strokeStyle = p.trimLt; c.lineWidth = 1.15;
-    c.beginPath(); c.moveTo(0, -tip + 0.6); c.lineTo(strX, 0.3); c.lineTo(0, low - 0.4); c.stroke();
 
     // Gold limb tips
     glow(c, 0, -tip, 3.2, p.glow, 0.5);
@@ -1137,16 +1133,15 @@
     c.fillStyle = p.trimLt;
     c.beginPath(); c.arc(0, low, 0.8, 0, Math.PI * 2); c.fill();
 
-    // Glowing energy arrow while drawn
+    // Glowing energy arrow while the off-hand is drawing (no string)
     if (draw > 0.25 && flash < 0.2 && !(shot && shot.snap)) {
-      const ax0 = strX, ay0 = 0.3;
+      const ax0 = nockX, ay0 = 0.3;
       const ax1 = out * 16.5;
       c.strokeStyle = p.glow; c.lineWidth = 3.0; c.globalAlpha = 0.55;
       c.beginPath(); c.moveTo(ax0, ay0); c.lineTo(ax1, ay0); c.stroke();
       c.globalAlpha = 1;
       c.strokeStyle = p.trimLt; c.lineWidth = 1.35;
       c.beginPath(); c.moveTo(ax0, ay0); c.lineTo(ax1, ay0); c.stroke();
-      // black-sun arrowhead with gold edge
       c.fillStyle = p.voidC;
       c.beginPath();
       c.moveTo(ax1 + out * 3.4, ay0);
@@ -1161,7 +1156,7 @@
       c.closePath(); c.fill();
     }
 
-    // Release: elongated gold energy bolt, not a plain dot
+    // Release: elongated gold energy bolt
     if (flash > 0.12) {
       const len = 12 + flash * 10;
       glow(c, out * 9, 0.3, 7.5, p.glow, 0.6 * flash);
@@ -1188,39 +1183,38 @@
   function drawStaffHeld(c, st, facing, shot, pos) {
     const p = palFor("vestments", st);
     const flash = (shot && shot.flash) || 0;
-    const raise = (shot && shot.raise) || 0;
     const ang = staffHoldAngle(facing, shot || {});
     c.save();
     if (pos) c.translate(pos.x, pos.y);
     c.rotate(ang);
-    const len = 24.0;
+    const butt = POLE_BUTT;
+    const len = -STAFF_HEAD_Y;
     // faint violet core in the shaft
     c.strokeStyle = p.glow; c.lineWidth = 3.6; c.globalAlpha = 0.3;
-    c.beginPath(); c.moveTo(0, 8.2); c.lineTo(0, -len); c.stroke();
+    c.beginPath(); c.moveTo(0, butt); c.lineTo(0, -len); c.stroke();
     c.globalAlpha = 1;
     c.strokeStyle = p.ink; c.lineWidth = 3.15; c.lineCap = "round";
-    c.beginPath(); c.moveTo(0, 8.5); c.lineTo(0, -len); c.stroke();
+    c.beginPath(); c.moveTo(0, butt); c.lineTo(0, -len); c.stroke();
     c.strokeStyle = p.main; c.lineWidth = 1.85;
-    c.beginPath(); c.moveTo(0, 8.0); c.lineTo(0, -len + 0.5); c.stroke();
-    // silver bindings
+    c.beginPath(); c.moveTo(0, butt - 0.5); c.lineTo(0, -len + 0.5); c.stroke();
+    // silver bindings along the long shaft
     c.fillStyle = p.trim;
     c.fillRect(-1.6, -2.4, 3.2, 2.0);
-    c.fillRect(-1.5, 4.0, 3.0, 1.6);
-    c.fillRect(-1.5, -12.4, 3.0, 1.5);
-    // Nightfall head: large floating orb in a crescent / eclipse ring
-    const hx = 0, hy = -len - 1.2;
+    c.fillRect(-1.5, 8.0, 3.0, 1.6);
+    c.fillRect(-1.5, 16.4, 3.0, 1.5);
+    c.fillRect(-1.5, -16.0, 3.0, 1.5);
+    c.fillRect(-1.5, -32.0, 3.0, 1.5);
+    // Nightfall head: large floating orb in a crescent / eclipse ring, above the hood
+    const hx = 0, hy = STAFF_HEAD_Y - 1.2;
     glow(c, hx, hy, 9.5 + flash * 3, p.glow, 0.4 + flash * 0.35);
-    // eclipse ring
     c.strokeStyle = p.ink; c.lineWidth = 3.4;
     c.beginPath(); c.arc(hx, hy, 6.6, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = p.trim; c.lineWidth = 1.6;
     c.beginPath(); c.arc(hx, hy, 6.6, 0, Math.PI * 2); c.stroke();
-    // crescent
     c.fillStyle = p.trimLt;
     c.beginPath(); c.arc(hx, hy, 5.1, 0, Math.PI * 2); c.fill();
     c.fillStyle = p.dark;
     c.beginPath(); c.arc(hx + 2.0, hy - 0.6, 4.2, 0, Math.PI * 2); c.fill();
-    // inner star / moon
     c.fillStyle = p.glowHard;
     c.beginPath();
     for (let i = 0; i < 10; i++) {
@@ -1299,8 +1293,8 @@
     c.save();
     if (pos) c.translate(pos.x, pos.y);
     c.rotate(ang);
-    const butt = 4.6;
-    const headY = -26.0;
+    const butt = POLE_BUTT;
+    const headY = HALBERD_HEAD_Y;
     c.strokeStyle = p.ink; c.lineWidth = 3.15; c.lineCap = "round";
     c.beginPath(); c.moveTo(0, butt); c.lineTo(0, headY + 2.2); c.stroke();
     c.strokeStyle = p.main; c.lineWidth = 1.85;
@@ -1328,7 +1322,6 @@
     c.fillStyle = p.trim;
     c.beginPath(); c.moveTo(-11, -4); c.lineTo(-15.2, -8.8); c.lineTo(-9.6, 0); c.closePath(); c.fill();
     c.beginPath(); c.moveTo(11, -4); c.lineTo(15.2, -8.8); c.lineTo(9.6, 0); c.closePath(); c.fill();
-    c.beginPath(); c.moveTo(-2, -11); c.lineTo(0, -15.6); c.lineTo(2, -11); c.closePath(); c.fill();
     blackSun(c, p, 0, -8.0, 2.4);
   }
   function iconEclipseBody(c, p) {
@@ -1347,32 +1340,26 @@
     c.fillStyle = p.trim; c.fillRect(-11, -11, 22, 2); c.fillRect(-8, 4, 5, 1.6); c.fillRect(3, 4, 5, 1.6);
   }
   function iconLongbow(c, p) {
+    // Longer recurve, no string.
     c.strokeStyle = p.glow; c.globalAlpha = 0.45; c.lineWidth = 6; c.lineCap = "round";
-    c.beginPath(); c.moveTo(0, -15); c.quadraticCurveTo(12, 0, 0, 15); c.stroke();
+    c.beginPath(); c.moveTo(0, -17.4); c.quadraticCurveTo(12, 0, 0, 17.4); c.stroke();
     c.globalAlpha = 1;
     c.strokeStyle = p.ink; c.lineWidth = 3.6;
-    c.beginPath(); c.moveTo(0, -15); c.quadraticCurveTo(11, 0, 0, 15); c.stroke();
+    c.beginPath(); c.moveTo(0, -17.4); c.quadraticCurveTo(11, 0, 0, 17.4); c.stroke();
     c.strokeStyle = p.main; c.lineWidth = 2.2;
-    c.beginPath(); c.moveTo(0, -14.2); c.quadraticCurveTo(10, 0, 0, 14.2); c.stroke();
-    // upper + lower gold wings
+    c.beginPath(); c.moveTo(0, -16.6); c.quadraticCurveTo(10, 0, 0, 16.6); c.stroke();
     c.fillStyle = p.trim;
-    c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(11, -9, 2, -4); c.lineTo(0, -5.4); c.closePath(); c.fill();
-    c.beginPath(); c.moveTo(0, 13); c.quadraticCurveTo(11, 9, 2, 4); c.lineTo(0, 5.4); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(0, -15.2); c.quadraticCurveTo(11.5, -11, 2, -5); c.lineTo(0, -6.4); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(0, 15.2); c.quadraticCurveTo(11.5, 11, 2, 5); c.lineTo(0, 6.4); c.closePath(); c.fill();
     c.fillStyle = p.trimLt;
-    c.beginPath(); c.moveTo(0.4, -12); c.quadraticCurveTo(8.5, -8.5, 1.6, -5.2); c.closePath(); c.fill();
-    // glowing string
-    c.strokeStyle = p.glow; c.lineWidth = 2.0; c.globalAlpha = 0.5;
-    c.beginPath(); c.moveTo(0, -15); c.lineTo(-10, 0); c.lineTo(0, 15); c.stroke();
-    c.globalAlpha = 1;
-    c.strokeStyle = p.trimLt; c.lineWidth = 1.0;
-    c.beginPath(); c.moveTo(0, -15); c.lineTo(-10, 0); c.lineTo(0, 15); c.stroke();
+    c.beginPath(); c.moveTo(0.4, -14); c.quadraticCurveTo(8.8, -10, 1.6, -6.2); c.closePath(); c.fill();
     glow(c, 0, 0, 6, p.glow, 0.45);
     blackSun(c, p, 0, 0, 2.8);
     c.fillStyle = p.trim;
-    c.beginPath(); c.arc(0, -15, 2.0, 0, Math.PI * 2); c.fill();
-    c.beginPath(); c.arc(0, 15, 1.6, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, -17.4, 2.0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, 17.4, 1.6, 0, Math.PI * 2); c.fill();
     c.fillStyle = p.trimLt;
-    c.beginPath(); c.arc(0, -15, 0.9, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, -17.4, 0.9, 0, Math.PI * 2); c.fill();
   }
   function iconEclipsePendant(c, p) {
     c.strokeStyle = p.trim; c.lineWidth = 1.6;
@@ -1419,21 +1406,22 @@
     c.beginPath(); c.moveTo(0, -10); c.lineTo(0, 8); c.stroke();
   }
   function iconStaff(c, p) {
-    c.strokeStyle = p.dark; c.lineWidth = 3.2; c.lineCap = "round";
-    c.beginPath(); c.moveTo(-5, 14); c.lineTo(4, -2); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 1.8;
-    c.beginPath(); c.moveTo(-4.6, 13.2); c.lineTo(3.6, -1.2); c.stroke();
+    // Long, nearly vertical shaft, head at the top.
+    c.strokeStyle = p.dark; c.lineWidth = 3.0; c.lineCap = "round";
+    c.beginPath(); c.moveTo(-1.2, 16.5); c.lineTo(0.6, -4.0); c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 1.7;
+    c.beginPath(); c.moveTo(-1.0, 15.8); c.lineTo(0.4, -3.2); c.stroke();
     c.save();
-    c.translate(5.4, -6.2);
-    glow(c, 0, 0, 10, p.glow, 0.4);
-    c.strokeStyle = p.trim; c.lineWidth = 2.2;
-    c.beginPath(); c.arc(0, 0, 7.2, 0, Math.PI * 2); c.stroke();
+    c.translate(0.8, -8.6);
+    glow(c, 0, 0, 9.5, p.glow, 0.4);
+    c.strokeStyle = p.trim; c.lineWidth = 2.1;
+    c.beginPath(); c.arc(0, 0, 6.8, 0, Math.PI * 2); c.stroke();
     c.fillStyle = p.trimLt;
-    c.beginPath(); c.arc(0, 0, 5.2, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, 0, 5.0, 0, Math.PI * 2); c.fill();
     c.fillStyle = p.dark;
-    c.beginPath(); c.arc(2.0, -0.6, 4.2, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(1.8, -0.5, 4.0, 0, Math.PI * 2); c.fill();
     c.fillStyle = p.glowHard;
-    c.beginPath(); c.arc(0, 0, 1.6, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, 0, 1.5, 0, Math.PI * 2); c.fill();
     c.restore();
   }
   function iconCharm(c, p) {
@@ -1466,10 +1454,10 @@
     c.globalAlpha = 1;
     c.strokeStyle = p.trim; c.lineWidth = 0.9; c.strokeRect(-5.2, -2.2, 10.4, 4.6);
     c.fillStyle = p.trim;
-    c.beginPath(); c.moveTo(-2.2, -8); c.lineTo(0, -16); c.lineTo(2.2, -8); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-2.0, -8); c.lineTo(0, -12.4); c.lineTo(2.0, -8); c.closePath(); c.fill();
     c.fillStyle = p.light;
-    c.beginPath(); c.moveTo(-8, -6); c.lineTo(-14.5, -14); c.lineTo(-6, -5); c.closePath(); c.fill();
-    c.beginPath(); c.moveTo(8, -6); c.lineTo(14.5, -14); c.lineTo(6, -5); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-8, -6); c.lineTo(-11.4, -10.2); c.lineTo(-6, -5); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(8, -6); c.lineTo(11.4, -10.2); c.lineTo(6, -5); c.closePath(); c.fill();
   }
   function iconPlate(c, p) {
     c.fillStyle = p.dark; rrect(c, -12, -12, 24, 25, 1.6); c.fill();
@@ -1487,13 +1475,14 @@
     c.fillStyle = p.trim; c.fillRect(-11, -11, 22, 2);
   }
   function iconHalberd(c, p) {
+    // Long, nearly vertical shaft, classic head at the top.
     c.strokeStyle = p.dark; c.lineWidth = 3.0; c.lineCap = "round";
-    c.beginPath(); c.moveTo(-7, 14); c.lineTo(5, -6); c.stroke();
-    c.strokeStyle = p.main; c.lineWidth = 1.8;
-    c.beginPath(); c.moveTo(-6.6, 13.2); c.lineTo(4.6, -5.2); c.stroke();
+    c.beginPath(); c.moveTo(-1.0, 16.6); c.lineTo(0.8, -2.4); c.stroke();
+    c.strokeStyle = p.main; c.lineWidth = 1.7;
+    c.beginPath(); c.moveTo(-0.8, 15.8); c.lineTo(0.6, -1.8); c.stroke();
     c.save();
-    c.translate(6.0, -8.4); c.rotate(0.48);
-    c.scale(0.92, 0.92);
+    c.translate(1.0, -5.6); c.rotate(0.10);
+    c.scale(0.82, 0.82);
     drawHalberdHead(c, p, 1);
     c.restore();
   }
