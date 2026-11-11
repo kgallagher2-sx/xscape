@@ -11,3 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
+- magic-sprites.js, item-icons.js, lab-gear.js, lab.html, index.html | Item & Character Design | 2026-11-11 11:54 America/New_York | Ship approved magic art (runes, Ashen shop set, staff casts, spell bolts)
