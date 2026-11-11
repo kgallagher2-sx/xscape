@@ -317,7 +317,9 @@
     // behind the body; the blade peeks forward past the torso.
     if (facing === "front") return -0.36;
     if (facing === "back") return 0.36;
-    if (facing === "left") return -0.58;
+    // Left: a steeper up-forward lean so a third to half of the single
+    // bit peeks past the torso while the far grip stays behind the body.
+    if (facing === "left") return -1.05;
     return 0.58; // right: haft up and forward, blade on +X continues forward
   }
 
@@ -336,7 +338,7 @@
     if (hand) c.translate(hand.x, hand.y);
     else if (facing === "front") c.translate(-5.5, -6.5);
     else if (facing === "back") c.translate(5.5, -8.0);
-    else if (facing === "left") c.translate(6.5, -7.0);
+    else if (facing === "left") c.translate(2.0, -7.0);
     else c.translate(6.5, -7.0);
     c.rotate(axeAttackAngle(facing, shot));
     drawWarAxe(c, facing);

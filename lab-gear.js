@@ -1887,14 +1887,16 @@ function twoHandPose(facing, opt) {
       y: origin.y - dist * Math.cos(ang)
     };
   }
-  const dist = 8.6;
+  // Left profile uses a longer reach along the haft so the near (left)
+  // fist sits on the peeking section, with haft visible above and below it.
+  const dist = (facing === "left") ? 15.0 : 8.6;
   let rest;
   if (facing === "front") rest = { x: -5.5, y: -6.5 - lift };
   else if (facing === "back") rest = { x: 5.5, y: -8.0 - lift };
   else if (facing === "right") rest = { x: 6.5, y: -7.0 - lift };
-  // Left: the right hand is the far hand. Park the lower grip on the far
-  // side so the axe draws behind the body and peeks, like other far items.
-  else rest = { x: 6.5, y: -7.0 - lift };
+  // Left: far (right) lower grip stays behind the body, shifted forward
+  // (toward -X) so a clear chunk of the blade peeks past the torso.
+  else rest = { x: 2.0, y: -7.0 - lift };
   const w = { x: rest.x, y: rest.y };
   if (shot.kind === "axe" && swing) {
     const fwd = facingForward(facing);
