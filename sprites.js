@@ -240,16 +240,16 @@ function staffCastAnimAt(shotT, attackTicks) {
 }
 
 function halberdThrustAnimAt(shotT, attackTicks) {
-  // Long polearm poke. Same pull-and-thrust vocabulary as the spear, on a 7-tick cycle.
-  const z = stabAnimAt(shotT, attackTicks || 7);
+  // Long polearm poke. Same pull-and-thrust vocabulary as the spear, on a 6-tick cycle.
+  const z = stabAnimAt(shotT, attackTicks || 6);
   z.kind = "halberd_thrust";
   return z;
 }
 
 function halberdChopAnimAt(shotT, attackTicks) {
   // Sweeping diagonal chop (not the 7-tick Gorehorn overhead). Windup cocks
-  // the head up-back; the strike cuts down-forward. 7-tick weapon.
-  const speed = attackTicks || 7;
+  // the head up-back; the strike cuts down-forward. 6-tick weapon.
+  const speed = attackTicks || 6;
   const z = _animBase(shotT, "halberd_chop");
   const ph = _attackPhase(shotT, speed, 1.45, 1.85);
   z.phase = ph.phase;
@@ -284,8 +284,8 @@ function weaponAnimAt(shotT, attackTicks, kind) {
   if (kind === "whip") return whipAnimAt(shotT, attackTicks || 4);
   if (kind === "longbow") return bowDrawAnimAt(shotT, attackTicks || 5);
   if (kind === "staff") return staffCastAnimAt(shotT, attackTicks || 5);
-  if (kind === "halberd" || kind === "halberd_thrust") return halberdThrustAnimAt(shotT, attackTicks || 7);
-  if (kind === "halberd_chop") return halberdChopAnimAt(shotT, attackTicks || 7);
+  if (kind === "halberd" || kind === "halberd_thrust") return halberdThrustAnimAt(shotT, attackTicks || 6);
+  if (kind === "halberd_chop") return halberdChopAnimAt(shotT, attackTicks || 6);
   return shotAnimAt(shotT, attackTicks || 4);
 }
 

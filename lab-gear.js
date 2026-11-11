@@ -82,7 +82,7 @@ const LAB_ITEMS = {
   hollowplate_helm:        { id: "hollowplate_helm", name: "Hollowplate helm", slot: "head", tier: "t3", kind: "hollowplate" },
   hollowplate_body:        { id: "hollowplate_body", name: "Hollowplate body", slot: "body", tier: "t3", kind: "hollowplate" },
   hollowplate_legs:        { id: "hollowplate_legs", name: "Hollowplate legs", slot: "legs", tier: "t3", kind: "hollowplate" },
-  hollow_halberd:          { id: "hollow_halberd", name: "Hollow halberd", slot: "weapon", tier: "t3", kind: "halberd", twohand: true, speed: 7 },
+  hollow_halberd:          { id: "hollow_halberd", name: "Hollow halberd", slot: "weapon", tier: "t3", kind: "halberd", twohand: true, speed: 6 },
   hollow_torque:           { id: "hollow_torque", name: "Hollow torque", slot: "neck", tier: "t3", kind: "hollow_torque" },
   hollow_signet:           { id: "hollow_signet", name: "Hollow signet", slot: "ring", tier: "t3", kind: "hollow_signet" },
 
@@ -1865,12 +1865,21 @@ function facingForward(facing) {
   return { x: 0, y: 1 }; // front: toward the camera
 }
 
+function labAttackSpeed(weaponId, kind) {
+  // Prefer live combat.js ITEMS speeds when the game has loaded them.
+  const live = (typeof ITEMS !== "undefined" && ITEMS[weaponId] && ITEMS[weaponId].speed);
+  if (live != null) return live;
+  const it = (typeof LAB_ITEMS !== "undefined" && LAB_ITEMS[weaponId]) || labItem(weaponId);
+  if (it && it.speed != null) return it.speed;
+  if (kind === "wand" || kind === "widow" || kind === "spear" || kind === "staff" || kind === "longbow") return 5;
+  if (kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop") return 6;
+  if (kind === "axe") return 7;
+  return 4;
+}
+
 function shotForWeapon(weaponId, shotT, animKind) {
   const kind = animKind || weaponKind(weaponId);
-  const it = (typeof ITEMS !== "undefined" && ITEMS[weaponId])
-    || (typeof LAB_ITEMS !== "undefined" && LAB_ITEMS[weaponId])
-    || labItem(weaponId);
-  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" || kind === "spear" || kind === "staff" || kind === "longbow" ? 5 : kind === "axe" || kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop" ? 7 : 4);
+  const speed = labAttackSpeed(weaponId, kind);
   if (typeof weaponAnimAt === "function") return weaponAnimAt(shotT, speed, kind);
   if ((kind === "wand" || kind === "widow") && typeof mageCastAnimAt === "function") return mageCastAnimAt(shotT, speed);
   return (typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise: 0 };
@@ -3335,6 +3344,7 @@ window.LAB_DEFAULTS = LAB_DEFAULTS;
 window.LAB_TIER_ORDER = LAB_TIER_ORDER;
 window.LAB_TIER_LABEL = LAB_TIER_LABEL;
 window.shotForWeapon = shotForWeapon;
+window.labAttackSpeed = labAttackSpeed;
 window.facingForward = facingForward;
 window.drawLabPlayer = drawLabPlayer;
 window.drawLabPlayerBack = drawLabPlayerBack;
