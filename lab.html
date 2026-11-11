@@ -173,6 +173,8 @@
   .widow-stage { background: #080406; }
   .widow-stage canvas { width: 100%; height: auto; display: block; image-rendering: auto; }
   .widow-fx { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .cast-frames { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .cast-frames .preview-cell canvas { width: 100%; height: auto; }
   .widow-fx .preview-cell canvas { position: relative; width: 100%; height: auto; inset: auto; }
 </style>
 </head>
@@ -237,6 +239,29 @@
     </div>
     <label class="cape-toggle"><input type="checkbox" id="show-cape" checked> Show cape (turn off to see the body)</label>
     <div class="slot-grid" id="slots"></div>
+  </div>
+
+  <div class="gear-card" id="widow-cast-card">
+    <h2>Magic cast</h2>
+    <p class="lead">Ancient Magicks-style barrage: the fang and the spellbook (held by its spine) rise together, then lower. Same animation in-game when you cast.</p>
+    <div class="cast-frames" id="widow-cast-frames">
+      <div class="preview-cell">
+        <div class="preview-frame"><canvas id="widow-cast-rest" width="160" height="200"></canvas></div>
+        <span>Rest</span>
+      </div>
+      <div class="preview-cell">
+        <div class="preview-frame"><canvas id="widow-cast-rise" width="160" height="200"></canvas></div>
+        <span>Rising</span>
+      </div>
+      <div class="preview-cell">
+        <div class="preview-frame"><canvas id="widow-cast-peak" width="160" height="200"></canvas></div>
+        <span>Cast</span>
+      </div>
+      <div class="preview-cell">
+        <div class="preview-frame"><canvas id="widow-cast-lower" width="160" height="200"></canvas></div>
+        <span>Lowering</span>
+      </div>
+    </div>
   </div>
 
   <div class="gear-card" id="gear-tweaks">
@@ -333,15 +358,15 @@
 </section>
 
 <div class="grid" id="grid"></div>
-<script src="partyhat-img.js?v=35-2"></script>
-<script src="whip-img.js?v=35-2"></script>
-<script src="sprites.js?v=35-2"></script>
-<script src="widow-sprites.js?v=35-2"></script>
-<script src="lab-gear.js?v=35-2"></script>
+<script src="partyhat-img.js?v=35-3"></script>
+<script src="whip-img.js?v=35-3"></script>
+<script src="sprites.js?v=35-3"></script>
+<script src="widow-sprites.js?v=35-3"></script>
+<script src="lab-gear.js?v=35-3"></script>
 <script>
 "use strict";
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register("sw.js?v=35-2").catch(function () {});
+  navigator.serviceWorker.register("sw.js?v=35-3").catch(function () {});
 }
 
 // Lab only: no game logic. Each sprite renders into a 1x canvas at CSS-pixel game scale
@@ -564,7 +589,17 @@ function refreshJson() {
 
 function paintPreview(t) {
   const paused = document.getElementById("pause").checked;
-  const shot = paused ? shotAnimAt(99) : shotAnimAt(((t / TICK) % 8 < 4) ? 99 : ((t / TICK) % 4), 4);
+  const eq = LabGear.equipment || {};
+  const mage = (typeof weaponKind === "function" && weaponKind(eq.weapon) === "wand")
+    || (eq.weapon && String(eq.weapon).indexOf("widow_weaver_wand") !== -1);
+  let shot;
+  if (paused) {
+    shot = mage && typeof mageCastAnimAt === "function" ? mageCastAnimAt(99, 5) : shotAnimAt(99);
+  } else if (mage && typeof mageCastAnimAt === "function") {
+    shot = ((t / TICK) % 8 < 3) ? mageCastAnimAt(99, 5) : mageCastAnimAt((t / TICK) % 5, 5);
+  } else {
+    shot = shotAnimAt(((t / TICK) % 8 < 4) ? 99 : ((t / TICK) % 4), 4);
+  }
   const focus = LabGear.facing || "back";
   for (const view of previewCanvases) {
     const c = view.ctx;
@@ -584,9 +619,39 @@ function paintPreview(t) {
     const facing = (focus === "left" && view.id === "gear-preview-side") ? "left" : view.facing;
     drawLabPlayer(c, t, {
       equipment: LabGear.equipment,
-      shot: view.facing === "back" ? shot : { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 },
+      shot: shot,
       facing,
       walk: view.walk && !paused,
+      showCape: LabGear.showCape !== false
+    });
+    c.restore();
+  }
+}
+
+
+function paintCastFrames() {
+  const eq = (window.LabGear && LabGear.equipment) || {};
+  const frames = [
+    { id: "widow-cast-rest", shot: typeof mageCastAnimAt === "function" ? mageCastAnimAt(99, 5) : { raise: 0 } },
+    { id: "widow-cast-rise", shot: typeof mageCastAnimAt === "function" ? mageCastAnimAt(0.25, 5) : { raise: 0.45 } },
+    { id: "widow-cast-peak", shot: typeof mageCastAnimAt === "function" ? mageCastAnimAt(0.7, 5) : { raise: 1, flash: 1 } },
+    { id: "widow-cast-lower", shot: typeof mageCastAnimAt === "function" ? mageCastAnimAt(3.3, 5) : { raise: 0.4 } }
+  ];
+  for (const f of frames) {
+    const el = document.getElementById(f.id);
+    if (!el) continue;
+    const c = el.getContext("2d");
+    const w = el.width, h = el.height;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    bg(c, w, h);
+    c.save();
+    c.translate(w * 0.5, h * 0.90);
+    c.scale(sP * 3.05, sP * 3.05);
+    drawLabPlayer(c, 0, {
+      equipment: eq,
+      shot: f.shot,
+      facing: "front",
+      walk: false,
       showCape: LabGear.showCape !== false
     });
     c.restore();
@@ -803,6 +868,7 @@ function frame() {
   paintPreview(t);
   paintSheet(t);
   paintWidow(t);
+  paintCastFrames();
   requestAnimationFrame(frame);
 }
 document.getElementById("scale").addEventListener("change", (e) => { sP = parseFloat(e.target.value) || 0.896; });

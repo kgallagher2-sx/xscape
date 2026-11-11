@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111023423-5e24134";</script>
+  <script>window.XSCAPE_BUILD = "20261111024319-7e44267";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -4980,15 +4980,25 @@ function drawHealers(t) {
 
 
 function playerShotAnim() {
-  if (!G.player) return shotAnimAt(99);
+  const w = (typeof itemInSlot === "function") ? itemInSlot("weapon") : null;
+  const mage = !!(w && (
+    (typeof weaponKind === "function" && weaponKind(w.id) === "wand")
+    || w.magicBase
+    || w.style === "magic"
+    || (w.id && String(w.id).indexOf("widow_weaver_wand") !== -1)
+  ));
+  const speed = (w && w.speed) || (mage ? 5 : (typeof PLAYER_ATTACK_TICKS === "number" ? PLAYER_ATTACK_TICKS : 4));
+  const idle = mage && typeof mageCastAnimAt === "function" ? mageCastAnimAt(99, speed) : shotAnimAt(99);
+  if (!G.player) return idle;
   let shotT;
   if (G._shotAnimT != null) shotT = G._shotAnimT;
   else {
-    if (G.mode !== "playing") return shotAnimAt(99);
+    if (G.mode !== "playing") return idle;
     const remain = Math.max(0, (G.player.atkCd || 0) - tickProgress());
-    shotT = PLAYER_ATTACK_TICKS - remain;
+    shotT = speed - remain;
   }
-  return shotAnimAt(shotT);
+  if (mage && typeof mageCastAnimAt === "function") return mageCastAnimAt(shotT, speed);
+  return shotAnimAt(shotT, speed);
 }
 
 function playerBowTip() {

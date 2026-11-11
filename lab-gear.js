@@ -391,13 +391,16 @@ function labSleeveStyle(id) {
   return { main: "#3a5a28", trim: "#2a4018", scale: 1 };
 }
 
-function drawLabVamb(c, id, side) {
+function drawLabVamb(c, id, side, raise) {
   const st = labSleeveStyle(id);
   const p = pal(st);
   const it = labItem(id);
   const x = side < 0 ? -12 : 11.4;
   const rot = side < 0 ? 0.15 : -0.22;
+  const lift = (raise || 0) * 13;
   withScale(c, x, -16, st.scale, () => {
+    c.save();
+    c.translate(0, -lift);
     c.fillStyle = p.main;
     c.beginPath();
     c.ellipse(x, -16.0, 4.3, 5.55, rot, 0, Math.PI * 2);
@@ -413,6 +416,7 @@ function drawLabVamb(c, id, side) {
       c.ellipse(x, -16.0, 4.0, 5.2, rot, 0.2, Math.PI * 1.4);
       c.stroke();
     }
+    c.restore();
   });
 }
 
@@ -1046,12 +1050,14 @@ function drawLabPlayerBack(ctx, t, opt) {
   ctx.save();
   ctx.translate(0, (shot.recoil || 0) * 6);
 
+  const raise = (shot.raise || 0);
+  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
   drawLabLegs(ctx, eq.legs);
-  drawLabBoots(ctx, eq.feet);
-  drawLabVamb(ctx, eq.hands, -1);
+  if (!widowRobes) drawLabBoots(ctx, eq.feet);
+  drawLabVamb(ctx, eq.hands, -1, raise);
 
   if (eq.weapon) drawHeroWeapon(ctx, t, eq, opt, "back");
-  if (eq.shield) drawHeroShield(ctx, t, eq, "back");
+  if (eq.shield) drawHeroShield(ctx, t, eq, "back", opt);
 
   drawLabBody(ctx, eq.body);
   if (opt.showCape !== false && (opt.showCape === true || typeof LabGear === "undefined" || LabGear.showCape !== false)) {
@@ -1061,7 +1067,8 @@ function drawLabPlayerBack(ctx, t, opt) {
   drawLabHead(ctx, eq.head);
   const headIt = labItem(eq.head);
   if (headIt && headIt.kind === "partyhat") drawPartyhatOnHead(ctx, "back", labStyle(eq.head));
-  drawLabVamb(ctx, eq.hands, 1);
+  drawLabVamb(ctx, eq.hands, 1, raise);
+  drawSpineGrip(ctx, "back", opt);
   drawLabRing(ctx, eq.ring);
 
   ctx.restore();
@@ -1445,12 +1452,30 @@ function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase) {
 }
 
 
-function drawHeroShield(c, t, eq, facing) {
+
+function drawSpineGrip(c, facing, opt) {
+  const raise = (opt && opt.shot && opt.shot.raise) || 0;
+  const sk = (typeof skinPal === "function") ? skinPal() : { skin: "#c4a07a" };
+  let x, y;
+  if (facing === "front") { x = 12.6; y = -9.2 - raise * 13.5; }
+  else if (facing === "right") { x = -11.2; y = -9.0 - raise * 13.5; }
+  else { x = -11.8; y = -11.2 - raise * 13; }
+  c.fillStyle = sk.skin;
+  c.beginPath();
+  c.ellipse(x, y, 2.2, 2.6, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = "rgba(40,20,16,0.3)";
+  c.beginPath();
+  c.ellipse(x + 0.25, y + 0.45, 1.15, 1.35, 0, 0, Math.PI * 2);
+  c.fill();
+}
+
+function drawHeroShield(c, t, eq, facing, opt) {
   const id = eq && eq.shield;
   if (!id) return;
   const it = labItem(id);
   if (it && it.kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBookHeld) {
-    XscapeWidowArt.drawBookHeld(c, labStyle(id), facing, t);
+    XscapeWidowArt.drawBookHeld(c, labStyle(id), facing, t, false, opt && opt.shot);
   }
 }
 
@@ -1460,7 +1485,7 @@ function drawHeroWeapon(c, t, eq, opt, facing) {
   if (kind === "whip") drawHeroWhip(c, t, labStyle(eq.weapon), facing);
   else if (kind === "wand") {
     if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
-      XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t);
+      XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t, false, opt && opt.shot);
     }
   } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase);
 }
@@ -1980,12 +2005,15 @@ function drawHeroBody(c, id, facing) {
   });
 }
 
-function drawHeroArms(c, id, facing, stride) {
+function drawHeroArms(c, id, facing, stride, raise) {
   const st = labSleeveStyle(id);
   const p = pal(st);
   const it = labItem(id);
   const s = stride || 0;
+  const lift = (raise || 0) * 13;
   const sk = skinPal();
+  c.save();
+  c.translate(0, -lift);
   function vamb(x, y, rot, rx, ry) {
     c.fillStyle = p.main;
     c.beginPath();
@@ -2016,27 +2044,33 @@ function drawHeroArms(c, id, facing, stride) {
     c.fill();
   }
   if (facing === "back") {
-    drawLabVamb(c, id, -1);
+    c.restore();
+    drawLabVamb(c, id, -1, raise);
     return; // right vamb drawn later after weapon in back view
   }
   if (facing === "front") {
     // Far arm (character's left = screen-right). Weapon-hand arm is drawn later.
     vamb(11.4, -15.0 - s * 0.15, -0.2, 4.0, 5.4);
     hand(12.2, -9.4 - s * 0.15);
+    c.restore();
     return;
   }
   // right-facing: far arm first, near arm later
   vamb(-1.2, -16 + s * 0.2, 0.5, 3.4, 5.0);
   hand(-2.4, -10.5 + s * 0.2);
+  c.restore();
 }
 
-function drawHeroNearArm(c, id, facing, stride) {
+function drawHeroNearArm(c, id, facing, stride, raise) {
   if (facing !== "right" && facing !== "front") return;
   const st = labSleeveStyle(id);
   const p = pal(st);
   const it = labItem(id);
   const s = stride || 0;
+  const lift = (raise || 0) * 13;
   const sk = skinPal();
+  c.save();
+  c.translate(0, -lift);
   if (facing === "front") {
     // Character's right arm = screen-left, drawn in front of the weapon grip
     c.fillStyle = p.main;
@@ -2058,6 +2092,7 @@ function drawHeroNearArm(c, id, facing, stride) {
     c.beginPath();
     c.ellipse(-12.4, -9.6 + s * 0.15, 2.1, 2.4, 0, 0, Math.PI * 2);
     c.fill();
+    c.restore();
     return;
   }
   c.fillStyle = p.main;
@@ -2079,6 +2114,7 @@ function drawHeroNearArm(c, id, facing, stride) {
   c.beginPath();
   c.ellipse(9.6, -9.8 - s * 0.15, 2.2, 2.5, 0, 0, Math.PI * 2);
   c.fill();
+  c.restore();
 }
 
 function drawHeroHead(c, id, facing) {
@@ -2335,16 +2371,19 @@ function drawLabPlayerFront(ctx, t, opt) {
   ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save();
   ctx.translate(0, -bob + (shot.recoil || 0) * 6);
+  const raise = (shot.raise || 0);
+  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
   drawHeroCape(ctx, t, eq, opt, "front");
   drawHeroLegs(ctx, eq.legs, "front", stride);
-  drawHeroBoots(ctx, eq.feet, "front", stride);
-  drawHeroArms(ctx, eq.hands, "front", stride); // far arm (character's left)
+  if (!widowRobes) drawHeroBoots(ctx, eq.feet, "front", stride);
+  drawHeroArms(ctx, eq.hands, "front", stride, raise); // far arm (character's left / book)
   drawHeroBody(ctx, eq.body, "front");
-  drawHeroShield(ctx, t, eq, "front");
+  drawHeroShield(ctx, t, eq, "front", opt);
+  drawSpineGrip(ctx, "front", opt);
   drawHeroNeck(ctx, eq.neck, "front");
   drawHeroHead(ctx, eq.head, "front");
-  drawHeroNearArm(ctx, eq.hands, "front", stride); // right arm first
-  drawHeroWeapon(ctx, t, eq, opt, "front"); // on top of the arm and hand
+  drawHeroNearArm(ctx, eq.hands, "front", stride, raise); // right arm / wand
+  drawHeroWeapon(ctx, t, eq, opt, "front");
   drawHeroRing(ctx, eq.ring, "front");
   ctx.restore();
 }
@@ -2358,16 +2397,19 @@ function drawLabPlayerSide(ctx, t, opt) {
   ctx.beginPath(); ctx.ellipse(1, 10, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save();
   ctx.translate(0, -bob + (shot.recoil || 0) * 6);
+  const raise = (shot.raise || 0);
+  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
   drawHeroCape(ctx, t, eq, opt, "right");
-  drawHeroArms(ctx, eq.hands, "right", stride); // far arm
+  drawHeroArms(ctx, eq.hands, "right", stride, raise); // far arm (book side)
+  drawHeroShield(ctx, t, eq, "right", opt); // off-hand book BEHIND the torso
   drawHeroLegs(ctx, eq.legs, "right", stride);
-  drawHeroBoots(ctx, eq.feet, "right", stride);
+  if (!widowRobes) drawHeroBoots(ctx, eq.feet, "right", stride);
   drawHeroBody(ctx, eq.body, "right");
-  drawHeroShield(ctx, t, eq, "right");
+  drawSpineGrip(ctx, "right", opt);
   drawHeroNeck(ctx, eq.neck, "right");
   drawHeroHead(ctx, eq.head, "right");
-  drawHeroNearArm(ctx, eq.hands, "right", stride); // near arm first
-  drawHeroWeapon(ctx, t, eq, opt, "right"); // on top of the arm and hand
+  drawHeroNearArm(ctx, eq.hands, "right", stride, raise); // near arm, wand side
+  drawHeroWeapon(ctx, t, eq, opt, "right"); // wand in front of the torso
   drawHeroRing(ctx, eq.ring, "right");
   ctx.restore();
 }

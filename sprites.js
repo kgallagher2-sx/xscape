@@ -43,6 +43,27 @@ function shotAnimAt(shotT, attackTicks) {
   return z;
 }
 
+function mageCastAnimAt(shotT, attackTicks) {
+  // OSRS Ancient Magicks-style raise: both hands lift, hold, then lower.
+  attackTicks = attackTicks || 5;
+  const z = { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1, shotT: 99, mage: true };
+  z.shotT = shotT;
+  if (shotT < 0 || shotT > attackTicks + 0.05) return z;
+  if (shotT < 0.45) {
+    const u = shotT / 0.45;
+    z.raise = u * u * (3 - 2 * u); // smoothstep
+  } else if (shotT < 0.95) {
+    z.raise = 1;
+    z.snap = 1;
+    z.flash = 1 - (shotT - 0.45) / 0.50;
+  } else {
+    const u = (shotT - 0.95) / Math.max(0.2, attackTicks - 0.95);
+    z.raise = Math.max(0, 1 - u);
+    z.reload = Math.min(1, u);
+  }
+  return z;
+}
+
 function drawHeldCrossbow(c, anim) {
   anim = anim || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
   const flex = (anim.flex || 0) * 2.6;

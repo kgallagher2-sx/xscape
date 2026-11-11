@@ -244,66 +244,93 @@
     var p = palFrom(st);
     facing = facing || "front";
     if (facing === "right") {
+      // Flowing side drape — soft shoulder, hanging front panel, no breastplate
       c.fillStyle = p.ink;
       c.beginPath();
-      c.moveTo(-6.8, -21.6);
-      c.lineTo(8.6, -21.6);
-      c.quadraticCurveTo(11.2, -10, 8.0, -0.6);
-      c.lineTo(-6.2, -0.6);
-      c.quadraticCurveTo(-8.4, -10, -6.8, -21.6);
+      c.moveTo(-7.4, -22.2);
+      c.quadraticCurveTo(1.0, -24.0, 9.2, -21.8);
+      c.quadraticCurveTo(11.4, -12, 8.6, 2.4);
+      c.quadraticCurveTo(1.0, 4.6, -6.8, 2.6);
+      c.quadraticCurveTo(-9.0, -10, -7.4, -22.2);
       c.closePath();
       c.fill();
       c.fillStyle = p.main;
       c.beginPath();
-      c.moveTo(-5.6, -20.6);
-      c.lineTo(7.4, -20.6);
-      c.quadraticCurveTo(9.4, -10, 6.8, -1.6);
-      c.lineTo(-5.0, -1.6);
-      c.quadraticCurveTo(-7.0, -10, -5.6, -20.6);
+      c.moveTo(-6.2, -21.2);
+      c.quadraticCurveTo(1.0, -22.8, 8.0, -20.8);
+      c.quadraticCurveTo(9.8, -12, 7.4, 1.4);
+      c.quadraticCurveTo(1.0, 3.2, -5.6, 1.6);
+      c.quadraticCurveTo(-7.6, -10, -6.2, -21.2);
       c.closePath();
       c.fill();
-      c.strokeStyle = p.trim;
-      c.lineWidth = 1.1;
+      // fold
+      c.strokeStyle = PAL.web;
+      c.globalAlpha = 0.4;
+      c.lineWidth = 0.7;
       c.beginPath();
-      c.moveTo(6.6, -18.4);
-      c.quadraticCurveTo(10.2, -10, 6.2, -3.2);
+      c.moveTo(2.2, -20);
+      c.quadraticCurveTo(4.4, -8, 3.0, 1.0);
       c.stroke();
-      hourglass(c, 2.2, -11.4, 2.1, true);
+      c.globalAlpha = 1;
+      c.strokeStyle = p.trim;
+      c.lineWidth = 1.05;
+      c.beginPath();
+      c.moveTo(7.0, -18.6);
+      c.quadraticCurveTo(10.0, -10, 6.8, 0.2);
+      c.stroke();
+      c.fillStyle = p.trim;
+      c.fillRect(-5.4, -21.6, 13.0, 1.15);
+      hourglass(c, 2.0, -10.8, 2.05, true);
       return;
     }
-    // front + back share the robe silhouette; hourglass on front only
+    // Front / back: loose robe body, bell sleeves, hem overlapping the skirt
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(-12.6, -22.0);
-    c.quadraticCurveTo(0, -24.2, 12.6, -22.0);
-    c.quadraticCurveTo(14.6, -10, 12.0, -0.4);
-    c.quadraticCurveTo(0, 1.6, -12.0, -0.4);
-    c.quadraticCurveTo(-14.6, -10, -12.6, -22.0);
+    c.moveTo(-13.0, -22.4);
+    c.quadraticCurveTo(0, -24.8, 13.0, -22.4);
+    c.quadraticCurveTo(15.4, -10, 13.4, 2.8);
+    c.quadraticCurveTo(0, 5.4, -13.4, 2.8);
+    c.quadraticCurveTo(-15.4, -10, -13.0, -22.4);
     c.closePath();
     c.fill();
     c.fillStyle = p.main;
     c.beginPath();
-    c.moveTo(-11.2, -21.0);
-    c.quadraticCurveTo(0, -22.8, 11.2, -21.0);
-    c.quadraticCurveTo(13.0, -10, 10.8, -1.4);
-    c.quadraticCurveTo(0, 0.4, -10.8, -1.4);
-    c.quadraticCurveTo(-13.0, -10, -11.2, -21.0);
+    c.moveTo(-11.6, -21.4);
+    c.quadraticCurveTo(0, -23.4, 11.6, -21.4);
+    c.quadraticCurveTo(13.6, -10, 12.0, 1.6);
+    c.quadraticCurveTo(0, 3.8, -12.0, 1.6);
+    c.quadraticCurveTo(-13.6, -10, -11.6, -21.4);
     c.closePath();
     c.fill();
-    // sleeve drapes
+    // hanging folds
+    c.strokeStyle = "rgba(90,68,80,0.55)";
+    c.lineWidth = 0.7;
+    c.beginPath();
+    c.moveTo(-5.2, -20.4); c.quadraticCurveTo(-6.4, -8, -5.6, 1.4);
+    c.moveTo(5.2, -20.4); c.quadraticCurveTo(6.4, -8, 5.6, 1.4);
+    c.stroke();
+    // bell sleeves
     function sleeve(dir) {
       c.fillStyle = p.dark;
       c.beginPath();
-      c.moveTo(dir * 10.4, -19.4);
-      c.quadraticCurveTo(dir * 18.4, -12, dir * 16.2, -1.2);
-      c.quadraticCurveTo(dir * 12.4, -2.6, dir * 10.0, -8);
+      c.moveTo(dir * 10.0, -19.8);
+      c.quadraticCurveTo(dir * 20.4, -14.0, dir * 18.8, 1.6);
+      c.quadraticCurveTo(dir * 14.4, 3.2, dir * 10.4, -6.4);
+      c.quadraticCurveTo(dir * 11.2, -14, dir * 10.0, -19.8);
+      c.closePath();
+      c.fill();
+      c.fillStyle = p.main;
+      c.beginPath();
+      c.moveTo(dir * 10.6, -18.6);
+      c.quadraticCurveTo(dir * 18.2, -13.0, dir * 16.8, 0.2);
+      c.quadraticCurveTo(dir * 13.6, 1.4, dir * 11.0, -7.0);
       c.closePath();
       c.fill();
       c.strokeStyle = p.trim;
-      c.lineWidth = 0.9;
+      c.lineWidth = 1.0;
       c.beginPath();
-      c.moveTo(dir * 11.6, -17);
-      c.quadraticCurveTo(dir * 16.4, -10, dir * 14.8, -3);
+      c.moveTo(dir * 12.2, 1.0);
+      c.quadraticCurveTo(dir * 16.0, 2.4, dir * 18.4, 1.0);
       c.stroke();
     }
     sleeve(-1); sleeve(1);
@@ -312,78 +339,106 @@
     c.globalAlpha = 0.5;
     c.lineWidth = 0.7;
     c.beginPath();
-    c.moveTo(-8, -19);
-    c.lineTo(0, -8);
-    c.lineTo(8, -19);
-    c.moveTo(-6, -2.4);
-    c.lineTo(0, -8);
-    c.lineTo(6, -2.4);
+    c.moveTo(-8.4, -19.2);
+    c.lineTo(0, -7.4);
+    c.lineTo(8.4, -19.2);
+    c.moveTo(-7.0, 1.0);
+    c.lineTo(0, -7.4);
+    c.lineTo(7.0, 1.0);
     c.stroke();
     c.globalAlpha = 1;
     c.fillStyle = p.trim;
-    c.fillRect(-7.4, -21.4, 14.8, 1.25);
+    c.fillRect(-8.0, -21.8, 16.0, 1.25);
+    // hem trim
+    c.strokeStyle = p.trim;
+    c.lineWidth = 1.05;
+    c.beginPath();
+    c.moveTo(-12.0, 1.6);
+    c.quadraticCurveTo(0, 3.8, 12.0, 1.6);
+    c.stroke();
     if (facing !== "back") {
-      hourglass(c, 0, -11.6, 3.15, true);
+      hourglass(c, 0, -10.8, 3.2, true);
     } else {
-      // spine web
       c.strokeStyle = p.trim;
       c.lineWidth = 1.1;
       c.beginPath();
-      c.moveTo(0, -20.4);
-      c.lineTo(0, -2.2);
+      c.moveTo(0, -20.6);
+      c.lineTo(0, 1.2);
       c.stroke();
-      webStitch(c, -7, -16, 7, -16, p.trim);
-      webStitch(c, -6, -10, 6, -10, PAL.web);
-      webStitch(c, -5, -5, 5, -5, PAL.web);
+      webStitch(c, -7.2, -16, 7.2, -16, p.trim);
+      webStitch(c, -6.4, -10, 6.4, -10, PAL.web);
+      webStitch(c, -5.6, -4, 5.6, -4, PAL.web);
     }
   }
 
-  /* ---------- Worn robe bottom ---------- */
+  /* ---------- Worn robe bottom — long flared skirt to the ankles ---------- */
   function drawBottom(c, st, facing) {
     var p = palFrom(st);
     facing = facing || "front";
     if (facing === "right") {
       c.fillStyle = p.ink;
       c.beginPath();
-      c.moveTo(-7.2, -2.4);
-      c.lineTo(7.6, -2.4);
-      c.quadraticCurveTo(9.6, 5, 8.8, 12.2);
-      c.lineTo(-7.4, 12.2);
-      c.quadraticCurveTo(-8.6, 5, -7.2, -2.4);
+      c.moveTo(-7.6, -2.8);
+      c.lineTo(7.8, -2.8);
+      c.quadraticCurveTo(12.4, 6.0, 11.6, 14.0);
+      c.quadraticCurveTo(2.0, 15.4, -10.8, 14.0);
+      c.quadraticCurveTo(-11.8, 6.0, -7.6, -2.8);
       c.closePath();
       c.fill();
       c.fillStyle = p.main;
       c.beginPath();
-      c.moveTo(-6.0, -1.6);
-      c.lineTo(6.6, -1.6);
-      c.quadraticCurveTo(8.2, 5, 7.4, 11.2);
-      c.lineTo(-6.2, 11.2);
+      c.moveTo(-6.4, -1.8);
+      c.lineTo(6.6, -1.8);
+      c.quadraticCurveTo(10.6, 6.0, 10.0, 13.0);
+      c.quadraticCurveTo(2.0, 14.2, -9.4, 13.0);
+      c.quadraticCurveTo(-10.4, 6.0, -6.4, -1.8);
       c.closePath();
       c.fill();
+      c.strokeStyle = "rgba(90,68,80,0.5)";
+      c.lineWidth = 0.7;
+      c.beginPath();
+      c.moveTo(1.4, -1.6);
+      c.quadraticCurveTo(3.2, 6, 2.4, 13.0);
+      c.stroke();
       c.fillStyle = p.trim;
-      c.fillRect(-7.0, -2.4, 14.6, 1.15);
-      c.fillRect(-6.6, 10.4, 14.2, 1.3);
+      c.fillRect(-7.2, -2.8, 15.0, 1.15);
+      c.strokeStyle = p.trim;
+      c.lineWidth = 1.15;
+      c.beginPath();
+      c.moveTo(-10.4, 13.2);
+      c.quadraticCurveTo(2.0, 14.6, 10.8, 13.2);
+      c.stroke();
       return;
     }
-    // flowing skirt, slightly flared
+    // Long A-line skirt, flared to the ankles, wavy hem
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(-9.0, -2.6);
-    c.lineTo(9.0, -2.6);
-    c.quadraticCurveTo(13.2, 5, 11.6, 12.4);
-    c.lineTo(-11.6, 12.4);
-    c.quadraticCurveTo(-13.2, 5, -9.0, -2.6);
+    c.moveTo(-9.2, -2.8);
+    c.lineTo(9.2, -2.8);
+    c.quadraticCurveTo(16.4, 6.2, 14.8, 13.6);
+    c.quadraticCurveTo(7.4, 15.4, 0, 14.2);
+    c.quadraticCurveTo(-7.4, 15.4, -14.8, 13.6);
+    c.quadraticCurveTo(-16.4, 6.2, -9.2, -2.8);
     c.closePath();
     c.fill();
     c.fillStyle = p.main;
     c.beginPath();
-    c.moveTo(-7.8, -1.6);
-    c.lineTo(7.8, -1.6);
-    c.quadraticCurveTo(11.6, 5, 10.2, 11.2);
-    c.lineTo(-10.2, 11.2);
-    c.quadraticCurveTo(-11.6, 5, -7.8, -1.6);
+    c.moveTo(-8.0, -1.8);
+    c.lineTo(8.0, -1.8);
+    c.quadraticCurveTo(14.6, 6.2, 13.2, 12.8);
+    c.quadraticCurveTo(6.6, 14.4, 0, 13.2);
+    c.quadraticCurveTo(-6.6, 14.4, -13.2, 12.8);
+    c.quadraticCurveTo(-14.6, 6.2, -8.0, -1.8);
     c.closePath();
     c.fill();
+    // vertical folds
+    c.strokeStyle = "rgba(90,68,80,0.5)";
+    c.lineWidth = 0.7;
+    c.beginPath();
+    c.moveTo(-4.6, -1.4); c.quadraticCurveTo(-6.0, 6, -6.8, 13.0);
+    c.moveTo(4.6, -1.4); c.quadraticCurveTo(6.0, 6, 6.8, 13.0);
+    c.moveTo(0, -1.4); c.lineTo(0, 13.0);
+    c.stroke();
     // web diamonds
     c.strokeStyle = PAL.web;
     c.globalAlpha = 0.55;
@@ -397,145 +452,210 @@
       c.closePath();
       c.stroke();
     }
-    dia(-4.2, 4.2, 2.4);
-    dia(4.2, 4.2, 2.4);
-    dia(0, 7.2, 2.0);
+    dia(-5.0, 5.4, 2.5);
+    dia(5.0, 5.4, 2.5);
     c.globalAlpha = 1;
     c.fillStyle = p.trim;
-    c.fillRect(-8.6, -2.5, 17.2, 1.25);
-    c.fillRect(-10.6, 10.4, 21.2, 1.4);
+    c.fillRect(-8.8, -2.8, 17.6, 1.25);
     c.fillStyle = p.trimLt;
-    c.fillRect(-8.6, -2.5, 17.2, 0.4);
+    c.fillRect(-8.8, -2.8, 17.6, 0.4);
+    // ankle hem trim, following the wave
+    c.strokeStyle = p.trim;
+    c.lineWidth = 1.2;
+    c.beginPath();
+    c.moveTo(-13.4, 12.8);
+    c.quadraticCurveTo(-6.6, 14.4, 0, 13.2);
+    c.quadraticCurveTo(6.6, 14.4, 13.4, 12.8);
+    c.stroke();
     if (facing !== "back") {
-      hourglass(c, 0, 4.6, 1.55, false);
+      hourglass(c, 0, 5.2, 1.7, false);
     }
   }
 
-  /* ---------- Held wand (main hand = character's right) ---------- */
-  function drawWandHeld(c, st, facing, t, icon) {
+  /* ---------- Held wand: a glowing red spider fang (no crystal tip) ---------- */
+  function drawFangWand(c, st, t, pulse) {
     var p = palFrom(st);
-    var pulse = 0.55 + 0.45 * Math.sin((t || 0) * 6.2);
-    c.save();
-    if (icon) {
-      c.rotate(-0.5);
-    } else if (facing === "front") {
-      c.translate(-12.4, -9.2);
-      c.rotate(-0.55);
-    } else if (facing === "right") {
-      c.translate(9.2, -9.6);
-      c.rotate(0.85);
-    } else {
-      c.translate(11.6, -12.6);
-      c.rotate(0.4);
-    }
-    // shaft
+    pulse = pulse == null ? 0.6 : pulse;
+    // Local space: grip at (0, 7), tip curves up and slightly left to ( -2, -16 )
+    glowDot(c, -1.0, -6, 11 + pulse * 2.4, PAL.glow);
+    glowDot(c, -1.6, -13, 6 + pulse * 1.6, PAL.glow);
+    // ink outline of the fang
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(-2.1, 14);
-    c.lineTo(2.1, 14);
-    c.lineTo(1.3, -11);
-    c.lineTo(-1.3, -11);
+    c.moveTo(-2.0, 8.4);
+    c.quadraticCurveTo(-7.2, -1.0, -2.4, -16.6);
+    c.lineTo(-0.6, -18.2);
+    c.quadraticCurveTo(4.4, -2.0, 2.2, 8.4);
     c.closePath();
     c.fill();
-    c.fillStyle = p.main;
+    // blood-red body
+    c.fillStyle = PAL.blood;
     c.beginPath();
-    c.moveTo(-1.4, 13);
-    c.lineTo(1.4, 13);
-    c.lineTo(0.8, -10);
-    c.lineTo(-0.8, -10);
+    c.moveTo(-1.3, 7.2);
+    c.quadraticCurveTo(-5.6, -1.0, -1.8, -15.0);
+    c.lineTo(-0.7, -16.4);
+    c.quadraticCurveTo(3.2, -2.0, 1.4, 7.2);
     c.closePath();
     c.fill();
-    // web wrap
-    c.strokeStyle = p.trim;
-    c.lineWidth = 0.8;
-    for (var y = 8; y >= -6; y -= 5) {
-      c.beginPath();
-      c.moveTo(-1.6, y);
-      c.lineTo(1.6, y - 2.2);
-      c.stroke();
-    }
-    // handle bulb
-    c.fillStyle = p.dark;
-    c.beginPath(); c.ellipse(0, 12.4, 2.6, 3.2, 0, 0, Math.PI * 2); c.fill();
-    c.fillStyle = p.trim;
-    c.beginPath(); c.ellipse(0, 12.4, 1.5, 1.8, 0, 0, Math.PI * 2); c.fill();
-    hourglass(c, 0, 1.2, 1.15, false);
-    // glowing tip crystal
-    glowDot(c, 0, -14.2, 6.2 + pulse * 1.6, PAL.glow);
-    c.fillStyle = p.ink;
-    c.beginPath();
-    c.moveTo(0, -20.4);
-    c.lineTo(3.2, -11.2);
-    c.lineTo(-3.2, -11.2);
-    c.closePath();
-    c.fill();
+    // hot inner taper
     c.fillStyle = PAL.hot;
     c.beginPath();
-    c.moveTo(0, -19.0);
-    c.lineTo(2.2, -11.6);
-    c.lineTo(-2.2, -11.6);
+    c.moveTo(-0.6, 5.0);
+    c.quadraticCurveTo(-3.6, -1.0, -1.4, -14.2);
+    c.lineTo(-0.8, -15.2);
+    c.quadraticCurveTo(1.8, -1.5, 0.6, 5.0);
     c.closePath();
     c.fill();
-    c.fillStyle = PAL.flare;
-    c.globalAlpha = 0.55 + 0.4 * pulse;
+    // glowing edge
+    c.strokeStyle = PAL.flare;
+    c.globalAlpha = 0.45 + 0.45 * pulse;
+    c.lineWidth = 0.85;
     c.beginPath();
-    c.moveTo(0, -17.6);
-    c.lineTo(0.9, -12.4);
-    c.lineTo(-0.5, -12.4);
+    c.moveTo(-0.9, 4.2);
+    c.quadraticCurveTo(-3.2, -2, -1.2, -14.6);
+    c.stroke();
+    c.globalAlpha = 1;
+    // sharp tip glint
+    c.fillStyle = "#fff5f5";
+    c.globalAlpha = 0.55 + 0.35 * pulse;
+    c.beginPath();
+    c.moveTo(-0.8, -15.4);
+    c.lineTo(-0.5, -17.4);
+    c.lineTo(-0.2, -15.0);
     c.closePath();
     c.fill();
     c.globalAlpha = 1;
+    // wrapped root / grip in the hand
+    c.fillStyle = p.ink;
+    c.beginPath(); c.ellipse(0, 8.2, 3.0, 3.6, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = p.dark;
+    c.beginPath(); c.ellipse(0, 8.2, 2.3, 2.8, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.75;
+    c.beginPath(); c.ellipse(0, 8.2, 2.3, 2.8, 0, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.moveTo(-2.0, 7.2); c.lineTo(2.0, 9.2); c.stroke();
+    c.beginPath(); c.moveTo(-2.0, 9.2); c.lineTo(2.0, 7.2); c.stroke();
+  }
+
+  function drawWandHeld(c, st, facing, t, icon, anim) {
+    var pulse = 0.55 + 0.45 * Math.sin((t || 0) * 6.2);
+    var raise = (anim && anim.raise) || 0;
+    if (anim && anim.flash) pulse = Math.max(pulse, anim.flash);
+    c.save();
+    if (icon) {
+      c.translate(1, 2);
+      c.rotate(-0.55);
+      c.scale(1.05, 1.05);
+    } else if (facing === "front") {
+      // Character's right hand = screen-left
+      c.translate(-12.4, -9.2 - raise * 13.5);
+      c.rotate(-0.55 + raise * 0.35);
+    } else if (facing === "right") {
+      // Near hand, in front of the torso, offset forward
+      c.translate(10.4 + raise * 1.2, -9.4 - raise * 13.5);
+      c.rotate(0.55 - raise * 0.15);
+    } else {
+      c.translate(11.6, -12.4 - raise * 13);
+      c.rotate(0.35 + raise * 0.1);
+    }
+    drawFangWand(c, st, t, pulse);
     c.restore();
   }
 
-  /* ---------- Held spellbook (off-hand = character's left) ---------- */
-  function drawBookHeld(c, st, facing, t, icon) {
+  /* ---------- Held spellbook: gripped by the SPINE, cover facing out ---------- */
+  function drawSpineBook(c, st, t, pulse) {
     var p = palFrom(st);
-    var pulse = 0.5 + 0.5 * Math.sin((t || 0) * 5.1);
-    c.save();
-    if (icon) {
-      /* centered */
-    } else if (facing === "front") {
-      c.translate(12.2, -7.8);
-      c.rotate(0.25);
-    } else if (facing === "right") {
-      c.translate(-6.4, -8.4);
-      c.rotate(-0.4);
-    } else {
-      c.translate(-11.4, -11.2);
-      c.rotate(-0.2);
-    }
-    // cover
+    pulse = pulse == null ? 0.6 : pulse;
+    // Local space: the hand grips the spine at x=0, y=0.
+    // The closed book hangs/fans out toward +x, cover facing the viewer.
+    // Spine (thick bound edge) — this is what the hand grips
     c.fillStyle = p.ink;
-    rounded(c, -8.2, -11.4, 16.4, 20.6, 1.6);
+    rounded(c, -2.4, -9.2, 4.6, 18.6, 1.1);
+    c.fill();
+    c.fillStyle = p.dark;
+    c.fillRect(-1.6, -8.4, 3.0, 17.0);
+    c.fillStyle = p.trim;
+    c.fillRect(-2.4, -9.2, 4.6, 1.15);
+    c.fillRect(-2.4, 8.2, 4.6, 1.15);
+    // ribs on the spine
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.7;
+    c.beginPath();
+    c.moveTo(-1.4, -5); c.lineTo(1.2, -5);
+    c.moveTo(-1.4, 0); c.lineTo(1.2, 0);
+    c.moveTo(-1.4, 5); c.lineTo(1.2, 5);
+    c.stroke();
+    // cover fanning out from the spine, slight 3/4 so it isn't a flat shield
+    c.fillStyle = p.ink;
+    c.beginPath();
+    c.moveTo(1.8, -8.8);
+    c.lineTo(13.6, -7.2);
+    c.lineTo(13.6, 9.0);
+    c.lineTo(1.8, 9.4);
+    c.closePath();
     c.fill();
     c.fillStyle = p.main;
-    rounded(c, -7.2, -10.4, 14.4, 18.6, 1.3);
-    c.fill();
-    // glowing page edge
-    c.fillStyle = PAL.hot;
-    c.globalAlpha = 0.65 + 0.3 * pulse;
-    c.fillRect(5.6, -9.6, 1.5, 16.8);
-    c.globalAlpha = 1;
-    c.strokeStyle = p.trim;
-    c.lineWidth = 1;
-    rounded(c, -7.2, -10.4, 14.4, 18.6, 1.3);
-    c.stroke();
-    // web clasp
-    c.strokeStyle = PAL.webLt;
-    c.lineWidth = 0.8;
     c.beginPath();
-    c.moveTo(-5, -6); c.lineTo(5, 4);
-    c.moveTo(5, -6); c.lineTo(-5, 4);
-    c.moveTo(0, -7); c.lineTo(0, 5);
+    c.moveTo(2.4, -7.8);
+    c.lineTo(12.6, -6.4);
+    c.lineTo(12.6, 8.0);
+    c.lineTo(2.4, 8.4);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = p.trim;
+    c.lineWidth = 1.0;
+    c.beginPath();
+    c.moveTo(2.4, -7.8);
+    c.lineTo(12.6, -6.4);
+    c.lineTo(12.6, 8.0);
+    c.lineTo(2.4, 8.4);
+    c.closePath();
     c.stroke();
-    hourglass(c, 0, -1.2, 2.4, true);
-    // spine
-    c.fillStyle = p.dark;
-    c.fillRect(-8.2, -10.4, 2.2, 18.4);
-    c.fillStyle = p.trim;
-    c.fillRect(-8.2, -10.4, 2.2, 1.1);
-    c.fillRect(-8.2, 6.8, 2.2, 1.1);
+    // page block at the fore-edge
+    c.fillStyle = PAL.flare;
+    c.globalAlpha = 0.35 + 0.25 * pulse;
+    c.fillRect(12.2, -6.2, 1.5, 14.0);
+    c.globalAlpha = 1;
+    c.fillStyle = "#e8d0d0";
+    c.fillRect(12.4, -5.8, 0.9, 13.2);
+    c.fillStyle = PAL.hot;
+    c.globalAlpha = 0.55 + 0.35 * pulse;
+    c.fillRect(12.4, -5.8, 0.5, 13.2);
+    c.globalAlpha = 1;
+    // web + hourglass on the outward cover
+    c.strokeStyle = PAL.webLt;
+    c.lineWidth = 0.75;
+    c.beginPath();
+    c.moveTo(4.0, -4.6); c.lineTo(10.8, 4.6);
+    c.moveTo(10.8, -4.2); c.lineTo(4.0, 5.0);
+    c.moveTo(7.4, -5.2); c.lineTo(7.4, 5.6);
+    c.stroke();
+    hourglass(c, 7.4, 0.4, 2.15, true);
+  }
+
+  function drawBookHeld(c, st, facing, t, icon, anim) {
+    var pulse = 0.5 + 0.5 * Math.sin((t || 0) * 5.1);
+    var raise = (anim && anim.raise) || 0;
+    if (anim && anim.flash) pulse = Math.max(pulse, anim.flash);
+    c.save();
+    if (icon) {
+      c.translate(-4.5, 0);
+      c.rotate(-0.12);
+      c.scale(1.15, 1.15);
+    } else if (facing === "front") {
+      // Character's left hand = screen-right. Spine in the fist, cover fans out.
+      c.translate(12.6, -9.2 - raise * 13.5);
+      c.rotate(0.18 - raise * 0.28);
+    } else if (facing === "right") {
+      // Far / off hand, BEHIND the torso, book fanning further back (left)
+      c.translate(-11.2, -9.0 - raise * 13.5);
+      c.rotate(Math.PI + 0.12 + raise * 0.1);
+    } else {
+      // Back: character's left = screen-left, spine in hand, cover fans outward
+      c.translate(-11.8, -11.2 - raise * 13);
+      c.rotate(Math.PI + 0.08);
+    }
+    drawSpineBook(c, st, t, pulse);
     c.restore();
   }
 
@@ -562,18 +682,18 @@
       c.scale(1.7, 1.7);
       drawHood(c, st, "front");
     } else if (id === "widow_weaver_top") {
-      c.translate(0, 12);
-      c.scale(1.55, 1.55);
+      c.translate(0, 14);
+      c.scale(1.4, 1.4);
       drawTop(c, st, "front");
     } else if (id === "widow_weaver_bottom") {
       c.translate(0, -2);
-      c.scale(1.7, 1.7);
+      c.scale(1.45, 1.45);
       drawBottom(c, st, "front");
     } else if (id === "widow_weaver_wand") {
-      c.scale(1.7, 1.7);
+      c.scale(1.65, 1.65);
       drawWandHeld(c, st, "back", t, true);
     } else if (id === "widow_weaver_book") {
-      c.scale(1.7, 1.7);
+      c.scale(1.45, 1.45);
       drawBookHeld(c, st, "back", t, true);
     }
     c.restore();
