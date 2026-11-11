@@ -43,7 +43,8 @@
       bronze: { main: "#8a5a28", shade: "#4a2e10", light: "#c89048", metal: "#b07838" },
       hollow: { main: "#3a3048", shade: "#181420", light: "#c8b890", metal: "#8a7a60", accent: "#c8c0e0" },
       dusk:   { main: "#3a3048", shade: "#16101e", light: "#6a5a78", stitch: "#907850", metal: "#686478" },
-      tempered:{ main: "#3a444c", shade: "#161a20", light: "#7a8a94", metal: "#5c7080" }
+      tempered:{ main: "#3a444c", shade: "#161a20", light: "#7a8a94", metal: "#5c7080" },
+      ashen:  { main: "#6a5850", shade: "#3a2c28", light: "#c4a090", stitch: "#d07838", metal: "#8a7060" }
     };
   }
 
@@ -557,6 +558,9 @@
     else if (global.XscapeGloamT3Art && XscapeGloamT3Art.isT3Id(id)) {
       XscapeGloamT3Art.drawItemIcon(ctx, id);
     }
+    else if (id === "ashen_hood") drawCoif(ctx, pal.ashen);
+    else if (id === "ashen_robe_top") drawBody(ctx, pal.ashen);
+    else if (id === "ashen_robe_bottom") drawChaps(ctx, pal.ashen);
     else {
       // Unknown id: simple rune-pouch-like box so we never fall back to text.
       ctx.fillStyle = "#4a3a20"; rrect(ctx, -11, -11, 22, 22, 2); ctx.fill();

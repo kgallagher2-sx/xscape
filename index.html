@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111164407-359b72b";</script>
+  <script>window.XSCAPE_BUILD = "20261111165432-033809f";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1187,6 +1187,7 @@
           <button class="btn mode-btn" id="btn-mode-jad" type="button">
             Magmor, the Molten Titan
             <span class="sub">the Molten Caves</span>
+            <span class="hint">Weak to ranged</span>
           </button>
           <button class="mode-info" id="btn-info-jad" type="button" aria-label="Magmor, the Molten Titan guide">i</button>
         </div>
@@ -1194,7 +1195,7 @@
           <button class="btn mode-btn" id="btn-mode-kree" type="button">
             Vaelkor the Stormwing
             <span class="sub">the Stormwing Eyrie · the Sky Citadel</span>
-            <span class="hint">Recommended: Tier 2 gear</span>
+            <span class="hint">Weak to magic</span>
           </button>
           <button class="mode-info" id="btn-info-kree" type="button" aria-label="Vaelkor the Stormwing guide">i</button>
         </div>
@@ -1202,7 +1203,7 @@
           <button class="btn mode-btn" id="btn-mode-widow" type="button">
             Widow Queen
             <span class="sub">The Widow's Nest · Cave</span>
-            <span class="hint">Recommended: magic gear</span>
+            <span class="hint">Weak to magic</span>
           </button>
           <button class="mode-info" id="btn-info-widow" type="button" aria-label="Widow Queen guide">i</button>
         </div>
@@ -1499,27 +1500,27 @@
           <p class="lead">Choose a fight. Magmor, Vaelkor the Stormwing, the Widow Queen, the Hollow Knight-King, Gorehorn, and the Drowned Colossus are solo. Gloamhold can be solo or a group.</p>
           <div class="boss-choice">
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-jad">Magmor, the Molten Titan<span class="sub">the Molten Caves</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-jad">Magmor, the Molten Titan<span class="sub">the Molten Caves</span><span class="hint">Weak to ranged</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-jad" aria-label="Magmor, the Molten Titan guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-kree">Vaelkor the Stormwing<span class="sub">the Stormwing Eyrie · the Sky Citadel</span><span class="hint">Recommended: Tier 2 gear</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-kree">Vaelkor the Stormwing<span class="sub">the Stormwing Eyrie · the Sky Citadel</span><span class="hint">Weak to magic</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-kree" aria-label="Vaelkor the Stormwing guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span><span class="hint">Recommended: magic gear</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span><span class="hint">Weak to magic</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-widow" aria-label="Widow Queen guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-knight">Hollow Knight-King<span class="sub">The Throne Room · Shadow</span><span class="hint">Recommended: melee or ranged</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-knight">Hollow Knight-King<span class="sub">The Throne Room · Shadow</span><span class="hint">Weak to melee</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-knight" aria-label="Hollow Knight-King guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-gorehorn">Gorehorn, the Minotaur<span class="sub">The Stone Labyrinth</span><span class="hint">Recommended: melee or ranged</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-gorehorn">Gorehorn, the Minotaur<span class="sub">The Stone Labyrinth</span><span class="hint">Weak to slash</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-gorehorn" aria-label="Gorehorn guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-colossus">The Drowned Colossus<span class="sub">The Flooded Pit</span><span class="hint">Recommended: melee or ranged</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-colossus">The Drowned Colossus<span class="sub">The Flooded Pit</span><span class="hint">Weak to stab</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-colossus" aria-label="Drowned Colossus guide">i</button>
             </div>
             <div class="boss-row">
@@ -1590,9 +1591,9 @@
         <p><b>Missiles (2):</b> a shard throw and a sharper mid cue. Protect from Missiles.</p>
         <p><b>Melee (3):</b> a sword slam and a low thud. Protect from Melee. Cinder Shades always melee.</p>
         <p><b>The Veil Gate:</b> rune tiles light in a sequence — step them in order (three rounds). Gloom lances mark your tile and land two ticks later; walk off. Then step the exit tile on the right.</p>
-        <p><b>The Wailing Court:</b> the Pale Warden swaps Magic / Missiles with two-tick tells. Shades must be killed; if they live too long they heal him or explode on you.</p>
+        <p><b>The Wailing Court:</b> the Pale Warden swaps Magic / Missiles with two-tick tells. Shades must be killed; if they live too long they heal him or explode on you. Weak to ranged.</p>
         <p><b>The Eclipse Corridor:</b> waves of marked tiles. Dodge, then step the exit.</p>
-        <p><b>Morvane — four phases</b> (by remaining HP):</p>
+        <p><b>Morvane — four phases</b> (by remaining HP). Weak to magic. Incoming defence does not change by phase:</p>
         <p><b>Twin Crowns</b> (above 55%): Magic / Missiles, slower three-tick tells.</p>
         <p><b>Court of Shades</b> (28–55%): melee joins, faster tells. Shades spawn. Stand on the crown sigil or take Judgment. Don't stand still.</p>
         <p><b>Nightfall</b> (10–28%): quicker flicks, sometimes a one-tick tell, and an occasional Magic → Missiles → Melee combo. After a hit, your tile is marked — walk off. Seek the moon tile or your prayer drains. Rows of tiles go unsafe.</p>
@@ -1613,7 +1614,7 @@
         <h2>Vaelkor the Stormwing</h2>
         <div class="tut-scroll sheet-scroll">
         <p>High in <b>the Stormwing Eyrie</b>, the stormwing general <b>Vaelkor the Stormwing</b> guards the Sky Citadel. Entry is open to any adventurer. <b>Tier 2 gear is recommended</b> — starter kit can get a kill, but it is slow and a missed prayer is deadly.</p>
-        <p><b>He flies.</b> Only ranged or magic can hit him. Your crossbow is fine. Tap Vaelkor the Stormwing or a bodyguard to set your target (a red X). Tap a floor tile to move (yellow X). Keyboard A/D or arrows also work.</p>
+        <p><b>He flies.</b> Only ranged or magic can hit him. He is weak to magic; ranged still works. Your crossbow is fine. Tap Vaelkor the Stormwing or a bodyguard to set your target (a red X). Tap a floor tile to move (yellow X). Keyboard A/D or arrows also work.</p>
         <p><b>Prayers</b> — switch <b>before</b> the hit. Keys 1 / 2 / 3, or the buttons. Listen for the tell.</p>
         <p><b>Missiles (2):</b> feathers and a tearing wind. This is his main attack and hits very hard (up to 71). Protect from Missiles blocks it.</p>
         <p><b>Magic (1):</b> a blue wind blast that <b>punches through Protect from Missiles</b>. You must flick to Protect from Magic or you will take it.</p>

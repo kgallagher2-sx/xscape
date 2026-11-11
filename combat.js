@@ -50,14 +50,17 @@
     rune_crossbow:      { id: "rune_crossbow", name: "Rune crossbow", slot: "weapon", tier: "starter", twohand: false, speed: 4, bonuses: b({ arange: 90 }) },
     mithril_bolts:      { id: "mithril_bolts", name: "Mithril bolts", slot: "ammo", tier: "starter", bonuses: b({ rstr: 40 }) },
 
-    black_dhide_coif:   { id: "black_dhide_coif", name: "Black d'hide coif", slot: "head", tier: "tier2", bonuses: b({ arange: 6, amagic: -1, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
-    black_dhide_body:   { id: "black_dhide_body", name: "Black d'hide body", slot: "body", tier: "tier2", bonuses: b({ arange: 30, amagic: -15, dstab: 30, dslash: 38, dcrush: 45, dmagic: 45, drange: 30 }) },
-    black_dhide_chaps:  { id: "black_dhide_chaps", name: "Black d'hide chaps", slot: "legs", tier: "tier2", bonuses: b({ arange: 17, amagic: -10, dstab: 18, dslash: 20, dcrush: 26, dmagic: 23, drange: 26 }) },
-    black_dhide_vambs:  { id: "black_dhide_vambs", name: "Black d'hide vambs", slot: "hands", tier: "tier2", bonuses: b({ arange: 11, dstab: 6, dslash: 5, dcrush: 7, dmagic: 8, drange: 0 }) },
+    black_dhide_coif:   { id: "black_dhide_coif", name: "Black d'hide coif", slot: "head", tier: "tier2", bonuses: b({ arange: 6, amagic: -1, dstab: 6, dslash: 8, dcrush: 10, dmagic: 7, drange: 8 }) },
+    black_dhide_body:   { id: "black_dhide_body", name: "Black d'hide body", slot: "body", tier: "tier2", bonuses: b({ arange: 30, amagic: -15, dstab: 30, dslash: 38, dcrush: 45, dmagic: 54, drange: 30 }) },
+    black_dhide_chaps:  { id: "black_dhide_chaps", name: "Black d'hide chaps", slot: "legs", tier: "tier2", bonuses: b({ arange: 17, amagic: -10, dstab: 18, dslash: 20, dcrush: 26, dmagic: 27, drange: 26 }) },
+    black_dhide_vambs:  { id: "black_dhide_vambs", name: "Black d'hide vambs", slot: "hands", tier: "tier2", bonuses: b({ arange: 11, dstab: 6, dslash: 5, dcrush: 7, dmagic: 10, drange: 0 }) },
     black_dhide_boots:  { id: "black_dhide_boots", name: "Black d'hide boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
     rune_bolts:         { id: "rune_bolts", name: "Rune bolts", slot: "ammo", tier: "tier2", bonuses: b({ rstr: 115 }) },
     amulet_of_glory:    { id: "amulet_of_glory", name: "Amulet of glory", slot: "neck", tier: "tier2", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 3, dslash: 3, dcrush: 3, dmagic: 3, drange: 3, str: 6 }) },
     ashen_staff:        { id: "ashen_staff", name: "Ashen staff", slot: "weapon", tier: "shop", kind: "staff", twohand: true, speed: 5, style: "magic", bonuses: b({ amagic: 20, mdmg: 0 }) },
+    ashen_hood:         { id: "ashen_hood", name: "Ashen hood", slot: "head", tier: "shop", bonuses: b({ amagic: 4, dstab: 1, dslash: 1, dcrush: 1, dmagic: 6, drange: 0, mdmg: 0 }) },
+    ashen_robe_top:     { id: "ashen_robe_top", name: "Ashen robe top", slot: "body", tier: "shop", bonuses: b({ amagic: 12, dstab: 2, dslash: 2, dcrush: 3, dmagic: 14, drange: 1, mdmg: 0 }) },
+    ashen_robe_bottom:  { id: "ashen_robe_bottom", name: "Ashen robe bottom", slot: "legs", tier: "shop", bonuses: b({ amagic: 8, dstab: 1, dslash: 1, dcrush: 2, dmagic: 8, drange: 1, mdmg: 0 }) },
 
     fire_cape:          { id: "fire_cape", name: "Fire cape", slot: "cape", tier: "jad", bonuses: b({ astab: 1, aslash: 1, acrush: 1, amagic: 1, arange: 1, dstab: 11, dslash: 11, dcrush: 11, dmagic: 11, drange: 11, str: 4 }) },
 
@@ -69,23 +72,23 @@
     archers_ring:       { id: "archers_ring", name: "Archers ring", slot: "ring", tier: "tier2", bonuses: b({ arange: 8 }) },
 
     /* Vaelkor the Stormwing drop only — never listed in the Shop. */
-    armadyl_helmet:     { id: "armadyl_helmet", name: "Stormwing helm", slot: "head", tier: "armadyl", bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 6, drange: 8 }) },
-    armadyl_chestplate: { id: "armadyl_chestplate", name: "Stormwing chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 70, drange: 57 }) },
-    armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Stormwing chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 38, drange: 33 }) },
+    armadyl_helmet:     { id: "armadyl_helmet", name: "Stormwing helm", slot: "head", tier: "armadyl", bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 7, drange: 8 }) },
+    armadyl_chestplate: { id: "armadyl_chestplate", name: "Stormwing chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 80, drange: 57 }) },
+    armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Stormwing chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 43, drange: 33 }) },
     armadyl_crossbow:   { id: "armadyl_crossbow", name: "Stormwing crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
 
     /* Widow Queen drop only — never listed in the Shop. Not unique:true (that flag blocks trading). */
-    widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow", bonuses: b({ amagic: 10, mdmg: 2, dmagic: 10 }) },
-    widow_weaver_top:    { id: "widow_weaver_top", name: "Widow Weaver robe top", slot: "body", tier: "widow", kind: "widow", bonuses: b({ amagic: 35, mdmg: 2, dmagic: 30 }) },
-    widow_weaver_bottom: { id: "widow_weaver_bottom", name: "Widow Weaver robe bottom", slot: "legs", tier: "widow", kind: "widow", bonuses: b({ amagic: 22, mdmg: 2, dmagic: 22 }) },
+    widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow", bonuses: b({ amagic: 10, mdmg: 2, dstab: 3, dslash: 3, dcrush: 3, dmagic: 10, drange: 2 }) },
+    widow_weaver_top:    { id: "widow_weaver_top", name: "Widow Weaver robe top", slot: "body", tier: "widow", kind: "widow", bonuses: b({ amagic: 35, mdmg: 2, dstab: 6, dslash: 6, dcrush: 6, dmagic: 30, drange: 4 }) },
+    widow_weaver_bottom: { id: "widow_weaver_bottom", name: "Widow Weaver robe bottom", slot: "legs", tier: "widow", kind: "widow", bonuses: b({ amagic: 22, mdmg: 2, dstab: 4, dslash: 4, dcrush: 4, dmagic: 22, drange: 2 }) },
     widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow", twohand: false, speed: 5, magicBase: 30, style: "magic", bonuses: b({ amagic: 80, mdmg: 12, dmagic: 15 }) },
     widow_weaver_book:   { id: "widow_weaver_book", name: "Widow Weaver spellbook", slot: "shield", tier: "widow", kind: "widow", bonuses: b({ amagic: 20, mdmg: 8, dmagic: 18 }) },
 
-    kingsguard_helm:    { id: "kingsguard_helm", name: "Kingsguard full helm", slot: "head", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 33, dslash: 35, dcrush: 32, dmagic: -3, drange: 31, str: 1 }) },
-    kingsguard_plate:   { id: "kingsguard_plate", name: "Kingsguard platebody", slot: "body", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 82, dslash: 80, dcrush: 72, dmagic: -6, drange: 80, str: 2 }) },
-    kingsguard_legs:    { id: "kingsguard_legs", name: "Kingsguard platelegs", slot: "legs", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 51, dslash: 49, dcrush: 47, dmagic: -4, drange: 49, str: 1 }) },
+    kingsguard_helm:    { id: "kingsguard_helm", name: "Kingsguard full helm", slot: "head", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 33, dslash: 35, dcrush: 32, dmagic: -6, drange: 31, str: 1 }) },
+    kingsguard_plate:   { id: "kingsguard_plate", name: "Kingsguard platebody", slot: "body", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 82, dslash: 80, dcrush: 72, dmagic: -11, drange: 80, str: 2 }) },
+    kingsguard_legs:    { id: "kingsguard_legs", name: "Kingsguard platelegs", slot: "legs", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 51, dslash: 49, dcrush: 47, dmagic: -7, drange: 49, str: 1 }) },
     kingsguard_sword:   { id: "kingsguard_sword", name: "Kingsguard sword", slot: "weapon", tier: "kingsguard", kind: "sword", twohand: false, speed: 4, style: "slash", bonuses: b({ astab: 20, aslash: 58, acrush: 8, str: 55 }) },
-    kingsguard_kite:    { id: "kingsguard_kite", name: "Kingsguard kiteshield", slot: "shield", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 48, dslash: 52, dcrush: 50, dmagic: -2, drange: 50 }) },
+    kingsguard_kite:    { id: "kingsguard_kite", name: "Kingsguard kiteshield", slot: "shield", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 48, dslash: 52, dcrush: 50, dmagic: -4, drange: 50 }) },
 
     gorehorn_helm:      { id: "gorehorn_helm", name: "Gorehorn helm", slot: "head", tier: "gorehorn", kind: "gorehorn", bonuses: b({ dstab: 45, dslash: 48, dcrush: 44, dmagic: -3, drange: 46, str: 0 }) },
     gorehorn_plate:     { id: "gorehorn_plate", name: "Gorehorn platebody", slot: "body", tier: "gorehorn", kind: "gorehorn", bonuses: b({ dstab: 85, dslash: 82, dcrush: 78, dmagic: -6, drange: 82, str: 0 }) },
@@ -102,21 +105,21 @@
 
     /* The only blue partyhat in the game. Granted server-side; never sold or dropped. Not stakeable. */
     /* Gloamhold tier-3 uniques. Ids must match game.gloamhold_unique_items. */
-    eclipse_coif:       { id: "eclipse_coif", name: "Eclipse coif", slot: "head", tier: "unique", bonuses: b({ amagic: 8, arange: 14, dstab: 8, dslash: 10, dcrush: 12, dmagic: 8, drange: 10 }) },
-    eclipse_body:       { id: "eclipse_body", name: "Eclipse body", slot: "body", tier: "unique", bonuses: b({ amagic: -6, arange: 48, rstr: 6, dstab: 48, dslash: 48, dcrush: 52, dmagic: 36, drange: 56 }) },
-    eclipse_chaps:      { id: "eclipse_chaps", name: "Eclipse chaps", slot: "legs", tier: "unique", bonuses: b({ amagic: -5, arange: 30, dstab: 28, dslash: 26, dcrush: 30, dmagic: 20, drange: 38 }) },
+    eclipse_coif:       { id: "eclipse_coif", name: "Eclipse coif", slot: "head", tier: "unique", bonuses: b({ amagic: 8, arange: 14, dstab: 8, dslash: 10, dcrush: 12, dmagic: 12, drange: 10 }) },
+    eclipse_body:       { id: "eclipse_body", name: "Eclipse body", slot: "body", tier: "unique", bonuses: b({ amagic: -6, arange: 48, rstr: 6, dstab: 48, dslash: 48, dcrush: 52, dmagic: 57, drange: 56 }) },
+    eclipse_chaps:      { id: "eclipse_chaps", name: "Eclipse chaps", slot: "legs", tier: "unique", bonuses: b({ amagic: -5, arange: 30, dstab: 28, dslash: 26, dcrush: 30, dmagic: 31, drange: 38 }) },
     eclipse_longbow:    { id: "eclipse_longbow", name: "Eclipse longbow", slot: "weapon", tier: "unique", kind: "bow", twohand: true, speed: 5, style: "ranged", bonuses: b({ amagic: -8, arange: 120, rstr: 340 }) },
     eclipse_pendant:    { id: "eclipse_pendant", name: "Eclipse pendant", slot: "neck", tier: "unique", bonuses: b({ arange: 18, rstr: 4, dstab: 6, dslash: 6, dcrush: 6, dmagic: 6, drange: 6 }) },
     eclipse_band:       { id: "eclipse_band", name: "Eclipse band", slot: "ring", tier: "unique", bonuses: b({ arange: 12, rstr: 4 }) },
-    unsleeping_hood:        { id: "unsleeping_hood", name: "Unsleeping hood", slot: "head", tier: "unique", bonuses: b({ amagic: 14, mdmg: 3, dstab: 8, dslash: 8, dcrush: 8, dmagic: 16, drange: 8 }) },
-    unsleeping_robe_top:    { id: "unsleeping_robe_top", name: "Unsleeping robe top", slot: "body", tier: "unique", bonuses: b({ amagic: 42, mdmg: 4, dstab: 18, dslash: 16, dcrush: 20, dmagic: 38, drange: 12 }) },
-    unsleeping_robe_bottom: { id: "unsleeping_robe_bottom", name: "Unsleeping robe bottom", slot: "legs", tier: "unique", bonuses: b({ amagic: 26, mdmg: 3, dstab: 12, dslash: 10, dcrush: 14, dmagic: 28, drange: 8 }) },
+    unsleeping_hood:        { id: "unsleeping_hood", name: "Unsleeping hood", slot: "head", tier: "unique", bonuses: b({ amagic: 14, mdmg: 3, dstab: 6, dslash: 6, dcrush: 6, dmagic: 16, drange: 5 }) },
+    unsleeping_robe_top:    { id: "unsleeping_robe_top", name: "Unsleeping robe top", slot: "body", tier: "unique", bonuses: b({ amagic: 42, mdmg: 4, dstab: 14, dslash: 12, dcrush: 16, dmagic: 38, drange: 7 }) },
+    unsleeping_robe_bottom: { id: "unsleeping_robe_bottom", name: "Unsleeping robe bottom", slot: "legs", tier: "unique", bonuses: b({ amagic: 26, mdmg: 3, dstab: 10, dslash: 8, dcrush: 12, dmagic: 28, drange: 4 }) },
     nightfall_staff:        { id: "nightfall_staff", name: "Nightfall staff", slot: "weapon", tier: "unique", kind: "staff", twohand: true, speed: 5, magicBase: 38, style: "magic", bonuses: b({ amagic: 95, mdmg: 20 }) },
     unsleeping_charm:       { id: "unsleeping_charm", name: "Unsleeping charm", slot: "neck", tier: "unique", bonuses: b({ amagic: 16, mdmg: 4, dmagic: 8 }) },
     dreamless_ring:         { id: "dreamless_ring", name: "Dreamless ring", slot: "ring", tier: "unique", bonuses: b({ amagic: 10, mdmg: 3 }) },
-    hollowplate_helm:   { id: "hollowplate_helm", name: "Hollowplate helm", slot: "head", tier: "unique", bonuses: b({ astab: 12, aslash: 12, acrush: 12, str: 5, dstab: 38, dslash: 40, dcrush: 36, dmagic: -2, drange: 36 }) },
-    hollowplate_body:   { id: "hollowplate_body", name: "Hollowplate plate", slot: "body", tier: "unique", bonuses: b({ astab: 16, aslash: 16, acrush: 16, str: 8, dstab: 70, dslash: 68, dcrush: 66, dmagic: -4, drange: 68 }) },
-    hollowplate_legs:   { id: "hollowplate_legs", name: "Hollowplate legs", slot: "legs", tier: "unique", bonuses: b({ astab: 10, aslash: 10, acrush: 10, str: 6, dstab: 54, dslash: 52, dcrush: 50, dmagic: -3, drange: 52 }) },
+    hollowplate_helm:   { id: "hollowplate_helm", name: "Hollowplate helm", slot: "head", tier: "unique", bonuses: b({ astab: 12, aslash: 12, acrush: 12, str: 5, dstab: 38, dslash: 40, dcrush: 36, dmagic: -5, drange: 36 }) },
+    hollowplate_body:   { id: "hollowplate_body", name: "Hollowplate plate", slot: "body", tier: "unique", bonuses: b({ astab: 16, aslash: 16, acrush: 16, str: 8, dstab: 70, dslash: 68, dcrush: 66, dmagic: -11, drange: 68 }) },
+    hollowplate_legs:   { id: "hollowplate_legs", name: "Hollowplate legs", slot: "legs", tier: "unique", bonuses: b({ astab: 10, aslash: 10, acrush: 10, str: 6, dstab: 54, dslash: 52, dcrush: 50, dmagic: -8, drange: 52 }) },
     hollow_halberd:     { id: "hollow_halberd", name: "Hollow halberd", slot: "weapon", tier: "unique", kind: "halberd", twohand: true, speed: 6, reach: 2, style: "slash", bonuses: b({ astab: 90, aslash: 125, acrush: 20, str: 168 }) },
     hollow_torque:      { id: "hollow_torque", name: "Hollow torque", slot: "neck", tier: "unique", bonuses: b({ astab: 16, aslash: 16, acrush: 16, str: 12, dstab: 8, dslash: 8, dcrush: 8, dmagic: 8, drange: 8 }) },
     hollow_signet:      { id: "hollow_signet", name: "Hollow signet", slot: "ring", tier: "unique", bonuses: b({ astab: 8, aslash: 8, acrush: 8, str: 12 }) },
@@ -195,7 +198,10 @@
     { id: "black_dhide_boots", price: 800000 },
     { id: "rune_bolts", price: 1500000 },
     { id: "amulet_of_glory", price: 2000000 },
-    { id: "ashen_staff", price: 400000 }
+    { id: "ashen_staff", price: 400000 },
+    { id: "ashen_hood", price: 400000 },
+    { id: "ashen_robe_top", price: 800000 },
+    { id: "ashen_robe_bottom", price: 600000 }
   ];
   const SHOP_BUNDLE = {
     name: "Black d'hide kit",
@@ -322,10 +328,10 @@
       id: "tztok-jad",
       name: "Magmor, the Molten Titan",
       hp: 360, hitpoints: 360,
-      levels: { attack: 750, strength: 240, defence: 60, magic: 510, ranged: 960 },
+      levels: { attack: 750, strength: 240, defence: 70, magic: 510, magicDef: 20, ranged: 960 },
       osrsDefence: 480,
       atk: b({ amagic: 60, arange: 60 }),
-      def: b({}),
+      def: b({ dstab: 2, dslash: 2, dcrush: 2, dmagic: 0, drange: 52 }),
       attacks: [
         { style: "magic", speed: 8, magicBase: 97 },
         { style: "ranged", speed: 8 },
@@ -353,7 +359,7 @@
       osrsDefence: 260,
       flying: true,
       atk: b({ arange: 80, amagic: 40, str: 20 }),
-      def: b({ drange: 110, dmagic: 20, dstab: 72, dslash: 80, dcrush: 90 }),
+      def: b({ drange: 83, dmagic: 20, dstab: 80, dslash: 88, dcrush: 100 }),
       attacks: [
         { style: "magic", speed: 5, magicBase: 21 },
         { style: "ranged", speed: 5, maxHit: 71, overrideReason: "formula at ranged 260 rstr 0 is 27; keep hand-set ranged max 71" },
@@ -400,10 +406,10 @@
     "widow-queen": {
       id: "widow-queen", name: "Widow Queen",
       hp: 600, hitpoints: 600,
-      levels: { attack: 400, strength: 300, defence: 220, magic: 300, ranged: 80 },
+      levels: { attack: 400, strength: 300, defence: 196, magic: 300, magicDef: 180, ranged: 80 },
       osrsDefence: 220,
       atk: b({ amagic: 40, str: 40 }),
-      def: b({ dmagic: 20, drange: 40, dstab: 40, dslash: 40, dcrush: 40 }),
+      def: b({ dmagic: 30, drange: 129, dstab: 47, dslash: 47, dcrush: 47 }),
       attacks: [
         { style: "magic", speed: 5, magicBase: 28 },
         { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 300 str 40 is 50; keep hand-set melee max 30" }
@@ -436,9 +442,9 @@
       id: "hollow-knight-king", name: "Hollow Knight-King",
       combat: 520,
       hp: 600, hitpoints: 600,
-      levels: { attack: 200, strength: 200, defence: 200, magic: 80, ranged: 80 },
+      levels: { attack: 200, strength: 200, defence: 140, magic: 180, ranged: 80 },
       atk: b({ astab: 40, aslash: 80, acrush: 20 }),
-      def: b({ dmagic: 40, drange: 80, dstab: 180, dslash: 180, dcrush: 160 }),
+      def: b({ dmagic: 35, drange: 148, dstab: 55, dslash: 40, dcrush: 20 }),
       attacks: [
         { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 200 str 0 is 21; keep hand-set melee max 30" },
         { style: "magic", speed: 5, magicBase: 22 },
@@ -462,9 +468,9 @@
       id: "gorehorn-the-minotaur", name: "Gorehorn, the Minotaur",
       combat: 520,
       hp: 600, hitpoints: 600,
-      levels: { attack: 220, strength: 220, defence: 180, magic: 20, ranged: 20 },
+      levels: { attack: 220, strength: 220, defence: 140, magic: 180, ranged: 20 },
       atk: b({ astab: 20, aslash: 40, acrush: 90 }),
-      def: b({ dmagic: 20, drange: 60, dstab: 160, dslash: 150, dcrush: 180 }),
+      def: b({ dmagic: 35, drange: 148, dstab: 55, dslash: 40, dcrush: 70 }),
       attacks: [
         { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 220 str 0 is 23; keep hand-set melee max 30" },
         { style: "magic", speed: 5, magicBase: 1 },
@@ -476,9 +482,9 @@
       id: "drowned-colossus", name: "The Drowned Colossus",
       combat: 520,
       hp: 600, hitpoints: 600,
-      levels: { attack: 220, strength: 200, defence: 160, magic: 40, ranged: 20 },
+      levels: { attack: 220, strength: 200, defence: 108, magic: 193, ranged: 20 },
       atk: b({ astab: 40, aslash: 70, acrush: 50 }),
-      def: b({ dmagic: 40, drange: 50, dstab: 120, dslash: 110, dcrush: 130 }),
+      def: b({ dmagic: 40, drange: 227, dstab: 30, dslash: 132, dcrush: 148 }),
       attacks: [
         { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 200 str 0 is 21; keep hand-set melee max 30" },
         { style: "magic", speed: 5, magicBase: 1 },
@@ -587,9 +593,7 @@
     var npcDefLevel = npcStatsNow.levels.defence;
     var npcDefBonus = styleDefenceBonus(npcStatsNow.def || emptyBonuses(), style);
     if ((style === "mage" || style === "magic") && FLAGS && FLAGS.npcMagicDefUsesMagicLevel) {
-      npcDefLevel = (npcStatsNow.levels && npcStatsNow.levels.magic != null)
-        ? npcStatsNow.levels.magic
-        : npcDefLevel;
+      npcDefLevel = npcMagicDefLevel(npcStatsNow.levels);
       npcDefBonus = styleDefenceBonus(npcStatsNow.def || emptyBonuses(), "magic");
     }
     const defRoll = maxRoll(effectiveNpcLevel(npcDefLevel), npcDefBonus);
@@ -693,12 +697,18 @@
      shape below. Helpers still accept the legacy shape (hand-set maxHit,
      defence / defBonuses) if an older record is passed in:
 
-       { name, hp, levels:{attack,strength,defence,magic,ranged},
+       { name, hp, levels:{attack,strength,defence,magic,magicDef?,ranged},
          atk:{astab,aslash,acrush,amagic,arange,str,rstr,mdmg},
          def:{dstab,dslash,dcrush,dmagic,drange},
          attacks:[{style, speed, magicBase?, maxHit?, overrideReason?,
                    reach?, special?, accuracy?}],
          phases?:[{levels?,atk?,def?}], weakness?, groupHpScale:true }
+
+     levels.magicDef is optional incoming magic defence under formula B.
+     It falls back to levels.magic. Phases may override it like any level,
+     but must not do so just to raise outgoing magic accuracy — that would
+     swing incoming magic defence. levels.magic stays the outgoing magic
+     attack level and feeds magic max hits.
 
      A special attack (special: true) carries a fixed accuracy in 0..1 and
      a fixed maxHit. npcHitChance / npcMaxHit return those values directly.
@@ -708,11 +718,12 @@
      A non-special attack.maxHit is a formula override and should set
      overrideReason (console.warn if missing).
 
-     FLAGS.npcMagicDefUsesMagicLevel defaults to false, which keeps today's
-     player-vs-monster magic accuracy (NPC general defence level). When
-     true, the magic defence roll is (magic+9)*(dmagic+64). */
+     FLAGS.npcMagicDefUsesMagicLevel is true (approved 2026-11-11): the
+     player-vs-monster magic defence roll is
+     (magicDef or magic + 9) * (dmagic + 64). When false, every style
+     including magic still uses the NPC's general defence level. */
   const FLAGS = {
-    npcMagicDefUsesMagicLevel: false
+    npcMagicDefUsesMagicLevel: true
   };
   const NPC_PLAYER_LEVEL = 99;
 
@@ -726,6 +737,13 @@
 
   function isNpcSpecialAttack(attack) {
     return !!(attack && attack.special === true);
+  }
+
+  function npcMagicDefLevel(levels) {
+    if (!levels) return 1;
+    if (levels.magicDef != null) return levels.magicDef;
+    if (levels.magic != null) return levels.magic;
+    return 1;
   }
 
   function emptyNpcLevels() {
@@ -807,6 +825,10 @@
       if (partial.def) out.def = Object.assign({}, out.def, partial.def);
       if (partial.hp != null) out.hp = partial.hp;
     }
+    // Resolve after phase merge so a missing magicDef falls back to the
+    // (possibly phase-updated) magic level. An explicit magicDef, including
+    // one set on the base and not mentioned in the phase, is left alone.
+    if (out.levels.magicDef == null) out.levels.magicDef = out.levels.magic;
     return out;
   }
 
@@ -903,6 +925,16 @@
     const preferLevel = opts.preferLevel;
     const preferBonus = opts.preferBonus;
     const out = { target: opts.target, style: style, exact: [], preferred: null, closest: null };
+    // Read levels.magicDef from opts.mon / opts.levels the same way npcStats
+    // does (optional, falls back to levels.magic). Outgoing magic accuracy
+    // still uses levels.magic.
+    if (opts.mon || opts.levels) {
+      const src = opts.mon
+        ? npcStats(opts.mon, opts.phaseIdx).levels
+        : Object.assign({}, opts.levels);
+      out.magic = src.magic;
+      out.magicDef = npcMagicDefLevel(src);
+    }
 
     function considerMaxHit(level, bonus, computed) {
       const want = opts.maxHit;
@@ -1314,6 +1346,7 @@
     npcHitChance: npcHitChance,
     solveNpcLevel: solveNpcLevel,
     npcPlayerDefenceLevel: npcPlayerDefenceLevel,
+    npcMagicDefLevel: npcMagicDefLevel,
     normalizeNpcStyle: normalizeNpcStyle,
     isNpcSpecialAttack: isNpcSpecialAttack
   };
