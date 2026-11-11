@@ -476,65 +476,63 @@
   function drawFangWand(c, st, t, pulse) {
     var p = palFrom(st);
     pulse = pulse == null ? 0.6 : pulse;
-    // Local space: grip at (0, 7), tip curves up and slightly left to ( -2, -16 )
-    glowDot(c, -1.0, -6, 11 + pulse * 2.4, PAL.glow);
-    glowDot(c, -1.6, -13, 6 + pulse * 1.6, PAL.glow);
-    // ink outline of the fang
+    // Needle-like curved fang. Local: grip at (0, 7.5), tip up and slightly left.
+    glowDot(c, -0.6, -6, 5.2 + pulse * 1.2, PAL.glow);
+    glowDot(c, -0.9, -14, 3.2 + pulse * 0.8, PAL.glow);
+    // ink outline — ~half the previous width, tapering to a point
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(-2.0, 8.4);
-    c.quadraticCurveTo(-7.2, -1.0, -2.4, -16.6);
-    c.lineTo(-0.6, -18.2);
-    c.quadraticCurveTo(4.4, -2.0, 2.2, 8.4);
+    c.moveTo(-0.75, 8.0);
+    c.quadraticCurveTo(-2.35, -1.2, -0.55, -17.4);
+    c.lineTo(-0.12, -19.0);
+    c.quadraticCurveTo(1.35, -1.0, 0.75, 8.0);
     c.closePath();
     c.fill();
     // blood-red body
     c.fillStyle = PAL.blood;
     c.beginPath();
-    c.moveTo(-1.3, 7.2);
-    c.quadraticCurveTo(-5.6, -1.0, -1.8, -15.0);
-    c.lineTo(-0.7, -16.4);
-    c.quadraticCurveTo(3.2, -2.0, 1.4, 7.2);
+    c.moveTo(-0.48, 7.0);
+    c.quadraticCurveTo(-1.7, -1.0, -0.42, -16.2);
+    c.lineTo(-0.14, -17.4);
+    c.quadraticCurveTo(0.95, -1.0, 0.48, 7.0);
     c.closePath();
     c.fill();
-    // hot inner taper
+    // hot inner needle
     c.fillStyle = PAL.hot;
     c.beginPath();
-    c.moveTo(-0.6, 5.0);
-    c.quadraticCurveTo(-3.6, -1.0, -1.4, -14.2);
-    c.lineTo(-0.8, -15.2);
-    c.quadraticCurveTo(1.8, -1.5, 0.6, 5.0);
+    c.moveTo(-0.18, 5.0);
+    c.quadraticCurveTo(-0.85, -1.0, -0.22, -15.4);
+    c.lineTo(-0.10, -16.4);
+    c.quadraticCurveTo(0.45, -1.0, 0.18, 5.0);
     c.closePath();
     c.fill();
-    // glowing edge
     c.strokeStyle = PAL.flare;
-    c.globalAlpha = 0.45 + 0.45 * pulse;
-    c.lineWidth = 0.85;
+    c.globalAlpha = 0.5 + 0.45 * pulse;
+    c.lineWidth = 0.45;
     c.beginPath();
-    c.moveTo(-0.9, 4.2);
-    c.quadraticCurveTo(-3.2, -2, -1.2, -14.6);
+    c.moveTo(-0.2, 4.0);
+    c.quadraticCurveTo(-0.8, -2, -0.18, -16.0);
     c.stroke();
     c.globalAlpha = 1;
-    // sharp tip glint
     c.fillStyle = "#fff5f5";
-    c.globalAlpha = 0.55 + 0.35 * pulse;
+    c.globalAlpha = 0.6 + 0.3 * pulse;
     c.beginPath();
-    c.moveTo(-0.8, -15.4);
-    c.lineTo(-0.5, -17.4);
-    c.lineTo(-0.2, -15.0);
+    c.moveTo(-0.22, -16.6);
+    c.lineTo(-0.12, -18.6);
+    c.lineTo(-0.02, -16.2);
     c.closePath();
     c.fill();
     c.globalAlpha = 1;
-    // wrapped root / grip in the hand
+    // small wrapped root in the fist
     c.fillStyle = p.ink;
-    c.beginPath(); c.ellipse(0, 8.2, 3.0, 3.6, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(0, 8.0, 1.85, 2.35, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = p.dark;
-    c.beginPath(); c.ellipse(0, 8.2, 2.3, 2.8, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(0, 8.0, 1.35, 1.8, 0, 0, Math.PI * 2); c.fill();
     c.strokeStyle = p.trim;
-    c.lineWidth = 0.75;
-    c.beginPath(); c.ellipse(0, 8.2, 2.3, 2.8, 0, 0, Math.PI * 2); c.stroke();
-    c.beginPath(); c.moveTo(-2.0, 7.2); c.lineTo(2.0, 9.2); c.stroke();
-    c.beginPath(); c.moveTo(-2.0, 9.2); c.lineTo(2.0, 7.2); c.stroke();
+    c.lineWidth = 0.6;
+    c.beginPath(); c.ellipse(0, 8.0, 1.35, 1.8, 0, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.moveTo(-1.1, 7.3); c.lineTo(1.1, 8.7); c.stroke();
+    c.beginPath(); c.moveTo(-1.1, 8.7); c.lineTo(1.1, 7.3); c.stroke();
   }
 
   function drawWandHeld(c, st, facing, t, icon, anim) {
@@ -545,13 +543,11 @@
     if (icon) {
       c.translate(1, 2);
       c.rotate(-0.55);
-      c.scale(1.05, 1.05);
+      c.scale(1.25, 1.25);
     } else if (facing === "front") {
-      // Character's right hand = screen-left
       c.translate(-12.4, -9.2 - raise * 13.5);
       c.rotate(-0.55 + raise * 0.35);
     } else if (facing === "right") {
-      // Near hand, in front of the torso, offset forward
       c.translate(10.4 + raise * 1.2, -9.4 - raise * 13.5);
       c.rotate(0.55 - raise * 0.15);
     } else {
@@ -562,75 +558,112 @@
     c.restore();
   }
 
-  /* ---------- Held spellbook: gripped by the SPINE, cover facing out ---------- */
-  function drawSpineBook(c, st, t, pulse) {
+  /* Edge-on book (front/back): thin vertical slab. Spine in the fist,
+     pages and a sliver of red cover visible. Hangs down beside the hip.
+     Local: grip at (0,0); +x is away from the body. */
+  function drawBookEdgeOn(c, st, pulse) {
     var p = palFrom(st);
     pulse = pulse == null ? 0.6 : pulse;
-    // Local space: the hand grips the spine at x=0, y=0.
-    // The closed book hangs/fans out toward +x, cover facing the viewer.
-    // Spine (thick bound edge) — this is what the hand grips
+    // spine (what the hand grips), vertical
     c.fillStyle = p.ink;
-    rounded(c, -2.4, -9.2, 4.6, 18.6, 1.1);
+    rounded(c, -1.35, -6.6, 2.5, 16.6, 0.7);
     c.fill();
     c.fillStyle = p.dark;
-    c.fillRect(-1.6, -8.4, 3.0, 17.0);
+    c.fillRect(-0.85, -5.8, 1.55, 15.0);
     c.fillStyle = p.trim;
-    c.fillRect(-2.4, -9.2, 4.6, 1.15);
-    c.fillRect(-2.4, 8.2, 4.6, 1.15);
-    // ribs on the spine
+    c.fillRect(-1.35, -6.6, 2.5, 0.9);
+    c.fillRect(-1.35, 9.1, 2.5, 0.9);
     c.strokeStyle = p.trim;
-    c.lineWidth = 0.7;
+    c.lineWidth = 0.55;
     c.beginPath();
-    c.moveTo(-1.4, -5); c.lineTo(1.2, -5);
-    c.moveTo(-1.4, 0); c.lineTo(1.2, 0);
-    c.moveTo(-1.4, 5); c.lineTo(1.2, 5);
+    c.moveTo(-0.7, -3.2); c.lineTo(0.55, -3.2);
+    c.moveTo(-0.7, 0.6); c.lineTo(0.55, 0.6);
+    c.moveTo(-0.7, 4.4); c.lineTo(0.55, 4.4);
     c.stroke();
-    // cover fanning out from the spine, slight 3/4 so it isn't a flat shield
+    // page block — thin cream leaves
+    c.fillStyle = "#c8b0a8";
+    c.fillRect(1.05, -6.0, 1.15, 15.2);
+    c.fillStyle = "#efe4dc";
+    c.fillRect(1.15, -5.7, 0.7, 14.6);
+    c.strokeStyle = "rgba(80,50,50,0.45)";
+    c.lineWidth = 0.4;
+    c.beginPath();
+    c.moveTo(1.35, -5.4); c.lineTo(1.35, 8.6);
+    c.moveTo(1.7, -5.4); c.lineTo(1.7, 8.6);
+    c.stroke();
+    // sliver of red cover on the far edge
+    c.fillStyle = p.ink;
+    c.fillRect(2.15, -6.2, 0.85, 15.6);
+    c.fillStyle = PAL.hot;
+    c.globalAlpha = 0.7 + 0.3 * pulse;
+    c.fillRect(2.25, -5.8, 0.5, 14.8);
+    c.globalAlpha = 1;
+    c.fillStyle = PAL.flare;
+    c.globalAlpha = 0.4 + 0.3 * pulse;
+    c.fillRect(2.05, -5.6, 0.25, 14.4);
+    c.globalAlpha = 1;
+  }
+
+  /* Full cover (side view, and a 3/4 inventory icon). Spine in the fist,
+     cover hangs vertically beside the hip. Local: grip at (0,0). */
+  function drawBookCoverFace(c, st, pulse) {
+    var p = palFrom(st);
+    pulse = pulse == null ? 0.6 : pulse;
+    c.fillStyle = p.ink;
+    rounded(c, -2.1, -7.0, 3.8, 17.2, 0.9);
+    c.fill();
+    c.fillStyle = p.dark;
+    c.fillRect(-1.45, -6.2, 2.5, 15.6);
+    c.fillStyle = p.trim;
+    c.fillRect(-2.1, -7.0, 3.8, 1.05);
+    c.fillRect(-2.1, 9.15, 3.8, 1.05);
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.65;
+    c.beginPath();
+    c.moveTo(-1.2, -3.4); c.lineTo(1.0, -3.4);
+    c.moveTo(-1.2, 0.6); c.lineTo(1.0, 0.6);
+    c.moveTo(-1.2, 4.6); c.lineTo(1.0, 4.6);
+    c.stroke();
+    // cover hanging down, facing the camera
     c.fillStyle = p.ink;
     c.beginPath();
-    c.moveTo(1.8, -8.8);
-    c.lineTo(13.6, -7.2);
-    c.lineTo(13.6, 9.0);
-    c.lineTo(1.8, 9.4);
+    c.moveTo(1.5, -6.6);
+    c.lineTo(12.4, -6.2);
+    c.lineTo(12.4, 10.0);
+    c.lineTo(1.5, 10.2);
     c.closePath();
     c.fill();
     c.fillStyle = p.main;
     c.beginPath();
-    c.moveTo(2.4, -7.8);
-    c.lineTo(12.6, -6.4);
-    c.lineTo(12.6, 8.0);
-    c.lineTo(2.4, 8.4);
+    c.moveTo(2.1, -5.7);
+    c.lineTo(11.5, -5.3);
+    c.lineTo(11.5, 9.1);
+    c.lineTo(2.1, 9.3);
     c.closePath();
     c.fill();
     c.strokeStyle = p.trim;
-    c.lineWidth = 1.0;
+    c.lineWidth = 0.95;
     c.beginPath();
-    c.moveTo(2.4, -7.8);
-    c.lineTo(12.6, -6.4);
-    c.lineTo(12.6, 8.0);
-    c.lineTo(2.4, 8.4);
+    c.moveTo(2.1, -5.7);
+    c.lineTo(11.5, -5.3);
+    c.lineTo(11.5, 9.1);
+    c.lineTo(2.1, 9.3);
     c.closePath();
     c.stroke();
-    // page block at the fore-edge
-    c.fillStyle = PAL.flare;
-    c.globalAlpha = 0.35 + 0.25 * pulse;
-    c.fillRect(12.2, -6.2, 1.5, 14.0);
-    c.globalAlpha = 1;
-    c.fillStyle = "#e8d0d0";
-    c.fillRect(12.4, -5.8, 0.9, 13.2);
+    c.fillStyle = "#efe4dc";
+    c.fillRect(11.5, -5.2, 0.85, 14.2);
     c.fillStyle = PAL.hot;
     c.globalAlpha = 0.55 + 0.35 * pulse;
-    c.fillRect(12.4, -5.8, 0.5, 13.2);
+    c.fillRect(11.5, -5.2, 0.4, 14.2);
     c.globalAlpha = 1;
-    // web + hourglass on the outward cover
     c.strokeStyle = PAL.webLt;
     c.lineWidth = 0.75;
     c.beginPath();
-    c.moveTo(4.0, -4.6); c.lineTo(10.8, 4.6);
-    c.moveTo(10.8, -4.2); c.lineTo(4.0, 5.0);
-    c.moveTo(7.4, -5.2); c.lineTo(7.4, 5.6);
+    c.moveTo(3.6, -3.4); c.lineTo(10.0, 5.4);
+    c.moveTo(10.0, -3.0); c.lineTo(3.6, 5.8);
+    c.moveTo(6.8, -4.0); c.lineTo(6.8, 6.4);
     c.stroke();
-    hourglass(c, 7.4, 0.4, 2.15, true);
+    hourglass(c, 6.8, 1.2, 2.05, true);
   }
 
   function drawBookHeld(c, st, facing, t, icon, anim) {
@@ -639,23 +672,29 @@
     if (anim && anim.flash) pulse = Math.max(pulse, anim.flash);
     c.save();
     if (icon) {
-      c.translate(-4.5, 0);
-      c.rotate(-0.12);
+      // Inventory icon stays a readable 3/4 cover with the spine showing
+      c.translate(-4.2, 0);
+      c.rotate(-0.08);
       c.scale(1.15, 1.15);
+      drawBookCoverFace(c, st, pulse);
     } else if (facing === "front") {
-      // Character's left hand = screen-right. Spine in the fist, cover fans out.
-      c.translate(12.6, -9.2 - raise * 13.5);
-      c.rotate(0.18 - raise * 0.28);
+      // Off-hand at screen-right, hanging by the spine, EDGE toward the camera
+      c.translate(12.0, -8.8 - raise * 13.5);
+      c.rotate(0.04);
+      drawBookEdgeOn(c, st, pulse);
     } else if (facing === "right") {
-      // Far / off hand, BEHIND the torso, book fanning further back (left)
-      c.translate(-11.2, -9.0 - raise * 13.5);
-      c.rotate(Math.PI + 0.12 + raise * 0.1);
+      // Far / book's own side — full cover faces the camera, hanging behind the hip
+      c.translate(-11.2, -8.8 - raise * 13.5);
+      c.scale(-1, 1);
+      c.rotate(0.02);
+      drawBookCoverFace(c, st, pulse);
     } else {
-      // Back: character's left = screen-left, spine in hand, cover fans outward
-      c.translate(-11.8, -11.2 - raise * 13);
-      c.rotate(Math.PI + 0.08);
+      // Back: character's left = screen-left; flip so spine stays toward the body
+      c.translate(-12.0, -10.6 - raise * 13);
+      c.scale(-1, 1);
+      c.rotate(0.04);
+      drawBookEdgeOn(c, st, pulse);
     }
-    drawSpineBook(c, st, t, pulse);
     c.restore();
   }
 

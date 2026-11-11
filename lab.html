@@ -67,7 +67,7 @@
     position: relative;
     width: 100%;
     height: 0;
-    padding-bottom: 125%; /* 200/160 — avoids iOS Safari canvas height collapse in grid */
+    padding-bottom: 155%; /* 248/160 — full body to the robe hem */
     background: #0c0604;
     border-radius: 6px;
     border: 1px solid #2a1810;
@@ -207,19 +207,19 @@
     <div class="preview-trio" id="preview-trio">
       <div class="preview-cell">
         <div class="preview-frame">
-          <canvas id="gear-preview-front" width="160" height="200"></canvas>
+          <canvas id="gear-preview-front" width="160" height="248"></canvas>
         </div>
         <span>FRONT</span>
       </div>
       <div class="preview-cell">
         <div class="preview-frame">
-          <canvas id="gear-preview-back" width="160" height="200"></canvas>
+          <canvas id="gear-preview-back" width="160" height="248"></canvas>
         </div>
         <span>BACK</span>
       </div>
       <div class="preview-cell">
         <div class="preview-frame">
-          <canvas id="gear-preview-side" width="160" height="200"></canvas>
+          <canvas id="gear-preview-side" width="160" height="248"></canvas>
         </div>
         <span>SIDE</span>
       </div>
@@ -246,19 +246,19 @@
     <p class="lead">Ancient Magicks-style barrage: the fang and the spellbook (held by its spine) rise together, then lower. Same animation in-game when you cast.</p>
     <div class="cast-frames" id="widow-cast-frames">
       <div class="preview-cell">
-        <div class="preview-frame"><canvas id="widow-cast-rest" width="160" height="200"></canvas></div>
+        <div class="preview-frame"><canvas id="widow-cast-rest" width="160" height="248"></canvas></div>
         <span>Rest</span>
       </div>
       <div class="preview-cell">
-        <div class="preview-frame"><canvas id="widow-cast-rise" width="160" height="200"></canvas></div>
+        <div class="preview-frame"><canvas id="widow-cast-rise" width="160" height="248"></canvas></div>
         <span>Rising</span>
       </div>
       <div class="preview-cell">
-        <div class="preview-frame"><canvas id="widow-cast-peak" width="160" height="200"></canvas></div>
+        <div class="preview-frame"><canvas id="widow-cast-peak" width="160" height="248"></canvas></div>
         <span>Cast</span>
       </div>
       <div class="preview-cell">
-        <div class="preview-frame"><canvas id="widow-cast-lower" width="160" height="200"></canvas></div>
+        <div class="preview-frame"><canvas id="widow-cast-lower" width="160" height="248"></canvas></div>
         <span>Lowering</span>
       </div>
     </div>
@@ -358,15 +358,15 @@
 </section>
 
 <div class="grid" id="grid"></div>
-<script src="partyhat-img.js?v=35-3"></script>
-<script src="whip-img.js?v=35-3"></script>
-<script src="sprites.js?v=35-3"></script>
-<script src="widow-sprites.js?v=35-3"></script>
-<script src="lab-gear.js?v=35-3"></script>
+<script src="partyhat-img.js?v=35-4"></script>
+<script src="whip-img.js?v=35-4"></script>
+<script src="sprites.js?v=35-4"></script>
+<script src="widow-sprites.js?v=35-4"></script>
+<script src="lab-gear.js?v=35-4"></script>
 <script>
 "use strict";
 if (navigator.serviceWorker) {
-  navigator.serviceWorker.register("sw.js?v=35-3").catch(function () {});
+  navigator.serviceWorker.register("sw.js?v=35-4").catch(function () {});
 }
 
 // Lab only: no game logic. Each sprite renders into a 1x canvas at CSS-pixel game scale
@@ -614,7 +614,7 @@ function paintPreview(t) {
       c.strokeRect(1.5, 1.5, w - 3, h - 3);
     }
     c.save();
-    c.translate(w * 0.5, h * 0.90);
+    c.translate(w * 0.5, h * 0.84);
     c.scale(sP * 3.05, sP * 3.05);
     const facing = (focus === "left" && view.id === "gear-preview-side") ? "left" : view.facing;
     drawLabPlayer(c, t, {
@@ -645,7 +645,7 @@ function paintCastFrames() {
     c.setTransform(1, 0, 0, 1, 0, 0);
     bg(c, w, h);
     c.save();
-    c.translate(w * 0.5, h * 0.90);
+    c.translate(w * 0.5, h * 0.84);
     c.scale(sP * 3.05, sP * 3.05);
     drawLabPlayer(c, 0, {
       equipment: eq,
