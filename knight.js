@@ -65,18 +65,14 @@
   function fitFloatMsg() {
     const el = $("float-msg");
     if (!el || !el.textContent) return;
-    el.style.whiteSpace = "nowrap";
-    el.style.left = "50%";
-    el.style.transform = "translateX(-50%)";
-    el.style.maxWidth = "none";
-    el.style.top = "4%";
-    let size = 24;
-    el.style.fontSize = size + "px";
-    const maxW = Math.max(160, (global.cssW || 390) - 16);
-    while (size > 13 && el.scrollWidth > maxW) {
-      size -= 1;
-      el.style.fontSize = size + "px";
-    }
+    // Let .float-msg CSS place and wrap the banner below the name/HP plate.
+    el.style.whiteSpace = "";
+    el.style.left = "";
+    el.style.right = "";
+    el.style.transform = "";
+    el.style.maxWidth = "";
+    el.style.top = "";
+    el.style.fontSize = "";
   }
   function tickFloatMsg(dt) {
     const el = $("float-msg");

@@ -327,9 +327,23 @@
       font-size: 13px; cursor: pointer; flex: 0 0 auto; line-height: 1;
     }
     .float-msg {
-      position: absolute; left: 50%; top: 8%; transform: translateX(-50%);
-      font-family: Impact, "Arial Black", sans-serif; font-size: 28px; color: var(--gold);
-      text-shadow: 0 2px 0 #000, 0 0 8px #000; pointer-events: none; z-index: 5; opacity: 0;
+      /* Sit below the boss name/HP plate. left:50% without a width only
+         has the right half of the arena to wrap in, which made long
+         banners tall enough to cover the plate. */
+      position: absolute; left: 0; right: 0;
+      top: clamp(128px, 23%, 152px);
+      transform: none;
+      font-family: Impact, "Arial Black", sans-serif;
+      font-size: clamp(18px, 5.2vw, 24px);
+      line-height: 1.15;
+      color: var(--gold);
+      text-shadow: 0 2px 0 #000, 0 0 8px #000;
+      pointer-events: none; z-index: 5; opacity: 0;
+      text-align: center;
+      padding: 0 12px;
+      box-sizing: border-box;
+      white-space: normal;
+      overflow-wrap: break-word;
     }
 
     #hub-gear {
