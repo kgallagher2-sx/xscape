@@ -12,4 +12,3 @@ One line per claim, in this format:
 ## Active claims
 
 - `combat.js` | Combat Balance | 2026-11-11 11:14 America/New_York | NPC stat-system helpers (legacy-compatible)
-- `index.html` | Boss Mechanics | 2026-11-11 11:19 America/New_York | Hook tryCastSpell into Magmor/Jad playerAttack
