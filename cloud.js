@@ -324,6 +324,109 @@
     }
   }
 
+  function itemIsHeld(p, id) {
+    if (!p || !id || typeof id !== "string") return false;
+    if (Array.isArray(p.bank) && p.bank.indexOf(id) !== -1) return true;
+    if (Array.isArray(p.inventory) && p.inventory.indexOf(id) !== -1) return true;
+    if (p.equipment && typeof p.equipment === "object") {
+      var slots = Object.keys(p.equipment);
+      for (var i = 0; i < slots.length; i++) {
+        if (p.equipment[slots[i]] === id) return true;
+      }
+    }
+    return false;
+  }
+
+  function snapshotHeldState(p) {
+    return {
+      unlockedItems: (p && Array.isArray(p.unlockedItems)) ? p.unlockedItems.slice() : [],
+      bank: (p && Array.isArray(p.bank)) ? p.bank.slice() : [],
+      inventory: (p && Array.isArray(p.inventory)) ? p.inventory.slice() : [],
+      equipment: (p && p.equipment && typeof p.equipment === "object") ? Object.assign({}, p.equipment) : {}
+    };
+  }
+
+  /* Add items from `from` into `into` without dropping anything already
+     held or creating a second copy. Used to keep server grants (and a
+     newer in-memory profile) from being overwritten by an old snapshot. */
+  function mergeHeldState(into, from) {
+    if (!into || !from) return false;
+    var changed = false;
+    if (Array.isArray(from.unlockedItems)) {
+      if (!Array.isArray(into.unlockedItems)) into.unlockedItems = [];
+      for (var i = 0; i < from.unlockedItems.length; i++) {
+        var id = from.unlockedItems[i];
+        if (id && typeof id === "string" && into.unlockedItems.indexOf(id) === -1) {
+          into.unlockedItems.push(id);
+          changed = true;
+        }
+      }
+    }
+    function eachHeld(src, fn) {
+      if (Array.isArray(src.bank)) src.bank.forEach(fn);
+      if (Array.isArray(src.inventory)) src.inventory.forEach(fn);
+      if (src.equipment && typeof src.equipment === "object") {
+        Object.keys(src.equipment).forEach(function (k) { fn(src.equipment[k]); });
+      }
+    }
+    eachHeld(from, function (id) {
+      if (!id || typeof id !== "string") return;
+      if (itemIsHeld(into, id)) return;
+      if (!Array.isArray(into.bank)) into.bank = [];
+      into.bank.push(id);
+      changed = true;
+    });
+    return changed;
+  }
+
+  function saveProfileLocally() {
+    if (typeof _rawSaveProfile === "function") {
+      try { _rawSaveProfile(); } catch (e) {}
+    }
+  }
+
+  /* After claim_alcove_mid, including already:true, merge returned items
+     into the local Profile and the in-memory cloud profile, then save
+     locally so showTitle/loadProfile cannot revert them. */
+  function applyAlcoveClaimToLocal(res) {
+    if (!res || !res.ok) return;
+    var items = res.items;
+    if (typeof items === "string") {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    if (res.profile) rememberCloudAlcoveMids(res.profile);
+    else if (items.length) rememberCloudAlcoveMids({ unlockedItems: items, bank: items });
+    var grant = { unlockedItems: items.slice(), bank: items.slice() };
+    if (res.profile) {
+      if (Array.isArray(res.profile.unlockedItems)) {
+        res.profile.unlockedItems.forEach(function (id) {
+          if (isAlcoveMidId(id) && grant.unlockedItems.indexOf(id) === -1) grant.unlockedItems.push(id);
+        });
+      }
+      if (Array.isArray(res.profile.bank)) {
+        res.profile.bank.forEach(function (id) {
+          if (isAlcoveMidId(id) && grant.bank.indexOf(id) === -1) grant.bank.push(id);
+        });
+      }
+    }
+    if (cloudProfile) mergeHeldState(cloudProfile, grant);
+    else rememberCloudAlcoveMids(grant);
+    var P = global.Profile;
+    if (P) {
+      mergeHeldState(P, grant);
+      if (res.profile) mergeHeldState(P, res.profile);
+    }
+    if (res.profile && res.profile.revision != null) {
+      var rev = Number(res.profile.revision);
+      if (!isNaN(rev)) {
+        saveRevision = rev;
+        if (cloudProfile) cloudProfile.revision = rev;
+      }
+    }
+    saveProfileLocally();
+  }
+
   function localPayload() {
     var P = global.Profile || {};
     var js = localJadStats();
@@ -1956,6 +2059,23 @@
       wrappedSave._cloud = true;
       global.saveProfile = wrappedSave;
     }
+    if (typeof global.loadProfile === "function" && !global.loadProfile._cloud) {
+      var rawLoad = global.loadProfile;
+      var wrappedLoad = function () {
+        var prior = (session && global.Profile) ? snapshotHeldState(global.Profile) : null;
+        var out = rawLoad.apply(this, arguments);
+        if (session && global.Profile) {
+          var changed = false;
+          if (prior) changed = mergeHeldState(global.Profile, prior) || changed;
+          if (cloudProfile) changed = mergeHeldState(global.Profile, cloudProfile) || changed;
+          if (changed) saveProfileLocally();
+        }
+        return out;
+      };
+      wrappedLoad._cloud = true;
+      wrappedLoad._raw = rawLoad;
+      global.loadProfile = wrappedLoad;
+    }
     if (typeof global.commitLogin === "function" && !global.commitLogin._cloud) {
       var rawCommit = global.commitLogin;
       var wrappedCommit = function () { claimNameAndEnter(); };
@@ -2297,9 +2417,21 @@
       applyCloudProfile(res.profile, { fromCloudLoad: true });
       return;
     }
-    if (res && res.ok && res.profile && res.profile.revision != null) {
-      var nextRev = Number(res.profile.revision);
-      if (!isNaN(nextRev)) saveRevision = nextRev;
+    if (res && res.ok && res.profile) {
+      if (res.profile.revision != null) {
+        var nextRev = Number(res.profile.revision);
+        if (!isNaN(nextRev)) saveRevision = nextRev;
+      }
+      rememberCloudAlcoveMids(res.profile);
+      if (cloudProfile) {
+        if (Array.isArray(res.profile.unlockedItems)) cloudProfile.unlockedItems = res.profile.unlockedItems.slice();
+        if (Array.isArray(res.profile.bank)) cloudProfile.bank = res.profile.bank.slice();
+        if (Array.isArray(res.profile.inventory)) cloudProfile.inventory = res.profile.inventory.slice();
+        if (res.profile.revision != null) cloudProfile.revision = res.profile.revision;
+      }
+      if (global.Profile && mergeHeldState(global.Profile, res.profile)) {
+        saveProfileLocally();
+      }
     }
   }
 
@@ -2480,8 +2612,7 @@
     myParty: function () { return rpc("my_party", {}); },
     claimAlcoveMid: function (runId, room, nonce) {
       return rpc("claim_alcove_mid", { p_run: runId || null, p_room: room || null, p_nonce: nonce || null }).then(function (res) {
-        if (res && res.profile) rememberCloudAlcoveMids(res.profile);
-        else if (res && res.items) rememberCloudAlcoveMids({ unlockedItems: res.items, bank: res.items });
+        applyAlcoveClaimToLocal(res);
         return res;
       });
     },
