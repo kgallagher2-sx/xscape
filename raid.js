@@ -492,6 +492,54 @@
     for (var i = 0; i < list.length; i++) if (list[i].col === col && list[i].row === row) return true;
     return false;
   }
+  function livingOrSelf(st) {
+    var list = livingFighters(st);
+    if (list.length) return list;
+    return (st && st.player) ? [st.player] : [];
+  }
+  function forEachUniqueLivingTile(st, fn) {
+    var list = livingOrSelf(st);
+    var seen = {};
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      if (!f) continue;
+      var k = (f.col == null ? 0 : f.col) + "," + (f.row == null ? 0 : f.row);
+      if (seen[k]) continue;
+      seen[k] = true;
+      fn(f.col, f.row, f);
+    }
+  }
+  function grantAlcoveMid(st, mid) {
+    if (!st || !mid) return;
+    st.alcoveMids = st.alcoveMids || [];
+    var room = st.room || "";
+    var exists = false;
+    for (var i = 0; i < st.alcoveMids.length; i++) {
+      var e = st.alcoveMids[i];
+      if (e && e.room === room && e.mid === mid) { exists = true; break; }
+    }
+    if (!exists) st.alcoveMids.push({ room: room, mid: mid });
+    if (st.roomState) st.roomState.mid = mid;
+    allFighters(st).forEach(function (f) {
+      if (!f) return;
+      f.alcoveUnlocks = f.alcoveUnlocks || [];
+      if (f.alcoveUnlocks.indexOf(mid) === -1) f.alcoveUnlocks.push(mid);
+    });
+    claimLocalAlcoveMids(st);
+  }
+  function claimLocalAlcoveMids(st) {
+    if (!st) return;
+    var list = st.alcoveMids || [];
+    st._claimedAlcove = st._claimedAlcove || {};
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (!e || !e.mid) continue;
+      var key = (e.room || "") + ":" + e.mid;
+      if (st._claimedAlcove[key]) continue;
+      st._claimedAlcove[key] = true;
+      unlockItem(e.mid);
+    }
+  }
   function nearestFighter(st, col, row) {
     var list = livingFighters(st);
     if (!list.length) return st.player;
@@ -1432,8 +1480,13 @@
           st.boss.hp = Math.min(st.boss.hpMax, st.boss.hp + heal);
           splat(st, st.boss.col, st.boss.row, heal, "#80ff80", { anchor: "boss", target: "boss" });
           flash(st, "The shade feeds him", "#ff8a70");
-        } else if (dist <= 1) {
-          hurtPlayer(st, 24, "A shade explodes.");
+        } else {
+          livingFighters(st).forEach(function (f) {
+            var d = Math.abs(a.col - f.col) + Math.abs((a.row || 0) - (f.row || 0));
+            if (d <= 1) {
+              withFighter(st, f, function () { hurtPlayer(st, 24, "A shade explodes."); });
+            }
+          });
         }
         a.hp = 0;
       }
@@ -1683,9 +1736,18 @@
         const j = irand(st.rng, 0, i);
         const tmp = cols[i]; cols[i] = cols[j]; cols[j] = tmp;
       }
-      const preferSafe = [st.player.col];
-      neighbors(st.player.col, 0).forEach(function (n2) { preferSafe.push(n2.c); });
-      const safePick = preferSafe[irand(st.rng, 0, preferSafe.length - 1)];
+      const preferSafe = [];
+      const seenSafe = {};
+      function addSafeCol(c) {
+        if (c == null || seenSafe[c]) return;
+        seenSafe[c] = true;
+        preferSafe.push(c);
+      }
+      livingOrSelf(st).forEach(function (f) {
+        addSafeCol(f.col);
+        neighbors(f.col, 0).forEach(function (n2) { addSafeCol(n2.c); });
+      });
+      const safePick = preferSafe[irand(st.rng, 0, Math.max(0, preferSafe.length - 1))];
       const unsafe = cols.filter(function (c) { return c !== safePick; }).slice(0, unsafeN);
       for (let i = 0; i < unsafe.length; i++) markDanger(st, unsafe[i], 0, "row", tel, 22);
       sfx(st, "mark");
@@ -1693,7 +1755,9 @@
     if (n >= 4) {
       rs.beamCd--;
       if (rs.beamCd <= 0) {
-        markDanger(st, st.player.col, 0, "beam", 2, 28);
+        forEachUniqueLivingTile(st, function (col) {
+          markDanger(st, col, 0, "beam", 2, 28);
+        });
         sfx(st, "mark");
         flash(st, "The Eye looks upon you", "#ff6060");
         rs.beamCd = 6;
@@ -1755,7 +1819,7 @@
     let mid = null;
     if (tab.midChance && st.rng() < tab.midChance) {
       mid = pickMissing(st.rng, midPool(), profileObj().unlockedItems);
-      if (mid) { unlockItem(mid); bits.push(getItem(mid).name); }
+      if (mid) { grantAlcoveMid(st, mid); bits.push(getItem(mid).name); }
     }
     st.roomState.lootBits = bits;
     flash(st, bits.length ? bits.join(", ") : "Empty hooks", "#ffe9a0");
@@ -2505,9 +2569,11 @@
           id: f.id, username: f.username, col: f.col, row: f.row, hp: f.hp, prayer: f.prayer,
           dead: !!f.dead, score: computeRaidScore(f),
           damageDealt: f.damageDealt || 0, damageTaken: f.damageTaken || 0,
-          perfectPrayers: f.perfectPrayers || 0
+          perfectPrayers: f.perfectPrayers || 0,
+          alcoveUnlocks: (f.alcoveUnlocks || []).slice()
         };
-      })
+      }),
+      alcoveMids: (R.alcoveMids || []).slice()
     };
   }
 
@@ -2645,6 +2711,7 @@
     saveProfile: saveRaidProfile,
     profile: profileObj,
     rollFinalLoot: rollFinalLoot,
+    claimLocalAlcoveMids: claimLocalAlcoveMids,
     raidAudio: raidAudio,
     testFlag: function () {
       try { return (new URLSearchParams(global.location.search).get("test") || "").toLowerCase(); }
@@ -2944,6 +3011,7 @@
       float: st.float,
       loot: st.loot,
       deathReason: st.deathReason || null,
+      alcoveMids: st.alcoveMids || [],
       fighters: allFighters(st).map(packFighter),
       hits: st._hits || []
     };
@@ -2976,6 +3044,11 @@
     if (payload.target !== undefined) R.target = payload.target;
     if (payload.float) R.float = payload.float;
     if (payload.loot) R.loot = payload.loot;
+    if (payload.alcoveMids) R.alcoveMids = payload.alcoveMids;
+    else if (payload.roomState && payload.roomState.mid) {
+      grantAlcoveMid(R, payload.roomState.mid);
+    }
+    claimLocalAlcoveMids(R);
     if (payload.fighters && payload.fighters.length) {
       for (var i = 0; i < payload.fighters.length; i++) applyPackedFighter(R, payload.fighters[i]);
       restoreLocalFighter(R);
