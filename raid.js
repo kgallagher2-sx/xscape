@@ -150,6 +150,36 @@
     shade: {
       id: "shade", name: "Cinder Shade",
       hp: SHADE_HP, hitpoints: SHADE_HP,
+      levels: { attack: 40, strength: 20, defence: 8, magic: 1, ranged: 1 },
+      attack: 40, strength: 20, defence: 8, magic: 1, ranged: 1,
+      atk: { astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0, str: 0, rstr: 0, mdmg: 0 },
+      bonuses: { astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0, str: 0, rstr: 0, mdmg: 0 },
+      def: { dstab: 0, dslash: 0, dcrush: 0, dmagic: 0, drange: 0 },
+      defBonuses: { dstab: 0, dslash: 0, dcrush: 0, dmagic: 0, drange: 0 },
+      attacks: [
+        { style: "crush", speed: 4, maxHit: 6, overrideReason: "formula at strength 20 str 0 is 3; keep hand-set melee max 6" },
+        { style: "crush", special: true, maxHit: 6, accuracy: 0.70, speed: 4 }
+      ],
+      weakness: "crush",
+      groupHpScale: true,
+      // Host path (combat.js / global.MONSTERS / combatVsMonster) uses
+      // levels.defence 8, matching pre-52040c9 HOST_MONSTERS.shade.
+      defLevel: 8,
+      defBonus: { mage: 0, range: 0, melee: 0 },
+      maxHit: 6,
+      accuracy: 0.70
+    }
+  };
+  // Legacy raid table (currentTarget / monsterDefRoll fallback) keeps the
+  // pre-52040c9 MONSTERS.shade defLevel 5. The host table above stays at
+  // defence 8. Kellen did not approve unifying these; do not fold them
+  // into one number.
+  const MONSTERS = {
+    morvane: HOST_MONSTERS.morvane,
+    warden: HOST_MONSTERS.warden,
+    shade: {
+      id: "shade", name: "Cinder Shade",
+      hp: SHADE_HP, hitpoints: SHADE_HP,
       levels: { attack: 40, strength: 20, defence: 5, magic: 1, ranged: 1 },
       attack: 40, strength: 20, defence: 5, magic: 1, ranged: 1,
       atk: { astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0, str: 0, rstr: 0, mdmg: 0 },
@@ -162,14 +192,12 @@
       ],
       weakness: "crush",
       groupHpScale: true,
-      // Aliases. defLevel 5 is the approved live-table value (HOST was 8).
       defLevel: 5,
       defBonus: { mage: 0, range: 0, melee: 0 },
       maxHit: 6,
       accuracy: 0.70
     }
   };
-  const MONSTERS = HOST_MONSTERS;
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -230,7 +258,7 @@
     weapon: "nightfall_staff", body: "unsleeping_robe_top", shield: null,
     legs: "unsleeping_robe_bottom", hands: null, feet: null, ring: "dreamless_ring"
   };
-  /* HOST_MONSTERS is defined with the raid MONSTERS table above. */
+  /* HOST_MONSTERS is the host/combat table; MONSTERS is the legacy raid table (Shade defence stays split). */
   function registerItems() {
     if (!global.XscapeItems) global.XscapeItems = {};
     for (const k of Object.keys(RAID_ITEMS)) {
@@ -3575,8 +3603,14 @@
     }
     if (!Array.isArray(rawItems)) rawItems = [];
     var rares = rawItems.filter(function (id) { return id && id !== "hollow_bolts"; });
+    // Replays return gpAwarded 0 and originalGpAwarded with the stored amount.
+    // Show the original award; never treat gpAwarded as a second grant.
+    var displayGp = res.already
+      ? (res.originalGpAwarded != null ? res.originalGpAwarded : (res.gp != null ? res.gp : 0))
+      : (res.gpAwarded != null ? res.gpAwarded : 0);
     var loot = {
-      gp: res.gpAwarded || 0,
+      gp: displayGp || 0,
+      alreadyClaimed: !!res.already,
       items: rawItems,
       died: !!res.died,
       halfGp: !!(res.halfGp || res.died),
@@ -3596,7 +3630,9 @@
     }
     var bits = [];
     if (loot.score != null) bits.push("Score " + loot.score);
-    if (loot.gp) bits.push((typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : loot.gp) + " GP");
+    if (loot.gp) {
+      bits.push((typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : loot.gp) + " GP" + (loot.alreadyClaimed ? " (already claimed)" : ""));
+    }
     if (loot.died) bits.push("Died, half GP");
     else if (!loot.uniqueHit) bits.push("No rare this time");
     (loot.items || []).forEach(function (id) {
@@ -3890,7 +3926,7 @@
       lootTxt = bits.join("<br>") || "—";
     }
     const gpTxt = loot && loot.gp
-      ? (typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : String(loot.gp)) + " GP"
+      ? (typeof global.fmtGp === "function" ? global.fmtGp(loot.gp) : String(loot.gp)) + " GP" + (loot.alreadyClaimed ? " (already claimed)" : "")
       : "—";
     const html = row("Time", fmtTimeLocal(result && result.seconds)) +
       row("Score", scoreVal != null ? String(scoreVal) : "—") +
