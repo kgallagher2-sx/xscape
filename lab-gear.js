@@ -807,70 +807,8 @@ function drawLabHead(c, id) {
       return;
     }
     if (kind === "armadyl") {
-      // avian helm from behind: rounded skull, raised crest, wing flanges
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.ellipse(0, -26.2, 10.2, 10.6, 0, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = p.main;
-      c.beginPath();
-      c.ellipse(0, -26.6, 8.8, 9.2, 0, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = p.light;
-      c.beginPath();
-      c.ellipse(-2.2, -28.4, 4.2, 3.6, -0.3, 0, Math.PI * 2);
-      c.fill();
-      // crest
-      c.fillStyle = p.trim;
-      c.beginPath();
-      c.moveTo(-1.3, -35.6);
-      c.lineTo(1.3, -35.6);
-      c.lineTo(1.8, -26);
-      c.lineTo(-1.8, -26);
-      c.closePath();
-      c.fill();
-      c.fillStyle = p.trimLt;
-      c.fillRect(-0.45, -35.4, 0.9, 9.2);
-      // wing flanges
-      function flange(dir) {
-        c.fillStyle = p.dark;
-        c.beginPath();
-        c.moveTo(dir * 7.2, -30);
-        c.quadraticCurveTo(dir * 15.4, -32.5, dir * 14.2, -24.5);
-        c.quadraticCurveTo(dir * 11.2, -22.2, dir * 7.6, -23.6);
-        c.closePath();
-        c.fill();
-        c.fillStyle = p.main;
-        c.beginPath();
-        c.moveTo(dir * 7.6, -29.2);
-        c.quadraticCurveTo(dir * 13.8, -31.2, dir * 13.0, -25.2);
-        c.quadraticCurveTo(dir * 10.4, -23.4, dir * 7.8, -24.4);
-        c.closePath();
-        c.fill();
-        c.strokeStyle = p.trim;
-        c.lineWidth = 0.85;
-        c.beginPath();
-        c.moveTo(dir * 8.2, -28.6);
-        c.quadraticCurveTo(dir * 13.0, -30.2, dir * 12.2, -25.6);
-        c.stroke();
-      }
-      flange(-1);
-      flange(1);
-      // gold brow / nape bands
-      c.fillStyle = p.trim;
-      c.fillRect(-6.8, -24.2, 13.6, 1.4);
-      c.fillStyle = p.trimLt;
-      c.fillRect(-6.8, -24.2, 13.6, 0.45);
-      c.fillStyle = p.dark;
-      c.beginPath();
-      c.moveTo(-6.4, -20.4);
-      c.lineTo(6.4, -20.4);
-      c.lineTo(5, -16.2);
-      c.lineTo(-5, -16.2);
-      c.closePath();
-      c.fill();
-      c.fillStyle = p.trim;
-      c.fillRect(-5.6, -20.4, 11.2, 1.15);
+      const sk = skinPal();
+      drawStormwingHelm(c, p, sk, "back");
       return;
     }
     if (kind === "partyhat") {
@@ -2780,6 +2718,221 @@ function drawHeroNearArm(c, id, facing, stride, raise) {
   c.restore();
 }
 
+
+function drawStormwingWing(c, p, dir, mode) {
+  // Feathered wing in local space: +X is "out along the wing", -Y is up.
+  // Front/back: out is away from the head. Profile far/near: out is back and up.
+  const locals = [
+    { dx: 10.4, dy: -12.6, w: 4.4 },
+    { dx: 11.2, dy: -7.4, w: 3.8 },
+    { dx: 9.0, dy: -2.6, w: 3.4 },
+    { dx: 6.0, dy: 1.0, w: 2.8 }
+  ];
+  let templeX, templeY, ang, sx;
+  if (mode === "front" || mode === "back") {
+    templeX = dir * 7.4;
+    templeY = -28.8;
+    ang = 0;
+    sx = dir;
+  } else if (mode === "far") {
+    templeX = -5.2;
+    templeY = -29.0;
+    ang = 0.18; // slightly up while going back
+    sx = -1;
+  } else {
+    templeX = 1.8;
+    templeY = -29.8;
+    ang = -0.55; // sweep back and up, clear of the visor
+    sx = -1;
+  }
+  c.save();
+  c.translate(templeX, templeY);
+  c.rotate(ang);
+  locals.forEach((f, i) => {
+    const tx = sx * f.dx, ty = f.dy, w = f.w;
+    const midX = tx * 0.5 + sx * 0.6;
+    const midY = ty * 0.5 - 2.0;
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.quadraticCurveTo(midX, midY, tx, ty);
+    c.quadraticCurveTo(midX + sx * (w * 0.55), midY + 1.6, sx * 1.2, 2.2);
+    c.closePath();
+    c.fill();
+    c.fillStyle = (i === 0) ? p.light : p.main;
+    c.beginPath();
+    c.moveTo(sx * 0.4, 0.4);
+    c.quadraticCurveTo(midX, midY + 0.4, tx * 0.96, ty + 0.5);
+    c.quadraticCurveTo(midX + sx * (w * 0.35), midY + 1.3, sx * 0.8, 1.6);
+    c.closePath();
+    c.fill();
+    if (i === 0) {
+      c.strokeStyle = p.trim;
+      c.lineWidth = 0.85;
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.quadraticCurveTo(midX, midY, tx * 0.55, ty * 0.55);
+      c.stroke();
+    }
+  });
+  c.restore();
+}
+
+function drawStormwingHelm(c, p, sk, facing) {
+  if (facing === "right") {
+    // Far wing behind the head, then bowl, visor, near wing in front.
+    drawStormwingWing(c, p, -1, "far");
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.ellipse(1.2, -26.2, 9.4, 10.4, 0.05, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.ellipse(1.4, -26.6, 8.2, 9.0, 0.05, 0, Math.PI * 2);
+    // visor opening toward the face (+X) — evenodd so anything under shows through
+    c.ellipse(7.4, -27.2, 2.6, 2.0, 0.15, 0, Math.PI * 2);
+    c.fill("evenodd");
+    // eye in the visor (drawn after the hole fill: paint into the opening)
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.ellipse(7.4, -27.2, 2.2, 1.6, 0.15, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = sk.dark;
+    c.beginPath();
+    c.ellipse(8.0, -27.3, 0.7, 0.85, 0, 0, Math.PI * 2);
+    c.fill();
+    // visor rim
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.85;
+    c.beginPath();
+    c.ellipse(7.4, -27.2, 2.6, 2.0, 0.15, 0, Math.PI * 2);
+    c.stroke();
+    // gold crest
+    c.fillStyle = p.trim;
+    c.beginPath();
+    c.moveTo(0.2, -36);
+    c.lineTo(2.2, -36);
+    c.lineTo(2.6, -26);
+    c.lineTo(-0.2, -26);
+    c.closePath();
+    c.fill();
+    c.fillStyle = p.trimLt;
+    c.fillRect(0.7, -35.6, 0.9, 9.0);
+    // metal beak / chin, not a skin face over the helm
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.moveTo(8.6, -26);
+    c.lineTo(13.0, -23.8);
+    c.lineTo(8.2, -22.4);
+    c.closePath();
+    c.fill();
+    c.fillStyle = p.trim;
+    c.fillRect(-4, -24.2, 12, 1.3);
+    drawStormwingWing(c, p, 1, "near");
+    return;
+  }
+
+  if (facing === "back") {
+    drawStormwingWing(c, p, -1, "back");
+    drawStormwingWing(c, p, 1, "back");
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.ellipse(0, -26.2, 10.2, 10.6, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.main;
+    c.beginPath();
+    c.ellipse(0, -26.6, 8.8, 9.2, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.light;
+    c.beginPath();
+    c.ellipse(-2.2, -28.4, 4.2, 3.6, -0.3, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.trim;
+    c.beginPath();
+    c.moveTo(-1.3, -35.6);
+    c.lineTo(1.3, -35.6);
+    c.lineTo(1.8, -26);
+    c.lineTo(-1.8, -26);
+    c.closePath();
+    c.fill();
+    c.fillStyle = p.trimLt;
+    c.fillRect(-0.45, -35.4, 0.9, 9.2);
+    c.fillStyle = p.trim;
+    c.fillRect(-6.8, -24.2, 13.6, 1.4);
+    c.fillStyle = p.trimLt;
+    c.fillRect(-6.8, -24.2, 13.6, 0.45);
+    c.fillStyle = p.dark;
+    c.beginPath();
+    c.moveTo(-6.4, -20.4);
+    c.lineTo(6.4, -20.4);
+    c.lineTo(5, -16.2);
+    c.lineTo(-5, -16.2);
+    c.closePath();
+    c.fill();
+    c.fillStyle = p.trim;
+    c.fillRect(-5.6, -20.4, 11.2, 1.15);
+    return;
+  }
+
+  // FRONT: face first, then helm with a visor hole so the face shows
+  // through the opening only — nothing of the face draws over the shell.
+  c.fillStyle = sk.skin;
+  c.beginPath();
+  c.ellipse(0, -26.3, 4.6, 2.8, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = "#fff8ee";
+  c.beginPath(); c.arc(-1.8, -26.4, 1.15, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(1.8, -26.4, 1.15, 0, Math.PI * 2); c.fill();
+  c.fillStyle = sk.eye || sk.dark;
+  c.beginPath(); c.arc(-1.7, -26.3, 0.65, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(1.7, -26.3, 0.65, 0, Math.PI * 2); c.fill();
+
+  drawStormwingWing(c, p, -1, "front");
+  drawStormwingWing(c, p, 1, "front");
+
+  const vx = 5.4, vy = 2.15;
+  function visorHole() {
+    c.moveTo(-vx, -26.3 - vy);
+    c.lineTo(vx, -26.3 - vy);
+    c.lineTo(vx, -26.3 + vy);
+    c.lineTo(-vx, -26.3 + vy);
+    c.closePath();
+  }
+  c.fillStyle = p.dark;
+  c.beginPath();
+  c.ellipse(0, -26.2, 10.2, 10.6, 0, 0, Math.PI * 2);
+  visorHole();
+  c.fill("evenodd");
+  c.fillStyle = p.main;
+  c.beginPath();
+  c.ellipse(0, -26.6, 8.8, 9.2, 0, 0, Math.PI * 2);
+  visorHole();
+  c.fill("evenodd");
+
+  // dark visor recess around the opening, then gold brow / chin bands
+  c.strokeStyle = p.ink;
+  c.lineWidth = 0.7;
+  c.strokeRect(-vx, -26.3 - vy, vx * 2, vy * 2);
+  c.fillStyle = p.trim;
+  c.fillRect(-6.8, -30.4, 13.6, 1.5);
+  c.fillStyle = p.trimLt;
+  c.fillRect(-6.8, -30.4, 13.6, 0.45);
+  // crest on top of the bowl, between the wings
+  c.fillStyle = p.trim;
+  c.beginPath();
+  c.moveTo(-1.3, -35.8);
+  c.lineTo(1.3, -35.8);
+  c.lineTo(1.8, -26);
+  c.lineTo(-1.8, -26);
+  c.closePath();
+  c.fill();
+  c.fillStyle = p.trimLt;
+  c.fillRect(-0.45, -35.4, 0.9, 9.2);
+  // chin / cheek enclosure
+  c.fillStyle = p.trim;
+  c.fillRect(-6.8, -22.2, 13.6, 1.4);
+}
+
 function drawHeroHead(c, id, facing) {
   if (!id) { drawBareHead(c, facing); return; }
   if (facing === "back") { drawLabHead(c, id); return; }
@@ -2805,35 +2958,7 @@ function drawHeroHead(c, id, facing) {
         return;
       }
       if (kind === "armadyl") {
-        c.fillStyle = p.dark;
-        c.beginPath();
-        c.ellipse(1.2, -26.2, 9.4, 10.4, 0.05, 0, Math.PI * 2);
-        c.fill();
-        c.fillStyle = p.main;
-        c.beginPath();
-        c.ellipse(1.4, -26.6, 8.2, 9.0, 0.05, 0, Math.PI * 2);
-        c.fill();
-        c.fillStyle = p.trim;
-        c.beginPath();
-        c.moveTo(0.2, -36);
-        c.lineTo(2.2, -36);
-        c.lineTo(2.6, -26);
-        c.lineTo(-0.2, -26);
-        c.closePath();
-        c.fill();
-        // visor slit
-        c.fillStyle = "#0e1216";
-        c.fillRect(4.6, -28.4, 5.2, 1.6);
-        // beak / chin
-        c.fillStyle = p.main;
-        c.beginPath();
-        c.moveTo(8.6, -26);
-        c.lineTo(13.4, -23.6);
-        c.lineTo(8.2, -22.2);
-        c.closePath();
-        c.fill();
-        c.fillStyle = p.trim;
-        c.fillRect(-4, -24.2, 12, 1.3);
+        drawStormwingHelm(c, p, sk, "right");
         return;
       }
       if (kind === "partyhat") {
@@ -2902,52 +3027,7 @@ function drawHeroHead(c, id, facing) {
       return;
     }
     if (kind === "armadyl") {
-      c.fillStyle = p.dark;
-      c.beginPath(); c.ellipse(0, -26.2, 10.2, 10.6, 0, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.main;
-      c.beginPath(); c.ellipse(0, -26.6, 8.8, 9.2, 0, 0, Math.PI * 2); c.fill();
-      // crest
-      c.fillStyle = p.trim;
-      c.beginPath();
-      c.moveTo(-1.3, -35.8);
-      c.lineTo(1.3, -35.8);
-      c.lineTo(1.8, -26);
-      c.lineTo(-1.8, -26);
-      c.closePath();
-      c.fill();
-      c.fillStyle = p.trimLt;
-      c.fillRect(-0.45, -35.4, 0.9, 9.2);
-      function flange(dir) {
-        c.fillStyle = p.dark;
-        c.beginPath();
-        c.moveTo(dir * 7.2, -30);
-        c.quadraticCurveTo(dir * 15.4, -32.5, dir * 14.2, -24.5);
-        c.quadraticCurveTo(dir * 11.2, -22.2, dir * 7.6, -23.6);
-        c.closePath();
-        c.fill();
-        c.fillStyle = p.main;
-        c.beginPath();
-        c.moveTo(dir * 7.6, -29.2);
-        c.quadraticCurveTo(dir * 13.8, -31.2, dir * 13.0, -25.2);
-        c.quadraticCurveTo(dir * 10.4, -23.4, dir * 7.8, -24.4);
-        c.closePath();
-        c.fill();
-      }
-      flange(-1); flange(1);
-      // visor + face
-      c.fillStyle = p.trim;
-      c.fillRect(-6.8, -30.2, 13.6, 1.5);
-      c.fillStyle = "#0e1216";
-      c.fillRect(-5.6, -28.8, 11.2, 2.4);
-      c.fillStyle = sk.skin;
-      c.beginPath();
-      c.ellipse(0, -23.4, 5.0, 4.2, 0, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = sk.dark;
-      c.beginPath(); c.arc(-1.8, -24.0, 0.7, 0, Math.PI * 2); c.fill();
-      c.beginPath(); c.arc(1.8, -24.0, 0.7, 0, Math.PI * 2); c.fill();
-      c.fillStyle = p.trim;
-      c.fillRect(-6.8, -20.8, 13.6, 1.4);
+      drawStormwingHelm(c, p, sk, "front");
       return;
     }
     if (kind === "partyhat") {
