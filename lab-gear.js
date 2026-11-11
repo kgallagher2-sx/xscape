@@ -483,13 +483,20 @@ function drawLabLegs(c, id) {
 }
 
 
+let _drawEq = null;
+function currentEq() {
+  return _drawEq || (typeof LabGear !== "undefined" && LabGear.equipment) || {};
+}
 function labBodyIsWidow() {
-  const it = labItem((LabGear.equipment || {}).body);
+  const it = labItem(currentEq().body);
   return !!(it && it.kind === "widow");
 }
 function labSleeveStyle(id) {
   if (id) return labStyle(id);
-  if (labBodyIsWidow()) return labStyle((LabGear.equipment || {}).body);
+  // Unequipped hands: use the body armour's sleeve colour (steel, bronze, silk…)
+  // instead of a leftover green d'hide vambrace.
+  const bodyId = currentEq().body;
+  if (bodyId) return labStyle(bodyId);
   return { main: "#3a5a28", trim: "#2a4018", scale: 1 };
 }
 
@@ -1161,35 +1168,127 @@ function drawLabRing(c, id) {
 }
 
 function drawLabPlayerBack(ctx, t, opt) {
+  return drawLabPlayerCore(ctx, t, opt || {}, "back");
+}
+
+function drawLabPlayerCore(ctx, t, opt, facing) {
   opt = opt || {};
-  const eq = opt.equipment || LabGear.equipment;
-  const shot = opt.shot || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
+  const eq = opt.equipment || (typeof LabGear !== "undefined" && LabGear.equipment) || {};
+  _drawEq = eq;
+  const shot = opt.shot || {};
+  const walkMul = (facing === "front") ? 3.2 : (facing === "back" ? 0 : 3.6);
+  const stride = walkAmount(opt, t) * walkMul;
+  const bob = Math.abs(walkAmount(opt, t)) * ((facing === "front" || facing === "back") ? 1.3 : 1.4);
+  const packed = Object.assign({}, opt, { equipment: eq, shot: shot, _stride: stride });
+  const twoHand = isTwoHandedWeapon(eq.weapon);
+  const hands = twoHand ? twoHandPose(facing, packed) : heroHands(facing, packed);
+  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
+
   ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  if (facing === "left") ctx.ellipse(-1, 10, 14, 5, 0, 0, Math.PI * 2);
+  else if (facing === "right") ctx.ellipse(1, 10, 14, 5, 0, 0, Math.PI * 2);
+  else ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.save();
-  ctx.translate(0, (shot.recoil || 0) * 6);
+  ctx.translate(0, -bob + (shot.recoil || 0) * 6);
 
-  const raise = (shot.raise || 0);
-  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
-  drawLabLegs(ctx, eq.legs);
-  if (!widowRobes) drawLabBoots(ctx, eq.feet);
-  drawLabVamb(ctx, eq.hands, -1, raise);
-
-  if (eq.weapon) drawHeroWeapon(ctx, t, eq, opt, "back");
-  if (eq.shield) drawHeroShield(ctx, t, eq, "back", opt);
-
-  drawLabBody(ctx, eq.body);
-  if (opt.showCape !== false && (opt.showCape === true || typeof LabGear === "undefined" || LabGear.showCape !== false)) {
-    drawLabCape(ctx, t, eq.cape);
+  function cape(f) { drawHeroCape(ctx, t, eq, packed, f); }
+  function legs(f) { drawHeroLegs(ctx, eq.legs, f, stride); }
+  function boots(f) { if (!widowRobes) drawHeroBoots(ctx, eq.feet, f, stride); }
+  function body(f) { drawHeroBody(ctx, eq.body, f); }
+  function neck(f) { drawHeroNeck(ctx, eq.neck, f); }
+  function head(f) {
+    drawHeroHead(ctx, eq.head, f);
+    const headIt = labItem(eq.head);
+    if (headIt && headIt.kind === "partyhat" && f === "back") drawPartyhatOnHead(ctx, "back", labStyle(eq.head));
   }
-  drawLabNeck(ctx, eq.neck);
-  drawLabHead(ctx, eq.head);
-  const headIt = labItem(eq.head);
-  if (headIt && headIt.kind === "partyhat") drawPartyhatOnHead(ctx, "back", labStyle(eq.head));
-  drawLabVamb(ctx, eq.hands, 1, raise);
-  drawSpineGrip(ctx, "back", opt);
-  drawLabRing(ctx, eq.ring);
+  function sleeve(side) { drawHeroArmSleeve(ctx, eq.hands, facing, side, packed, hands); }
+  function fist(side) { drawHeroHandOnly(ctx, side, hands); }
+  function weapon() { drawHeroWeapon(ctx, t, eq, packed, facing, twoHand ? hands.weapon : hands.right); }
+  function shield() { if (!twoHand) drawHeroShield(ctx, t, eq, facing, packed, hands.left); }
+  function ring() { drawHeroRing(ctx, eq.ring, facing, hands); }
+
+  if (facing === "front") {
+    // Cape behind, torso over sleeves, shield in front of the body on the
+    // left, weapon in the right hand, gloves over both grips.
+    cape("front");
+    legs("front");
+    boots("front");
+    sleeve("left");
+    sleeve("right");
+    body("front");
+    shield();
+    neck("front");
+    head("front");
+    weapon();
+    fist("right");
+    fist("left");
+    ring();
+  } else if (facing === "back") {
+    // Cape over the body; weapons and fists poke out at the sides, with
+    // the right-hand weapon on the viewer's right.
+    legs("back");
+    boots("back");
+    sleeve("left");
+    sleeve("right");
+    weapon();
+    shield();
+    body("back");
+    cape("back");
+    neck("back");
+    head("back");
+    fist("right");
+    fist("left");
+    ring();
+  } else if (facing === "right") {
+    // Near = right hand (weapon in front). Far = left hand (shield behind).
+    cape("right");
+    sleeve("left");
+    if (!twoHand) {
+      shield();
+      fist("left");
+    }
+    legs("right");
+    boots("right");
+    body("right");
+    neck("right");
+    head("right");
+    sleeve("right");
+    weapon();
+    fist("right");
+    if (twoHand) fist("left");
+    if (twoHand) ring();
+  } else {
+    // Left profile: do NOT flip the whole sprite (that would swap hands).
+    // Body/cape/head are mirrored for the left profile; arms and items use
+    // true left-facing anchors. Near = left hand (shield in front).
+    // Far = right hand (weapon behind).
+    drawProfilePart(ctx, "left", cape);
+    sleeve("right");
+    if (twoHand) {
+      weapon();
+    } else {
+      weapon();
+      fist("right");
+    }
+    drawProfilePart(ctx, "left", legs);
+    drawProfilePart(ctx, "left", boots);
+    drawProfilePart(ctx, "left", body);
+    drawProfilePart(ctx, "left", neck);
+    drawProfilePart(ctx, "left", head);
+    sleeve("left");
+    if (!twoHand) {
+      shield();
+      fist("left");
+      ring();
+    } else {
+      fist("right");
+      fist("left");
+      ring();
+    }
+  }
 
   ctx.restore();
 }
@@ -1530,20 +1629,161 @@ function weaponKind(id) {
   return "bow";
 }
 
-function drawHeroWhip(c, t, st, facing) {
+/* ---------- shared hand anchors + layer helpers ----------
+   Character's RIGHT hand always holds the main-weapon; LEFT holds the
+   shield/book. Front: right hand is on the viewer's left. Back: right
+   hand is on the viewer's right. Side views: the near/far hands swap
+   with facing, and the far item is drawn behind the body.
+   Two-handed weapons (Gorehorn war axe) are gripped by both hands and
+   never show an off-hand. */
+function isTwoHandedWeapon(id) {
+  if (!id) return false;
+  return weaponKind(id) === "axe";
+}
+
+function heroHands(facing, opt) {
+  const raise = (opt && opt.shot && opt.shot.raise) || 0;
+  const lift = raise * 13.5;
+  const s = (opt && opt._stride) || 0;
+  let right, left;
+  if (facing === "front") {
+    right = { x: -12.4, y: -9.6 + s * 0.15 };
+    left  = { x:  12.0, y: -8.8 - s * 0.15 };
+  } else if (facing === "back") {
+    right = { x:  11.6, y: -12.4 };
+    left  = { x: -12.0, y: -10.6 };
+  } else if (facing === "right") {
+    right = { x:  9.6, y: -9.8 - s * 0.15 }; // near, toward the front
+    left  = { x: -8.0, y: -4.0 + s * 0.20 }; // far, toward the back, at the hip
+  } else {
+    // left profile: near = character's left (front of screen), far = right (back)
+    right = { x:  8.0, y: -9.8 - s * 0.15 }; // far, toward the back
+    left  = { x: -6.4, y: -5.0 + s * 0.20 }; // near, tucked at the front hip
+  }
+  return {
+    right: { x: right.x, y: right.y - lift },
+    left:  { x: left.x,  y: left.y  - lift }
+  };
+}
+
+function twoHandPose(facing, opt) {
+  const raise = (opt && opt.shot && opt.shot.raise) || 0;
+  const lift = raise * 13.5;
+  // After rotate(ang) + translate(0,-6), the lower grip is at the origin and the
+  // blade lies along local -y. A point `dist` along the haft toward the blade:
+  function along(origin, ang, dist) {
+    return {
+      x: origin.x + dist * Math.sin(ang),
+      y: origin.y - dist * Math.cos(ang)
+    };
+  }
+  const dist = 8.5;
+  if (facing === "front") {
+    const w = { x: -5.5, y: -6.5 - lift };
+    return { weapon: w, right: w, left: along(w, -0.55, dist) };
+  }
+  if (facing === "back") {
+    const w = { x: 5.5, y: -8.0 - lift };
+    return { weapon: w, right: w, left: along(w, 0.55, dist) };
+  }
+  if (facing === "right") {
+    const w = { x: 7.0, y: -7.0 - lift };
+    return { weapon: w, right: w, left: along(w, -0.7, dist) };
+  }
+  const w = { x: -7.0, y: -7.0 - lift };
+  return { weapon: w, right: w, left: along(w, 0.7, dist) };
+}
+
+function heroShoulder(facing, side) {
+  if (facing === "front") return side === "right" ? { x: -11.6, y: -15.2, rot: 0.2 } : { x: 11.4, y: -15.0, rot: -0.2 };
+  if (facing === "back")  return side === "right" ? { x: 11.4, y: -16.0, rot: -0.22 } : { x: -12.0, y: -16.0, rot: 0.15 };
+  if (facing === "right") return side === "right" ? { x: 6.4, y: -15.2, rot: -0.35 } : { x: -1.2, y: -16.0, rot: 0.5 };
+  return side === "right" ? { x: 1.2, y: -16.0, rot: -0.5 } : { x: -6.4, y: -15.2, rot: 0.35 };
+}
+
+function drawHeroArmSleeve(c, id, facing, side, opt, hands) {
+  const st = labSleeveStyle(id);
+  const p = pal(st);
+  const it = labItem(id);
+  const raise = (opt && opt.shot && opt.shot.raise) || 0;
+  const lift = raise * 13;
+  const sh = heroShoulder(facing, side);
+  // If a two-hand pose pulled the hand inward, lean the sleeve toward it a little.
+  let sx = sh.x, sy = sh.y - lift;
+  if (hands && hands[side]) {
+    sx = sh.x * 0.65 + hands[side].x * 0.35;
+    sy = (sh.y - lift) * 0.55 + hands[side].y * 0.45;
+  }
+  c.save();
+  c.fillStyle = p.main;
+  c.beginPath();
+  c.ellipse(sx, sy, 4.0, 5.4, sh.rot, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = p.dark;
+  c.beginPath();
+  c.ellipse(sx, sy + 1.2, 2.4, 3.1, sh.rot, 0, Math.PI * 2);
+  c.fill();
+  if (it && (it.kind === "armadyl" || it.kind === "veilhide")) {
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.85;
+    c.beginPath();
+    c.ellipse(sx, sy, 3.7, 5.0, sh.rot, 0.2, Math.PI * 1.4);
+    c.stroke();
+  } else if (typeof labBodyIsWidow === "function" && labBodyIsWidow()) {
+    c.strokeStyle = p.trim;
+    c.lineWidth = 0.9;
+    c.beginPath();
+    c.ellipse(sx, sy + 1.6, 3.4, 2.2, sh.rot, 0, Math.PI * 2);
+    c.stroke();
+  }
+  c.restore();
+}
+
+function drawHeroHandOnly(c, side, hands) {
+  const sk = skinPal();
+  const hand = hands[side];
+  if (!hand) return;
+  c.save();
+  c.fillStyle = sk.skin;
+  c.beginPath();
+  c.ellipse(hand.x, hand.y, 2.1, 2.4, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = "rgba(40,20,16,0.28)";
+  c.beginPath();
+  c.ellipse(hand.x + 0.25, hand.y + 0.45, 1.15, 1.35, 0, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+}
+
+function drawProfilePart(c, facing, fn) {
+  if (facing === "left") {
+    c.save();
+    c.scale(-1, 1);
+    fn("right");
+    c.restore();
+  } else {
+    fn(facing);
+  }
+}
+
+function drawHeroWhip(c, t, st, facing, hand) {
   const sway = Math.sin((t || 0) * 3.2) * 0.08;
   c.save();
+  if (hand) c.translate(hand.x, hand.y);
+  else if (facing === "front") c.translate(-12.4, -9.6);
+  else if (facing === "right") c.translate(9.6, -9.8);
+  else if (facing === "left") c.translate(8.0, -9.8);
+  else c.translate(11.6, -12.4);
   if (facing === "front") {
-    // Character's right hand = screen-left. Mirror the back-side hang so the
-    // lash falls outward (further left), not across the torso.
-    c.translate(-12.2, -10);
+    // Character's right hand = screen-left. Mirror the hang so the lash falls
+    // outward (further left), not across the torso.
     c.scale(-1, 1);
     c.rotate(0.35 + sway);
   } else if (facing === "right") {
-    c.translate(8, -10);
     c.rotate(0.95 + sway);
+  } else if (facing === "left") {
+    c.rotate(-0.95 - sway);
   } else {
-    c.translate(11, -14);
     c.rotate(0.35 + sway);
   }
   if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: (st && st.scale) || 1 });
@@ -1559,25 +1799,32 @@ function drawHeroWhip(c, t, st, facing) {
   c.restore();
 }
 
-function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase) {
+function drawHeroBow(c, shot, weaponId, ammoId, facing, recoilBase, hand) {
   const shotA = shot || { raise: 0, snap: 0, recoil: 0, flash: 0, reload: 0, flex: 0, string: 1 };
   const recoil = recoilBase || 0;
   c.save();
+  if (hand) c.translate(hand.x, hand.y);
+  else if (facing === "front") c.translate(-12.4, -9.6 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
+  else if (facing === "right") c.translate(9.6, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
+  else if (facing === "left") c.translate(8.0, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
+  else {
+    const bowX = typeof PLAYER_BOW_X === "number" ? PLAYER_BOW_X : 13.4;
+    const bowY = typeof PLAYER_BOW_Y === "number" ? PLAYER_BOW_Y : -21.5;
+    c.translate(bowX, bowY - (shotA.raise || 0) * 3.5 + (shotA.recoil || 0) * 1.5);
+  }
   if (facing === "front") {
     // Right hand (screen-left). Muzzle down and outward, ~37° off vertical.
-    // Translate to the grip, then offset so local stock y≈8 sits in the hand.
-    c.translate(-10.6, -9.6 - (shotA.raise || 0) * 2.2 + (shotA.recoil || 0) * 1.2);
     c.rotate(Math.PI + 0.58 - recoil * 0.2);
     c.translate(0, -8.2);
   } else if (facing === "right") {
     // Relaxed at the side: muzzle down and ahead, grip in the near hand
-    c.translate(9.6, -9.8 - (shotA.raise || 0) * 2.5 + (shotA.recoil || 0));
     c.rotate(Math.PI - 0.65 + recoil * 0.2);
     c.translate(0, -8.2);
+  } else if (facing === "left") {
+    // Far (right) hand, behind the body; muzzle down and toward the back.
+    c.rotate(-(Math.PI - 0.65 + recoil * 0.2));
+    c.translate(0, -8.2);
   } else {
-    const bowX = typeof PLAYER_BOW_X === "number" ? PLAYER_BOW_X : 13.4;
-    const bowY = typeof PLAYER_BOW_Y === "number" ? PLAYER_BOW_Y : -21.5;
-    c.translate(bowX, bowY - (shotA.raise || 0) * 3.5 + (shotA.recoil || 0) * 1.5);
     c.rotate(recoil * 0.25 - (shotA.raise || 0) * 0.04 + (shotA.recoil || 0) * 0.08 - 0.10);
   }
   if (typeof drawLabCrossbow === "function") drawLabCrossbow(c, shotA, weaponId, ammoId);
@@ -1603,35 +1850,39 @@ function drawSpineGrip(c, facing, opt) {
   c.fill();
 }
 
-function drawHeroShield(c, t, eq, facing, opt) {
+function drawHeroShield(c, t, eq, facing, opt, hand) {
   const id = eq && eq.shield;
   if (!id) return;
+  if (isTwoHandedWeapon(eq && eq.weapon)) return;
   const it = labItem(id);
+  const pos = hand || heroHands(facing, opt).left;
   if (it && it.kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawBookHeld) {
-    XscapeWidowArt.drawBookHeld(c, labStyle(id), facing, t, false, opt && opt.shot);
+    XscapeWidowArt.drawBookHeld(c, labStyle(id), facing, t, false, opt && opt.shot, pos);
   } else if (it && it.kind === "kingsguard" && window.XscapeKnightArt && XscapeKnightArt.drawKiteHeld) {
-    XscapeKnightArt.drawKiteHeld(c, facing);
+    XscapeKnightArt.drawKiteHeld(c, facing, pos);
   }
 }
 
-function drawHeroWeapon(c, t, eq, opt, facing) {
+function drawHeroWeapon(c, t, eq, opt, facing, hand) {
   const kind = weaponKind(eq && eq.weapon);
   if (!kind) return;
+  const two = isTwoHandedWeapon(eq && eq.weapon);
+  const pos = hand || (two ? twoHandPose(facing, opt).weapon : heroHands(facing, opt).right);
   if (kind === "whip") {
-    if (eq.weapon === "tentacle_whip" && window.XscapeColossusArt && XscapeColossusArt.drawWhipHeld) XscapeColossusArt.drawWhipHeld(c, t, facing);
-    else drawHeroWhip(c, t, labStyle(eq.weapon), facing);
+    if (eq.weapon === "tentacle_whip" && window.XscapeColossusArt && XscapeColossusArt.drawWhipHeld) XscapeColossusArt.drawWhipHeld(c, t, facing, pos);
+    else drawHeroWhip(c, t, labStyle(eq.weapon), facing, pos);
   }
   else if (kind === "wand") {
     if (window.XscapeWidowArt && XscapeWidowArt.drawWandHeld) {
-      XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t, false, opt && opt.shot);
+      XscapeWidowArt.drawWandHeld(c, labStyle(eq.weapon), facing, t, false, opt && opt.shot, pos);
     }
   } else if (kind === "sword" && window.XscapeKnightArt && XscapeKnightArt.drawSwordHeld) {
-    XscapeKnightArt.drawSwordHeld(c, t, facing);
+    XscapeKnightArt.drawSwordHeld(c, t, facing, pos);
   } else if (kind === "axe" && window.XscapeGorehornArt && XscapeGorehornArt.drawAxeHeld) {
-    XscapeGorehornArt.drawAxeHeld(c, t, facing);
+    XscapeGorehornArt.drawAxeHeld(c, t, facing, pos);
   } else if (kind === "spear" && window.XscapeColossusArt && XscapeColossusArt.drawSpearHeld) {
-    XscapeColossusArt.drawSpearHeld(c, t, facing);
-  } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase);
+    XscapeColossusArt.drawSpearHeld(c, t, facing, pos);
+  } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase, pos);
 }
 
 function drawPartyhatOnHead(c, facing, st) {
@@ -2524,17 +2775,13 @@ function drawHeroHead(c, id, facing) {
   });
 }
 
-function drawHeroRing(c, id, facing) {
-  if (!id || facing === "back") {
-    if (facing === "back") drawLabRing(c, id);
-    return;
-  }
+function drawHeroRing(c, id, facing, hands) {
+  if (!id) return;
   const st = labStyle(id);
   const p = pal(st);
+  const h = (hands && hands.left) || heroHands(facing, null).left;
   c.save();
-  const x = facing === "right" ? 11.2 : 13.4;
-  const y = facing === "right" ? -9.2 : -9.0;
-  c.translate(x, y);
+  c.translate(h.x + (facing === "back" ? 0.8 : 0.6), h.y);
   c.strokeStyle = p.main;
   c.lineWidth = 1.3;
   c.beginPath(); c.arc(0, 0, 1.7, 0, Math.PI * 2); c.stroke();
@@ -2552,70 +2799,16 @@ function walkAmount(opt, t) {
 }
 
 function drawLabPlayerFront(ctx, t, opt) {
-  const eq = opt.equipment || LabGear.equipment;
-  const shot = opt.shot || {};
-  const stride = walkAmount(opt, t) * 3.2;
-  const bob = Math.abs(walkAmount(opt, t)) * 1.3;
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(0, 10, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.save();
-  ctx.translate(0, -bob + (shot.recoil || 0) * 6);
-  const raise = (shot.raise || 0);
-  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
-  drawHeroCape(ctx, t, eq, opt, "front");
-  drawHeroLegs(ctx, eq.legs, "front", stride);
-  if (!widowRobes) drawHeroBoots(ctx, eq.feet, "front", stride);
-  drawHeroArms(ctx, eq.hands, "front", stride, raise); // far arm (character's left / book)
-  drawHeroBody(ctx, eq.body, "front");
-  drawHeroShield(ctx, t, eq, "front", opt);
-  drawSpineGrip(ctx, "front", opt);
-  drawHeroNeck(ctx, eq.neck, "front");
-  drawHeroHead(ctx, eq.head, "front");
-  drawHeroNearArm(ctx, eq.hands, "front", stride, raise); // right arm / wand
-  drawHeroWeapon(ctx, t, eq, opt, "front");
-  drawHeroRing(ctx, eq.ring, "front");
-  ctx.restore();
+  return drawLabPlayerCore(ctx, t, opt, "front");
 }
 
-function drawLabPlayerSide(ctx, t, opt) {
-  const eq = opt.equipment || LabGear.equipment;
-  const shot = opt.shot || {};
-  const stride = walkAmount(opt, t) * 3.6;
-  const bob = Math.abs(walkAmount(opt, t)) * 1.4;
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(1, 10, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.save();
-  ctx.translate(0, -bob + (shot.recoil || 0) * 6);
-  const raise = (shot.raise || 0);
-  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
-  drawHeroCape(ctx, t, eq, opt, "right");
-  drawHeroArms(ctx, eq.hands, "right", stride, raise); // far arm (book side)
-  drawHeroShield(ctx, t, eq, "right", opt); // off-hand book BEHIND the torso
-  drawHeroLegs(ctx, eq.legs, "right", stride);
-  if (!widowRobes) drawHeroBoots(ctx, eq.feet, "right", stride);
-  drawHeroBody(ctx, eq.body, "right");
-  drawSpineGrip(ctx, "right", opt);
-  drawHeroNeck(ctx, eq.neck, "right");
-  drawHeroHead(ctx, eq.head, "right");
-  drawHeroNearArm(ctx, eq.hands, "right", stride, raise); // near arm, wand side
-  drawHeroWeapon(ctx, t, eq, opt, "right"); // wand in front of the torso
-  drawHeroRing(ctx, eq.ring, "right");
-  ctx.restore();
+function drawLabPlayerSide(ctx, t, opt, facing) {
+  return drawLabPlayerCore(ctx, t, opt, facing || "right");
 }
 
 function drawLabPlayer(ctx, t, opt) {
   opt = opt || {};
-  const facing = resolveFacing(opt);
-  if (facing === "front") return drawLabPlayerFront(ctx, t, opt);
-  if (facing === "right") return drawLabPlayerSide(ctx, t, opt);
-  if (facing === "left") {
-    ctx.save();
-    ctx.scale(-1, 1);
-    drawLabPlayerSide(ctx, t, opt);
-    ctx.restore();
-    return;
-  }
-  return drawLabPlayerBack(ctx, t, opt);
+  return drawLabPlayerCore(ctx, t, opt, resolveFacing(opt));
 }
 
 function drawPlayerFacing(ctx, t, opt) {
@@ -2633,6 +2826,9 @@ window.drawLabPlayer = drawLabPlayer;
 window.drawLabPlayerBack = drawLabPlayerBack;
 window.drawPlayerFacing = drawPlayerFacing;
 window.resolveFacing = resolveFacing;
+window.heroHands = heroHands;
+window.isTwoHandedWeapon = isTwoHandedWeapon;
+window.twoHandPose = twoHandPose;
 window.drawLabItemIcon = drawLabItemIcon;
 window.labStyle = labStyle;
 window.labItem = labItem;

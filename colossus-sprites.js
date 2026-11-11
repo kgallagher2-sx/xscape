@@ -242,13 +242,27 @@
     c.fillRect(0.8, 6, 5.4, 1.6);
     c.restore();
   }
-  function drawWhipHeld(c, t, facing) {
+  function drawWhipHeld(c, t, facing, hand) {
     c.save();
-    const side = facing === "left" ? -1 : 1;
-    if (facing === "front") c.translate(5, -4);
-    else if (facing === "back") c.translate(-4, -6);
-    else c.translate(side * 8, -6);
-    c.rotate(facing === "left" ? 0.5 : -0.55);
+    if (hand) c.translate(hand.x, hand.y);
+    else if (facing === "front") c.translate(-12.4, -9.6);
+    else if (facing === "back") c.translate(11.6, -12.4);
+    else if (facing === "left") c.translate(8.0, -9.8);
+    else c.translate(9.6, -9.8);
+    // Local lash goes "up" (negative y). Flip 180 so it hangs down from the fist,
+    // then tilt slightly outward / along the facing.
+    if (facing === "front") {
+      c.scale(-1, 1);
+      c.rotate(Math.PI - 0.45);
+    } else if (facing === "back") {
+      c.rotate(Math.PI - 0.28);
+    } else if (facing === "left") {
+      c.rotate(-(Math.PI - 0.35));
+    } else {
+      c.rotate(Math.PI - 0.35);
+    }
+    // Handle sits in the fist (local handle at y≈5).
+    c.translate(0, -5);
     c.strokeStyle = pal.teal;
     c.lineWidth = 2.2;
     c.lineCap = "round";
@@ -264,13 +278,18 @@
     c.fillRect(-1.4, 3, 2.6, 5);
     c.restore();
   }
-  function drawSpearHeld(c, t, facing) {
+  function drawSpearHeld(c, t, facing, hand) {
     c.save();
-    const side = facing === "left" ? -1 : 1;
-    if (facing === "front") c.translate(3, -6);
-    else if (facing === "back") c.translate(-2, -8);
-    else c.translate(side * 7, -8);
-    c.rotate(facing === "left" ? 0.55 : -0.55);
+    if (hand) c.translate(hand.x, hand.y);
+    else if (facing === "front") c.translate(-12.4, -9.6);
+    else if (facing === "back") c.translate(11.6, -12.4);
+    else if (facing === "left") c.translate(8.0, -9.8);
+    else c.translate(9.6, -9.8);
+    if (facing === "front") c.rotate(-0.55);
+    else if (facing === "back") c.rotate(0.55);
+    else if (facing === "left") c.rotate(0.55);
+    else c.rotate(-0.55);
+    c.translate(0, -6);
     c.fillStyle = pal.bronze;
     c.fillRect(-1.1, -16, 2.2, 28);
     c.fillStyle = pal.tealLt;

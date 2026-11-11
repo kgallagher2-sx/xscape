@@ -535,7 +535,7 @@
     c.beginPath(); c.moveTo(-1.1, 8.7); c.lineTo(1.1, 7.3); c.stroke();
   }
 
-  function drawWandHeld(c, st, facing, t, icon, anim) {
+  function drawWandHeld(c, st, facing, t, icon, anim, hand) {
     var pulse = 0.55 + 0.45 * Math.sin((t || 0) * 6.2);
     var raise = (anim && anim.raise) || 0;
     if (anim && anim.flash) pulse = Math.max(pulse, anim.flash);
@@ -544,15 +544,18 @@
       c.translate(1, 2);
       c.rotate(-0.55);
       c.scale(1.25, 1.25);
-    } else if (facing === "front") {
-      c.translate(-12.4, -9.2 - raise * 13.5);
-      c.rotate(-0.55 + raise * 0.35);
-    } else if (facing === "right") {
-      c.translate(10.4 + raise * 1.2, -9.4 - raise * 13.5);
-      c.rotate(0.55 - raise * 0.15);
     } else {
-      c.translate(11.6, -12.4 - raise * 13);
-      c.rotate(0.35 + raise * 0.1);
+      if (hand) c.translate(hand.x, hand.y);
+      else if (facing === "front") c.translate(-12.4, -9.6 - raise * 13.5);
+      else if (facing === "right") c.translate(9.6, -9.8 - raise * 13.5);
+      else if (facing === "left") c.translate(8.0, -9.8 - raise * 13.5);
+      else c.translate(11.6, -12.4 - raise * 13);
+      if (facing === "front") c.rotate(-0.55 + raise * 0.35);
+      else if (facing === "right") c.rotate(0.55 - raise * 0.15);
+      else if (facing === "left") c.rotate(-0.55 + raise * 0.15);
+      else c.rotate(0.35 + raise * 0.1);
+      // Fang wand grip is at local (0, 7.5).
+      c.translate(0, -7.5);
     }
     drawFangWand(c, st, t, pulse);
     c.restore();
@@ -666,7 +669,7 @@
     hourglass(c, 6.8, 1.2, 2.05, true);
   }
 
-  function drawBookHeld(c, st, facing, t, icon, anim) {
+  function drawBookHeld(c, st, facing, t, icon, anim, hand) {
     var pulse = 0.5 + 0.5 * Math.sin((t || 0) * 5.1);
     var raise = (anim && anim.raise) || 0;
     if (anim && anim.flash) pulse = Math.max(pulse, anim.flash);
@@ -677,23 +680,29 @@
       c.rotate(-0.08);
       c.scale(1.15, 1.15);
       drawBookCoverFace(c, st, pulse);
-    } else if (facing === "front") {
-      // Off-hand at screen-right, hanging by the spine, EDGE toward the camera
-      c.translate(12.0, -8.8 - raise * 13.5);
-      c.rotate(0.04);
-      drawBookEdgeOn(c, st, pulse);
-    } else if (facing === "right") {
-      // Far hip: spine in the fist at the robe's back edge, cover into the torso
-      // so the body occludes most of it and only a sliver peeks out.
-      c.translate(-8.0, -4.0 - raise * 13.5);
-      c.rotate(0.02);
-      drawBookCoverFace(c, st, pulse);
     } else {
-      // Back: character's left = screen-left; flip so spine stays toward the body
-      c.translate(-12.0, -10.6 - raise * 13);
-      c.scale(-1, 1);
-      c.rotate(0.04);
-      drawBookEdgeOn(c, st, pulse);
+      if (hand) c.translate(hand.x, hand.y);
+      else if (facing === "front") c.translate(12.0, -8.8 - raise * 13.5);
+      else if (facing === "right") c.translate(-8.0, -4.0 - raise * 13.5);
+      else if (facing === "left") c.translate(-9.6, -4.0 - raise * 13.5);
+      else c.translate(-12.0, -10.6 - raise * 13);
+      if (facing === "front") {
+        c.rotate(0.04);
+        drawBookEdgeOn(c, st, pulse);
+      } else if (facing === "back") {
+        c.scale(-1, 1);
+        c.rotate(0.04);
+        drawBookEdgeOn(c, st, pulse);
+      } else if (facing === "right") {
+        // Far hip: spine in the fist, cover into the torso so the body occludes most of it.
+        c.rotate(0.02);
+        drawBookCoverFace(c, st, pulse);
+      } else {
+        // Left profile, book in the near (left) hand at the front hip. Spine in the
+        // fist, cover hanging toward the body so it sits tight against the hip.
+        c.rotate(-0.02);
+        drawBookCoverFace(c, st, pulse);
+      }
     }
     c.restore();
   }

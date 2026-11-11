@@ -173,13 +173,19 @@
     c.fillRect(0.8, 6, 5.4, 1.4);
     c.restore();
   }
-  function drawAxeHeld(c, t, facing) {
+  function drawAxeHeld(c, t, facing, hand) {
     c.save();
-    const side = facing === "left" ? -1 : 1;
-    if (facing === "front") c.translate(2, -6);
-    else if (facing === "back") c.translate(-2, -8);
-    else c.translate(side * 7, -8);
-    c.rotate(facing === "left" ? 0.7 : -0.7);
+    if (hand) c.translate(hand.x, hand.y);
+    else if (facing === "front") c.translate(-2, -8);
+    else if (facing === "back") c.translate(2, -9.5);
+    else if (facing === "left") c.translate(-5.5, -9);
+    else c.translate(5.5, -9);
+    if (facing === "front") c.rotate(-0.55);
+    else if (facing === "back") c.rotate(0.55);
+    else if (facing === "left") c.rotate(0.7);
+    else c.rotate(-0.7);
+    // Lower grip sits at the origin (right hand); blade is up the haft.
+    c.translate(0, -6);
     c.fillStyle = pal.bronzeDk;
     c.fillRect(-1.4, -14, 2.8, 24);
     c.fillStyle = pal.bronzeLt;

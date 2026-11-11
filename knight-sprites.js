@@ -291,13 +291,19 @@
     c.restore();
   }
 
-  function drawSwordHeld(c, t, facing) {
+  function drawSwordHeld(c, t, facing, hand) {
     c.save();
-    const side = facing === "left" ? -1 : 1;
-    if (facing === "front") c.translate(9, -8);
-    else if (facing === "back") c.translate(-9, -8);
-    else c.translate(side * 8, -9);
-    c.rotate(facing === "left" ? 0.5 : -0.55);
+    if (hand) c.translate(hand.x, hand.y);
+    else if (facing === "front") c.translate(-12.4, -9.6);
+    else if (facing === "back") c.translate(11.6, -12.4);
+    else if (facing === "left") c.translate(8.0, -9.8);
+    else c.translate(9.6, -9.8);
+    if (facing === "front") c.rotate(-0.55);
+    else if (facing === "back") c.rotate(0.55);
+    else if (facing === "left") c.rotate(0.55);
+    else c.rotate(-0.55);
+    // Local drawing has the grip around y=8; put that at the hand.
+    c.translate(0, -8);
     c.fillStyle = pal.steelLt;
     c.fillRect(-1.2, -16, 2.4, 22);
     c.fillStyle = pal.gold;
@@ -308,12 +314,18 @@
     c.restore();
   }
 
-  function drawKiteHeld(c, facing) {
+  function drawKiteHeld(c, facing, hand) {
     c.save();
-    // Shield sits over the forearm — front: in front of the torso/arm; side: on the leading arm.
-    if (facing === "front") c.translate(8.5, -4);
-    else if (facing === "back") c.translate(-8.5, -4);
-    else c.translate((facing === "right" ? -7.2 : 7.2), -5);
+    if (hand) c.translate(hand.x, hand.y);
+    else if (facing === "front") c.translate(12.0, -8.8);
+    else if (facing === "back") c.translate(-12.0, -10.6);
+    else if (facing === "left") c.translate(-9.6, -4.0);
+    else c.translate(-8.0, -4.0);
+    // Sit the shield on the forearm, slightly toward the body and down from the fist.
+    if (facing === "front") c.translate(-3.2, 3.6);
+    else if (facing === "back") c.translate(3.2, 3.6);
+    else if (facing === "right") c.translate(1.2, 1.2);
+    else c.translate(1.6, 1.2);
     const s = 0.85;
     c.scale(s, s);
     c.fillStyle = pal.steelDk;
