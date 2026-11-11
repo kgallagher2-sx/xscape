@@ -981,6 +981,11 @@
     "#cloud-panel h3{margin:0 0 6px;color:#ffd84a;font-family:Impact,'Arial Black',sans-serif;font-size:18px;letter-spacing:.5px;text-align:center}",
     "#cloud-panel .cloud-sec{color:#8a7038;font-size:11px;letter-spacing:.6px;font-weight:700;margin:8px 0 4px;text-transform:uppercase}",
     "#cloud-online-list,#cloud-challenge-list,#cloud-board{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow:auto}",
+    ".cloud-board-nav{display:flex;align-items:center;gap:6px;margin:0 0 4px;user-select:none;touch-action:pan-y}",
+    ".cloud-board-nav button{flex:0 0 32px;height:28px;border:1px solid #8a7038;background:#2a1c0c;color:#ffd84a;",
+    "font-family:Impact,'Arial Black',sans-serif;font-size:16px;line-height:1;cursor:pointer;touch-action:manipulation}",
+    ".cloud-board-nav button:active{transform:translateY(1px)}",
+    "#cloud-board-title{flex:1;text-align:center;color:#ffd84a;font-size:13px;font-weight:700;letter-spacing:.3px;min-width:0}",
     ".cloud-where{color:#c8b070;font-size:11px;flex:0 0 auto;margin-left:8px}.cloud-row{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#fff4c0;font-size:13px;padding:3px 0;border-bottom:1px solid #2a1c0c}",
     ".cloud-row button{flex:0 0 auto;padding:3px 8px;font-size:11px;font-family:Impact,'Arial Black',sans-serif;border:1px solid #8a7038;background:#2a1c0c;color:#ffd84a;cursor:pointer}",
     ".cloud-empty{color:#8a7038;font-size:12px;text-align:center;padding:4px}",
@@ -1303,11 +1308,17 @@
       '<div class="cloud-sec">Challenges</div>' +
       '<div id="cloud-challenge-list" class="cloud-empty">No pending duels</div>' +
       '<div class="cloud-sec">Leaderboard</div>' +
+      '<div class="cloud-board-nav" id="cloud-board-nav">' +
+        '<button type="button" id="cloud-board-prev" aria-label="Previous boss">&lt;</button>' +
+        '<div id="cloud-board-title">Overall</div>' +
+        '<button type="button" id="cloud-board-next" aria-label="Next boss">&gt;</button>' +
+      '</div>' +
       '<div id="cloud-board" class="cloud-empty">Loading…</div>' +
       '<div class="cloud-or" id="cloud-party-note">Form a party in the bank to run Gloamhold together.</div>';
     var best = $("title-best");
     if (best && best.parentNode) best.parentNode.insertBefore(panel, best);
     else hub.appendChild(panel);
+    bindBoardNav();
 
     var duel = $("btn-mode-duel");
     if (duel) {
@@ -1326,6 +1337,7 @@
   function refreshCloudChrome() {
     if (page !== "hub") return;
     ensureHubChrome();
+    try { loadLeaderboard(); } catch (e) {}
     var who = $("cloud-chip-who");
     var action = $("cloud-chip-action");
     var localName = (cloudProfile && cloudProfile.username) || (global.Profile && Profile.name) || "";
@@ -1548,33 +1560,141 @@
     }
   }
 
-  async function loadLeaderboard() {
-    var board = $("cloud-board");
-    if (!board || !sb) return;
-    var q = await sb.from("leaderboard").select("id,username,jad_kills,kree_kills,raid_completions,jad_best_ticks,kree_best_ticks,raid_best_ticks").order("jad_kills", { ascending: false }).limit(25);
-    if (q.error) {
-      board.className = "cloud-empty";
-      board.textContent = "Leaderboard is unavailable";
-      return;
+  var BOARD_VIEWS = [
+    { id: "overall", label: "Overall" },
+    { id: "jad", label: "Magmor", kills: "jad_kills", ticks: "jad_best_ticks" },
+    { id: "kree", label: "Vaelkor", kills: "kree_kills", ticks: "kree_best_ticks" },
+    { id: "widow", label: "Widow Queen", kills: "widow_kills", ticks: "widow_best_ticks" },
+    { id: "knight", label: "Knight-King", kills: "knight_kills", ticks: "knight_best_ticks" },
+    { id: "gorehorn", label: "Gorehorn", kills: "gorehorn_kills", ticks: "gorehorn_best_ticks" },
+    { id: "colossus", label: "Colossus", kills: "colossus_kills", ticks: "colossus_best_ticks" },
+    { id: "raid", label: "Gloamhold", kills: "raid_completions", ticks: "raid_best_ticks" }
+  ];
+  var boardRows = null;
+  var boardView = 0;
+
+  function boardTotalKills(r) {
+    return (r.jad_kills || 0) + (r.kree_kills || 0) + (r.widow_kills || 0) +
+      (r.knight_kills || 0) + (r.gorehorn_kills || 0) + (r.colossus_kills || 0) +
+      (r.raid_completions || 0);
+  }
+
+  function bindBoardNav() {
+    var nav = $("cloud-board-nav");
+    if (!nav || nav._bound) return;
+    nav._bound = true;
+    on($("cloud-board-prev"), "click", function (e) {
+      if (e) e.preventDefault();
+      setBoardView(boardView - 1);
+    });
+    on($("cloud-board-next"), "click", function (e) {
+      if (e) e.preventDefault();
+      setBoardView(boardView + 1);
+    });
+    var startX = 0, startY = 0, tracking = false;
+    function onDown(e) {
+      var ev = (e.changedTouches && e.changedTouches[0]) || e;
+      startX = ev.clientX; startY = ev.clientY; tracking = true;
     }
-    var rows = q.data || [];
-    if (!rows.length) {
+    function onUp(e) {
+      if (!tracking) return;
+      tracking = false;
+      var ev = (e.changedTouches && e.changedTouches[0]) || e;
+      var dx = ev.clientX - startX, dy = ev.clientY - startY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      if (e && e.preventDefault) e.preventDefault();
+      setBoardView(boardView + (dx < 0 ? 1 : -1));
+    }
+    on(nav, "pointerdown", onDown);
+    on(nav, "pointerup", onUp);
+    var board = $("cloud-board");
+    if (board) {
+      on(board, "pointerdown", onDown);
+      on(board, "pointerup", onUp);
+    }
+  }
+
+  function setBoardView(i) {
+    var n = BOARD_VIEWS.length;
+    boardView = ((i % n) + n) % n;
+    renderLeaderboard();
+  }
+
+  function renderLeaderboard() {
+    var board = $("cloud-board");
+    if (!board) return;
+    bindBoardNav();
+    var view = BOARD_VIEWS[boardView] || BOARD_VIEWS[0];
+    var title = $("cloud-board-title");
+    if (title) title.textContent = view.label;
+    if (boardRows === null) return;
+    if (!boardRows.length) {
       board.className = "cloud-empty";
       board.textContent = "No adventurers on the board yet";
       return;
     }
-    rows.sort(function (a, b) {
-      if ((b.jad_kills || 0) !== (a.jad_kills || 0)) return (b.jad_kills || 0) - (a.jad_kills || 0);
-      var at = a.jad_best_ticks || 1e12, bt = b.jad_best_ticks || 1e12;
-      return at - bt;
-    });
+    var rows = boardRows.slice();
+    if (view.id === "overall") {
+      rows = rows.filter(function (r) { return boardTotalKills(r) > 0; });
+      rows.sort(function (a, b) {
+        var d = boardTotalKills(b) - boardTotalKills(a);
+        if (d) return d;
+        return String(a.username || "").localeCompare(String(b.username || ""));
+      });
+    } else {
+      var key = view.kills, tickKey = view.ticks;
+      rows = rows.filter(function (r) { return (r[key] || 0) > 0; });
+      rows.sort(function (a, b) {
+        var d = (b[key] || 0) - (a[key] || 0);
+        if (d) return d;
+        var at = a[tickKey] || 1e12, bt = b[tickKey] || 1e12;
+        return at - bt;
+      });
+    }
+    if (!rows.length) {
+      board.className = "cloud-empty";
+      board.textContent = "No kills recorded yet";
+      return;
+    }
     board.className = "";
     var uid = session && session.user && session.user.id;
-    board.innerHTML = rows.map(function (r, i) {
+    board.innerHTML = rows.slice(0, 25).map(function (r, i) {
       var you = uid && r.id === uid ? " (you)" : "";
+      var kc, detail;
+      if (view.id === "overall") {
+        kc = boardTotalKills(r);
+        detail = kc + " kc";
+      } else {
+        kc = r[view.kills] || 0;
+        detail = kc + " kc · " + fmtTicks(r[view.ticks]);
+      }
       return '<div class="cloud-row"><span>' + (i + 1) + ". " + escapeHtml(r.username) + you +
-        "</span><span>Magmor " + (r.jad_kills || 0) + " kc · " + fmtTicks(r.jad_best_ticks) + "</span></div>";
+        "</span><span>" + detail + "</span></div>";
     }).join("");
+  }
+
+  var boardLoadInFlight = false;
+  async function loadLeaderboard() {
+    var board = $("cloud-board");
+    if (!board || !sb || boardLoadInFlight) return;
+    bindBoardNav();
+    boardLoadInFlight = true;
+    var q = await sb.from("leaderboard").select(
+      "id,username,jad_kills,kree_kills,widow_kills,knight_kills,gorehorn_kills,colossus_kills,raid_completions," +
+      "jad_best_ticks,kree_best_ticks,widow_best_ticks,knight_best_ticks,gorehorn_best_ticks,colossus_best_ticks,raid_best_ticks"
+    ).limit(200);
+    try {
+      if (q.error) {
+        boardRows = null;
+        board.className = "cloud-empty";
+        board.textContent = "Leaderboard is unavailable";
+        return;
+      }
+      boardRows = q.data || [];
+      renderLeaderboard();
+    } finally {
+      boardLoadInFlight = false;
+    }
   }
 
   var presenceExtra = { scene: "bank" };
