@@ -11,3 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
+kree.js | Boss Mechanics | 2026-11-11 14:24 America/New_York | Vaelkor tornadoes cover the full 5x5 grid
