@@ -409,12 +409,12 @@
       levels: { attack: 400, strength: 300, defence: 196, magic: 300, magicDef: 180, ranged: 80 },
       osrsDefence: 220,
       atk: b({ amagic: 40, str: 40 }),
-      def: b({ dmagic: 30, drange: 129, dstab: 47, dslash: 47, dcrush: 47 }),
+      def: b({ dmagic: 50, drange: 86, dstab: 47, dslash: 47, dcrush: 47 }),
       attacks: [
         { style: "magic", speed: 5, magicBase: 28 },
         { style: "crush", speed: 5, maxHit: 30, overrideReason: "formula at strength 300 str 40 is 50; keep hand-set melee max 30" }
       ],
-      weakness: "magic"
+      weakness: "ranged"
     },
     "widow-baby": {
       id: "widow-baby", name: "Baby spider",
