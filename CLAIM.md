@@ -11,5 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
-- arena-combat.js, raid.js, index.html, raid.html | Arena layout | 2026-11-11 11:57 America/New_York | Shared arena floor above the HUD, attack facing, generous NPC tap targets
 - raid.js, index.html | Boss Mechanics | 2026-11-11 11:58 America/New_York | Apply formula-B Warden/Morvane defence handoff and fix debug overlay phase max

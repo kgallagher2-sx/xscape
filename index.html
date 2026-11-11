@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111165547-2d2dd8d";</script>
+  <script>window.XSCAPE_BUILD = "20261111170418-d2d4253";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1187,7 +1187,6 @@
           <button class="btn mode-btn" id="btn-mode-jad" type="button">
             Magmor, the Molten Titan
             <span class="sub">the Molten Caves</span>
-            <span class="hint">Weak to ranged</span>
           </button>
           <button class="mode-info" id="btn-info-jad" type="button" aria-label="Magmor, the Molten Titan guide">i</button>
         </div>
@@ -1195,7 +1194,6 @@
           <button class="btn mode-btn" id="btn-mode-kree" type="button">
             Vaelkor the Stormwing
             <span class="sub">the Stormwing Eyrie · the Sky Citadel</span>
-            <span class="hint">Weak to magic</span>
           </button>
           <button class="mode-info" id="btn-info-kree" type="button" aria-label="Vaelkor the Stormwing guide">i</button>
         </div>
@@ -1203,7 +1201,6 @@
           <button class="btn mode-btn" id="btn-mode-widow" type="button">
             Widow Queen
             <span class="sub">The Widow's Nest · Cave</span>
-            <span class="hint">Weak to magic</span>
           </button>
           <button class="mode-info" id="btn-info-widow" type="button" aria-label="Widow Queen guide">i</button>
         </div>
@@ -1500,27 +1497,27 @@
           <p class="lead">Choose a fight. Magmor, Vaelkor the Stormwing, the Widow Queen, the Hollow Knight-King, Gorehorn, and the Drowned Colossus are solo. Gloamhold can be solo or a group.</p>
           <div class="boss-choice">
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-jad">Magmor, the Molten Titan<span class="sub">the Molten Caves</span><span class="hint">Weak to ranged</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-jad">Magmor, the Molten Titan<span class="sub">the Molten Caves</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-jad" aria-label="Magmor, the Molten Titan guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-kree">Vaelkor the Stormwing<span class="sub">the Stormwing Eyrie · the Sky Citadel</span><span class="hint">Weak to magic</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-kree">Vaelkor the Stormwing<span class="sub">the Stormwing Eyrie · the Sky Citadel</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-kree" aria-label="Vaelkor the Stormwing guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span><span class="hint">Weak to magic</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-widow">Widow Queen<span class="sub">The Widow's Nest · Cave</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-widow" aria-label="Widow Queen guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-knight">Hollow Knight-King<span class="sub">The Throne Room · Shadow</span><span class="hint">Weak to melee</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-knight">Hollow Knight-King<span class="sub">The Throne Room · Shadow</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-knight" aria-label="Hollow Knight-King guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-gorehorn">Gorehorn, the Minotaur<span class="sub">The Stone Labyrinth</span><span class="hint">Weak to slash</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-gorehorn">Gorehorn, the Minotaur<span class="sub">The Stone Labyrinth</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-gorehorn" aria-label="Gorehorn guide">i</button>
             </div>
             <div class="boss-row">
-              <button class="btn mode-btn" type="button" id="btn-boss-colossus">The Drowned Colossus<span class="sub">The Flooded Pit</span><span class="hint">Weak to stab</span></button>
+              <button class="btn mode-btn" type="button" id="btn-boss-colossus">The Drowned Colossus<span class="sub">The Flooded Pit</span></button>
               <button class="mode-info" type="button" id="btn-info-boss-colossus" aria-label="Drowned Colossus guide">i</button>
             </div>
             <div class="boss-row">
@@ -7813,6 +7810,7 @@ window.tryEnterGloamhold = tryEnterGloamhold;
 <script src="colossus.js"></script>
 <script src="hub.js"></script>
 <script src="duel.js"></script>
+<script src="arena-combat.js"></script>
 <script>
 if (window.XscapeRaid) {
   XscapeRaid.installIntoGame();
