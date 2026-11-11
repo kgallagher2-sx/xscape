@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111174116-d62d360";</script>
+  <script>window.XSCAPE_BUILD = "20261111175948-09a476e";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -309,6 +309,25 @@
     }
     #item-popup .tap-hint { color: #8a7a50; font-size: 10px; }
 
+    #item-inspect {
+      position: absolute; z-index: 200; display: none !important;
+      width: min(280px, calc(100% - 16px));
+      background: linear-gradient(#3a2c1c, #1e140c);
+      border: 2px solid #c9a24a; box-shadow: 0 6px 20px #000, inset 0 0 0 1px #1a1008;
+      border-radius: 8px; padding: 10px 12px 10px; color: var(--beige);
+      pointer-events: auto;
+    }
+    #item-inspect.open { display: block !important; }
+    #item-inspect-card { display: grid; grid-template-columns: 44px 1fr; gap: 8px 10px; align-items: start; }
+    #item-inspect-icon { width: 44px; height: 44px; image-rendering: pixelated; background: #140e08; border: 1px solid #6a5430; border-radius: 3px; }
+    #item-inspect-name { color: #ffe9a0; font-weight: 700; font-size: 14px; line-height: 1.2; text-shadow: 0 1px 0 #000; }
+    #item-inspect-tier { color: #d4a84a; font-size: 11px; margin-top: 2px; }
+    #item-inspect-desc, #item-inspect-stats {
+      grid-column: 1 / -1; font-size: 12px; line-height: 1.35; color: #ebd7a4;
+    }
+    #item-inspect-stats { color: #d8c48a; }
+    #item-inspect-hint { grid-column: 1 / -1; color: #8a7a50; font-size: 10px; margin-top: 2px; }
+
     .overlay {
       position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
       align-items: center; justify-content: safe center;
@@ -482,7 +501,7 @@
       line-height: 1.15;
       color: var(--gold);
       text-shadow: 0 2px 0 #000, 0 0 8px #000;
-      pointer-events: none; z-index: 5; opacity: 0;
+      pointer-events: none; z-index: 180; opacity: 0;
       text-align: center;
       padding: 0 12px;
       box-sizing: border-box;
@@ -575,6 +594,8 @@
     .slot-btn.tier1, .bank-item.tier1, .shop-row.tier1 { border-color: #3a6a2a; }
     .slot-btn.tier2, .bank-item.tier2, .shop-row.tier2 { border-color: #5a5a72; }
     .slot-btn.mid, .bank-item.mid { border-color: #4a7a38; }
+    .slot-btn.shop, .bank-item.shop, .shop-row.shop { border-color: #b07a28; }
+    .shop-row.shop .tier, .slot-btn.shop .tier { color: #d4a84a; }
     .bank-item .tier, .shop-row .tier, .slot-btn .tier { display: block; font-size: 10px; color: #8a7a58; margin-top: 2px; }
     .shop-row.tier2 .tier { color: #a0a0c0; }
     #overlay-shop .shop-card { width: 100%; max-width: 340px; }
@@ -1809,6 +1830,18 @@
     </div>
 
     <button id="sound-btn" type="button" aria-label="Toggle sound">♪</button>
+    <div id="item-inspect" hidden>
+      <div id="item-inspect-card">
+        <canvas id="item-inspect-icon" width="44" height="44" aria-hidden="true"></canvas>
+        <div>
+          <div id="item-inspect-name"></div>
+          <div id="item-inspect-tier"></div>
+        </div>
+        <div id="item-inspect-desc"></div>
+        <div id="item-inspect-stats"></div>
+        <div id="item-inspect-hint">Tap to close</div>
+      </div>
+    </div>
   </div>
 
 <script src="partyhat-img.js"></script>
@@ -2214,7 +2247,47 @@ function bankStacks() {
   return bankList().map((id) => ({ id: id, qty: bankCount(id) }));
 }
 
+function isEquipSlot(slot) {
+  return EQUIP_SLOTS.indexOf(slot) !== -1;
+}
+
+function canWearItem(id) {
+  const it = ITEMS[id];
+  return !!(it && isEquipSlot(it.slot));
+}
+
+/* Potions/food/runes use slot:"inventory". Tapping them used to "equip" the
+   id onto Profile.equipment.inventory, a fake slot the worn-gear UI never
+   shows, so the item vanished. Reclaim any of those stray keys. */
+function reclaimStrayEquipment(eq, inv) {
+  if (!eq || typeof eq !== "object") return 0;
+  if (!Array.isArray(inv)) return 0;
+  let n = 0;
+  Object.keys(eq).forEach(function (slot) {
+    const id = eq[slot];
+    if (!id || typeof id !== "string") {
+      if (!isEquipSlot(slot)) delete eq[slot];
+      return;
+    }
+    const it = ITEMS[id];
+    const ok = isEquipSlot(slot) && (!it || it.slot === slot);
+    if (ok) return;
+    inv.push(id);
+    n++;
+    if (isEquipSlot(slot)) eq[slot] = null;
+    else delete eq[slot];
+  });
+  return n;
+}
+
+function reclaimStrayWornItems() {
+  if (typeof Profile === "undefined" || !Profile || !Profile.equipment) return 0;
+  if (!Array.isArray(Profile.inventory)) Profile.inventory = [];
+  return reclaimStrayEquipment(Profile.equipment, Profile.inventory);
+}
+
 function normalizeContainers() {
+  reclaimStrayWornItems();
   const inv = [];
   const runeSeen = {};
   let slots = 0;
@@ -2329,7 +2402,12 @@ function unequipSlot(slot, silent) {
 
 function equipItem(id) {
   const it = ITEMS[id];
-  if (!it || !it.slot) return false;
+  if (!it || !isEquipSlot(it.slot)) {
+    if (typeof flashMsg === "function") {
+      flashMsg((it && itemIsConsumable(id)) ? "Use this during a fight" : "You can't wear that", "#ffe9a0");
+    }
+    return false;
+  }
   if (!isOwned(id)) ownItem(id);
   const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
   if (eq[it.slot] === id) return true;
@@ -2923,6 +3001,8 @@ function gearTierClass(tier) {
   if (tier === "tier2" || tier === "upgrade") return "tier2";
   if (tier === "mid") return "mid";
   if (tier === "starter" || tier === "tier1") return "tier1";
+  if (tier === "shop") return "shop";
+  if (tier === "supply") return "supply";
   if (tier === "partyhat") return "unique";
   return "";
 }
@@ -2939,6 +3019,8 @@ function gearTierLabel(it) {
   if (t === "gorehorn") return "Gorehorn · Minotaur";
   if (t === "colossus") return "Drowned Colossus · Abyssal";
   if (t === "partyhat") return "Unique · the only one";
+  if (t === "shop") return "Shop";
+  if (t === "supply") return "Supply";
   return "Tier 1 · Starter";
 }
 
@@ -3334,6 +3416,8 @@ function gearSlotColor(tier) {
   if (tier === "tier2" || tier === "upgrade") return "#2a2a38";
   if (tier === "mid") return "#3a5a28";
   if (tier === "starter" || tier === "tier1") return "#2a4a1c";
+  if (tier === "shop") return "#5a3a10";
+  if (tier === "supply") return "#3a2a18";
   return "#5a3a1c";
 }
 
@@ -3479,7 +3563,6 @@ function loadProfile() {
       Profile.hasFireCape = !!raw.hasFireCape;
       Profile.seenFirstKill = !!raw.seenFirstKill;
       Profile.levels = normalizeLevels(raw.levels);
-      Profile.equipment = normalizeEquipment(raw.equipment);
       Profile.unlockedItems = Array.isArray(raw.unlockedItems) ? raw.unlockedItems.slice() : [];
       Profile.raidCompletions = Number(raw.raidCompletions) || 0;
       Profile.raidBestTicks = raw.raidBestTicks || null;
@@ -3493,8 +3576,12 @@ function loadProfile() {
       Profile.colossusKills = Number(raw.colossusKills) || 0;
       if (raw.colossusBestTicks != null) Profile.colossusBestTicks = raw.colossusBestTicks;
       Profile.widowBestTicks = raw.widowBestTicks || null;
-      Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
       Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
+      if (raw.equipment && typeof raw.equipment === "object") {
+        reclaimStrayEquipment(raw.equipment, Profile.inventory);
+      }
+      Profile.equipment = normalizeEquipment(raw.equipment);
+      Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
       Profile.autocast = raw.autocast || (raw.settings && raw.settings.autocast) || null;
       if (!Profile.settings || typeof Profile.settings !== "object") Profile.settings = {};
       if (Profile.autocast) Profile.settings.autocast = Profile.autocast;
@@ -7221,6 +7308,7 @@ if ($("overlay-chat-history")) bindBackdropClose($("overlay-chat-history"), () =
 if ($("overlay-trade-history")) bindBackdropClose($("overlay-trade-history"), () => { if (window.XscapeTrade && XscapeTrade.closeTradeHistory) XscapeTrade.closeTradeHistory(); });
 
 if ($("shop-list")) $("shop-list").addEventListener("click", (e) => {
+  if (typeof itemInspectConsumed === "function" && itemInspectConsumed()) return;
   const btn = e.target.closest && e.target.closest("[data-shop]");
   if (!btn) return;
   audio.unlock();
@@ -7233,6 +7321,7 @@ bindTap($("btn-gear-x"), () => { audio.unlock(); closeEquipmentView(); });
 bindBackdropClose($("overlay-gear"), () => { audio.unlock(); closeEquipmentView(); });
 if ($("gear-worn")) {
   const onWorn = (e) => {
+    if (typeof itemInspectConsumed === "function" && itemInspectConsumed()) return;
     const btn = e.target.closest && e.target.closest("[data-slot]");
     if (!btn) return;
     audio.unlock();
@@ -7254,11 +7343,23 @@ if ($("gear-bank")) {
   $("gear-bank").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onBank(e); });
 }
 if ($("gear-inventory")) {
+  let lastInvTap = 0;
   const onInv = (e) => {
+    if (typeof itemInspectConsumed === "function" && itemInspectConsumed()) return;
     const btn = e.target.closest && e.target.closest("[data-inv-item]");
     if (!btn) return;
+    const nowMs = Date.now();
+    if (nowMs - lastInvTap < 350) return;
+    lastInvTap = nowMs;
     audio.unlock();
-    equipItem(btn.getAttribute("data-inv-item"));
+    const id = btn.getAttribute("data-inv-item");
+    if (!canWearItem(id)) {
+      if (typeof flashMsg === "function") {
+        flashMsg(itemIsConsumable(id) ? "Use this during a fight" : "You can't wear that", "#ffe9a0");
+      }
+      return;
+    }
+    equipItem(id);
   };
   $("gear-inventory").addEventListener("click", onInv);
   $("gear-inventory").addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") onInv(e); });
@@ -7590,6 +7691,7 @@ function closeHowToPlay() {
   startPlaying();
 }
 function dismissTopOverlay() {
+  if (typeof itemInspectOpen !== "undefined" && itemInspectOpen) { audio.unlock(); hideItemInspect(); return true; }
   if (window.XscapeHub && XscapeHub.dismiss && XscapeHub.dismiss()) { audio.unlock(); return true; }
   if (overlayIsOpen("overlay-gear")) { audio.unlock(); closeEquipmentView(); return true; }
   if (overlayIsOpen("overlay-shop")) { audio.unlock(); closeShop(); return true; }
@@ -7799,6 +7901,244 @@ window.updateRaidLock = updateRaidLock;
 window.wearingFireCape = wearingFireCape;
 window.gloamholdLockReason = gloamholdLockReason;
 window.tryEnterGloamhold = tryEnterGloamhold;
+
+/* Long-press item inspect. Replaces the name-only flash in XscapeIcons.bindExamine
+   once installItemInspect() runs (after item-icons.js loads). */
+const ITEM_INSPECT_HOLD_MS = 450;
+const ITEM_INSPECT_SEL = "[data-withdraw],[data-deposit],[data-equip],[data-inv-item],[data-icon],[data-shop],[data-item-id],[data-buy],[data-id],.slot-btn[data-slot]";
+const ITEM_INSPECT_SKIP = "#overlay-trade, #overlay-trade-history, #overlay-stake, #overlay-stake-confirm, #overlay-quick-edit";
+let itemInspectOpen = false;
+let itemInspectLockUntil = 0;
+let itemInspectGesture = false;
+
+function itemInspectConsumed() {
+  return !!(itemInspectOpen || itemInspectGesture || Date.now() < itemInspectLockUntil);
+}
+
+function hideItemInspect() {
+  const el = $("item-inspect");
+  if (el) {
+    el.classList.remove("open");
+    el.setAttribute("hidden", "");
+  }
+  if (itemInspectOpen) itemInspectLockUntil = Date.now() + 350;
+  itemInspectOpen = false;
+}
+
+function inspectItemIdFromEl(el) {
+  if (!el || !el.getAttribute) return null;
+  const id = el.getAttribute("data-withdraw") || el.getAttribute("data-deposit") ||
+    el.getAttribute("data-equip") || el.getAttribute("data-inv-item") ||
+    el.getAttribute("data-icon") || el.getAttribute("data-shop") ||
+    el.getAttribute("data-item-id") || el.getAttribute("data-buy") ||
+    el.getAttribute("data-id") || null;
+  if (!id || id === "bundle") return null;
+  return id;
+}
+
+function inspectDoseOf(id, it) {
+  if (it && it.dose) return it.dose;
+  const m = String(id || "").match(/_([1-4])$/);
+  return m ? Number(m[1]) : null;
+}
+
+function inspectItemName(id, it) {
+  let name = (it && it.name) || "";
+  if (!name && window.XscapeIcons && XscapeIcons.itemName) name = XscapeIcons.itemName(id);
+  if (!name) name = String(id || "").replace(/_/g, " ");
+  const dose = inspectDoseOf(id, it);
+  if (it && it.kind === "potion" && dose) return name + " (" + dose + ")";
+  return name;
+}
+
+function inspectItemDesc(id, it) {
+  const supplies = window.XscapeSupplies;
+  const fam = (it && it.family) || (supplies && supplies.familyOf && supplies.familyOf(id)) || null;
+  const rows = supplies && supplies.SHOP_ROWS;
+  let row = null;
+  if (rows && rows.length) {
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].id === id || (fam && rows[i].id === fam)) { row = rows[i]; break; }
+    }
+  }
+  if (row && row.desc) return row.desc;
+  if (it && it.kind === "food" && it.heal) return "Heals " + it.heal + " Hitpoints.";
+  if (it && it.kind === "rune") return "Consumed when you cast a spell.";
+  if (it && it.kind === "potion") return "Drink during a fight.";
+  if (it && it.twohand) return "Two-handed " + ((typeof SLOT_LABELS !== "undefined" && SLOT_LABELS[it.slot]) || it.slot || "weapon") + ".";
+  if (it && it.slot && isEquipSlot(it.slot)) return ((typeof SLOT_LABELS !== "undefined" && SLOT_LABELS[it.slot]) || it.slot) + " slot.";
+  return "";
+}
+
+function inspectItemStats(it) {
+  if (!it || !it.bonuses) return "";
+  const labels = {
+    astab: "Stab atk", aslash: "Slash atk", acrush: "Crush atk", amagic: "Magic atk", arange: "Range atk",
+    dstab: "Stab def", dslash: "Slash def", dcrush: "Crush def", dmagic: "Magic def", drange: "Range def",
+    str: "Strength", rstr: "Range str", mdmg: "Magic dmg"
+  };
+  const parts = [];
+  Object.keys(labels).forEach(function (k) {
+    const v = it.bonuses[k];
+    if (!v) return;
+    parts.push(labels[k] + " " + (v > 0 ? "+" : "") + v + (k === "mdmg" ? "%" : ""));
+  });
+  if (it.speed) parts.push("Speed " + it.speed);
+  return parts.join(" · ");
+}
+
+function inspectExtraLine(id, it) {
+  const dose = inspectDoseOf(id, it);
+  if (it && it.kind === "potion") {
+    return (dose ? (dose + " dose" + (dose === 1 ? "" : "s") + " remaining. ") : "") + "Drink during a fight.";
+  }
+  if (it && it.kind === "food") return "Eat during a fight.";
+  return "";
+}
+
+function placeItemInspect(anchor) {
+  const pop = $("item-inspect");
+  const app = $("app");
+  if (!pop || !app) return;
+  const ar = app.getBoundingClientRect();
+  const pad = 8;
+  const w = pop.offsetWidth;
+  const h = pop.offsetHeight;
+  let left = (ar.width - w) / 2;
+  let top = (ar.height - h) / 2;
+  if (anchor && anchor.getBoundingClientRect) {
+    const r = anchor.getBoundingClientRect();
+    left = r.left - ar.left + r.width / 2 - w / 2;
+    top = r.bottom - ar.top + 6;
+    if (top + h > ar.height - pad) top = r.top - ar.top - h - 6;
+  }
+  left = Math.max(pad, Math.min(left, ar.width - w - pad));
+  top = Math.max(pad, Math.min(top, ar.height - h - pad));
+  pop.style.left = Math.round(left) + "px";
+  pop.style.top = Math.round(top) + "px";
+}
+
+function showItemInspect(id, anchor) {
+  const el = $("item-inspect");
+  if (!el || !id) return false;
+  const it = (typeof ITEMS !== "undefined" && ITEMS[id]) || null;
+  const name = inspectItemName(id, it);
+  const tier = (typeof gearTierLabel === "function" && it) ? gearTierLabel(it) : "";
+  const desc = inspectItemDesc(id, it);
+  const stats = inspectItemStats(it);
+  const extra = inspectExtraLine(id, it);
+  $("item-inspect-name").textContent = name;
+  const tierEl = $("item-inspect-tier");
+  if (tierEl) {
+    tierEl.textContent = tier;
+    tierEl.style.display = tier ? "block" : "none";
+  }
+  const descEl = $("item-inspect-desc");
+  if (descEl) {
+    descEl.textContent = desc;
+    descEl.style.display = desc ? "block" : "none";
+  }
+  const statsEl = $("item-inspect-stats");
+  if (statsEl) {
+    statsEl.textContent = stats || extra;
+    statsEl.style.display = (stats || extra) ? "block" : "none";
+  }
+  const cv = $("item-inspect-icon");
+  if (cv && window.XscapeIcons && XscapeIcons.paintCanvas) {
+    XscapeIcons.paintCanvas(cv, id);
+  }
+  el.removeAttribute("hidden");
+  el.classList.add("open");
+  itemInspectOpen = true;
+  itemInspectGesture = true;
+  itemInspectLockUntil = Date.now() + 500;
+  placeItemInspect(anchor);
+  return true;
+}
+
+function bindItemInspect(root) {
+  if (!root || root._iconExamine) return;
+  root._iconExamine = true;
+  let timer = null, startX = 0, startY = 0, fired = false, target = null;
+  function clearTimer() { if (timer) { clearTimeout(timer); timer = null; } }
+  function skip(el) {
+    return !!(el && el.closest && el.closest(ITEM_INSPECT_SKIP));
+  }
+  root.addEventListener("pointerdown", function (e) {
+    if (e.button != null && e.button !== 0) return;
+    if (itemInspectOpen) {
+      hideItemInspect();
+      itemInspectGesture = true;
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+      return;
+    }
+    const el = e.target.closest && e.target.closest(ITEM_INSPECT_SEL);
+    if (!el || skip(el)) return;
+    const id = inspectItemIdFromEl(el);
+    if (!id) return;
+    fired = false; target = el; itemInspectGesture = false;
+    startX = e.clientX; startY = e.clientY;
+    clearTimer();
+    timer = setTimeout(function () {
+      timer = null;
+      if (showItemInspect(id, el)) fired = true;
+    }, ITEM_INSPECT_HOLD_MS);
+  }, true);
+  root.addEventListener("pointermove", function (e) {
+    if (!timer) return;
+    if (Math.abs(e.clientX - startX) > 12 || Math.abs(e.clientY - startY) > 12) clearTimer();
+  }, true);
+  function suppressIfNeeded(e) {
+    if (!(fired || itemInspectGesture || itemInspectOpen)) return;
+    if (e.preventDefault) e.preventDefault();
+    if (e.stopPropagation) e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+  }
+  root.addEventListener("pointerup", function (e) {
+    clearTimer();
+    suppressIfNeeded(e);
+    if (fired) itemInspectGesture = true;
+    fired = false;
+    target = null;
+    setTimeout(function () { itemInspectGesture = false; }, 350);
+  }, true);
+  root.addEventListener("pointercancel", function () {
+    clearTimer();
+    fired = false;
+    itemInspectGesture = false;
+    target = null;
+  }, true);
+  root.addEventListener("click", function (e) {
+    if (!(itemInspectConsumed() || fired)) return;
+    suppressIfNeeded(e);
+    fired = false;
+  }, true);
+  root.addEventListener("contextmenu", function (e) {
+    const el = e.target.closest && e.target.closest(ITEM_INSPECT_SEL);
+    if (!el || skip(el)) return;
+    if (e.preventDefault) e.preventDefault();
+  }, true);
+}
+
+function installItemInspect() {
+  if (window.XscapeIcons) {
+    // One delegated binder on #app covers inventory, worn gear, shop, bank, loot.
+    // Existing per-root bindExamine calls become no-ops so we don't double-bind.
+    XscapeIcons.bindExamine = function () {};
+  }
+  const app = $("app");
+  if (app) bindItemInspect(app);
+}
+
+window.isEquipSlot = isEquipSlot;
+window.canWearItem = canWearItem;
+window.reclaimStrayWornItems = reclaimStrayWornItems;
+window.itemInspectConsumed = itemInspectConsumed;
+window.showItemInspect = showItemInspect;
+window.hideItemInspect = hideItemInspect;
+window.installItemInspect = installItemInspect;
+window.gearTierLabel = gearTierLabel;
 </script>
 <script src="item-icons.js"></script>
 <script src="supplies.js"></script>
@@ -7850,6 +8190,7 @@ if (window.XscapeDuel) {
   XscapeDuel.install();
   if (window.Xscape) window.Xscape.duel = XscapeDuel;
 }
+if (typeof installItemInspect === "function") installItemInspect();
 
 drawGearIcons();
 refreshPrayIcons();

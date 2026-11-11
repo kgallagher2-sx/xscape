@@ -2288,7 +2288,8 @@
     if (typeof global.equipItem === "function" && !global.equipItem._cloud) {
       var rawEquip = global.equipItem;
       global.equipItem = function (id) {
-        if (isRestrictedGuest() && !isStarterItem(id)) {
+        var wearable = typeof global.canWearItem !== "function" || global.canWearItem(id);
+        if (wearable && isRestrictedGuest() && !isStarterItem(id)) {
           requireSignIn("Guests fight in starter kit only. Sign in to wear better gear. Your Fire cape stays in the bank until you sign in.");
           return false;
         }
