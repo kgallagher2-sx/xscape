@@ -1,0 +1,35 @@
+# QA screenshots and output that are not part of the shipped site.
+# Do not use a broad screens/ or *.png rule: tracked PNGs the game or
+# Pages can serve live under icons/, and some screens/ batches (v33–v37)
+# are already in the repo. Ignore only untracked QA batches.
+
+# Untracked screenshot batches under screens/ (no overlap with tracked names,
+# except the four files listed after v32).
+screens/v23-*
+screens/v24-*
+screens/v25-*
+screens/v26-*
+screens/v27-*
+screens/v28-*
+screens/v29-*
+screens/v31-*
+screens/v32-*
+screens/v33-icons-bank-grid.png
+screens/v33-icons-inventory.png
+screens/v35-widow-sprites-v3-cast-page.png
+screens/v35-widow-sprites-v3-set-page.png
+screens/v38-*
+screens/v39-*
+screens/v40-*
+screens/v41-*
+screens/v42-*
+screens/v43-*
+screens/v44-*
+
+# Later QA screenshot batches (v45+). Tracked shots stay at v33–v37.
+# To add a new tracked screenshot, use git add -f on that path.
+screens/v4[5-9]-*
+screens/v[5-9][0-9]-*
+
+# Optional local QA-output folder (not used by the live site).
+qa-output/
