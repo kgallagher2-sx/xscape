@@ -13,6 +13,7 @@
   const TORNADO_DMG = 42;
   const TORNADO_EVERY = 9;
   const TORNADO_DELAY = 3;
+  const TILE_ROWS = 5;
   const SHARKS = 4;
   const POTS = 2;
   const RANGE_POTS = 1;
@@ -38,6 +39,37 @@
   let hostLast = 0;
   let rangingPending = false;
   let rangingCd = 0;
+  let savedTileRows = 1;
+  let tileOwned = false;
+
+  function claimTiles() {
+    if (!global.TILE || tileOwned) return;
+    savedTileRows = TILE.rows || 1;
+    TILE.rows = TILE_ROWS;
+    tileOwned = true;
+  }
+  function releaseTiles() {
+    if (!global.TILE || !tileOwned) return;
+    TILE.rows = savedTileRows;
+    tileOwned = false;
+  }
+  function bossCenter() {
+    if (typeof global.tileCenter === "function") return tileCenter(2, 3);
+    return { x: 0.5, y: 0.36 };
+  }
+  function tornadoGrid() {
+    return {
+      cols: (global.TILE && TILE.cols) || 5,
+      rows: (global.TILE && TILE.rows) || TILE_ROWS
+    };
+  }
+  function placeBoss() {
+    const G = g();
+    if (!G || !G.kree) return;
+    const bc = bossCenter();
+    G.kree.x = bc.x;
+    G.kree.y = bc.y;
+  }
 
   function g() { return global.G; }
   function $(id) { return global.document && document.getElementById(id); }
@@ -56,10 +88,12 @@
 
   function resetKreeState() {
     const G = g();
+    claimTiles();
     if (typeof global.syncPlayerCaps === "function") global.syncPlayerCaps();
     const mid = Math.floor((global.TILE && TILE.cols) ? TILE.cols / 2 : 2);
     const maxHp = global.PLAYER_MAX_HP || 99;
     const maxPray = global.PLAYER_MAX_PRAYER || 99;
+    const bc = bossCenter();
     G.player = {
       hp: maxHp, prayerPts: maxPray, atkCd: 1,
       x: 0.5, y: 0.86, gp: (global.Profile && Profile.gp) || 0,
@@ -69,7 +103,7 @@
     G.kree = {
       hp: KREE_HP, maxHp: KREE_HP, phase: "idle", style: null,
       telLeft: 0, recLeft: 1, telLen: KREE_TEL, hurt: 0, bob: 0,
-      x: 0.5, y: 0.36, nextTornado: 5
+      x: bc.x, y: bc.y, nextTornado: 5
     };
     G.minions = MINIONS.map(function (m, i) {
       return {
@@ -110,7 +144,9 @@
     G.perfectPrayers = 0;
     G.kreeGod = !!G.kreeGod;
     G.waveFlash = 0.6;
-    if (typeof global.layoutFighters === "function") { /* player y */ }
+    if (typeof global.layoutFighters === "function") layoutFighters();
+    placeBoss();
+    layoutMinions();
     if (typeof global.syncPlayerWorldPos === "function") global.syncPlayerWorldPos(true);
     if (typeof global.updateHud === "function") global.updateHud();
     if (typeof global.updatePrayerButtons === "function") global.updatePrayerButtons();
@@ -120,11 +156,23 @@
   function layoutMinions() {
     const G = g();
     if (!G.minions) return;
-    const xs = [0.18, 0.50, 0.82];
-    const ys = [0.62, 0.70, 0.62]; // Geerin sits lower so his label clears Kree's talons
+    // Hover on the back/mid rows, flanking Vaelkor at tile (2, 3).
+    // Geerin (index 1) stands on row 1, in front of Vaelkor, so his label clears the talons.
+    const spots = [
+      { c: 0, r: 3, dy: 0 },
+      { c: 2, r: 1, dy: 0.01 },
+      { c: 4, r: 3, dy: 0 }
+    ];
     for (let i = 0; i < G.minions.length; i++) {
-      G.minions[i].x = xs[i] || (0.25 + i * 0.25);
-      G.minions[i].y = ys[i] || 0.64;
+      const s = spots[i] || spots[spots.length - 1];
+      if (typeof global.tileCenter === "function") {
+        const t = tileCenter(s.c, s.r);
+        G.minions[i].x = t.x;
+        G.minions[i].y = t.y + (s.dy || 0);
+      } else {
+        G.minions[i].x = 0.18 + i * 0.32;
+        G.minions[i].y = i === 1 ? 0.70 : 0.62;
+      }
     }
   }
 
@@ -237,12 +285,20 @@
     k.nextTornado--;
     if (k.nextTornado > 0) return;
     k.nextTornado = TORNADO_EVERY + irand(0, 2);
-    const col = G.player ? G.player.tileCol : 2;
+    // One tornado, one tile, same delay and cadence as before. The target is
+    // the player's current tile on the post-layout 5×5 (cols 0..4, rows 0..4).
+    // Every walkable tile is a legal target — there is no excluded safe set.
+    // A single spawn never covers more than one tile, so 24 tiles stay safe
+    // and the 3-tick walk-off dodge still works.
+    const grid = tornadoGrid();
+    const p = G.player;
+    const col = p && p.tileCol != null ? clamp(p.tileCol, 0, grid.cols - 1) : Math.floor(grid.cols / 2);
+    const row = p && p.tileRow != null ? clamp(p.tileRow, 0, grid.rows - 1) : 0;
     if (typeof global.launchTileAttack === "function") {
       launchTileAttack({
         kind: "tornado",
         col: col,
-        row: 0,
+        row: row,
         delayTicks: TORNADO_DELAY,
         damage: function () { return G.kreeGod ? 0 : TORNADO_DMG; },
         prayer: null,
@@ -523,6 +579,8 @@
       ctx.fillStyle = "#17304a";
       ctx.fillRect(0, 0, cssW, cssH);
     }
+    placeBoss();
+    layoutMinions();
     if (G.mode === "playing") {
       if (typeof global.syncPlayerWorldPos === "function") syncPlayerWorldPos(false);
       if (typeof global.drawArenaTiles === "function") drawArenaTiles(t);
@@ -931,6 +989,7 @@
         id: "kree",
         enter: function () { tryEnter({}); },
         exit: function () {
+          releaseTiles();
           setKreeChrome(false);
           const ov = $("overlay-kree-loot");
           if (ov) ov.classList.add("hidden");
@@ -984,19 +1043,25 @@
       return DROP.map(function (d) { return d.id; });
     },
     testHit: function (style, opts) { applyKreeHit(style || "range", opts); },
-    launchTornado: function (col) {
+    launchTornado: function (col, row) {
       const G = g();
       if (!G || G.scene !== "kree") return null;
       if (typeof global.launchTileAttack === "function") {
+        const grid = tornadoGrid();
+        const pc = (G.player && G.player.tileCol != null) ? G.player.tileCol : Math.floor(grid.cols / 2);
+        const pr = (G.player && G.player.tileRow != null) ? G.player.tileRow : 0;
         return launchTileAttack({
-          kind: "tornado", col: col != null ? col : (G.player && G.player.tileCol) || 2,
-          row: 0, delayTicks: TORNADO_DELAY,
+          kind: "tornado",
+          col: clamp(col != null ? col : pc, 0, grid.cols - 1),
+          row: clamp(row != null ? row : pr, 0, grid.rows - 1),
+          delayTicks: TORNADO_DELAY,
           damage: function () { return G.kreeGod ? 0 : TORNADO_DMG; },
           prayer: null, source: "kree-test"
         });
       }
       return null;
     },
+    releaseTiles: releaseTiles,
     skipMinions: function () {
       const G = g();
       if (!G || !G.minions) return;
