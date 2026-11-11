@@ -102,13 +102,13 @@
     morvane: {
       id: "morvane", name: "Morvane the Unsleeping",
       hp: MORVANE_HP, hitpoints: MORVANE_HP,
-      levels: { attack: 280, strength: 200, defence: 70, magic: 260, ranged: 260 },
-      attack: 280, strength: 200, defence: 70, magic: 260, ranged: 260,
-      osrsDefence: 70,
+      levels: { attack: 280, strength: 200, defence: 196, magic: 260, magicDef: 180, ranged: 260 },
+      attack: 280, strength: 200, defence: 196, magic: 260, ranged: 260,
+      osrsDefence: 196,
       atk: { astab: 40, aslash: 40, acrush: 40, amagic: 40, arange: 40, str: 0, rstr: 0, mdmg: 0 },
       bonuses: { astab: 40, aslash: 40, acrush: 40, amagic: 40, arange: 40, str: 0, rstr: 0, mdmg: 0 },
-      def: { dstab: 30, dslash: 30, dcrush: 30, dmagic: 40, drange: 50 },
-      defBonuses: { dstab: 30, dslash: 30, dcrush: 30, dmagic: 40, drange: 50 },
+      def: { dstab: 47, dslash: 47, dcrush: 47, dmagic: 30, drange: 129 },
+      defBonuses: { dstab: 47, dslash: 47, dcrush: 47, dmagic: 30, drange: 129 },
       attacks: [
         { style: "magic", speed: 6, magicBase: 42 },
         { style: "ranged", speed: 6, maxHit: 42, overrideReason: "formula at ranged 260 rstr 0 is 27; HOST ordinary max is 42" },
@@ -121,18 +121,18 @@
       weakness: "magic",
       groupHpScale: true,
       // Aliases for standalone raid.html / older readers.
-      defLevel: 70,
-      defBonus: { mage: 40, range: 50, melee: 30 }
+      defLevel: 196,
+      defBonus: { mage: 30, range: 129, melee: 47 }
     },
     warden: {
       id: "warden", name: "The Pale Warden",
       hp: WARDEN_HP, hitpoints: WARDEN_HP,
-      levels: { attack: 120, strength: 80, defence: 40, magic: 80, ranged: 80 },
-      attack: 120, strength: 80, defence: 40, magic: 80, ranged: 80,
+      levels: { attack: 120, strength: 80, defence: 60, magic: 80, magicDef: 20, ranged: 80 },
+      attack: 120, strength: 80, defence: 60, magic: 80, ranged: 80,
       atk: { astab: 0, aslash: 0, acrush: 0, amagic: 20, arange: 20, str: 0, rstr: 0, mdmg: 0 },
       bonuses: { astab: 0, aslash: 0, acrush: 0, amagic: 20, arange: 20, str: 0, rstr: 0, mdmg: 0 },
-      def: { dstab: 10, dslash: 10, dcrush: 10, dmagic: 20, drange: 20 },
-      defBonuses: { dstab: 10, dslash: 10, dcrush: 10, dmagic: 20, drange: 20 },
+      def: { dstab: 4, dslash: 4, dcrush: 4, dmagic: 0, drange: 60 },
+      defBonuses: { dstab: 4, dslash: 4, dcrush: 4, dmagic: 0, drange: 60 },
       attacks: [
         { style: "magic", speed: 5, magicBase: 22 },
         { style: "ranged", speed: 5, maxHit: 22, overrideReason: "formula at ranged 80 rstr 0 is 9; HOST ordinary max is 22" },
@@ -142,8 +142,8 @@
       weakness: "ranged",
       groupHpScale: true,
       // Aliases. Melee def 10 is the live host table (canonical); standalone used 30.
-      defLevel: 40,
-      defBonus: { mage: 20, range: 20, melee: 10 },
+      defLevel: 60,
+      defBonus: { mage: 0, range: 60, melee: 4 },
       maxHit: 22,
       accuracy: 0.80
     },
@@ -326,7 +326,13 @@
   }
   function monsterDefRoll(mon, style) {
     if (mon && mon.levels && mon.def) {
-      const defLv = mon.levels.defence || 0;
+      const isMagic = (style === "mage" || style === "magic");
+      let defLv = mon.levels.defence || 0;
+      if (isMagic && global.FLAGS && global.FLAGS.npcMagicDefUsesMagicLevel) {
+        if (typeof global.npcMagicDefLevel === "function") defLv = global.npcMagicDefLevel(mon.levels);
+        else if (mon.levels.magicDef != null) defLv = mon.levels.magicDef;
+        else if (mon.levels.magic != null) defLv = mon.levels.magic;
+      }
       const key = (style === "mage" || style === "magic") ? "dmagic"
         : (style === "range" || style === "ranged") ? "drange"
         : (style === "stab") ? "dstab"
@@ -4145,8 +4151,48 @@
       if (typeof global.refreshGearViews === "function") global.refreshGearViews();
     }
   }
+
+  // Display-only: the &debug=1 overlay uses monsterVsPlayer's ordinary max.
+  // On Morvane phases 2-4 that shows 42 instead of the live special (48/55/65).
+  function installDebugOverlayFix() {
+    if (typeof global.updateDebugCombat !== "function") return;
+    if (global.updateDebugCombat.__morvanePhaseFix) return;
+    const orig = global.updateDebugCombat;
+    function patched() {
+      orig.apply(this, arguments);
+      try {
+        const el = global.document && document.getElementById("debug-combat");
+        if (!el || el.classList.contains("hidden")) return;
+        const st = getState();
+        if (!st || !st.boss) return;
+        const kind = st.boss.kind;
+        const mon = MONSTERS[kind];
+        if (!mon) return;
+        let phaseN = st.boss.phaseN;
+        if (kind === "morvane" && (phaseN == null || !phaseN)) {
+          phaseN = phaseOf({ boss: { kind: "morvane", hp: st.boss.hp, hpMax: st.boss.hpMax } });
+        }
+        const maxHit = monSpecialMaxHit(mon, phaseN);
+        const acc = monSpecialAccuracy(mon, phaseN);
+        if (maxHit == null || acc == null) return;
+        const lines = String(el.textContent || "").split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].indexOf(" hits you ") !== -1) {
+            lines[i] = lines[i]
+              .replace(/acc [0-9.]+%/, "acc " + (Math.round(acc * 1000) / 10) + "%")
+              .replace(/max [0-9]+/, "max " + maxHit);
+          }
+        }
+        el.textContent = lines.join("\n");
+      } catch (e) {}
+    }
+    patched.__morvanePhaseFix = true;
+    global.updateDebugCombat = patched;
+  }
+
   function installIntoGame() {
     registerItems();
+    installDebugOverlayFix();
     remigrateHostBank();
     installFoundSupplySlots();
     hookXscape();
@@ -4255,8 +4301,11 @@
   api.unlockAudio = kickUnlock;
   if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", hookXscape);
+    document.addEventListener("DOMContentLoaded", installDebugOverlayFix);
     setTimeout(hookXscape, 0);
+    setTimeout(installDebugOverlayFix, 0);
     setTimeout(hookXscape, 100);
+    setTimeout(installDebugOverlayFix, 100);
     armRaidUnlock();
   }
 })(typeof window !== "undefined" ? window : globalThis);

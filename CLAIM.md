@@ -11,4 +11,3 @@ One line per claim, in this format:
 
 ## Active claims
 
-- raid.js, index.html | Boss Mechanics | 2026-11-11 11:58 America/New_York | Apply formula-B Warden/Morvane defence handoff and fix debug overlay phase max
