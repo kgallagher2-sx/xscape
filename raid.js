@@ -136,7 +136,12 @@
     veilhide_vambs: { id: "veilhide_vambs", name: "Veilhide vambraces", slot: "hands", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:16, dstab:6,dslash:5,dcrush:7,dmagic:6,drange:4, str:0, rstr:0, mdmg:0 } },
     crownshard_boots: { id: "crownshard_boots", name: "Crownshard boots", slot: "feet", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:10, dstab:6,dslash:6,dcrush:6,dmagic:4,drange:6, str:0, rstr:4, mdmg:0 } },
     unsleeping_stole: { id: "unsleeping_stole", name: "Unsleeping stole", slot: "neck", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:4,dslash:4,dcrush:4,dmagic:4,drange:4, str:0, rstr:0, mdmg:0 } },
-    gloamheart_cape: { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:10,dslash:10,dcrush:10,dmagic:8,drange:16, str:0, rstr:6, mdmg:0 } }
+    gloamheart_cape: { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:10,dslash:10,dcrush:10,dmagic:8,drange:16, str:0, rstr:6, mdmg:0 } },
+    /* Mid-tier alcove ids match midPool() (hyphens). Stats match RAID_ITEMS. */
+    "tempered-xbow": { id: "tempered-xbow", name: "Tempered crossbow", slot: "weapon", tier: "mid", twohand: false, speed: 4, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:50, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:40, mdmg:0 } },
+    "duskhide-body": { id: "duskhide-body", name: "Duskhide body", slot: "body", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:8, dstab:20,dslash:18,dcrush:22,dmagic:8,drange:30, str:0, rstr:0, mdmg:0 } },
+    "duskhide-chaps": { id: "duskhide-chaps", name: "Duskhide chaps", slot: "legs", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:-2,arange:4, dstab:10,dslash:10,dcrush:10,dmagic:4,drange:16, str:0, rstr:0, mdmg:0 } },
+    "duskhide-vambs": { id: "duskhide-vambs", name: "Duskhide vambraces", slot: "hands", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:6, dstab:2,dslash:2,dcrush:2,dmagic:1,drange:2, str:0, rstr:0, mdmg:0 } }
   };
   const HOST_UNIQUES = ["hollowbolt_xbow","hollow_bolts","veilhide_body","veilhide_chaps","veilhide_vambs","crownshard_boots","unsleeping_stole","gloamheart_cape"];
   const GLOAMHOLD_LOADOUT = {
@@ -509,7 +514,19 @@
       fn(f.col, f.row, f);
     }
   }
-  function grantAlcoveMid(st, mid) {
+  /* Test-mode copy of game.gloamhold_alcove_rooms / game.gloamhold_mid_items.
+     Live signed-in grants use the server table only. Keep these in lockstep
+     with supabase/alcove_mid_loot.sql: chest1=0, chest2=0.45, chest3=0.35,
+     pool = tempered-xbow, duskhide-body, duskhide-chaps, duskhide-vambs. */
+  const ALCOVE_MID_CHANCE = { chest1: 0, chest2: 0.45, chest3: 0.35 };
+  function isLocalAlcoveMode() {
+    try {
+      var t = (new URLSearchParams(global.location.search).get("test") || "").trim();
+      if (t) return true;
+    } catch (e) {}
+    return false;
+  }
+  function recordAlcoveMid(st, mid) {
     if (!st || !mid) return;
     st.alcoveMids = st.alcoveMids || [];
     var room = st.room || "";
@@ -525,20 +542,70 @@
       f.alcoveUnlocks = f.alcoveUnlocks || [];
       if (f.alcoveUnlocks.indexOf(mid) === -1) f.alcoveUnlocks.push(mid);
     });
-    claimLocalAlcoveMids(st);
   }
-  function claimLocalAlcoveMids(st) {
-    if (!st) return;
-    var list = st.alcoveMids || [];
-    st._claimedAlcove = st._claimedAlcove || {};
-    for (var i = 0; i < list.length; i++) {
-      var e = list[i];
-      if (!e || !e.mid) continue;
-      var key = (e.room || "") + ":" + e.mid;
-      if (st._claimedAlcove[key]) continue;
-      st._claimedAlcove[key] = true;
-      unlockItem(e.mid);
+  function applyAlcoveItems(st, items) {
+    if (!items || !items.length) return;
+    for (var i = 0; i < items.length; i++) {
+      var id = items[i];
+      if (!id) continue;
+      recordAlcoveMid(st, id);
+      unlockItem(id);
     }
+  }
+  function alcoveItemNames(items) {
+    var names = [];
+    (items || []).forEach(function (id) {
+      if (!id) return;
+      var it = getItem(id);
+      names.push((it && it.name) || id);
+    });
+    return names;
+  }
+  function callClaimAlcoveMidRpc(runId, room, nonce) {
+    var cloud = global.XscapeCloud;
+    // Preferred: Gameboy adds XscapeCloud.claimAlcoveMid (see note at bottom).
+    if (cloud && typeof cloud.claimAlcoveMid === "function") {
+      return Promise.resolve(cloud.claimAlcoveMid(runId, room, nonce));
+    }
+    return Promise.resolve({
+      ok: false,
+      error: "Alcove claim RPC is not wired on the cloud client",
+      items: []
+    });
+  }
+  function requestAlcoveClaim(st, room, cb) {
+    if (!st || !room) return;
+    if (ALCOVE_MID_CHANCE[room] == null) return;
+    st._alcoveClaim = st._alcoveClaim || {};
+    if (st._alcoveClaim[room] === "done" || st._alcoveClaim[room] === "inflight") return;
+    st._alcoveClaim[room] = "inflight";
+    var runId = st.group && st.group.runId ? st.group.runId : null;
+    if (!st.soloNonce && !runId) st.soloNonce = makeRaidNonce();
+    var nonce = runId ? null : (st.soloNonce || null);
+    callClaimAlcoveMidRpc(runId, room, nonce).then(function (res) {
+      var items = (res && res.items) || [];
+      if (typeof items === "string") {
+        try { items = JSON.parse(items); } catch (e) { items = []; }
+      }
+      if (!Array.isArray(items)) items = [];
+      if (res && res.ok) {
+        st._alcoveClaim[room] = "done";
+        applyAlcoveItems(st, items);
+        var cloud = global.XscapeCloud;
+        if (res.profile && cloud && typeof cloud.applyProfile === "function") {
+          try { cloud.applyProfile(res.profile, { fromAward: true }); } catch (e) {}
+        }
+      } else {
+        st._alcoveClaim[room] = null;
+        if (res && res.error) flash(st, res.error, "#ff8a70");
+      }
+      if (typeof cb === "function") cb(res && res.ok ? res : { ok: false, items: items, error: res && res.error });
+    }).catch(function (err) {
+      st._alcoveClaim[room] = null;
+      var msg = (err && err.message) || "Could not claim alcove loot";
+      flash(st, msg, "#ff8a70");
+      if (typeof cb === "function") cb({ ok: false, items: [], error: msg });
+    });
   }
   function nearestFighter(st, col, row) {
     var list = livingFighters(st);
@@ -1817,9 +1884,21 @@
     if (tab.brews) bits.push(tab.brews + " brew");
     if (tab.ranging) bits.push(tab.ranging + " ranging pot");
     let mid = null;
-    if (tab.midChance && st.rng() < tab.midChance) {
-      mid = pickMissing(st.rng, midPool(), profileObj().unlockedItems);
-      if (mid) { grantAlcoveMid(st, mid); bits.push(getItem(mid).name); }
+    if (isLocalAlcoveMode()) {
+      var localChance = (ALCOVE_MID_CHANCE[st.room] != null) ? ALCOVE_MID_CHANCE[st.room] : (tab.midChance || 0);
+      if (localChance && st.rng() < localChance) {
+        mid = pickMissing(st.rng, midPool(), profileObj().unlockedItems);
+        if (mid) {
+          applyAlcoveItems(st, [mid]);
+          bits.push((getItem(mid) && getItem(mid).name) || mid);
+        }
+      }
+    } else if (ALCOVE_MID_CHANCE[st.room]) {
+      requestAlcoveClaim(st, st.room, function (res) {
+        var items = (res && res.items) || [];
+        var names = alcoveItemNames(items);
+        if (names.length) flash(st, names.join(", "), "#ffe9a0");
+      });
     }
     st.roomState.lootBits = bits;
     flash(st, bits.length ? bits.join(", ") : "Empty hooks", "#ffe9a0");
@@ -2645,8 +2724,10 @@
       const P = loadRaidProfile();
       const uni = uniquePool();
       const midIds = midPool();
-      for (let i = 0; i < uni.length; i++) unlockItem(uni[i]);
-      for (let i = 0; i < midIds.length; i++) unlockItem(midIds[i]);
+      if (isLocalAlcoveMode()) {
+        for (let i = 0; i < uni.length; i++) unlockItem(uni[i]);
+        for (let i = 0; i < midIds.length; i++) unlockItem(midIds[i]);
+      }
       if (typeof global.equipLoadout === "function" && typeof global.LOADOUTS !== "undefined" && global.LOADOUTS.gloamhold) {
         global.equipLoadout("gloamhold");
       } else {
@@ -2665,7 +2746,9 @@
     giveMidGear: function () {
       const P = loadRaidProfile();
       const midIds = midPool();
-      for (let i = 0; i < midIds.length; i++) unlockItem(midIds[i]);
+      if (isLocalAlcoveMode()) {
+        for (let i = 0; i < midIds.length; i++) unlockItem(midIds[i]);
+      }
       if (typeof global.equipLoadout === "function" && typeof global.LOADOUTS !== "undefined" && global.LOADOUTS.upgrade) {
         global.equipLoadout("upgrade");
       } else {
@@ -2711,7 +2794,6 @@
     saveProfile: saveRaidProfile,
     profile: profileObj,
     rollFinalLoot: rollFinalLoot,
-    claimLocalAlcoveMids: claimLocalAlcoveMids,
     raidAudio: raidAudio,
     testFlag: function () {
       try { return (new URLSearchParams(global.location.search).get("test") || "").toLowerCase(); }
@@ -3045,10 +3127,9 @@
     if (payload.float) R.float = payload.float;
     if (payload.loot) R.loot = payload.loot;
     if (payload.alcoveMids) R.alcoveMids = payload.alcoveMids;
-    else if (payload.roomState && payload.roomState.mid) {
-      grantAlcoveMid(R, payload.roomState.mid);
+    if (R.roomState && R.roomState.open && !isLocalAlcoveMode() && ALCOVE_MID_CHANCE[R.room]) {
+      requestAlcoveClaim(R, R.room);
     }
-    claimLocalAlcoveMids(R);
     if (payload.fighters && payload.fighters.length) {
       for (var i = 0; i < payload.fighters.length; i++) applyPackedFighter(R, payload.fighters[i]);
       restoreLocalFighter(R);
