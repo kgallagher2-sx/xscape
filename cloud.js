@@ -228,6 +228,13 @@
      claim_alcove_mid RPC is the only grant path. Dose or hyphen/underscore
      variants of these bases are treated the same. */
   var ALCOVE_MID_IDS = ["tempered-xbow", "duskhide-body", "duskhide-chaps", "duskhide-vambs"];
+  /* The 18 Gloamhold vault uniques from game.gloamhold_unique_items / combat.js ITEMS.
+     Only record_raid_clear and complete_raid_run (or a later trade) may grant them. */
+  var GLOAMHOLD_UNIQUE_IDS = [
+    "eclipse_coif", "eclipse_body", "eclipse_chaps", "eclipse_longbow", "eclipse_pendant", "eclipse_band",
+    "unsleeping_hood", "unsleeping_robe_top", "unsleeping_robe_bottom", "nightfall_staff", "unsleeping_charm", "dreamless_ring",
+    "hollowplate_helm", "hollowplate_body", "hollowplate_legs", "hollow_halberd", "hollow_torque", "hollow_signet"
+  ];
 
   function alcoveMidBase(id) {
     if (!id || typeof id !== "string") return null;
@@ -240,6 +247,36 @@
     return null;
   }
   function isAlcoveMidId(id) { return !!alcoveMidBase(id); }
+
+  function gloamholdUniqueBase(id) {
+    if (!id || typeof id !== "string") return null;
+    var normalized = id.replace(/-/g, "_");
+    for (var i = 0; i < GLOAMHOLD_UNIQUE_IDS.length; i++) {
+      var base = GLOAMHOLD_UNIQUE_IDS[i];
+      if (normalized === base) return base;
+      if (normalized.indexOf(base + "_") === 0) return base;
+    }
+    return null;
+  }
+  function isGloamholdUniqueId(id) { return !!gloamholdUniqueBase(id); }
+  function isProtectedGrantId(id) { return isAlcoveMidId(id) || isGloamholdUniqueId(id); }
+
+  function protectedIdKeys(id) {
+    var keys = [];
+    if (!id || typeof id !== "string") return keys;
+    keys.push(id);
+    var mid = alcoveMidBase(id);
+    var uni = gloamholdUniqueBase(id);
+    if (mid) {
+      keys.push(mid);
+      keys.push(mid.replace(/-/g, "_"));
+    }
+    if (uni) {
+      keys.push(uni);
+      keys.push(uni.replace(/_/g, "-"));
+    }
+    return keys;
+  }
 
   function collectProfileItemIds(p) {
     var ids = [];
@@ -254,12 +291,24 @@
     return ids;
   }
 
-  function cloudOwnedAlcoveMidIds(profile) {
+  function cloudOwnedProtectedIds(profile) {
     var allow = {};
     collectProfileItemIds(profile).forEach(function (id) {
-      if (isAlcoveMidId(id)) allow[id] = true;
+      if (!isProtectedGrantId(id)) return;
+      var keys = protectedIdKeys(id);
+      for (var i = 0; i < keys.length; i++) allow[keys[i]] = true;
     });
     return allow;
+  }
+  function cloudOwnedAlcoveMidIds(profile) { return cloudOwnedProtectedIds(profile); }
+
+  function allowedProtectedId(id, allowed) {
+    if (!isProtectedGrantId(id)) return true;
+    var keys = protectedIdKeys(id);
+    for (var i = 0; i < keys.length; i++) {
+      if (allowed[keys[i]]) return true;
+    }
+    return false;
   }
 
   function filterAlcoveMidsFromList(list, allowed) {
@@ -267,7 +316,7 @@
     var out = [];
     for (var i = 0; i < list.length; i++) {
       var id = list[i];
-      if (isAlcoveMidId(id) && !allowed[id]) continue;
+      if (isProtectedGrantId(id) && !allowedProtectedId(id, allowed)) continue;
       out.push(id);
     }
     return out;
@@ -278,16 +327,18 @@
     var out = {};
     Object.keys(eq).forEach(function (slot) {
       var id = eq[slot];
-      out[slot] = (isAlcoveMidId(id) && !allowed[id]) ? null : id;
+      out[slot] = (isProtectedGrantId(id) && !allowedProtectedId(id, allowed)) ? null : id;
     });
     return out;
   }
 
-  /* Strip mid-tier ids that are not already on the last loaded cloud
-     profile so a client-only unlock cannot be written via save_player_state. */
+  /* Strip mid-tier and Gloamhold unique ids that are not already on the
+     last loaded cloud profile so a client-only unlock cannot be written
+     via save_player_state. Traded or raid-granted copies stay if they
+     landed on cloudProfile via applyProfile. */
   function filterAlcoveMidsFromPayload(payload, profile) {
     if (!payload || typeof payload !== "object") return payload;
-    var allowed = cloudOwnedAlcoveMidIds(profile !== undefined ? profile : cloudProfile);
+    var allowed = cloudOwnedProtectedIds(profile !== undefined ? profile : cloudProfile);
     var out = {};
     Object.keys(payload).forEach(function (k) { out[k] = payload[k]; });
     if (out.unlockedItems) out.unlockedItems = filterAlcoveMidsFromList(out.unlockedItems, allowed);
@@ -297,8 +348,9 @@
     return out;
   }
 
-  /* After a successful claim_alcove_mid, remember granted mids on the
-     in-memory cloud profile so a later save does not drop them. */
+  /* After a successful claim, raid clear, or trade applyProfile, remember
+     granted mids and Gloamhold uniques on the in-memory cloud profile so
+     a later save does not drop them. */
   function rememberCloudAlcoveMids(p) {
     if (!p) return;
     if (!cloudProfile) cloudProfile = {};
@@ -307,7 +359,7 @@
       var incoming = Array.isArray(p[key]) ? p[key] : [];
       for (var i = 0; i < incoming.length; i++) {
         var id = incoming[i];
-        if (!isAlcoveMidId(id)) continue;
+        if (!isProtectedGrantId(id)) continue;
         if (have.indexOf(id) === -1) have.push(id);
       }
       if (have.length) cloudProfile[key] = have;
@@ -319,7 +371,7 @@
       if (!cloudProfile.equipment || typeof cloudProfile.equipment !== "object") cloudProfile.equipment = {};
       Object.keys(p.equipment).forEach(function (slot) {
         var id = p.equipment[slot];
-        if (isAlcoveMidId(id)) cloudProfile.equipment[slot] = id;
+        if (isProtectedGrantId(id)) cloudProfile.equipment[slot] = id;
       });
     }
   }
@@ -385,18 +437,46 @@
     }
   }
 
-  /* After claim_alcove_mid, including already:true, merge returned items
-     into the local Profile and the in-memory cloud profile, then save
-     locally so showTitle/loadProfile cannot revert them. */
+  function asItemIdList(v) {
+    if (typeof v === "string") {
+      try { v = JSON.parse(v); } catch (e) { return []; }
+    }
+    return Array.isArray(v) ? v.slice() : [];
+  }
+
+  /* Normalize claim_alcove_mid fields to the names raid.js already reads:
+     items, bonus_items (and bonusItems alias), gp, gpAwarded, profile.
+     Do not fold bonus supplies into items. */
+  function normalizeAlcoveClaim(res) {
+    if (!res || typeof res !== "object") return res;
+    res.items = asItemIdList(res.items);
+    var bonus = (res.bonus_items != null) ? res.bonus_items : res.bonusItems;
+    res.bonus_items = asItemIdList(bonus);
+    res.bonusItems = res.bonus_items;
+    return res;
+  }
+
+  /* After claim_alcove_mid, including already:true, apply the returned
+     profile (including gp so the HUD updates immediately), merge mid
+     grants from res.items / res.profile, and save locally. Bonus
+     supplies stay out of items and are not banked here. */
   function applyAlcoveClaimToLocal(res) {
     if (!res || !res.ok) return;
-    var items = res.items;
-    if (typeof items === "string") {
-      try { items = JSON.parse(items); } catch (e) { items = []; }
+    normalizeAlcoveClaim(res);
+    var items = res.items.slice();
+    if (res.profile) {
+      applyCloudProfile(res.profile, { fromAward: true });
+      rememberCloudAlcoveMids(res.profile);
+    } else {
+      if (items.length) rememberCloudAlcoveMids({ unlockedItems: items, bank: items });
+      if (res.gp != null && global.Profile) {
+        var claimedGp = Number(res.gp);
+        if (!isNaN(claimedGp)) {
+          global.Profile.gp = claimedGp;
+          if (global.G) global.G.gp = claimedGp;
+        }
+      }
     }
-    if (!Array.isArray(items)) items = [];
-    if (res.profile) rememberCloudAlcoveMids(res.profile);
-    else if (items.length) rememberCloudAlcoveMids({ unlockedItems: items, bank: items });
     var grant = { unlockedItems: items.slice(), bank: items.slice() };
     if (res.profile) {
       if (Array.isArray(res.profile.unlockedItems)) {
@@ -425,6 +505,15 @@
       }
     }
     saveProfileLocally();
+    if (typeof global.refreshHub === "function") {
+      try { global.refreshHub(); } catch (e) {}
+    }
+    refreshCloudChrome();
+  }
+
+  function applyAwardedProfile(res) {
+    if (res && res.ok && res.profile) applyCloudProfile(res.profile, { fromAward: true });
+    return res;
   }
 
   function localPayload() {
@@ -2618,12 +2707,13 @@
     },
     filterAlcoveMidsFromPayload: filterAlcoveMidsFromPayload,
     ALCOVE_MID_IDS: ALCOVE_MID_IDS,
+    GLOAMHOLD_UNIQUE_IDS: GLOAMHOLD_UNIQUE_IDS,
     recordRaidClear: function (ticks, score, nonce) {
       return rpc("record_raid_clear", {
         p_ticks: ticks || 0,
         p_score: score || 0,
         p_nonce: nonce || null
-      });
+      }).then(applyAwardedProfile);
     },
     completeRaidRun: function (runId, ticks, deadIds, scores) {
       return rpc("complete_raid_run", {
@@ -2631,7 +2721,7 @@
         p_ticks: ticks || 0,
         p_dead: Array.isArray(deadIds) ? deadIds : [],
         p_scores: scores && typeof scores === "object" ? scores : {}
-      });
+      }).then(applyAwardedProfile);
     },
     reportRaidDeaths: function (runId, deadIds) {
       return rpc("report_raid_deaths", {
