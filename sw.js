@@ -5,7 +5,19 @@ var LAB_RE = /(?:^|\/)(lab\.html|lab-gear\.js)(?:\?|$)/;
 var NO_CACHE_RE = /(?:^|\/)version\.json(?:\?|$)/;
 
 self.addEventListener("install", function (event) {
-  self.skipWaiting();
+  // Precache combat.js into the stamp-named cache (xscape-${BUILD}) before
+  // skipWaiting. A new stamp changes BUILD, so install writes a new bucket
+  // and activate deletes the old one. That way a client that activates this
+  // worker already has combat.js when it starts serving the new index.html,
+  // and an old worker (old stamp / old cache, no combat.js) stays in charge
+  // if this install fails (for example combat.js 404). Do not change BUILD here.
+  event.waitUntil(
+    caches.open(CACHE).then(function (cache) {
+      return cache.add(new Request("combat.js", { cache: "no-store" }));
+    }).then(function () {
+      return self.skipWaiting();
+    })
+  );
 });
 
 self.addEventListener("activate", function (event) {
