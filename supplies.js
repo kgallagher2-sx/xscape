@@ -18,7 +18,13 @@
     prayer_potion: 82000,
     super_restore: 100000,
     saradomin_brew: 90000,
-    antipoison: 40000
+    antipoison: 40000,
+    ember_rune: 20,
+    wisp_rune: 20,
+    coil_rune: 80,
+    veil_rune: 200,
+    vein_rune: 400,
+    omen_rune: 600
   };
 
   const SHOP_ROWS = [
@@ -33,7 +39,13 @@
     { id: "prayer_potion", name: "Prayer potion", kind: "potion", desc: "Restores 7 + 25% of base Prayer." },
     { id: "super_restore", name: "Super restore", kind: "potion", desc: "Restores stats and prayer (8 + 25%)." },
     { id: "saradomin_brew", name: "Gloam brew", kind: "potion", desc: "Heals 16, boosts Defence, drains other combat stats." },
-    { id: "antipoison", name: "Antipoison", kind: "potion", desc: "Cures poison and grants 90 seconds of immunity." }
+    { id: "antipoison", name: "Antipoison", kind: "potion", desc: "Cures poison and grants 90 seconds of immunity." },
+    { id: "ember_rune", name: "Ember rune", kind: "rune", desc: "20gp each. Packs of 100 / 500 / 1,000." },
+    { id: "wisp_rune", name: "Wisp rune", kind: "rune", desc: "20gp each. Packs of 100 / 500 / 1,000." },
+    { id: "coil_rune", name: "Coil rune", kind: "rune", desc: "80gp each. Packs of 100 / 500 / 1,000." },
+    { id: "veil_rune", name: "Veil rune", kind: "rune", desc: "200gp each. Packs of 100 / 500 / 1,000." },
+    { id: "vein_rune", name: "Vein rune", kind: "rune", desc: "400gp each. Packs of 100 / 500 / 1,000." },
+    { id: "omen_rune", name: "Omen rune", kind: "rune", desc: "600gp each. Packs of 100 / 500 / 1,000." }
   ];
 
   const POTION_FAMILIES = {
@@ -70,8 +82,46 @@
   const POTION_IDS = "super_attack|super_strength|super_defence|ranging_potion|magic_potion|super_restore|saradomin_brew|prayer_potion|antipoison";
   const POTION_ID_RE = new RegExp("^(" + POTION_IDS + ")(?:_([1-4]))?$");
 
+  const RUNE_IDS = {
+    ember_rune: true, wisp_rune: true, coil_rune: true,
+    veil_rune: true, vein_rune: true, omen_rune: true
+  };
+  const RUNE_COPY_CAP = 100000;
+  const RUNE_BUY_CAP = 1000;
+
+  function isRuneId(id) {
+    if (!id) return false;
+    if (RUNE_IDS[id]) return true;
+    const combat = global.XscapeCombat;
+    return !!(combat && typeof combat.isRuneId === "function" && combat.isRuneId(id));
+  }
+
+  // Unique inventory slots: each rune type occupies one slot no matter the stack size.
+  function uniqueInventorySlots(arr) {
+    arr = arr || invArr();
+    const seen = {};
+    let n = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const id = arr[i];
+      if (!id) continue;
+      if (isRuneId(id)) {
+        if (seen[id]) continue;
+        seen[id] = true;
+      }
+      n++;
+    }
+    return n;
+  }
+
+  function inventoryHasId(arr, id) {
+    arr = arr || invArr();
+    for (let i = 0; i < arr.length; i++) if (arr[i] === id) return true;
+    return false;
+  }
+
   function isSupplyId(id) {
     if (!id) return false;
+    if (isRuneId(id)) return true;
     if (id === "swordfish" || id === "shark" || id === "dark_crab") return true;
     return !!familyOf(id);
   }
@@ -105,6 +155,7 @@
     if (d) return d.family;
     if (POTION_FAMILIES[id]) return id;
     if (id === "swordfish" || id === "shark" || id === "dark_crab") return id;
+    if (isRuneId(id)) return id;
     return null;
   }
 
@@ -205,6 +256,10 @@
     Object.keys(POTION_FAMILIES).forEach(function (fam) {
       pot(fam, POTION_FAMILIES[fam].name);
     });
+    Object.keys(RUNE_IDS).forEach(function (id) {
+      const rec = (global.XscapeCombat && XscapeCombat.RUNES && XscapeCombat.RUNES[id]) || { id: id, name: id };
+      ITEMS[id] = { id: id, name: rec.name || id, slot: "inventory", tier: "supply", kind: "rune", consumable: true, stackable: true };
+    });
   }
 
   function patchContainers() {
@@ -215,7 +270,16 @@
       if (!global.ITEMS || !ITEMS[id]) return false;
       const P = profile();
       if (!P.inventory) P.inventory = [];
-      if (P.inventory.length >= CAP) return false;
+      if (isRuneId(id)) {
+        const have = inventoryHasId(P.inventory, id);
+        if (!have && uniqueInventorySlots(P.inventory) >= CAP) return false;
+        let copies = 0;
+        for (let i = 0; i < P.inventory.length; i++) if (P.inventory[i] === id) copies++;
+        if (copies >= RUNE_COPY_CAP) return false;
+        P.inventory.push(id);
+        return true;
+      }
+      if (uniqueInventorySlots(P.inventory) >= CAP) return false;
       P.inventory.push(id);
       return true;
     };
@@ -241,11 +305,22 @@
     global.normalizeContainers = function () {
       const P = profile();
       const inv = [];
+      const runeCopies = {};
       (P.inventory || []).forEach(function (raw) {
         const id = canonicalSupplyId(raw);
         if (!id || !ITEMS[id]) return;
         if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
-        if (inv.length >= CAP) return;
+        if (isRuneId(id)) {
+          if (runeCopies[id] == null) {
+            if (uniqueInventorySlots(inv) >= CAP) return;
+            runeCopies[id] = 0;
+          }
+          if (runeCopies[id] >= RUNE_COPY_CAP) return;
+          runeCopies[id]++;
+          inv.push(id);
+          return;
+        }
+        if (uniqueInventorySlots(inv) >= CAP) return;
         inv.push(id);
       });
       P.inventory = inv;
@@ -281,7 +356,12 @@
       }
       return out;
     };
-    if (prevAdd && prevBank && prevNorm && prevBankList) { /* replaced */ }
+    const prevSpace = global.inventorySpace;
+    global.inventorySpace = function () {
+      const P = profile();
+      return Math.max(0, CAP - uniqueInventorySlots(P.inventory || []));
+    };
+    if (prevAdd && prevBank && prevNorm && prevBankList && prevSpace) { /* replaced */ }
   }
 
   function defaultLayout() {
@@ -312,6 +392,7 @@
     const seen = {};
     const out = [];
     invArr().forEach(function (id) {
+      if (isRuneId(id)) return;
       const fam = familyOf(id);
       if (fam && !seen[fam]) { seen[fam] = true; out.push(fam); }
     });
@@ -558,6 +639,7 @@
   }
 
   function canUse(fam) {
+    if (isRuneId(fam)) return false;
     const G = global.G, p = G && G.player;
     if (!G || !p || p.hp <= 0 || G.mode !== "playing") return false;
     if (available(fam) <= 0) return false;
@@ -1088,14 +1170,13 @@
 
   function setQty(q) {
     if (q === "x") {
-      const space = (typeof global.inventorySpace === "function") ? inventorySpace() : 28;
       let n = 1;
       if (typeof global.prompt === "function" || typeof prompt === "function") {
-        const raw = prompt("How many? (1–" + Math.max(1, space) + ")", String(Math.min(10, space)));
+        const raw = prompt("How many? (1–28, or up to 1,000 for runes)", "100");
         n = Math.floor(Number(raw) || 0);
       }
       if (n < 1) return;
-      shopQty = clamp(n, 1, 28);
+      shopQty = clamp(n, 1, RUNE_BUY_CAP);
     } else shopQty = Number(q) || 1;
     renderShop();
   }
@@ -1236,11 +1317,19 @@
       return false;
     }
     const itemId = shopItemId(shopId);
+    const rune = isRuneId(itemId) || isRuneId(shopId);
+    if (rune) {
+      if (qty > RUNE_BUY_CAP) qty = RUNE_BUY_CAP;
+    } else if (qty > CAP) {
+      qty = CAP;
+    }
     const unit = shopUnitPrice(shopId);
     const cost = unit * qty;
     const P = profile();
-    const space = (typeof global.inventorySpace === "function") ? inventorySpace() : Math.max(0, CAP - invArr().length);
-    if (space < qty) {
+    if (!Array.isArray(P.inventory)) P.inventory = [];
+    const space = (typeof global.inventorySpace === "function") ? inventorySpace() : Math.max(0, CAP - uniqueInventorySlots(P.inventory));
+    const needsSlot = rune ? (inventoryHasId(P.inventory, itemId) ? 0 : 1) : qty;
+    if (space < needsSlot) {
       if (typeof flashMsg === "function") flashMsg("Inventory full", "#ff8a70");
       return false;
     }
@@ -1250,7 +1339,6 @@
     }
     if (!buyQueueActive()) snapshotConfirmed();
     const rec = { shopId: shopId, qty: qty, itemId: itemId, cost: cost, items: [] };
-    if (!Array.isArray(P.inventory)) P.inventory = [];
     for (let i = 0; i < qty; i++) {
       rec.items.push(itemId);
       P.inventory.push(itemId);
@@ -1389,7 +1477,10 @@
     doseOf: doseOf,
     labelFor: labelFor,
     init: init,
-    applyBuyProfile: applyBuyProfile
+    applyBuyProfile: applyBuyProfile,
+    isRuneId: isRuneId,
+    uniqueInventorySlots: uniqueInventorySlots,
+    markDirty: markDirty
   };
   global.XscapeSupplies = api;
   global.openSupplyShop = openShop;

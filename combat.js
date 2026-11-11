@@ -57,6 +57,7 @@
     black_dhide_boots:  { id: "black_dhide_boots", name: "Black d'hide boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
     rune_bolts:         { id: "rune_bolts", name: "Rune bolts", slot: "ammo", tier: "tier2", bonuses: b({ rstr: 115 }) },
     amulet_of_glory:    { id: "amulet_of_glory", name: "Amulet of glory", slot: "neck", tier: "tier2", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 3, dslash: 3, dcrush: 3, dmagic: 3, drange: 3, str: 6 }) },
+    ashen_staff:        { id: "ashen_staff", name: "Ashen staff", slot: "weapon", tier: "shop", kind: "staff", twohand: true, speed: 5, style: "magic", bonuses: b({ amagic: 20, mdmg: 0 }) },
 
     fire_cape:          { id: "fire_cape", name: "Fire cape", slot: "cape", tier: "jad", bonuses: b({ astab: 1, aslash: 1, acrush: 1, amagic: 1, arange: 1, dstab: 11, dslash: 11, dcrush: 11, dmagic: 11, drange: 11, str: 4 }) },
 
@@ -193,7 +194,8 @@
     { id: "black_dhide_vambs", price: 800000 },
     { id: "black_dhide_boots", price: 800000 },
     { id: "rune_bolts", price: 1500000 },
-    { id: "amulet_of_glory", price: 2000000 }
+    { id: "amulet_of_glory", price: 2000000 },
+    { id: "ashen_staff", price: 400000 }
   ];
   const SHOP_BUNDLE = {
     name: "Black d'hide kit",
@@ -284,6 +286,7 @@
     eq = eq || (typeof Profile !== "undefined" && Profile && Profile.equipment) || {};
     const it = (typeof ITEMS !== "undefined" && ITEMS) ? ITEMS[eq.weapon] : null;
     if (!it) return "ranged";
+    if (it.kind === "staff" || it.kind === "wand" || it.slot === "wand" || it.style === "magic" || it.style === "mage") return it.style === "magic" ? "magic" : (it.style || "mage");
     if (it.style) return it.style;
     if (it.kind === "wand" || it.slot === "wand") return "mage";
     if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "slash" || it.kind === "stab" || it.kind === "crush") {
@@ -512,8 +515,10 @@
       var wep = eq
         ? ((ITEMS && ITEMS[eq.weapon]) || null)
         : ((typeof itemInSlot === "function") ? itemInSlot("weapon") : (ITEMS[(Profile.equipment && Profile.equipment.weapon)] || null));
-      var base = (wep && wep.magicBase) || 0;
-      max = Math.floor(base * (1 + (pb.mdmg || 0) / 100));
+      var spellId = (opts && opts.spellId) || resolvedAutocast(wep && wep.id);
+      var spell = spellById(spellId);
+      var base = spell ? spell.base : ((wep && wep.magicBase) || 0);
+      max = spellMaxHitFrom(base, pb.mdmg);
     } else {
       atkLevel = effectivePlayerLevel(combatSkillLevel("attack", useBase), 1, stance);
       atkBonus = styleAttackBonus(pb, style);
@@ -597,6 +602,170 @@
   }
 
 
+  /* ---------- SPELLBOOK (Combat Balance, 2026-11-11) ----------
+     Approved via Gameboy, 11 Nov 2026: Ember spark 8 / arc 12 / flare 16 /
+     crest 20 / spire 30; Nightfall built-in 38. PvM max is
+     floor(spellBase * (1 + mdmg/100)). Staff-tier mapping is in
+     SPELL_TIER_UNLOCKS / WEAPON_SPELL_TIER only (change those tables to
+     retune unlocks). Ashen (shop) unlocks through Crest; Widow wand
+     (tier-2) adds Spire; Nightfall staff (tier-3) adds Nightfall.
+     Full Unsleeping kit mdmg is 37, so floor(38 * 1.37) = 52. The staff
+     alone is mdmg 20, floor(38 * 1.20) = 45. combatVsPlayer / duels are
+     intentionally unchanged. Staffs and wands never melee (playerStyle). */
+  const RUNES = {
+    ember_rune: { id: "ember_rune", name: "Ember rune", price: 20 },
+    wisp_rune:  { id: "wisp_rune",  name: "Wisp rune",  price: 20 },
+    coil_rune:  { id: "coil_rune",  name: "Coil rune",  price: 80 },
+    veil_rune:  { id: "veil_rune",  name: "Veil rune",  price: 200 },
+    vein_rune:  { id: "vein_rune",  name: "Vein rune",  price: 400 },
+    omen_rune:  { id: "omen_rune",  name: "Omen rune",  price: 600 }
+  };
+  const SPELLS = {
+    ember_spark: { id: "ember_spark", name: "Ember spark", base: 8,  runes: { ember_rune: 1, wisp_rune: 1 }, tier: "shop" },
+    ember_arc:   { id: "ember_arc",   name: "Ember arc",   base: 12, runes: { ember_rune: 2, coil_rune: 1 }, tier: "shop" },
+    ember_flare: { id: "ember_flare", name: "Ember flare", base: 16, runes: { ember_rune: 3, veil_rune: 1 }, tier: "shop" },
+    ember_crest: { id: "ember_crest", name: "Ember crest", base: 20, runes: { ember_rune: 4, vein_rune: 1 }, tier: "shop" },
+    ember_spire: { id: "ember_spire", name: "Ember spire", base: 30, runes: { ember_rune: 5, omen_rune: 1 }, tier: "tier2" },
+    nightfall:   { id: "nightfall",   name: "Nightfall",   base: 38, runes: { ember_rune: 5, omen_rune: 1, vein_rune: 1 }, tier: "unique" }
+  };
+  // Per-cast GP from MAGIC_SYSTEM_PROPOSAL.md, implied by the rune prices above.
+  const SPELL_CAST_GP = { ember_spark: 40, ember_arc: 120, ember_flare: 260, ember_crest: 480, ember_spire: 700, nightfall: 1100 };
+
+  const SPELL_TIER_UNLOCKS = {
+    shop:   ["ember_spark", "ember_arc", "ember_flare", "ember_crest"],
+    tier2:  ["ember_spark", "ember_arc", "ember_flare", "ember_crest", "ember_spire"],
+    unique: ["ember_spark", "ember_arc", "ember_flare", "ember_crest", "ember_spire", "nightfall"]
+  };
+  const WEAPON_SPELL_TIER = {
+    ashen_staff: "shop",
+    widow_weaver_wand: "tier2",
+    nightfall_staff: "unique"
+  };
+
+  function isRuneId(id) { return !!(id && RUNES[id]); }
+  function spellById(id) { return (id && SPELLS[id]) || null; }
+  function isMagicWeapon(it) {
+    if (!it) return false;
+    if (it.kind === "staff" || it.kind === "wand" || it.slot === "wand") return true;
+    if (it.style === "magic" || it.style === "mage") return true;
+    return false;
+  }
+  function allowedSpellsFor(weaponId) {
+    const tier = WEAPON_SPELL_TIER[weaponId];
+    if (!tier) return [];
+    const list = SPELL_TIER_UNLOCKS[tier];
+    return list ? list.slice() : [];
+  }
+  function defaultAutocast(weaponId) {
+    const list = allowedSpellsFor(weaponId);
+    return list.length ? list[list.length - 1] : null;
+  }
+  function resolvedAutocast(weaponId, requested) {
+    const allowed = allowedSpellsFor(weaponId);
+    if (!allowed.length) return null;
+    let want = requested;
+    if (want == null) {
+      const P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+      want = (P && P.autocast) || (P && P.settings && P.settings.autocast) || null;
+    }
+    if (want && allowed.indexOf(want) >= 0) return want;
+    return defaultAutocast(weaponId);
+  }
+  function spellMaxHitFrom(base, mdmg) {
+    return Math.floor((base || 0) * (1 + (mdmg || 0) / 100));
+  }
+  function spellMaxHit(eq, spellId) {
+    const spell = spellById(spellId);
+    if (!spell) return 0;
+    const pb = playerBonuses(eq);
+    return spellMaxHitFrom(spell.base, pb.mdmg);
+  }
+  function inventoryOf(source) {
+    if (!source) {
+      const P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+      return (P && Array.isArray(P.inventory)) ? P.inventory : [];
+    }
+    if (Array.isArray(source)) return source;
+    if (Array.isArray(source.inventory)) return source.inventory;
+    return [];
+  }
+  function countItem(inv, id) {
+    let n = 0;
+    for (let i = 0; i < inv.length; i++) if (inv[i] === id) n++;
+    return n;
+  }
+  function canCast(invOrProfile, spellId) {
+    const spell = spellById(spellId);
+    if (!spell) return false;
+    const inv = inventoryOf(invOrProfile);
+    const need = spell.runes || {};
+    for (const id of Object.keys(need)) {
+      if (countItem(inv, id) < (need[id] || 0)) return false;
+    }
+    return true;
+  }
+  function consumeRunes(invOrProfile, spellId) {
+    const spell = spellById(spellId);
+    if (!spell) return false;
+    const inv = inventoryOf(invOrProfile);
+    if (!canCast(inv, spellId)) return false;
+    const need = spell.runes || {};
+    for (const id of Object.keys(need)) {
+      let left = need[id] || 0;
+      for (let i = inv.length - 1; i >= 0 && left > 0; i--) {
+        if (inv[i] === id) { inv.splice(i, 1); left--; }
+      }
+    }
+    return true;
+  }
+  function outOfRunesMessage(spell) {
+    const name = (spell && spell.name) || "that spell";
+    return "Out of runes — " + name;
+  }
+  // Single helper for boss / raid / Jad attack paths. Checks the resolved
+  // autocast, consumes runes from the same inventory array the save path
+  // already writes (client mid-fight, flush on fight end / hub enter, same
+  // as sharks). Does not open a per-cast RPC.
+  //
+  // Usage (boss fire / playerAttack), before rollHit:
+  //   const cast = XscapeCombat.tryCastSpell(Profile, Profile.equipment.weapon);
+  //   if (!cast.ok) {
+  //     if (typeof flashMsg === "function") flashMsg(cast.message, "#c0c0c0");
+  //     return; // do not start atkCd, do not swing
+  //   }
+  //   const vs = combatVsMonster(monId, "magic", { spellId: cast.spell.id });
+  function tryCastSpell(source, weaponId, opts) {
+    opts = opts || {};
+    const P = (source && !Array.isArray(source)) ? source
+      : ((typeof Profile !== "undefined" && Profile) ? Profile : null);
+    const wepId = weaponId || (P && P.equipment && P.equipment.weapon) || null;
+    const requested = (opts.spellId != null) ? opts.spellId
+      : (P && (P.autocast || (P.settings && P.settings.autocast))) || null;
+    const spellId = resolvedAutocast(wepId, requested);
+    const spell = spellById(spellId);
+    if (!spell) {
+      return { ok: false, reason: "no-spell", message: "Choose a spell", spell: null, maxHit: 0 };
+    }
+    const inv = inventoryOf(source || P);
+    if (!canCast(inv, spellId)) {
+      return { ok: false, reason: "out-of-runes", message: outOfRunesMessage(spell), spell: spell, maxHit: 0 };
+    }
+    if (opts.dryRun) {
+      const eq = (opts.equipment || (P && P.equipment) || null);
+      return { ok: true, spell: spell, maxHit: spellMaxHit(eq, spellId), consumed: false };
+    }
+    if (!consumeRunes(inv, spellId)) {
+      return { ok: false, reason: "out-of-runes", message: outOfRunesMessage(spell), spell: spell, maxHit: 0 };
+    }
+    const supplies = (typeof global !== "undefined" && global.XscapeSupplies)
+      || (typeof window !== "undefined" && window.XscapeSupplies) || null;
+    if (supplies && typeof supplies.markDirty === "function") {
+      try { supplies.markDirty(); } catch (e) {}
+    }
+    const eq = (opts.equipment || (P && P.equipment) || null);
+    return { ok: true, spell: spell, maxHit: spellMaxHit(eq, spellId), consumed: true };
+  }
+
   // Intentionally NOT exposing getItem, rangeMaxHit, or rollPlayerHit.
   // raid.js probes those names on window.XscapeCombat and would call them
   // from in-game raids on index.html (combat.js loads before raid.js).
@@ -640,7 +809,23 @@
     combatVsPlayer: combatVsPlayer,
     monsterVsPlayer: monsterVsPlayer,
     meleeSetMaxHit: meleeSetMaxHit,
-    rand: rand
+    rand: rand,
+    RUNES: RUNES,
+    SPELLS: SPELLS,
+    SPELL_CAST_GP: SPELL_CAST_GP,
+    SPELL_TIER_UNLOCKS: SPELL_TIER_UNLOCKS,
+    WEAPON_SPELL_TIER: WEAPON_SPELL_TIER,
+    isRuneId: isRuneId,
+    isMagicWeapon: isMagicWeapon,
+    spellById: spellById,
+    allowedSpellsFor: allowedSpellsFor,
+    defaultAutocast: defaultAutocast,
+    resolvedAutocast: resolvedAutocast,
+    spellMaxHitFrom: spellMaxHitFrom,
+    spellMaxHit: spellMaxHit,
+    canCast: canCast,
+    consumeRunes: consumeRunes,
+    tryCastSpell: tryCastSpell
   };
   var k;
   for (k in api) {
