@@ -577,42 +577,11 @@
   }
 
 
-  function getItem(id) {
-    if (!id) return null;
-    return (ITEMS && ITEMS[id]) || null;
-  }
-
-  // Same formula as raid.js: effectiveRanged = floor(level + (pot ? 13 : 0)) + 8,
-  // then maxHitFrom. 13 is raid.js RANGING_POT_BOOST.
-  function rangeMaxHit(level, rangeStr, potOn) {
-    var pot = potOn ? 13 : 0;
-    var eff = Math.floor((level || 0) + pot) + 8;
-    return maxHitFrom(eff, rangeStr);
-  }
-
-  function rollPlayerHit(opts) {
-    opts = opts || {};
-    var rng = opts.rng || Math.random;
-    var mon = opts.monster;
-    var loadout = opts.loadout;
-    var eq = (loadout && (loadout.equipment || loadout.loadout)) || loadout || null;
-    var monId = (typeof mon === "string") ? mon : (mon && mon.id);
-    var style = playerStyle(eq);
-    var vsStyle;
-    if (style === "ranged" || style === "range") vsStyle = "ranged";
-    else if (style === "mage" || style === "magic") vsStyle = "magic";
-    else if (style === "stab" || style === "crush" || style === "slash") vsStyle = style;
-    else vsStyle = "slash";
-    var vs = combatVsMonster(monId, vsStyle, { equipment: eq });
-    var ch = vs.chance || 0;
-    var max = vs.maxHit || 0;
-    if (vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
-      max = meleeSetMaxHit(max);
-    }
-    var hit = rng() < ch;
-    var dmg = hit ? rand(0, max, rng) : 0;
-    return { hit: hit && dmg > 0, dmg: hit ? dmg : 0, max: max, chance: ch, style: vsStyle };
-  }
+  // Intentionally NOT exposing getItem, rangeMaxHit, or rollPlayerHit.
+  // raid.js probes those names on window.XscapeCombat and would call them
+  // from in-game raids on index.html (combat.js loads before raid.js).
+  // Keeping window.XscapeCombat itself is safe: raid.js only branches on
+  // those three members, not on the namespace existing.
 
   var api = {
     ITEMS: ITEMS,
@@ -651,9 +620,6 @@
     combatVsPlayer: combatVsPlayer,
     monsterVsPlayer: monsterVsPlayer,
     meleeSetMaxHit: meleeSetMaxHit,
-    getItem: getItem,
-    rangeMaxHit: rangeMaxHit,
-    rollPlayerHit: rollPlayerHit,
     rand: rand
   };
   var k;
