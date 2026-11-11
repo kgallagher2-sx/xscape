@@ -675,15 +675,37 @@
       breakGrab();
       return true;
     }
-    G.target = "colossus";
-    (G.colossusEels || []).forEach(function (eel, i) {
-      if (!eel.alive) return;
+    const nx = x / cssW, ny = y / cssH;
+    const sc = coloScale();
+    let hit = false;
+    const eels = G.colossusEels || [];
+    for (let i = 0; i < eels.length; i++) {
+      const eel = eels[i];
+      if (!eel.alive) continue;
       const pos = eelPos(eel);
-      const dx = x / cssW - pos.x, dy = y / cssH - pos.y;
-      if (dx * dx + dy * dy < 0.012) G.target = i;
-    });
-    if (typeof global.tryMoveToPx === "function") tryMoveToPx(x, y, cssW, cssH);
-    else if (typeof global.clickMove === "function") clickMove(x, y, cssW, cssH);
+      const dx = (nx - pos.x) * cssW, dy = (ny - pos.y) * cssH;
+      if (dx * dx + dy * dy <= (28 * sc) * (28 * sc)) {
+        G.target = i;
+        if (typeof global.flashMsg === "function") flashBanner("Attacking an eel", "#d0f0e0");
+        hit = true;
+        break;
+      }
+    }
+    if (!hit && G.colossus && G.colossus.hp > 0) {
+      const bc = bossCenter();
+      const dx = (nx - bc.x) * cssW, dy = (ny - bc.y) * cssH;
+      const rx = 70 * sc, ry = 80 * sc;
+      if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
+        G.target = "colossus";
+        if (typeof global.flashMsg === "function") flashBanner("Attacking the Drowned Colossus", "#ffe44a");
+        hit = true;
+      }
+    }
+    if (!hit && typeof global.tileAt === "function" && typeof global.queueMoveTo === "function") {
+      const tile = tileAt(nx, ny);
+      if (tile) queueMoveTo(tile.col, tile.row);
+    }
+    if (typeof global.addClickMark === "function") addClickMark(x, y, hit ? "npc" : "ground");
     return true;
   }
 
@@ -694,7 +716,9 @@
   }
   function rollLoot(forceItem) {
     const items = [];
-    if (forceItem) items.push(forceItem);
+    if (Array.isArray(forceItem) && forceItem.length) {
+      for (let i = 0; i < forceItem.length; i++) items.push(forceItem[i]);
+    } else if (forceItem && typeof forceItem === "string") items.push(forceItem);
     else if (Math.random() < 1 / UNIQUE_DENOM) {
       const have = ownedIds();
       const unowned = DROP.filter(function (d) { return have.indexOf(d.id) < 0; });
@@ -787,10 +811,12 @@
       damageTaken: G.damageTaken,
       perfectPrayers: G.perfectPrayers
     };
+    const force = G._forceColossusLoot || null;
+    G._forceColossusLoot = null;
     const already = ((global.Profile && Profile.unlockedItems) || []).slice();
     const cloud = global.XscapeCloud;
     const finish = function (loot, awarded) { showLoot(loot, awarded, result); };
-    if (cloud && typeof cloud.rpc === "function") {
+    if (!force && cloud && typeof cloud.rpc === "function") {
       Promise.resolve(cloud.rpc("record_colossus_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
         if (res && res.ok) {
           const items = Array.isArray(res.items) ? res.items : [];
@@ -811,7 +837,7 @@
       });
       return;
     }
-    const loot = rollLoot(null);
+    const loot = rollLoot(force);
     finish(loot, grantLoot(loot));
     if (audio() && audio().stopAmbient) audio().stopAmbient();
   }
@@ -869,6 +895,11 @@
     if (audio() && audio().unlock) audio().unlock();
     if (audio() && audio().startAmbient && !audio().muted) audio().startAmbient("kree");
     if (typeof global.updateHud === "function") updateHud();
+    if (opts.loot) {
+      G._forceColossusLoot = opts.loot === true ? DROP.map(function (d) { return d.id; }) : opts.loot;
+      G.colossus.hp = 0;
+      win();
+    }
   }
 
   function tryEnter(opts) {

@@ -160,7 +160,8 @@
     if (typeof global.PlayerStats !== "undefined" && PlayerStats.reset) PlayerStats.reset();
     G.damageTaken = 0;
     G.perfectPrayers = 0;
-    G.prayerChecks = 0;    G.gorehornFrozen = false;
+    G.prayerChecks = 0;
+    G.gorehornFrozen = false;
     clearFloatMsg();
   }
 
@@ -620,10 +621,37 @@
   function clickPx(x, y, cssW, cssH) {
     const G = g();
     if (!G || G.scene !== "gorehorn" || G.mode !== "playing") return false;
-    // Target an add if tapped
-    G.target = "gorehorn";
-    if (typeof global.tryMoveToPx === "function") tryMoveToPx(x, y, cssW, cssH);
-    else if (typeof global.clickMove === "function") clickMove(x, y, cssW, cssH);
+    const nx = x / cssW, ny = y / cssH;
+    const sc = goreScale();
+    let hit = false;
+    const adds = G.gorehornAdds || [];
+    for (let i = 0; i < adds.length; i++) {
+      const add = adds[i];
+      if (!add.alive) continue;
+      const pos = addPos(add);
+      const dx = (nx - pos.x) * cssW, dy = (ny - pos.y) * cssH;
+      if (dx * dx + dy * dy <= (28 * sc) * (28 * sc)) {
+        G.target = i;
+        if (typeof global.flashMsg === "function") flashBanner("Attacking a construct", "#e8d8c0");
+        hit = true;
+        break;
+      }
+    }
+    if (!hit && G.gorehorn && G.gorehorn.hp > 0) {
+      const bc = bossCenter();
+      const dx = (nx - bc.x) * cssW, dy = (ny - bc.y) * cssH;
+      const rx = 64 * sc, ry = 80 * sc;
+      if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
+        G.target = "gorehorn";
+        if (typeof global.flashMsg === "function") flashBanner("Attacking Gorehorn", "#ffe44a");
+        hit = true;
+      }
+    }
+    if (!hit && typeof global.tileAt === "function" && typeof global.queueMoveTo === "function") {
+      const tile = tileAt(nx, ny);
+      if (tile) queueMoveTo(tile.col, tile.row);
+    }
+    if (typeof global.addClickMark === "function") addClickMark(x, y, hit ? "npc" : "ground");
     return true;
   }
 
@@ -635,7 +663,9 @@
 
   function rollLoot(forceItem) {
     const items = [];
-    if (forceItem) items.push(forceItem);
+    if (Array.isArray(forceItem) && forceItem.length) {
+      for (let i = 0; i < forceItem.length; i++) items.push(forceItem[i]);
+    } else if (forceItem && typeof forceItem === "string") items.push(forceItem);
     else if (Math.random() < 1 / UNIQUE_DENOM) {
       const have = ownedIds();
       const unowned = DROP.filter(function (d) { return have.indexOf(d.id) < 0; });
@@ -735,12 +765,14 @@
       damageTaken: G.damageTaken,
       perfectPrayers: G.perfectPrayers
     };
+    const force = G._forceGorehornLoot || null;
+    G._forceGorehornLoot = null;
     const already = ((global.Profile && Profile.unlockedItems) || []).slice();
     const cloud = global.XscapeCloud;
     const finish = function (loot, awarded) {
       showLoot(loot, awarded, result);
     };
-    if (cloud && typeof cloud.rpc === "function") {
+    if (!force && cloud && typeof cloud.rpc === "function") {
       Promise.resolve(cloud.rpc("record_gorehorn_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
         if (res && res.ok) {
           const items = Array.isArray(res.items) ? res.items : [];
@@ -761,7 +793,7 @@
       });
       return;
     }
-    const loot = rollLoot(null);
+    const loot = rollLoot(force);
     finish(loot, grantLoot(loot));
     if (audio() && audio().stopAmbient) audio().stopAmbient();
   }
@@ -819,6 +851,11 @@
     if (audio() && audio().unlock) audio().unlock();
     if (audio() && audio().startAmbient && !audio().muted) audio().startAmbient("kree");
     if (typeof global.updateHud === "function") updateHud();
+    if (opts.loot) {
+      G._forceGorehornLoot = opts.loot === true ? DROP.map(function (d) { return d.id; }) : opts.loot;
+      G.gorehorn.hp = 0;
+      win();
+    }
   }
 
   function tryEnter(opts) {

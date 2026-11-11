@@ -49,6 +49,11 @@
     return (L.sJ || 1) * 0.95;
   }
 
+  function clearFloatMsg() {
+    const el = $("float-msg");
+    if (el) { el.textContent = ""; el.style.opacity = "0"; }
+  }
+
   function resetKreeState() {
     const G = g();
     if (typeof global.syncPlayerCaps === "function") global.syncPlayerCaps();
@@ -109,6 +114,7 @@
     if (typeof global.syncPlayerWorldPos === "function") global.syncPlayerWorldPos(true);
     if (typeof global.updateHud === "function") global.updateHud();
     if (typeof global.updatePrayerButtons === "function") global.updatePrayerButtons();
+    clearFloatMsg();
   }
 
   function layoutMinions() {

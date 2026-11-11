@@ -1981,7 +1981,7 @@
     if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
       var rawTry = api.tryEnter;
       api.tryEnter = function () {
-        if (requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return false;
+        if (!isTestMode() && requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return false;
         return rawTry.apply(this, arguments);
       };
       api.tryEnter._cloud = true;
@@ -1989,7 +1989,7 @@
     if (typeof api.startFight === "function" && !api.startFight._cloud) {
       var rawStart = api.startFight;
       api.startFight = function () {
-        if (requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return;
+        if (!isTestMode() && requireSignIn("Sign in to fight Kree'arra. Guests can only fight TzTok-Jad in starter gear.")) return;
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
@@ -2002,7 +2002,7 @@
     if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
       var rawTry = api.tryEnter;
       api.tryEnter = function () {
-        if (requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return false;
+        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return false;
         return rawTry.apply(this, arguments);
       };
       api.tryEnter._cloud = true;
@@ -2010,7 +2010,7 @@
     if (typeof api.startFight === "function" && !api.startFight._cloud) {
       var rawStart = api.startFight;
       api.startFight = function () {
-        if (requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return;
+        if (!isTestMode() && requireSignIn("Sign in to fight the Widow Queen. Guests can only fight TzTok-Jad in starter gear.")) return;
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
