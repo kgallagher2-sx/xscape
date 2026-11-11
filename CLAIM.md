@@ -11,4 +11,4 @@ One line per claim, in this format:
 
 ## Active claims
 
-item-icons.js, lab-gear.js, lab.html, hub.js, index.html | Item & Character Design | 2026-11-11 10:07 America/New_York | Ship approved Stormwing helm, whip hand-at-shoulder + taller frame, and alcove mid-tier bank icons
+(none)
