@@ -4627,13 +4627,27 @@ function playerAttack() {
     : (style === "mage" || style === "magic") ? "magic"
     : (style === "stab" || style === "crush" || style === "slash") ? style
     : "slash";
-  const vs = combatVsMonster(monId, vsStyle);
+  const isMagic = vsStyle === "magic" || vsStyle === "mage";
+  let spellId = null;
+  if (isMagic) {
+    const XC = window.XscapeCombat;
+    const P = (typeof Profile !== "undefined" && Profile) ? Profile : null;
+    const weaponId = (P && P.equipment && P.equipment.weapon) || null;
+    const cast = (XC && typeof XC.tryCastSpell === "function")
+      ? XC.tryCastSpell(P, weaponId)
+      : { ok: false, message: "Choose a spell" };
+    if (!cast.ok) {
+      if (typeof flashMsg === "function") flashMsg(cast.message, "#c0c0c0");
+      return false;
+    }
+    spellId = cast.spell && cast.spell.id;
+  }
+  const vs = combatVsMonster(monId, vsStyle, isMagic ? { spellId: spellId } : undefined);
   let max = vs.maxHit;
   if (typeof meleeSetMaxHit === "function" && vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
     max = meleeSetMaxHit(max);
   }
   const dmg = rollHit(max, vs.chance);
-  const isMagic = vsStyle === "magic" || vsStyle === "mage";
   const isMelee = !isMagic && vsStyle !== "ranged";
   if (isMelee) {
     applyBoltHit(dest, dmg);
@@ -4650,6 +4664,7 @@ function playerAttack() {
   }
   if (isMagic && audio.wind) audio.wind();
   else if (!isMelee) audio.crossbow();
+  return true;
 }
 
 function maybeSpawnHealers() {
@@ -4752,8 +4767,9 @@ function gameTick() {
   G.player.atkCd--;
   if (G.player.atkCd < 0) G.player.atkCd = 0;
   if (G.player.atkCd <= 0 && G.player.hp > 0 && j.hp > 0) {
-    playerAttack();
-    G.player.atkCd = (typeof playerSpeed === "function") ? playerSpeed() : PLAYER_ATTACK_TICKS;
+    if (playerAttack() !== false) {
+      G.player.atkCd = (typeof playerSpeed === "function") ? playerSpeed() : PLAYER_ATTACK_TICKS;
+    }
   }
 
   tickHealers();
