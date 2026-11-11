@@ -236,14 +236,47 @@
     const bonus = (mon.defBonus && mon.defBonus[style] != null) ? mon.defBonus[style] : 0;
     return (defLv + 9) * (bonus + 64);
   }
+  function fighterGear(f) {
+    return (f && (f.equipment || f.loadout)) || f || {};
+  }
+  function playerStyleFrom(loadout) {
+    const eq = fighterGear(loadout);
+    if (typeof global.playerStyle === "function") return global.playerStyle(eq);
+    const it = getItem(eq.weapon);
+    if (!it) return "ranged";
+    if (it.style) return it.style;
+    if (it.kind === "wand" || it.slot === "wand") return "mage";
+    if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "slash" || it.kind === "stab" || it.kind === "crush") {
+      return it.kind === "spear" || it.style === "stab" ? "stab" : (it.kind === "axe" || it.kind === "crush" ? "crush" : "slash");
+    }
+    return "ranged";
+  }
+  function playerSpeedFrom(loadout) {
+    const eq = fighterGear(loadout);
+    if (typeof global.playerSpeed === "function") return global.playerSpeed(eq);
+    const it = getItem(eq.weapon);
+    if (it && it.speed) return it.speed | 0;
+    return PLAYER_ATTACK_TICKS;
+  }
+  function vsStyleOf(style) {
+    if (style === "ranged" || style === "range") return "ranged";
+    if (style === "mage" || style === "magic") return "magic";
+    if (style === "stab" || style === "crush" || style === "slash") return style;
+    return "slash";
+  }
   function rollPlayerHit(rng, mon, loadout, potOn) {
+    const eq = fighterGear(loadout);
+    const vsStyle = vsStyleOf(playerStyleFrom(eq));
     if (typeof global.combatVsMonster === "function" && mon && mon.id) {
-      const vs = global.combatVsMonster(mon.id, "ranged");
+      const vs = global.combatVsMonster(mon.id, vsStyle, { equipment: eq });
       const ch = vs.chance || 0;
-      const max = vs.maxHit || 0;
+      let max = vs.maxHit || 0;
+      if (typeof global.meleeSetMaxHit === "function" && vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
+        max = global.meleeSetMaxHit(max);
+      }
       const hit = rng() < ch;
       const dmg = hit ? irand(rng, 0, max) : 0;
-      return { hit: hit && dmg > 0, dmg: hit ? dmg : 0, max: max, chance: ch };
+      return { hit: hit && dmg > 0, dmg: hit ? dmg : 0, max: max, chance: ch, style: vsStyle };
     }
     if (global.XscapeCombat && typeof global.XscapeCombat.rollPlayerHit === "function") {
       return global.XscapeCombat.rollPlayerHit({ monster: mon, loadout: loadout, rangingPot: potOn, rng: rng });
@@ -852,6 +885,7 @@
         else if (ra && ra.prayerOff) ra.prayerOff();
       }
       else if (name === "crossbow" && a.crossbow) a.crossbow();
+      else if (name === "wind" && a.wind) a.wind();
       else if (name === "win" && a.win) a.win();
       else if (name === "death" && a.death) a.death();
       else if (name === "tell" && a.tell) a.tell(arg);
@@ -1198,10 +1232,18 @@
   function playerAttack(st) {
     const t = currentTarget(st);
     if (!t) return;
-    st.player.atkCd = PLAYER_ATTACK_TICKS;
-    sfx(st, "crossbow");
-    const roll = rollPlayerHit(st.rng, t.mon, st.player.loadout, st.player.rangingLeft > 0);
-    st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t });
+    const eq = fighterGear(st.player);
+    const style = playerStyleFrom(eq);
+    const vsStyle = vsStyleOf(style);
+    const isMagic = vsStyle === "magic" || vsStyle === "mage";
+    const isMelee = !isMagic && vsStyle !== "ranged";
+    st.player.atkCd = playerSpeedFrom(eq);
+    if (isMagic) sfx(st, "wind");
+    else if (!isMelee) sfx(st, "crossbow");
+    const roll = rollPlayerHit(st.rng, t.mon, eq, st.player.rangingLeft > 0);
+    if (!isMelee) {
+      st.bolts.push({ fromC: st.player.col, fromR: st.player.row, toC: t.ref.col != null ? t.ref.col : 2, toR: t.ref.row != null ? t.ref.row : 0, dur: 0.18, t: 0, dmg: roll.dmg, hit: roll.dmg > 0, target: t, kind: isMagic ? "magic" : "bolt" });
+    }
     applyPlayerDamage(st, t, roll);
   }
   function applyPlayerDamage(st, t, roll) {
@@ -2180,7 +2222,7 @@
       : ((typeof weaponAnimAt === "function") ? weaponAnimAt(shotT, speed, kind)
         : ((typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise:0, recoil:0 }));
     const P = profileObj();
-    const recoilBase = (p.atkCd >= 3) ? -0.12 : 0;
+    const recoilBase = (p.atkCd >= Math.max(1, speed - 1)) ? -0.12 : 0;
     const eq = (p && (p.equipment || p.loadout))
       || (isSelf && P && P.equipment)
       || (P && P.equipment)
@@ -2231,7 +2273,7 @@
       const z = tilePos(b.toC, b.toR, W, H);
       const x = lerp(a.x, z.x, u);
       const y = lerp(a.y - 24, z.y - 40, u);
-      ctx.fillStyle = "#e8d080";
+      ctx.fillStyle = (b.kind === "magic") ? "#ff8a90" : "#e8d080";
       ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
     }
     st.bolts = st.bolts.filter(function (b) { return b.t < b.dur; });

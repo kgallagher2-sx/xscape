@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111075833-da846fe";</script>
+  <script>window.XSCAPE_BUILD = "20261111080609-82e4791";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2159,9 +2159,29 @@ function itemInSlot(slot) {
   return (id && ITEMS[id]) || null;
 }
 
-function playerBonuses() {
+// Shared weapon style and speed, same rules as Knight / Gorehorn / Colossus.
+// Pass an equipment/loadout object to resolve a specific fighter; otherwise use Profile.
+function playerStyle(eq) {
+  eq = eq || (typeof Profile !== "undefined" && Profile && Profile.equipment) || {};
+  const it = (typeof ITEMS !== "undefined" && ITEMS) ? ITEMS[eq.weapon] : null;
+  if (!it) return "ranged";
+  if (it.style) return it.style;
+  if (it.kind === "wand" || it.slot === "wand") return "mage";
+  if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "slash" || it.kind === "stab" || it.kind === "crush") {
+    return it.kind === "spear" || it.style === "stab" ? "stab" : (it.kind === "axe" || it.kind === "crush" ? "crush" : "slash");
+  }
+  return "ranged";
+}
+function playerSpeed(eq) {
+  eq = eq || (typeof Profile !== "undefined" && Profile && Profile.equipment) || {};
+  const it = (typeof ITEMS !== "undefined" && ITEMS) ? ITEMS[eq.weapon] : null;
+  if (it && it.speed) return it.speed | 0;
+  return (typeof PLAYER_ATTACK_TICKS === "number" ? PLAYER_ATTACK_TICKS : 4);
+}
+
+function playerBonuses(eq) {
   const sum = emptyBonuses();
-  const eq = Profile.equipment || emptyEquipment();
+  eq = eq || (Profile.equipment || emptyEquipment());
   for (let i = 0; i < EQUIP_SLOTS.length; i++) {
     const it = ITEMS[eq[EQUIP_SLOTS[i]]];
     if (!it || !it.bonuses) continue;
@@ -2661,7 +2681,8 @@ function combatVsMonster(monsterId, style, opts) {
   style = style || "ranged";
   const useBase = !!(opts && opts.useBase);
   const mon = MONSTERS[monsterId] || MONSTERS["tztok-jad"];
-  const pb = playerBonuses();
+  const eq = (opts && (opts.equipment || opts.loadout)) || null;
+  const pb = playerBonuses(eq);
   const stance = 0; // Rapid
   let atkLevel, atkBonus, strBonus, max;
   if (style === "ranged" || style === "range") {
@@ -2673,7 +2694,9 @@ function combatVsMonster(monsterId, style, opts) {
   } else if (style === "mage" || style === "magic") {
     atkLevel = effectivePlayerLevel(combatSkillLevel("magic", useBase), 1, stance);
     atkBonus = pb.amagic;
-    var wep = (typeof itemInSlot === "function") ? itemInSlot("weapon") : (ITEMS[(Profile.equipment && Profile.equipment.weapon)] || null);
+    var wep = eq
+      ? ((ITEMS && ITEMS[eq.weapon]) || null)
+      : ((typeof itemInSlot === "function") ? itemInSlot("weapon") : (ITEMS[(Profile.equipment && Profile.equipment.weapon)] || null));
     var base = (wep && wep.magicBase) || 0;
     max = Math.floor(base * (1 + (pb.mdmg || 0) / 100));
   } else {
@@ -4772,17 +4795,34 @@ function playerAttack() {
   }
   const dest = boltTarget();
   const monId = dest.kind === "healer" ? "healer" : "tztok-jad";
-  const vs = combatVsMonster(monId, "ranged");
-  const dmg = rollHit(vs.maxHit, vs.chance);
-  G.bolts.push({
-    t: 0, dur: BOLT_TRAVEL, dmg, dest,
-    from: (function () {
-      const tip = playerBowTip();
-      return { x: G.player.x + (tip.x * L.sP) / cssW, y: G.player.y + (tip.y * L.sP) / cssH };
-    })(),
-    to: { x: dest.x, y: dest.y }
-  });
-  audio.crossbow();
+  const style = (typeof playerStyle === "function") ? playerStyle() : "ranged";
+  const vsStyle = (style === "ranged" || style === "range") ? "ranged"
+    : (style === "mage" || style === "magic") ? "magic"
+    : (style === "stab" || style === "crush" || style === "slash") ? style
+    : "slash";
+  const vs = combatVsMonster(monId, vsStyle);
+  let max = vs.maxHit;
+  if (typeof meleeSetMaxHit === "function" && vsStyle !== "ranged" && vsStyle !== "mage" && vsStyle !== "magic") {
+    max = meleeSetMaxHit(max);
+  }
+  const dmg = rollHit(max, vs.chance);
+  const isMagic = vsStyle === "magic" || vsStyle === "mage";
+  const isMelee = !isMagic && vsStyle !== "ranged";
+  if (isMelee) {
+    applyBoltHit(dest, dmg);
+  } else {
+    G.bolts.push({
+      t: 0, dur: BOLT_TRAVEL, dmg, dest,
+      kind: isMagic ? "magic" : "bolt",
+      from: (function () {
+        const tip = playerBowTip();
+        return { x: G.player.x + (tip.x * L.sP) / cssW, y: G.player.y + (tip.y * L.sP) / cssH };
+      })(),
+      to: { x: dest.x, y: dest.y }
+    });
+  }
+  if (isMagic && audio.wind) audio.wind();
+  else if (!isMelee) audio.crossbow();
 }
 
 function maybeSpawnHealers() {
@@ -4886,7 +4926,7 @@ function gameTick() {
   if (G.player.atkCd < 0) G.player.atkCd = 0;
   if (G.player.atkCd <= 0 && G.player.hp > 0 && j.hp > 0) {
     playerAttack();
-    G.player.atkCd = PLAYER_ATTACK_TICKS;
+    G.player.atkCd = (typeof playerSpeed === "function") ? playerSpeed() : PLAYER_ATTACK_TICKS;
   }
 
   tickHealers();
@@ -5525,7 +5565,7 @@ function drawPlayer(t) {
   if (p.hp <= 0) ctx.globalAlpha = 0.45;
 
   const shot = playerShotAnim();
-  const recoilBase = (G.player.atkCd >= PLAYER_ATTACK_TICKS - 1) ? -0.12 : 0;
+  const recoilBase = (G.player.atkCd >= ((typeof playerSpeed === "function") ? playerSpeed() : PLAYER_ATTACK_TICKS) - 1) ? -0.12 : 0;
   // Worn gear must match the hub / gear lab (drawPlayerFacing), not the
   // leftover starter-only back-view in drawPlayerSprite.
   const eq = (typeof Profile !== "undefined" && Profile && Profile.equipment) ? Profile.equipment : {};

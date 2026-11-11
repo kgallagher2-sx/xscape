@@ -282,11 +282,37 @@
     }
   }
 
+  function playerStyle() {
+    if (typeof global.playerStyle === "function") return global.playerStyle();
+    const eq = (global.Profile && Profile.equipment) || {};
+    const it = (global.ITEMS || {})[eq.weapon];
+    if (!it) return "ranged";
+    if (it.style) return it.style;
+    if (it.kind === "wand" || it.slot === "wand") return "mage";
+    if (it.kind === "whip" || it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "slash" || it.kind === "stab" || it.kind === "crush") {
+      return it.kind === "spear" || it.style === "stab" ? "stab" : (it.kind === "axe" || it.kind === "crush" ? "crush" : "slash");
+    }
+    return "ranged";
+  }
+  function playerSpeed() {
+    if (typeof global.playerSpeed === "function") return global.playerSpeed();
+    const eq = (global.Profile && Profile.equipment) || {};
+    const it = (global.ITEMS || {})[eq.weapon];
+    if (it && it.speed) return it.speed | 0;
+    return global.PLAYER_ATTACK_TICKS || 4;
+  }
+  function vsStyleOf(style) {
+    if (style === "ranged" || style === "range") return "ranged";
+    if (style === "mage" || style === "magic") return "magic";
+    if (style === "stab" || style === "crush" || style === "slash") return style;
+    return "slash";
+  }
   function playerCanHitFlying() {
-    const w = (typeof global.itemInSlot === "function") ? itemInSlot("weapon") : null;
+    // Gate on the resolved style, not raw bonuses: melee never reaches Kree or its flying bodyguards.
+    const w = (typeof global.itemInSlot === "function") ? itemInSlot("weapon") : ((global.ITEMS || {})[((global.Profile && Profile.equipment) || {}).weapon]);
     if (!w) return false;
-    const b = w.bonuses || {};
-    return (b.arange || 0) > 0 || (b.amagic || 0) > 0;
+    const style = vsStyleOf(playerStyle());
+    return style === "ranged" || style === "magic" || style === "mage";
   }
 
   function currentTarget() {
@@ -305,23 +331,37 @@
     if (typeof G.target === "number" && (!G.minions[G.target] || !G.minions[G.target].alive)) G.target = "kree";
     if (G.target === "kree" && (!G.kree || G.kree.hp <= 0)) return;
     const dest = currentTarget();
+    const style = playerStyle();
+    const vsStyle = vsStyleOf(style);
+    const isMagic = vsStyle === "magic" || vsStyle === "mage";
+    const isMelee = !isMagic && vsStyle !== "ranged";
     let dmg = 0;
     if (!playerCanHitFlying()) {
       dmg = 0;
       if (typeof global.flashMsg === "function") flashMsg("It flies out of melee reach", "#c0c0c0");
     } else {
-      const vs = (typeof global.combatVsMonster === "function") ? combatVsMonster(dest.monId, "ranged") : { maxHit: 20, chance: 0.5 };
-      dmg = (typeof global.rollHit === "function") ? rollHit(vs.maxHit, vs.chance) : irand(0, vs.maxHit);
+      const vs = (typeof global.combatVsMonster === "function") ? combatVsMonster(dest.monId, vsStyle) : { maxHit: 20, chance: 0.5 };
+      let max = vs.maxHit;
+      if (typeof global.meleeSetMaxHit === "function" && !isMagic && vsStyle !== "ranged") {
+        max = global.meleeSetMaxHit(max);
+      }
+      dmg = (typeof global.rollHit === "function") ? rollHit(max, vs.chance) : irand(0, max);
     }
-    const tip = (typeof global.playerBowTip === "function") ? playerBowTip() : { x: 10, y: -20 };
-    const L = global.L || { sP: 1 };
-    const cssW = global.cssW || 390, cssH = global.cssH || 480;
-    G.bolts.push({
-      t: 0, dur: (global.BOLT_TRAVEL || 0.16), dmg: dmg, dest: dest,
-      from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
-      to: { x: dest.x, y: dest.y }
-    });
-    if (audio && audio.crossbow) audio.crossbow();
+    if (isMelee) {
+      applyBoltHit(dest, dmg);
+    } else {
+      const tip = (typeof global.playerBowTip === "function") ? playerBowTip() : { x: 10, y: -20 };
+      const L = global.L || { sP: 1 };
+      const cssW = global.cssW || 390, cssH = global.cssH || 480;
+      G.bolts.push({
+        t: 0, dur: (global.BOLT_TRAVEL || 0.16), dmg: dmg, dest: dest,
+        kind: isMagic ? "magic" : "bolt",
+        from: { x: G.player.x + (tip.x * (L.sP || 1)) / cssW, y: G.player.y + (tip.y * (L.sP || 1)) / cssH },
+        to: { x: dest.x, y: dest.y }
+      });
+    }
+    if (isMagic && audio && audio.wind) audio.wind();
+    else if (!isMelee && audio && audio.crossbow) audio.crossbow();
   }
 
   function applyBoltHit(target, dmg) {
@@ -405,7 +445,7 @@
     if (G.player.atkCd < 0) G.player.atkCd = 0;
     if (G.player.atkCd <= 0 && G.player.hp > 0 && k && k.hp > 0) {
       fireBolt();
-      G.player.atkCd = global.PLAYER_ATTACK_TICKS || 4;
+      G.player.atkCd = playerSpeed();
     }
 
     tickMinions();
