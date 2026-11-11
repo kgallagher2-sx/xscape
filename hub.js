@@ -2336,8 +2336,12 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
     ctx.save();
-    ctx.translate(w * 0.5, h * 0.88);
-    ctx.scale(2.15, 2.15);
+    // Frame budget ±42, y -76..+42 (fits sword stab, axe follow, soles, front/back
+    // whip). Canvas is 182×254; scale stays 2.15 so the body is the same size
+    // as before in canvas pixels. Origin was h*0.88 (bottom crop ≈ +10).
+    var GEAR_SCALE = 2.15, GEAR_TOP = 76;
+    ctx.translate(w * 0.5, GEAR_TOP * GEAR_SCALE);
+    ctx.scale(GEAR_SCALE, GEAR_SCALE);
     var t = (ts || performance.now()) / 1000;
     drawPlayerFacing(ctx, t, {
       facing: state.charFacing || "front",

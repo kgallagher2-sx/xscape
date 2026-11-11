@@ -189,9 +189,17 @@ function whipAnimAt(shotT, attackTicks) {
   return z;
 }
 
+function spearAnimAt(shotT, attackTicks) {
+  // Trident spear: same pull-and-thrust vocabulary as the sword, on a 5-tick cycle.
+  const z = stabAnimAt(shotT, attackTicks || 5);
+  z.kind = "spear";
+  return z;
+}
+
 function weaponAnimAt(shotT, attackTicks, kind) {
   if (kind === "wand" || kind === "widow") return mageCastAnimAt(shotT, attackTicks || 5);
   if (kind === "sword") return stabAnimAt(shotT, attackTicks || 4);
+  if (kind === "spear") return spearAnimAt(shotT, attackTicks || 5);
   if (kind === "axe") return axeSwingAnimAt(shotT, attackTicks || 7);
   if (kind === "whip") return whipAnimAt(shotT, attackTicks || 4);
   return shotAnimAt(shotT, attackTicks || 4);
@@ -1033,7 +1041,7 @@ function drawAbyssalWhip(c, tm, opt) {
   if (img && img.complete && img.naturalWidth > 0) {
     const iw = img.naturalWidth, ih = img.naturalHeight;
     const hx = 82, hy = 14; // grip on the handle, where the fist held it
-    const targetHang = bust ? 17 : 32;
+    const targetHang = (opt.hang != null) ? opt.hang : (bust ? 17 : 32);
     const sc = targetHang / (ih - hy);
     const swayR = Math.sin((tm || 0) * 2.5) * (bust ? 0.04 : 0.10);
     const crackR = bust ? 0 : (walking ? Math.pow(Math.max(0, Math.sin((tm || 0) * 6.0 - 0.35)), 3) : 0);

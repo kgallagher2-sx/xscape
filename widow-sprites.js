@@ -694,7 +694,9 @@
         c.rotate(0.04);
         drawBookEdgeOn(c, st, pulse);
       } else if (facing === "right") {
-        // Far hip: spine in the fist, cover into the torso so the body occludes most of it.
+        // Far hip: spine in the fist, cover hanging backward so a sliver peeks
+        // out behind the body instead of disappearing into the torso.
+        c.scale(-1, 1);
         c.rotate(0.02);
         drawBookCoverFace(c, st, pulse);
       } else {

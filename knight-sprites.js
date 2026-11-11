@@ -300,11 +300,14 @@
     else c.translate(7.6, -9.8);
     const thrust = (shot && shot.thrust) || 0;
     const pull = (shot && shot.pull) || 0;
-    // Rest: blade up-forward. Pull: more vertical / cocked back.
+    // Rest: blade up-forward. Left idle leans a bit more forward so the far
+    // blade peeks at chest height, not out through the face.
     // Thrust: aim the point straight along facingForward (back = up the
     // screen on the center line, sides = horizontally forward, front = down
-    // toward the camera) so the stab does not veer off the right shoulder.
-    const rest = (facing === "front" || facing === "left") ? -0.55 : 0.55;
+    // toward the camera). Covering the helm during the stab is allowed.
+    const rest = (facing === "front") ? -0.55
+      : (facing === "left") ? -0.95
+      : 0.55;
     const aim = (facing === "front") ? -Math.PI
       : (facing === "back") ? 0
       : (facing === "left") ? -Math.PI / 2

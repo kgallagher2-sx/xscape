@@ -324,6 +324,7 @@
     const rest = axeHoldAngle(facing);
     const swing = (shot && shot.swing) || 0;
     // swing 0 = rest, 1 = raised over/behind the head, negative = chopped down in front.
+    // Covering the face/helm during the windup or chop is allowed; idle stays clear.
     const dir = (facing === "left" || facing === "front") ? -1 : 1;
     const offset = swing >= 0 ? -1.28 * swing * dir : -0.90 * swing * dir;
     return rest + offset;

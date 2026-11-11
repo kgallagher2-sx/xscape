@@ -278,17 +278,26 @@
     c.fillRect(-1.4, 3, 2.6, 5);
     c.restore();
   }
-  function drawSpearHeld(c, t, facing, hand) {
+  function drawSpearHeld(c, t, facing, hand, shot) {
     c.save();
     if (hand) c.translate(hand.x, hand.y);
     else if (facing === "front") c.translate(-12.4, -9.6);
     else if (facing === "back") c.translate(11.6, -12.4);
     else if (facing === "left") c.translate(8.0, -9.8);
     else c.translate(9.6, -9.8);
-    if (facing === "front") c.rotate(-0.55);
-    else if (facing === "back") c.rotate(0.55);
-    else if (facing === "left") c.rotate(-0.55); // tip up and forward (screen-left)
-    else c.rotate(0.55); // tip up and forward (screen-right)
+    const thrust = (shot && shot.thrust) || 0;
+    const pull = (shot && shot.pull) || 0;
+    const rest = (facing === "front") ? -0.55
+      : (facing === "left") ? -0.95
+      : 0.55;
+    const aim = (facing === "front") ? -Math.PI
+      : (facing === "back") ? 0
+      : (facing === "left") ? -Math.PI / 2
+      : Math.PI / 2;
+    const reach = Math.max(0, Math.min(1, thrust));
+    const cocked = rest * (1 - 0.4 * pull);
+    const mix = reach <= 0 ? 0 : Math.min(1, Math.pow(reach, 0.3) * 1.15);
+    c.rotate(cocked + (aim - cocked) * mix);
     c.translate(0, -6);
     c.fillStyle = pal.bronze;
     c.fillRect(-1.1, -16, 2.2, 28);

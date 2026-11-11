@@ -341,13 +341,168 @@ function withScale(c, cx, cy, s, fn) {
 
 /* ---------- worn pieces (back view, same pose as drawPlayerSprite) ---------- */
 
-function drawLabBoots(c, id) {
-  if (!id) {
-    c.fillStyle = "#2a1c10";
-    c.fillRect(-9, 9, 8, 4.2);
-    c.fillRect(1, 9, 8, 4.2);
-    return;
+
+/* Bare-slot drawers: an empty slot is skin, not leftover starter green d'hide. */
+function drawBareTorso(c, facing) {
+  const sk = skinPal();
+  c.save();
+  if (facing === "right") {
+    c.fillStyle = sk.dark;
+    c.beginPath();
+    c.moveTo(-6.5, -21.2);
+    c.lineTo(8.4, -21.2);
+    c.quadraticCurveTo(10.2, -10, 7.6, -1.2);
+    c.lineTo(-5.8, -1.2);
+    c.quadraticCurveTo(-7.6, -10, -6.5, -21.2);
+    c.closePath();
+    c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.moveTo(-5.4, -20.4);
+    c.lineTo(7.4, -20.4);
+    c.quadraticCurveTo(8.8, -10, 6.6, -2);
+    c.lineTo(-4.8, -2);
+    c.quadraticCurveTo(-6.4, -10, -5.4, -20.4);
+    c.closePath();
+    c.fill();
+    c.fillStyle = sk.mid;
+    c.fillRect(-2.2, -14, 3.2, 8);
+  } else {
+    c.fillStyle = sk.dark;
+    c.fillRect(-11, -21, 22, 20);
+    c.fillStyle = sk.skin;
+    c.fillRect(-10, -20, 20, 18);
+    c.fillStyle = sk.mid;
+    c.fillRect(-4, -18, 8, 14);
   }
+  c.restore();
+}
+
+function drawBareLegs(c, facing, stride) {
+  const sk = skinPal();
+  const s = stride || 0;
+  c.save();
+  if (facing === "right") {
+    const far = -s * 0.7, near = s * 0.7;
+    c.fillStyle = sk.dark;
+    c.fillRect(-3.2, -2 + far, 6.2, 12);
+    c.fillStyle = sk.skin;
+    c.fillRect(-2.5, -1 + far, 5, 10.4);
+    c.fillStyle = sk.dark;
+    c.fillRect(-3.6, -2 + near, 7, 12.2);
+    c.fillStyle = sk.skin;
+    c.fillRect(-2.8, -1 + near, 5.6, 10.6);
+  } else {
+    function leg(x, dy) {
+      c.save();
+      c.translate(0, dy || 0);
+      c.fillStyle = sk.dark;
+      c.fillRect(x, -2, 6.2, 12);
+      c.fillStyle = sk.skin;
+      c.fillRect(x + 0.7, -1, 4.8, 10);
+      c.restore();
+    }
+    leg(-8.2, (facing === "front" ? s * 0.12 : 0));
+    leg(2.0, (facing === "front" ? -s * 0.12 : 0));
+  }
+  c.restore();
+}
+
+function drawBareFeet(c, facing, stride) {
+  const sk = skinPal();
+  const s = stride || 0;
+  c.save();
+  if (facing === "right") {
+    c.translate(0, s * 0.2);
+    c.fillStyle = sk.dark;
+    c.beginPath();
+    c.ellipse(5.2, 12.4, 6.2, 2.2, 0.05, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.ellipse(5.0, 12.0, 5.4, 1.8, 0.05, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    const dyL = facing === "front" ? s * 0.15 : 0;
+    const dyR = facing === "front" ? -s * 0.15 : 0;
+    function foot(x, dy) {
+      c.save();
+      c.translate(0, dy || 0);
+      c.fillStyle = sk.dark;
+      c.beginPath();
+      c.ellipse(x + 3.4, 12.2, 4.4, 2.1, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = sk.skin;
+      c.beginPath();
+      c.ellipse(x + 3.4, 11.8, 3.8, 1.7, 0, 0, Math.PI * 2);
+      c.fill();
+      c.restore();
+    }
+    foot(-9.2, dyL);
+    foot(1.2, dyR);
+  }
+  c.restore();
+}
+
+function drawBareHead(c, facing) {
+  const sk = skinPal();
+  c.save();
+  if (facing === "back") {
+    c.fillStyle = sk.dark;
+    c.beginPath(); c.arc(0, -25.4, 8.4, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath(); c.arc(0, -25.0, 7.6, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.hair;
+    c.beginPath(); c.ellipse(-6.6, -24.8, 2.2, 4.6, 0.1, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(6.6, -24.8, 2.2, 4.6, -0.1, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(0, -29.0, 6.2, 3.4, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(0, -22.4, 6.4, 4.2, 0, 0, Math.PI * 2); c.fill();
+  } else if (facing === "right") {
+    c.fillStyle = sk.dark;
+    c.beginPath(); c.ellipse(0.8, -25.6, 7.2, 8.0, 0.05, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath(); c.ellipse(1.4, -25.2, 6.4, 7.2, 0.05, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.hair;
+    c.beginPath(); c.ellipse(-3.2, -26.4, 3.2, 4.6, -0.15, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(-1.0, -23.8, 2.4, 3.2, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(0.2, -30.2, 5.0, 2.6, 0.05, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.dark;
+    c.beginPath(); c.ellipse(5.6, -26.2, 0.7, 0.9, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath();
+    c.moveTo(7.2, -24.6);
+    c.lineTo(9.4, -23.4);
+    c.lineTo(7.0, -22.6);
+    c.closePath();
+    c.fill();
+  } else {
+    c.fillStyle = sk.dark;
+    c.beginPath(); c.arc(0, -25.4, 8.4, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.skin;
+    c.beginPath(); c.arc(0, -25.0, 7.6, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.hair;
+    c.beginPath(); c.ellipse(-7.0, -25.6, 2.0, 4.2, 0.12, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(7.0, -25.6, 2.0, 4.2, -0.12, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(0, -30.0, 6.0, 2.8, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath();
+    c.moveTo(-5.5, -28.0);
+    c.quadraticCurveTo(0, -26.8, 5.5, -28.0);
+    c.quadraticCurveTo(0, -27.4, -5.5, -28.0);
+    c.fill();
+    c.fillStyle = "#fff8ee";
+    c.beginPath(); c.arc(-2.3, -25.6, 1.5, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.3, -25.6, 1.5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.eye;
+    c.beginPath(); c.arc(-2.2, -25.4, 0.7, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(2.2, -25.4, 0.7, 0, Math.PI * 2); c.fill();
+    c.fillStyle = sk.lip;
+    c.beginPath(); c.ellipse(0, -21.6, 1.5, 0.55, 0, 0, Math.PI * 2); c.fill();
+  }
+  c.restore();
+}
+
+function drawLabBoots(c, id) {
+  if (!id) { drawBareFeet(c, "back", 0); return; }
   const st = labStyle(id);
   const p = pal(st);
   const it = labItem(id);
@@ -392,6 +547,7 @@ function drawLabBoots(c, id) {
 }
 
 function drawLabLegs(c, id) {
+  if (!id) { drawBareLegs(c, "back", 0); return; }
   const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2e4e1c", scale: 1 };
   const p = pal(st);
   const it = labItem(id);
@@ -497,7 +653,8 @@ function labSleeveStyle(id) {
   // instead of a leftover green d'hide vambrace.
   const bodyId = currentEq().body;
   if (bodyId) return labStyle(bodyId);
-  return { main: "#3a5a28", trim: "#2a4018", scale: 1 };
+  const sk = skinPal();
+  return { main: sk.skin, trim: sk.dark, scale: 1 };
 }
 
 function drawLabVamb(c, id, side, raise) {
@@ -530,6 +687,7 @@ function drawLabVamb(c, id, side, raise) {
 }
 
 function drawLabBody(c, id) {
+  if (!id) { drawBareTorso(c, "back"); return; }
   const st = id ? labStyle(id) : { main: "#4a7a30", trim: "#2e4e1c", scale: 1 };
   const p = pal(st);
   const it = labItem(id);
@@ -629,6 +787,7 @@ function drawLabBody(c, id) {
 }
 
 function drawLabHead(c, id) {
+  if (!id) { drawBareHead(c, "back"); return; }
   const st = id ? labStyle(id) : { main: "#4a7a30", trim: "#2e4e1c", scale: 1 };
   const p = pal(st);
   const it = labItem(id);
@@ -1265,7 +1424,7 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
     weapon();
     fist("right");
     if (twoHand) fist("left");
-    if (twoHand) ring();
+    ring();
   } else {
     // Left profile: do NOT flip the whole sprite (that would swap hands).
     // Body/cape/head are mirrored for the left profile; arms and items use
@@ -1659,7 +1818,7 @@ function shotForWeapon(weaponId, shotT) {
   const it = (typeof ITEMS !== "undefined" && ITEMS[weaponId])
     || (typeof LAB_ITEMS !== "undefined" && LAB_ITEMS[weaponId])
     || labItem(weaponId);
-  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" ? 5 : kind === "axe" ? 7 : 4);
+  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" || kind === "spear" ? 5 : kind === "axe" ? 7 : 4);
   if (typeof weaponAnimAt === "function") return weaponAnimAt(shotT, speed, kind);
   if ((kind === "wand" || kind === "widow") && typeof mageCastAnimAt === "function") return mageCastAnimAt(shotT, speed);
   return (typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise: 0 };
@@ -1668,7 +1827,7 @@ function shotForWeapon(weaponId, shotT) {
 function heroHands(facing, opt) {
   const shot = (opt && opt.shot) || {};
   const kind = shot.kind;
-  const melee = kind === "sword" || kind === "whip";
+  const melee = kind === "sword" || kind === "whip" || kind === "spear";
   const raise = shot.raise || 0;
   const lift = melee ? 0 : raise * 13.5;
   const s = (opt && opt._stride) || 0;
@@ -1687,7 +1846,9 @@ function heroHands(facing, opt) {
     left  = { x: -1.6, y: -6.0 + s * 0.20 }; // far, centered, slight back so shield peeks
   } else {
     // left profile: near = character's left (front of screen), far = right
-    right = { x:  1.6, y: -9.8 - s * 0.15 }; // far, centered, slight back; blade still peeks
+    // Far (right) hand a little further toward the far side and lower so a
+    // sword or whip peeks in front of the chest at idle, not out through the face.
+    right = { x:  3.4, y: -6.6 - s * 0.15 };
     left  = { x: -7.6, y: -5.0 + s * 0.20 }; // near, at the front hip
   }
   right = { x: right.x, y: right.y - lift };
@@ -1739,6 +1900,7 @@ function twoHandPose(facing, opt) {
     const fwd = facingForward(facing);
     if (swing > 0) {
       // Raise: grip travels up and slightly behind the head.
+      // Covering the helm during the windup is allowed; idle must stay clear.
       w.x += -fwd.x * 4.5 * swing + (facing === "front" ? -1.2 * swing : facing === "back" ? 1.2 * swing : 0);
       w.y += -fwd.y * 3.0 * swing - 15.5 * swing;
     } else {
@@ -1840,17 +2002,26 @@ function drawHeroWhip(c, t, st, facing, hand, shot) {
   else c.translate(11.6, -12.4);
   // Rest hangs beside the hip; at full lash the tip is aimed along facingForward.
   // Aim angles were fitted so the tip sits on the target line (whip-art curve compensated).
+  // Side lashes are shortened slightly so the tip stays inside the ±42 portrait
+  // frame; front/back keep the full reach (the taller frame has room).
   let flip = false, restRot, aimRot;
   if (facing === "front") { flip = true; restRot = 0.35; aimRot = 0.377; }
   else if (facing === "right") { restRot = 0.95; aimRot = -1.194; }
-  else if (facing === "left") { flip = true; restRot = 0.95; aimRot = -1.194; }
+  else if (facing === "left") { flip = true; restRot = -0.95; aimRot = -1.194; }
   else { restRot = 0.35; aimRot = -2.765 + Math.PI * 2; } // back: swing up through the right, end straight up
   restRot += 0.25 * pull;
   const mix = reach >= 0.45 ? 1 : Math.pow(Math.max(0, reach) / 0.45, 0.7);
   const rot = restRot * (1 - mix) + aimRot * mix + sway;
   if (flip) c.scale(-1, 1);
   c.rotate(rot);
-  if (reach > 0) c.scale(1, 1 + 0.55 * reach);
+  // Side lashes: rotating the rest hang (length ~32) onto the horizontal
+  // already overshoots ±42, so shorten the sprite as it aims forward.
+  // Front/back keep the full 1+0.55 reach (the taller frame has room).
+  const side = (facing === "left" || facing === "right");
+  if (reach > 0) {
+    const grow = side ? (1 - 0.36 * mix) : (1 + 0.55 * reach);
+    c.scale(1, grow);
+  }
   if (typeof drawAbyssalWhip === "function") drawAbyssalWhip(c, t || 0, { scale: (st && st.scale) || 1, walk: false });
   else {
     c.strokeStyle = (st && st.main) || "#1a0c10";
@@ -1946,7 +2117,7 @@ function drawHeroWeapon(c, t, eq, opt, facing, hand) {
   } else if (kind === "axe" && window.XscapeGorehornArt && XscapeGorehornArt.drawAxeHeld) {
     XscapeGorehornArt.drawAxeHeld(c, t, facing, pos, opt && opt.shot);
   } else if (kind === "spear" && window.XscapeColossusArt && XscapeColossusArt.drawSpearHeld) {
-    XscapeColossusArt.drawSpearHeld(c, t, facing, pos);
+    XscapeColossusArt.drawSpearHeld(c, t, facing, pos, opt && opt.shot);
   } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase, pos);
 }
 
@@ -2177,6 +2348,7 @@ function drawHeroNeck(c, id, facing) {
 }
 
 function drawHeroBoots(c, id, facing, stride) {
+  if (!id) { drawBareFeet(c, facing, stride); return; }
   if (facing === "back") { drawLabBoots(c, id); return; }
   const st = id ? labStyle(id) : { main: "#2a1c10", trim: "#4a3420", scale: 1 };
   const p = pal(st);
@@ -2251,6 +2423,7 @@ function drawHeroBoots(c, id, facing, stride) {
 }
 
 function drawHeroLegs(c, id, facing, stride) {
+  if (!id) { drawBareLegs(c, facing, stride); return; }
   if (facing === "back") { drawLabLegs(c, id); return; }
   const st = id ? labStyle(id) : { main: "#3a5a28", trim: "#2e4e1c", scale: 1 };
   const p = pal(st);
@@ -2339,6 +2512,7 @@ function drawHeroLegs(c, id, facing, stride) {
 }
 
 function drawHeroBody(c, id, facing) {
+  if (!id) { drawBareTorso(c, facing); return; }
   if (facing === "back") { drawLabBody(c, id); return; }
   const st = id ? labStyle(id) : { main: "#4a7a30", trim: "#2e4e1c", scale: 1 };
   const p = pal(st);
@@ -2605,6 +2779,7 @@ function drawHeroNearArm(c, id, facing, stride, raise) {
 }
 
 function drawHeroHead(c, id, facing) {
+  if (!id) { drawBareHead(c, facing); return; }
   if (facing === "back") { drawLabHead(c, id); return; }
   const st = id ? labStyle(id) : { main: "#4a7a30", trim: "#2e4e1c", scale: 1 };
   const p = pal(st);
