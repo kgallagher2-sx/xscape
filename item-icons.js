@@ -41,7 +41,9 @@
       rune:   { main: "#3a6a8a", shade: "#1a3848", light: "#7ab0c8", metal: "#6a8aaa" },
       mithril:{ main: "#5a6a9a", shade: "#2a3458", light: "#a0b0d8", metal: "#8890b8" },
       bronze: { main: "#8a5a28", shade: "#4a2e10", light: "#c89048", metal: "#b07838" },
-      hollow: { main: "#3a3048", shade: "#181420", light: "#c8b890", metal: "#8a7a60", accent: "#c8c0e0" }
+      hollow: { main: "#3a3048", shade: "#181420", light: "#c8b890", metal: "#8a7a60", accent: "#c8c0e0" },
+      dusk:   { main: "#3a3048", shade: "#16101e", light: "#6a5a78", stitch: "#907850", metal: "#686478" },
+      tempered:{ main: "#3a444c", shade: "#161a20", light: "#7a8a94", metal: "#5c7080" }
     };
   }
 
@@ -478,6 +480,9 @@
     else if (id === "black_dhide_chaps") drawChaps(ctx, pal.black);
     else if (id === "black_dhide_vambs") drawVambs(ctx, pal.black);
     else if (id === "black_dhide_boots") drawBoots(ctx, pal.black);
+    else if (id === "duskhide_body" || id === "duskhide-body") drawBody(ctx, pal.dusk);
+    else if (id === "duskhide_chaps" || id === "duskhide-chaps") drawChaps(ctx, pal.dusk);
+    else if (id === "duskhide_vambs" || id === "duskhide-vambs") drawVambs(ctx, pal.dusk);
     else if (id === "leather_cowl") drawCoif(ctx, pal.leather);
     else if (id === "leather_body") drawBody(ctx, pal.leather);
     else if (id === "leather_chaps") drawChaps(ctx, pal.leather);
@@ -487,6 +492,7 @@
     else if (id === "rune_crossbow") drawCrossbow(ctx, pal.rune, false);
     else if (id === "armadyl_crossbow") drawCrossbow(ctx, pal.armadyl, true);
     else if (id === "bronze_crossbow") drawCrossbow(ctx, pal.bronze, false);
+    else if (id === "tempered_xbow" || id === "tempered-xbow") drawCrossbow(ctx, pal.tempered, false);
     else if (id === "hollowbolt_xbow" || id === "hollowbolt-xbow") drawCrossbow(ctx, pal.hollow, true);
     else if (id === "mithril_bolts") drawBolts(ctx, pal.mithril);
     else if (id === "rune_bolts") drawBolts(ctx, pal.rune);
