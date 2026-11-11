@@ -251,6 +251,9 @@
       <button type="button" data-preset="colossus_gorehorn_mix">Colossus + Gorehorn</button>
       <button type="button" data-preset="mixed_three">All three sets</button>
       <button type="button" data-preset="gloamhold">Gloamhold</button>
+      <button type="button" data-preset="eclipse">Eclipse hide</button>
+      <button type="button" data-preset="vestments">Unsleeping vestments</button>
+      <button type="button" data-preset="hollowplate">Hollowplate</button>
     </div>
     <label class="cape-toggle"><input type="checkbox" id="show-cape" checked> Show cape (turn off to see the body)</label>
     <div class="slot-grid" id="slots"></div>
@@ -423,6 +426,7 @@
 <script src="knight-sprites.js?v=37"></script>
 <script src="gorehorn-sprites.js?v=37"></script>
 <script src="colossus-sprites.js?v=37"></script>
+<script src="gloam-t3-sprites.js?v=1"></script>
 <script src="lab-gear.js?v=37"></script>
 <script>
 "use strict";
@@ -496,7 +500,7 @@ function zoom(src, dst) {
 }
 
 /* ---- Gear UI ---- */
-const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Stormwing", widow: "Widow Weaver", kingsguard: "Kingsguard", kingsguard_widow_mix: "Helm + Widow", kingsguard_whip_mix: "Kite + whip", gorehorn: "Gorehorn", gorehorn_widow_mix: "Gorehorn helm + Widow", gorehorn_knight_mix: "Gorehorn + Kingsguard", gloamhold: "Gloamhold", custom: "Custom" };
+const PRESET_LABEL = { starter: "Starter", tier2: "Tier 2", armadyl: "Stormwing", widow: "Widow Weaver", kingsguard: "Kingsguard", kingsguard_widow_mix: "Helm + Widow", kingsguard_whip_mix: "Kite + whip", gorehorn: "Gorehorn", gorehorn_widow_mix: "Gorehorn helm + Widow", gorehorn_knight_mix: "Gorehorn + Kingsguard", gloamhold: "Gloamhold", eclipse: "Eclipse hide", vestments: "Unsleeping vestments", hollowplate: "Hollowplate", custom: "Custom" };
 const PREVIEW_VIEWS = [
   { id: "gear-preview-front", facing: "front", walk: false },
   { id: "gear-preview-back", facing: "back", walk: false },

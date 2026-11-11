@@ -196,12 +196,96 @@ function spearAnimAt(shotT, attackTicks) {
   return z;
 }
 
+function bowDrawAnimAt(shotT, attackTicks) {
+  // 2h longbow: draw the string back, then release. 5-tick weapon.
+  const speed = attackTicks || 5;
+  const z = _animBase(shotT, "longbow");
+  const ph = _attackPhase(shotT, speed, 0.85, 1.35);
+  z.phase = ph.phase;
+  if (ph.phase === "windup") {
+    const u = _animSmooth(ph.u);
+    z.draw = u;
+    z.raise = 0.2 * u;
+    z.string = 1 - u;
+    z.lean = -0.08 * u;
+  } else if (ph.phase === "after") {
+    const t = ph.u * 1.35;
+    if (t < 0.16) {
+      const u = _animSmooth(t / 0.16);
+      z.draw = 1 - u;
+      z.string = u;
+      z.snap = 1;
+      z.flash = Math.sin(u * Math.PI); // peak mid-snap so the release reads clearly
+      z.recoil = Math.sin(u * Math.PI) * 0.7;
+      z.lean = -0.08 + 0.18 * u;
+    } else if (t < 0.55) {
+      z.string = 1;
+      z.recoil = 0.25 * (1 - (t - 0.16) / 0.39);
+      z.lean = 0.10 * (1 - (t - 0.16) / 0.39);
+    } else {
+      const u = _animSmooth((t - 0.55) / 0.80);
+      z.string = 1;
+      z.recoil = 0;
+      z.lean = 0;
+      z.reload = u;
+    }
+  }
+  return z;
+}
+
+function staffCastAnimAt(shotT, attackTicks) {
+  const z = mageCastAnimAt(shotT, attackTicks || 5);
+  z.kind = "staff";
+  return z;
+}
+
+function halberdThrustAnimAt(shotT, attackTicks) {
+  // Long polearm poke. Same pull-and-thrust vocabulary as the spear, on a 7-tick cycle.
+  const z = stabAnimAt(shotT, attackTicks || 7);
+  z.kind = "halberd_thrust";
+  return z;
+}
+
+function halberdChopAnimAt(shotT, attackTicks) {
+  // Sweeping diagonal chop (not the 7-tick Gorehorn overhead). Windup cocks
+  // the head up-back; the strike cuts down-forward. 7-tick weapon.
+  const speed = attackTicks || 7;
+  const z = _animBase(shotT, "halberd_chop");
+  const ph = _attackPhase(shotT, speed, 1.45, 1.85);
+  z.phase = ph.phase;
+  if (ph.phase === "windup") {
+    const u = ph.u < 0.85 ? _animSmooth(ph.u / 0.85) : 1;
+    z.swing = u;
+    z.lean = -0.16 * u;
+  } else if (ph.phase === "after") {
+    const t = ph.u * 1.85;
+    if (t < 0.45) {
+      const u = _animSmooth(t / 0.45);
+      z.swing = 1 - 1.75 * u; // 1 → -0.75, a clear cut past rest
+      z.lean = -0.16 + 0.7 * u;
+      z.snap = 1;
+    } else if (t < 1.15) {
+      const u = _animSmooth((t - 0.45) / 0.70);
+      z.swing = -0.75 * (1 - u);
+      z.lean = 0.54 * (1 - u);
+    } else {
+      z.swing = 0;
+      z.lean = 0;
+    }
+  }
+  return z;
+}
+
 function weaponAnimAt(shotT, attackTicks, kind) {
   if (kind === "wand" || kind === "widow") return mageCastAnimAt(shotT, attackTicks || 5);
   if (kind === "sword") return stabAnimAt(shotT, attackTicks || 4);
   if (kind === "spear") return spearAnimAt(shotT, attackTicks || 5);
   if (kind === "axe") return axeSwingAnimAt(shotT, attackTicks || 7);
   if (kind === "whip") return whipAnimAt(shotT, attackTicks || 4);
+  if (kind === "longbow") return bowDrawAnimAt(shotT, attackTicks || 5);
+  if (kind === "staff") return staffCastAnimAt(shotT, attackTicks || 5);
+  if (kind === "halberd" || kind === "halberd_thrust") return halberdThrustAnimAt(shotT, attackTicks || 7);
+  if (kind === "halberd_chop") return halberdChopAnimAt(shotT, attackTicks || 7);
   return shotAnimAt(shotT, attackTicks || 4);
 }
 

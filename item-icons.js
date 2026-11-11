@@ -554,6 +554,9 @@
       ctx.fillStyle = pal.veil.stitch;
       ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(3, -2); ctx.lineTo(-3, -2); ctx.closePath(); ctx.fill();
     }
+    else if (global.XscapeGloamT3Art && XscapeGloamT3Art.isT3Id(id)) {
+      XscapeGloamT3Art.drawItemIcon(ctx, id);
+    }
     else {
       // Unknown id: simple rune-pouch-like box so we never fall back to text.
       ctx.fillStyle = "#4a3a20"; rrect(ctx, -11, -11, 22, 22, 2); ctx.fill();

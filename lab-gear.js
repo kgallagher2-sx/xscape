@@ -66,6 +66,26 @@ const LAB_ITEMS = {
   unsleeping_stole:   { id: "unsleeping_stole", name: "Unsleeping stole", slot: "neck", tier: "unique", kind: "stole" },
   gloamheart_cape:    { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", kind: "gloam" },
 
+  /* Gloamhold tier-3 end-chest (visuals only; combat stats live with Gameboy / Boss Mechanics). */
+  eclipse_coif:            { id: "eclipse_coif", name: "Eclipse coif", slot: "head", tier: "t3", kind: "eclipse" },
+  eclipse_body:            { id: "eclipse_body", name: "Eclipse body", slot: "body", tier: "t3", kind: "eclipse" },
+  eclipse_chaps:           { id: "eclipse_chaps", name: "Eclipse chaps", slot: "legs", tier: "t3", kind: "eclipse" },
+  eclipse_longbow:         { id: "eclipse_longbow", name: "Eclipse longbow", slot: "weapon", tier: "t3", kind: "longbow", twohand: true, speed: 5 },
+  eclipse_pendant:         { id: "eclipse_pendant", name: "Eclipse pendant", slot: "neck", tier: "t3", kind: "eclipse_pendant" },
+  eclipse_band:            { id: "eclipse_band", name: "Eclipse band", slot: "ring", tier: "t3", kind: "eclipse_band" },
+  unsleeping_hood:         { id: "unsleeping_hood", name: "Unsleeping hood", slot: "head", tier: "t3", kind: "vestments" },
+  unsleeping_robe_top:     { id: "unsleeping_robe_top", name: "Unsleeping robe top", slot: "body", tier: "t3", kind: "vestments" },
+  unsleeping_robe_bottom:  { id: "unsleeping_robe_bottom", name: "Unsleeping robe bottom", slot: "legs", tier: "t3", kind: "vestments" },
+  nightfall_staff:         { id: "nightfall_staff", name: "Nightfall staff", slot: "weapon", tier: "t3", kind: "staff", twohand: true, speed: 5 },
+  unsleeping_charm:        { id: "unsleeping_charm", name: "Unsleeping charm", slot: "neck", tier: "t3", kind: "unsleeping_charm" },
+  dreamless_ring:          { id: "dreamless_ring", name: "Dreamless ring", slot: "ring", tier: "t3", kind: "dreamless" },
+  hollowplate_helm:        { id: "hollowplate_helm", name: "Hollowplate helm", slot: "head", tier: "t3", kind: "hollowplate" },
+  hollowplate_body:        { id: "hollowplate_body", name: "Hollowplate body", slot: "body", tier: "t3", kind: "hollowplate" },
+  hollowplate_legs:        { id: "hollowplate_legs", name: "Hollowplate legs", slot: "legs", tier: "t3", kind: "hollowplate" },
+  hollow_halberd:          { id: "hollow_halberd", name: "Hollow halberd", slot: "weapon", tier: "t3", kind: "halberd", twohand: true, speed: 7 },
+  hollow_torque:           { id: "hollow_torque", name: "Hollow torque", slot: "neck", tier: "t3", kind: "hollow_torque" },
+  hollow_signet:           { id: "hollow_signet", name: "Hollow signet", slot: "ring", tier: "t3", kind: "hollow_signet" },
+
   abyssal_whip:       { id: "abyssal_whip", name: "Abyssal whip", slot: "weapon", tier: "other", kind: "whip" },
   blue_partyhat:      { id: "blue_partyhat", name: "Blue partyhat", slot: "head", tier: "other", kind: "partyhat" }
 };
@@ -155,10 +175,25 @@ const LAB_LOADOUTS = {
     head: "kraken_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
     weapon: "tentacle_whip", body: "gorehorn_plate", shield: "kingsguard_kite",
     legs: "kingsguard_legs", hands: null, feet: "black_dhide_boots", ring: null
+  },
+  eclipse: {
+    head: "eclipse_coif", cape: null, neck: "eclipse_pendant", ammo: null,
+    weapon: "eclipse_longbow", body: "eclipse_body", shield: null,
+    legs: "eclipse_chaps", hands: null, feet: null, ring: "eclipse_band"
+  },
+  vestments: {
+    head: "unsleeping_hood", cape: null, neck: "unsleeping_charm", ammo: null,
+    weapon: "nightfall_staff", body: "unsleeping_robe_top", shield: null,
+    legs: "unsleeping_robe_bottom", hands: null, feet: null, ring: "dreamless_ring"
+  },
+  hollowplate: {
+    head: "hollowplate_helm", cape: null, neck: "hollow_torque", ammo: null,
+    weapon: "hollow_halberd", body: "hollowplate_body", shield: null,
+    legs: "hollowplate_legs", hands: null, feet: null, ring: "hollow_signet"
   }
 };
 
-const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "colossus", "unique", "other"];
+const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "colossus", "unique", "t3", "other"];
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
   tier2: "Tier 2 — black d'hide",
@@ -169,6 +204,7 @@ const LAB_TIER_LABEL = {
   gorehorn: "Gorehorn — the Minotaur",
   colossus: "Colossus — the Drowned Colossus",
   unique: "Gloamhold uniques",
+  t3: "Gloamhold tier-3 — end chest",
   other: "Other (kept if owned)"
 };
 
@@ -231,6 +267,25 @@ const LAB_DEFAULTS = {
   crownshard_boots:   { main: "#3a2a1c", trim: "#b8d8f0", scale: 1 },
   unsleeping_stole:   { main: "#1a1028", trim: "#e8e0c8", scale: 1 },
   gloamheart_cape:    { main: "#14081e", trim: "#e8c878", scale: 1 },
+
+  eclipse_coif:            { main: "#2a1c28", trim: "#e0b050", scale: 1 },
+  eclipse_body:            { main: "#2a1c28", trim: "#e0b050", scale: 1 },
+  eclipse_chaps:           { main: "#241820", trim: "#e0b050", scale: 1 },
+  eclipse_longbow:         { main: "#3a2418", trim: "#e0b050", scale: 1 },
+  eclipse_pendant:         { main: "#2a1c28", trim: "#e0b050", scale: 1 },
+  eclipse_band:            { main: "#d4b03a", trim: "#2a1c28", scale: 1 },
+  unsleeping_hood:         { main: "#181428", trim: "#c8d4f0", scale: 1 },
+  unsleeping_robe_top:     { main: "#181428", trim: "#c8d4f0", scale: 1 },
+  unsleeping_robe_bottom:  { main: "#141020", trim: "#c8d4f0", scale: 1 },
+  nightfall_staff:         { main: "#2a2438", trim: "#c8d4f0", scale: 1 },
+  unsleeping_charm:        { main: "#181428", trim: "#c8d4f0", scale: 1 },
+  dreamless_ring:          { main: "#8a90b0", trim: "#c8d4f0", scale: 1 },
+  hollowplate_helm:        { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
+  hollowplate_body:        { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
+  hollowplate_legs:        { main: "#323844", trim: "#c8d0d8", scale: 1 },
+  hollow_halberd:          { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
+  hollow_torque:           { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
+  hollow_signet:           { main: "#3a4450", trim: "#c8d0d8", scale: 1 },
 
   abyssal_whip:       { main: "#1a0c10", trim: "#6a1020", scale: 1 },
   blue_partyhat:      { main: "#1e48d8", trim: "#0a2060", scale: 1 }
@@ -566,7 +621,11 @@ function drawLabLegs(c, id) {
       XscapeColossusArt.drawLegs(c, "back");
       return;
     }
-    if (kind === "armadyl") {
+    if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+      XscapeGloamT3Art.drawWorn(kind, "legs", c, st, "back", 0);
+      return;
+    }
+        if (kind === "armadyl") {
       c.fillStyle = p.dark;
       c.beginPath();
       c.moveTo(-8.6, -2.2);
@@ -706,6 +765,10 @@ function drawLabBody(c, id) {
       XscapeColossusArt.drawPlate(c, "back");
       return;
     }
+        if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+      XscapeGloamT3Art.drawWorn(kind, "body", c, st, "back");
+      return;
+    }
     if (kind === "armadyl") {
       c.fillStyle = p.dark;
       c.beginPath();
@@ -804,6 +867,10 @@ function drawLabHead(c, id) {
       return;
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
       XscapeColossusArt.drawHelm(c, "back");
+      return;
+    }
+        if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+      XscapeGloamT3Art.drawWorn(kind, "head", c, st, "back");
       return;
     }
     if (kind === "armadyl") {
@@ -1024,6 +1091,11 @@ function drawLabNeck(c, id) {
   const it = labItem(id);
   const kind = it ? it.kind : "glory";
   withScale(c, 0, -21, st.scale, () => {
+    if (window.XscapeGloamT3Art) {
+      if (kind === "eclipse_pendant") { XscapeGloamT3Art.drawEclipsePendantWorn(c, st, "back"); return; }
+      if (kind === "unsleeping_charm") { XscapeGloamT3Art.drawUnsleepingCharmWorn(c, st, "back"); return; }
+      if (kind === "hollow_torque") { XscapeGloamT3Art.drawHollowTorqueWorn(c, st, "back"); return; }
+    }
     if (kind === "stole") {
       c.fillStyle = p.dark;
       c.beginPath();
@@ -1273,13 +1345,14 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
   const eq = opt.equipment || (typeof LabGear !== "undefined" && LabGear.equipment) || {};
   _drawEq = eq;
   const shot = opt.shot || {};
+  if (!shot.kind && eq && eq._animKind) shot.kind = eq._animKind;
   const walkMul = (facing === "front") ? 3.2 : (facing === "back" ? 0 : 3.6);
   const stride = walkAmount(opt, t) * walkMul;
   const bob = Math.abs(walkAmount(opt, t)) * ((facing === "front" || facing === "back") ? 1.3 : 1.4);
   const packed = Object.assign({}, opt, { equipment: eq, shot: shot, _stride: stride });
   const twoHand = isTwoHandedWeapon(eq.weapon);
   const hands = twoHand ? twoHandPose(facing, packed) : heroHands(facing, packed);
-  const widowRobes = !!(labItem(eq.legs) && labItem(eq.legs).kind === "widow");
+  const widowRobes = !!(labItem(eq.legs) && (labItem(eq.legs).kind === "widow" || labItem(eq.legs).kind === "vestments"));
 
   ctx.fillStyle = "rgba(0,0,0,0.4)";
   ctx.beginPath();
@@ -1551,6 +1624,11 @@ function drawLabItemIcon(c, id, t) {
   c.save();
   c.scale(st.scale || 1, st.scale || 1);
 
+  if (window.XscapeGloamT3Art && XscapeGloamT3Art.isT3Id(id) && XscapeGloamT3Art.drawItemIcon) {
+    XscapeGloamT3Art.drawItemIcon(c, id);
+    c.restore();
+    return;
+  }
   if (kind === "widow" && window.XscapeWidowArt && XscapeWidowArt.drawItemIcon) {
     XscapeWidowArt.drawItemIcon(c, id, st, t);
     c.restore();
@@ -1725,7 +1803,7 @@ function weaponKind(id) {
   if (String(id).indexOf("whip") !== -1) return "whip";
   if (it && it.kind === "widow") return "wand";
   if (String(id).indexOf("widow_weaver_wand") !== -1) return "wand";
-  if (it && (it.kind === "sword" || it.kind === "axe" || it.kind === "spear")) return it.kind;
+  if (it && (it.kind === "sword" || it.kind === "axe" || it.kind === "spear" || it.kind === "longbow" || it.kind === "staff" || it.kind === "halberd")) return it.kind;
   if (String(id).indexOf("kingsguard_sword") !== -1) return "sword";
   return "bow";
 }
@@ -1739,7 +1817,10 @@ function weaponKind(id) {
    never show an off-hand. */
 function isTwoHandedWeapon(id) {
   if (!id) return false;
-  return weaponKind(id) === "axe";
+  const it = labItem(id) || (typeof ITEMS !== "undefined" && ITEMS[id]) || null;
+  if (it && it.twohand) return true;
+  const k = weaponKind(id);
+  return k === "axe" || k === "longbow" || k === "staff" || k === "halberd";
 }
 
 function facingForward(facing) {
@@ -1749,12 +1830,12 @@ function facingForward(facing) {
   return { x: 0, y: 1 }; // front: toward the camera
 }
 
-function shotForWeapon(weaponId, shotT) {
-  const kind = weaponKind(weaponId);
+function shotForWeapon(weaponId, shotT, animKind) {
+  const kind = animKind || weaponKind(weaponId);
   const it = (typeof ITEMS !== "undefined" && ITEMS[weaponId])
     || (typeof LAB_ITEMS !== "undefined" && LAB_ITEMS[weaponId])
     || labItem(weaponId);
-  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" || kind === "spear" ? 5 : kind === "axe" ? 7 : 4);
+  const speed = (it && it.speed) || (kind === "wand" || kind === "widow" || kind === "spear" || kind === "staff" || kind === "longbow" ? 5 : kind === "axe" || kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop" ? 7 : 4);
   if (typeof weaponAnimAt === "function") return weaponAnimAt(shotT, speed, kind);
   if ((kind === "wand" || kind === "widow") && typeof mageCastAnimAt === "function") return mageCastAnimAt(shotT, speed);
   return (typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise: 0 };
@@ -1839,6 +1920,12 @@ function heroHands(facing, opt) {
 
 function twoHandPose(facing, opt) {
   const shot = (opt && opt.shot) || {};
+  const eq = opt && opt.equipment;
+  const k = (shot && shot.kind) || weaponKind(eq && eq.weapon);
+  if (window.XscapeGloamT3Art && XscapeGloamT3Art.t3TwoHandPose) {
+    const t3p = XscapeGloamT3Art.t3TwoHandPose(facing, opt, k);
+    if (t3p) return t3p;
+  }
   const raise = shot.raise || 0;
   const swing = shot.swing || 0;
   // Axe uses swing (not a generic raise) so the haft stays in both hands.
@@ -2082,6 +2169,12 @@ function drawHeroWeapon(c, t, eq, opt, facing, hand) {
     XscapeGorehornArt.drawAxeHeld(c, t, facing, pos, opt && opt.shot);
   } else if (kind === "spear" && window.XscapeColossusArt && XscapeColossusArt.drawSpearHeld) {
     XscapeColossusArt.drawSpearHeld(c, t, facing, pos, opt && opt.shot);
+  } else if (kind === "longbow" && window.XscapeGloamT3Art && XscapeGloamT3Art.drawLongbowHeld) {
+    XscapeGloamT3Art.drawLongbowHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
+  } else if (kind === "staff" && window.XscapeGloamT3Art && XscapeGloamT3Art.drawStaffHeld) {
+    XscapeGloamT3Art.drawStaffHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
+  } else if ((kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop") && window.XscapeGloamT3Art && XscapeGloamT3Art.drawHalberdHeld) {
+    XscapeGloamT3Art.drawHalberdHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
   } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase, pos);
 }
 
@@ -2250,6 +2343,12 @@ function drawHeroNeck(c, id, facing) {
   const it = labItem(id);
   c.save();
   withScale(c, 0, facing === "right" ? -18 : -16, st.scale, () => {
+    if (window.XscapeGloamT3Art && (it && (it.kind === "eclipse_pendant" || it.kind === "unsleeping_charm" || it.kind === "hollow_torque"))) {
+      if (it.kind === "eclipse_pendant") XscapeGloamT3Art.drawEclipsePendantWorn(c, st, facing === "right" ? "right" : "front");
+      else if (it.kind === "unsleeping_charm") XscapeGloamT3Art.drawUnsleepingCharmWorn(c, st, facing === "right" ? "right" : "front");
+      else XscapeGloamT3Art.drawHollowTorqueWorn(c, st, facing === "right" ? "right" : "front");
+      return;
+    }
     if (facing === "right") {
       c.strokeStyle = p.main;
       c.lineWidth = 1.4;
@@ -2407,6 +2506,9 @@ function drawHeroLegs(c, id, facing, stride) {
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawLegs) {
       XscapeColossusArt.drawLegs(c, facing === "right" ? "right" : "front");
       return;
+    } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+      XscapeGloamT3Art.drawWorn(kind, "legs", c, st, facing === "right" ? "right" : "front", s);
+      return;
     }
     if (facing === "right") {
       const far = -s * 0.7, near = s * 0.7;
@@ -2497,6 +2599,9 @@ function drawHeroBody(c, id, facing) {
       } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
         XscapeColossusArt.drawPlate(c, "right");
         return;
+      } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+        XscapeGloamT3Art.drawWorn(kind, "body", c, st, "right");
+        return;
       }
       c.fillStyle = p.dark;
       c.beginPath();
@@ -2543,6 +2648,9 @@ function drawHeroBody(c, id, facing) {
       return;
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
       XscapeColossusArt.drawPlate(c, "front");
+      return;
+    } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+      XscapeGloamT3Art.drawWorn(kind, "body", c, st, "front");
       return;
     }
     if (kind === "armadyl") {
@@ -2980,6 +3088,9 @@ function drawHeroHead(c, id, facing) {
       } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
         XscapeColossusArt.drawHelm(c, "right");
         return;
+      } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+        XscapeGloamT3Art.drawWorn(kind, "head", c, st, "right");
+        return;
       }
       if (kind === "armadyl") {
         drawStormwingHelm(c, p, sk, "right");
@@ -3048,6 +3159,9 @@ function drawHeroHead(c, id, facing) {
       return;
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
       XscapeColossusArt.drawHelm(c, "front");
+      return;
+    } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
+      XscapeGloamT3Art.drawWorn(kind, "head", c, st, "front");
       return;
     }
     if (kind === "armadyl") {
@@ -3125,6 +3239,11 @@ function drawHeroRing(c, id, facing, hands) {
   if (!id) return;
   const st = labStyle(id);
   const p = pal(st);
+  const it = labItem(id);
+  if (window.XscapeGloamT3Art && it && (it.kind === "eclipse_band" || it.kind === "dreamless" || it.kind === "hollow_signet")) {
+    XscapeGloamT3Art.drawT3Ring(c, st, facing, hands, it.kind);
+    return;
+  }
   const h = (hands && hands.left) || heroHands(facing, null).left;
   c.save();
   c.translate(h.x + (facing === "back" ? 0.8 : 0.6), h.y);
