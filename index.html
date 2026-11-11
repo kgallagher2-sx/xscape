@@ -1822,6 +1822,7 @@
 <script src="gorehorn-sprites.js"></script>
 <script src="colossus-sprites.js"></script>
 <script src="gloam-t3-sprites.js"></script>
+<script src="magic-sprites.js"></script>
 <script src="lab-gear.js"></script>
 <script src="kree-sprites.js"></script>
 <script src="stats.js"></script>
@@ -5753,17 +5754,24 @@ function drawBolts(dt) {
     ctx.save();
     ctx.translate(x, y);
     if (b.kind === "magic") {
-      const Art = window.XscapeWidowArt;
-      if (Art && Art.drawVenom) {
-        ctx.scale(1.35, 1.35);
-        Art.drawVenom(ctx, { t: b.t });
+      const Magic = window.XscapeMagicArt;
+      const spellId = b.spellId || b.spell;
+      const useSpell = Magic && Magic.drawBoltInWorld && spellId && spellId !== "venom";
+      if (useSpell) {
+        Magic.drawBoltInWorld(ctx, b, 0, 0, ang, k, false);
       } else {
-        const grd = ctx.createRadialGradient(0, 0, 1, 0, 0, 9);
-        grd.addColorStop(0, "#ff8a90");
-        grd.addColorStop(0.4, "#c00818");
-        grd.addColorStop(1, "rgba(80,0,10,0)");
-        ctx.fillStyle = grd;
-        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+        const Art = window.XscapeWidowArt;
+        if (Art && Art.drawVenom) {
+          ctx.scale(1.35, 1.35);
+          Art.drawVenom(ctx, { t: b.t });
+        } else {
+          const grd = ctx.createRadialGradient(0, 0, 1, 0, 0, 9);
+          grd.addColorStop(0, "#ff8a90");
+          grd.addColorStop(0.4, "#c00818");
+          grd.addColorStop(1, "rgba(80,0,10,0)");
+          ctx.fillStyle = grd;
+          ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+        }
       }
     } else {
       ctx.rotate(ang);
@@ -5775,10 +5783,15 @@ function drawBolts(dt) {
       ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-11, -3); ctx.lineTo(-11, 3); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
-    if (b.t >= b.dur) applyBoltHit(b.dest, b.dmg);
-    else keep.push(b);
+    if (b.t >= b.dur) {
+      if (window.XscapeMagicArt && XscapeMagicArt.drawBoltInWorld && (b.spellId || b.spell) && (b.spellId || b.spell) !== "venom") {
+        XscapeMagicArt.drawBoltInWorld(ctx, b, x, y, ang, 1, true);
+      }
+      applyBoltHit(b.dest, b.dmg);
+    } else keep.push(b);
   }
   G.bolts = keep;
+  if (window.XscapeMagicArt && XscapeMagicArt.drawImpacts) XscapeMagicArt.drawImpacts(ctx, dt);
 }
 
 function drawSplats(dt) {

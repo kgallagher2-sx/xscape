@@ -67,6 +67,17 @@ const LAB_ITEMS = {
   gloamheart_cape:    { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", kind: "gloam" },
 
   /* Gloamhold tier-3 end-chest (visuals only; combat stats live with Gameboy / Boss Mechanics). */
+  ashen_hood:              { id: "ashen_hood", name: "Ashen hood", slot: "head", tier: "shop", kind: "ashen" },
+  ashen_robe_top:          { id: "ashen_robe_top", name: "Ashen robe top", slot: "body", tier: "shop", kind: "ashen" },
+  ashen_robe_bottom:       { id: "ashen_robe_bottom", name: "Ashen robe bottom", slot: "legs", tier: "shop", kind: "ashen" },
+  ashen_staff:             { id: "ashen_staff", name: "Ashen staff", slot: "weapon", tier: "shop", kind: "staff", twohand: true, speed: 5 },
+  ember_rune:              { id: "ember_rune", name: "Ember rune", slot: "inventory", tier: "supply", kind: "rune" },
+  wisp_rune:               { id: "wisp_rune", name: "Wisp rune", slot: "inventory", tier: "supply", kind: "rune" },
+  coil_rune:               { id: "coil_rune", name: "Coil rune", slot: "inventory", tier: "supply", kind: "rune" },
+  veil_rune:               { id: "veil_rune", name: "Veil rune", slot: "inventory", tier: "supply", kind: "rune" },
+  vein_rune:               { id: "vein_rune", name: "Vein rune", slot: "inventory", tier: "supply", kind: "rune" },
+  omen_rune:               { id: "omen_rune", name: "Omen rune", slot: "inventory", tier: "supply", kind: "rune" },
+
   eclipse_coif:            { id: "eclipse_coif", name: "Eclipse coif", slot: "head", tier: "t3", kind: "eclipse" },
   eclipse_body:            { id: "eclipse_body", name: "Eclipse body", slot: "body", tier: "t3", kind: "eclipse" },
   eclipse_chaps:           { id: "eclipse_chaps", name: "Eclipse chaps", slot: "legs", tier: "t3", kind: "eclipse" },
@@ -115,6 +126,11 @@ const LAB_LOADOUTS = {
     head: "widow_weaver_hood", cape: null, neck: null, ammo: null,
     weapon: "widow_weaver_wand", body: "widow_weaver_top", shield: "widow_weaver_book",
     legs: "widow_weaver_bottom", hands: null, feet: null, ring: null
+  },
+  ashen: {
+    head: "ashen_hood", cape: null, neck: null, ammo: null,
+    weapon: "ashen_staff", body: "ashen_robe_top", shield: null,
+    legs: "ashen_robe_bottom", hands: null, feet: null, ring: null
   },
   kingsguard: {
     head: "kingsguard_helm", cape: "fire_cape", neck: "amulet_of_glory", ammo: null,
@@ -193,9 +209,10 @@ const LAB_LOADOUTS = {
   }
 };
 
-const LAB_TIER_ORDER = ["starter", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "colossus", "unique", "t3", "other"];
+const LAB_TIER_ORDER = ["starter", "shop", "tier2", "jad", "armadyl", "widow", "kingsguard", "gorehorn", "colossus", "unique", "t3", "other"];
 const LAB_TIER_LABEL = {
   starter: "Starter — green d'hide",
+  shop: "Shop — Ashen robes",
   tier2: "Tier 2 — black d'hide",
   jad: "Magmor",
   armadyl: "Stormwing — Vaelkor",
@@ -216,6 +233,10 @@ const LAB_DEFAULTS = {
   green_dhide_chaps:  { main: "#3a5a28", trim: "#2e4e1c", scale: 1 },
   green_dhide_vambs:  { main: "#3a5a28", trim: "#2a4018", scale: 1 },
   green_dhide_boots:  { main: "#2a1c10", trim: "#4a3420", scale: 1 },
+  ashen_hood:         { main: "#4a4440", trim: "#a05028", scale: 1 },
+  ashen_robe_top:     { main: "#4a4440", trim: "#a05028", scale: 1 },
+  ashen_robe_bottom:  { main: "#3a3532", trim: "#a05028", scale: 1 },
+  ashen_staff:        { main: "#5a3a22", trim: "#d06028", scale: 1 },
   rune_crossbow:      { main: "#4a6a88", trim: "#8a5a28", scale: 1 },
   mithril_bolts:      { main: "#6a8aaa", trim: "#8a5a28", scale: 1 },
 
@@ -621,6 +642,10 @@ function drawLabLegs(c, id) {
       XscapeColossusArt.drawLegs(c, "back");
       return;
     }
+    if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+      XscapeMagicArt.drawWorn("ashen", "legs", c, st, "back", 0);
+      return;
+    }
     if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
       XscapeGloamT3Art.drawWorn(kind, "legs", c, st, "back", 0);
       return;
@@ -765,6 +790,10 @@ function drawLabBody(c, id) {
       XscapeColossusArt.drawPlate(c, "back");
       return;
     }
+        if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+      XscapeMagicArt.drawWorn("ashen", "body", c, st, "back");
+      return;
+    }
         if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
       XscapeGloamT3Art.drawWorn(kind, "body", c, st, "back");
       return;
@@ -867,6 +896,10 @@ function drawLabHead(c, id) {
       return;
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
       XscapeColossusArt.drawHelm(c, "back");
+      return;
+    }
+        if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+      XscapeMagicArt.drawWorn("ashen", "head", c, st, "back");
       return;
     }
         if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
@@ -1355,10 +1388,19 @@ function drawLabPlayerCore(ctx, t, opt, facing) {
   if (window.XscapeGloamT3Art && XscapeGloamT3Art.t3WeaponPose) {
     t3p = XscapeGloamT3Art.t3WeaponPose(facing, packed, kWep || (shot && shot.kind));
   }
+  if (!t3p && kWep === "staff" && window.XscapeMagicArt && XscapeMagicArt.staffPose) {
+    t3p = XscapeMagicArt.staffPose(facing, packed);
+  }
   const blockOff = blocksOffhand(eq.weapon);
   const twoHand = t3p ? !!t3p.twoHand : isTwoHandedWeapon(eq.weapon);
   const hands = t3p || (twoHand ? twoHandPose(facing, packed) : heroHands(facing, packed));
-  const widowRobes = !!(labItem(eq.legs) && (labItem(eq.legs).kind === "widow" || labItem(eq.legs).kind === "vestments"));
+  // Staffs and wands never melee: the weapon stays in the right hand and the
+  // off-hand gestures on the cast. Idle / walk (raise ≈ 0) is unchanged.
+  if (hands && (kWep === "staff" || kWep === "wand" || kWep === "widow" || (shot && shot.mage))) {
+    const gest = mageOffhandGesture(facing, shot && shot.raise);
+    if (gest) hands.left = gest;
+  }
+  const widowRobes = !!(labItem(eq.legs) && (labItem(eq.legs).kind === "widow" || labItem(eq.legs).kind === "vestments" || labItem(eq.legs).kind === "ashen"));
 
   ctx.fillStyle = "rgba(0,0,0,0.4)";
   ctx.beginPath();
@@ -1885,6 +1927,15 @@ function shotForWeapon(weaponId, shotT, animKind) {
   return (typeof shotAnimAt === "function") ? shotAnimAt(shotT, speed) : { raise: 0 };
 }
 
+function mageOffhandGesture(facing, raise) {
+  const g = raise || 0;
+  if (g <= 0.04) return null;
+  if (facing === "front") return { x: 8.0 - g * 1.5, y: -8.8 - g * 16.0 };
+  if (facing === "back") return { x: -8.0 + g * 1.5, y: -10.6 - g * 16.0 };
+  if (facing === "right") return { x: -3.4 - g * 1.2, y: -6.0 - g * 14.0 };
+  return { x: -8.4 - g * 0.8, y: -5.0 - g * 15.0 };
+}
+
 function heroHands(facing, opt) {
   const shot = (opt && opt.shot) || {};
   const kind = shot.kind;
@@ -1912,8 +1963,16 @@ function heroHands(facing, opt) {
     right = { x:  3.4, y: -6.6 - s * 0.15 };
     left  = { x: -7.6, y: -5.0 + s * 0.20 }; // near, at the front hip
   }
-  right = { x: right.x, y: right.y - lift };
-  left  = { x: left.x,  y: left.y  - lift };
+  const isCast = !!(shot.mage || kind === "staff" || kind === "wand" || kind === "widow");
+  if (isCast) {
+    const g = raise || 0;
+    right = { x: right.x, y: right.y - g * 2.2 };
+    const gest = mageOffhandGesture(facing, g);
+    left = gest || left;
+  } else {
+    right = { x: right.x, y: right.y - lift };
+    left  = { x: left.x,  y: left.y  - lift };
+  }
   if (melee) {
     const fwd = facingForward(facing);
     const thrust = shot.thrust || 0;
@@ -2227,8 +2286,12 @@ function drawHeroWeapon(c, t, eq, opt, facing, hand) {
     XscapeColossusArt.drawSpearHeld(c, t, facing, pos, opt && opt.shot);
   } else if (kind === "longbow" && window.XscapeGloamT3Art && XscapeGloamT3Art.drawLongbowHeld) {
     XscapeGloamT3Art.drawLongbowHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
-  } else if (kind === "staff" && window.XscapeGloamT3Art && XscapeGloamT3Art.drawStaffHeld) {
-    XscapeGloamT3Art.drawStaffHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
+  } else if (kind === "staff") {
+    if ((eq && eq.weapon === "ashen_staff") && window.XscapeMagicArt && XscapeMagicArt.drawStaffHeld) {
+      XscapeMagicArt.drawStaffHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
+    } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawStaffHeld) {
+      XscapeGloamT3Art.drawStaffHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
+    }
   } else if ((kind === "halberd" || kind === "halberd_thrust" || kind === "halberd_chop") && window.XscapeGloamT3Art && XscapeGloamT3Art.drawHalberdHeld) {
     XscapeGloamT3Art.drawHalberdHeld(c, labStyle(eq.weapon), facing, opt && opt.shot, pos);
   } else drawHeroBow(c, opt && opt.shot, eq.weapon, eq.ammo, facing, opt && opt.recoilBase, pos);
@@ -2562,6 +2625,9 @@ function drawHeroLegs(c, id, facing, stride) {
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawLegs) {
       XscapeColossusArt.drawLegs(c, facing === "right" ? "right" : "front");
       return;
+    } else if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+      XscapeMagicArt.drawWorn("ashen", "legs", c, st, facing === "right" ? "right" : "front", s);
+      return;
     } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
       XscapeGloamT3Art.drawWorn(kind, "legs", c, st, facing === "right" ? "right" : "front", s);
       return;
@@ -2655,6 +2721,9 @@ function drawHeroBody(c, id, facing) {
       } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
         XscapeColossusArt.drawPlate(c, "right");
         return;
+      } else if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+        XscapeMagicArt.drawWorn("ashen", "body", c, st, "right");
+        return;
       } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
         XscapeGloamT3Art.drawWorn(kind, "body", c, st, "right");
         return;
@@ -2704,6 +2773,9 @@ function drawHeroBody(c, id, facing) {
       return;
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawPlate) {
       XscapeColossusArt.drawPlate(c, "front");
+      return;
+    } else if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+      XscapeMagicArt.drawWorn("ashen", "body", c, st, "front");
       return;
     } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
       XscapeGloamT3Art.drawWorn(kind, "body", c, st, "front");
@@ -3144,6 +3216,9 @@ function drawHeroHead(c, id, facing) {
       } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
         XscapeColossusArt.drawHelm(c, "right");
         return;
+      } else if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+        XscapeMagicArt.drawWorn("ashen", "head", c, st, "right");
+        return;
       } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
         XscapeGloamT3Art.drawWorn(kind, "head", c, st, "right");
         return;
@@ -3215,6 +3290,9 @@ function drawHeroHead(c, id, facing) {
       return;
     } else if (kind === "colossus" && window.XscapeColossusArt && XscapeColossusArt.drawHelm) {
       XscapeColossusArt.drawHelm(c, "front");
+      return;
+    } else if (kind === "ashen" && window.XscapeMagicArt && XscapeMagicArt.drawWorn) {
+      XscapeMagicArt.drawWorn("ashen", "head", c, st, "front");
       return;
     } else if (window.XscapeGloamT3Art && XscapeGloamT3Art.drawWorn && (kind === "eclipse" || kind === "vestments" || kind === "hollowplate")) {
       XscapeGloamT3Art.drawWorn(kind, "head", c, st, "front");
@@ -3352,6 +3430,7 @@ window.drawPlayerFacing = drawPlayerFacing;
 window.resolveFacing = resolveFacing;
 window.heroHands = heroHands;
 window.isTwoHandedWeapon = isTwoHandedWeapon;
+window.mageOffhandGesture = mageOffhandGesture;
 window.blocksOffhand = blocksOffhand;
 window.usesTwoHandGrip = usesTwoHandGrip;
 window.twoHandPose = twoHandPose;
