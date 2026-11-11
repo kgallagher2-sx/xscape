@@ -1824,6 +1824,13 @@
     session = null;
     cloudProfile = null;
     clearGuestContinue();
+    if (typeof global.clearCloudDerivedName === "function") {
+      try { global.clearCloudDerivedName(); } catch (e) {}
+    } else if (global.Profile) {
+      Profile.name = "";
+      if (global.G) G.name = "";
+      try { localStorage.removeItem("kellenscape-player-name"); } catch (e) {}
+    }
     refreshCloudChrome();
     setLoginStage("auth");
     if (typeof global.enterScene === "function") global.enterScene("login");

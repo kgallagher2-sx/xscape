@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261111080609-82e4791";</script>
+  <script>window.XSCAPE_BUILD = "20261111080839-fdb291a";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -67,12 +67,13 @@
     }
     #top-hud .stat { font-size: 12px; color: #f0e0b0; white-space: nowrap; }
     #top-hud .stat b { color: var(--gold); font-weight: 700; }
-    #arena-wrap { flex: 1 1 auto; position: relative; min-height: 0; background: #140a06; }
+    #arena-wrap { flex: 1 1 auto; position: relative; min-height: 0; background: #140a06; overflow: hidden; }
     #arena { display: block; width: 100%; height: 100%; }
     #mid {
       flex: 0 0 auto; background: linear-gradient(#2a1d13, #1a120c);
       border-top: 2px solid #4a3824; border-bottom: 2px solid #0e0906;
       padding: 6px 10px 4px;
+      position: relative; z-index: 4;
     }
     .bars { display: flex; flex-direction: column; gap: 4px; }
     .bar-row { display: flex; align-items: center; gap: 6px; }
@@ -3760,6 +3761,24 @@ function saveProfile() {
   G.gp = Profile.gp;
 }
 
+function clearCloudDerivedName() {
+  // Drop the signed-in adventurer name so a later guest run cannot show it
+  // on the death screen. Leave GP, items, and other local guest progress.
+  if (typeof Profile !== "undefined") Profile.name = "";
+  if (typeof G !== "undefined") G.name = "";
+  try { localStorage.removeItem(STORAGE.name); } catch (e) {}
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE.profile) || "null");
+    if (raw && typeof raw === "object") {
+      raw.name = "";
+      localStorage.setItem(STORAGE.profile, JSON.stringify(raw));
+    }
+  } catch (e) {}
+  const input = (typeof $ === "function") ? $("name-input") : document.getElementById("name-input");
+  if (input) input.value = "";
+}
+window.clearCloudDerivedName = clearCloudDerivedName;
+
 function awardGp(amount) {
   amount = Math.floor(Number(amount) || 0);
   Profile.gp = Math.max(0, (Profile.gp || 0) + amount);
@@ -6432,6 +6451,47 @@ function inHubScene() {
   return !!(G && G.scene === "hub");
 }
 
+function relayoutFightHud() {
+  // After leaving the hub, #mid / #quick-bar become visible and can still be
+  // settling when we first measure #arena-wrap. A stale canvas height then
+  // overflows over the HP / prayer panel. Measure now, after paint, and
+  // whenever the wrap or mid panel actually changes size.
+  function go() {
+    if (typeof fitViewport === "function") fitViewport();
+    else if (typeof resizeCanvas === "function") {
+      resizeCanvas();
+      if (typeof layoutFighters === "function") layoutFighters();
+    }
+  }
+  go();
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(function () {
+      go();
+      requestAnimationFrame(go);
+    });
+  }
+  // Catch a late flex shrink (skills row / font / chrome) that rAF can miss.
+  if (!window._fightLayoutObs && typeof ResizeObserver === "function") {
+    var wrap = (typeof $ === "function") ? $("arena-wrap") : document.getElementById("arena-wrap");
+    var mid = (typeof $ === "function") ? $("mid") : document.getElementById("mid");
+    if (wrap) {
+      window._fightLayoutObs = new ResizeObserver(function () {
+        var r = wrap.getBoundingClientRect();
+        if (!isFinite(r.height) || r.height < 1) return;
+        if (typeof cssH === "number" && Math.abs(r.height - cssH) < 0.5) return;
+        if (typeof resizeCanvas === "function") resizeCanvas();
+        if (typeof layoutFighters === "function") layoutFighters();
+      });
+      window._fightLayoutObs.observe(wrap);
+      if (mid) window._fightLayoutObs.observe(mid);
+    }
+  }
+  setTimeout(go, 0);
+  setTimeout(go, 50);
+  setTimeout(go, 200);
+}
+window.relayoutFightHud = relayoutFightHud;
+
 function teardownHubForFight(scene) {
   if (window.XscapeTrade && typeof XscapeTrade.cancelOpen === "function") {
     try { XscapeTrade.cancelOpen("left"); } catch (e) {}
@@ -6454,6 +6514,7 @@ function teardownHubForFight(scene) {
   if (cloud && typeof cloud.setPresenceExtra === "function" && scene) {
     try { cloud.setPresenceExtra({ scene: scene }); } catch (e) {}
   }
+  if (typeof relayoutFightHud === "function") relayoutFightHud();
 }
 
 function hideAllOverlays() {
@@ -7885,13 +7946,19 @@ if (navigator.serviceWorker) {
 var _update = { pending: null, checking: false, lastCheck: 0, reloading: false };
 
 function isMidFight() {
+  var app = document.getElementById("app");
+  if (app && app.classList.contains("fight-world")) return true;
   var G = window.G;
   if (!G) return false;
   var scene = G.scene, mode = G.mode;
-  if (scene === "duel" || scene === "raid" || scene === "kree") return true;
-  if (scene === "jad" && (mode === "playing" || mode === "intro" || mode === "firstkill" || mode === "win")) return true;
-  if (mode === "playing" || mode === "intro" || mode === "firstkill" || mode === "win") return true;
+  var fightScenes = { jad:1, raid:1, kree:1, widow:1, knight:1, gorehorn:1, colossus:1, duel:1 };
+  if (fightScenes[scene] && mode !== "hub" && mode !== "login") {
+    if (mode === "playing" || mode === "intro" || mode === "firstkill" || mode === "win" || mode === "lose") return true;
+    if (scene === "raid" || scene === "duel") return true;
+  }
+  var lose = document.getElementById("overlay-lose");
   var win = document.getElementById("overlay-win");
+  if (lose && !lose.classList.contains("hidden")) return true;
   if (win && !win.classList.contains("hidden")) return true;
   return false;
 }
@@ -7950,7 +8017,9 @@ function onNewVersionAvailable(build, opts) {
   if (build === (window.XSCAPE_BUILD || "dev")) return;
   _update.pending = build;
   if (isMidFight()) {
-    showUpdateBanner(build);
+    // Keep the pending update, but do not cover the fight HUD. The hub /
+    // title path (and the periodic check) will apply it once the fight ends.
+    hideUpdateBanner();
     return;
   }
   applyNewVersion(build);
@@ -8039,7 +8108,12 @@ async function onBuildTagTap(e) {
   var remote = await checkXscapeVersion();
   if (_update.reloading) return;
   if (_update.pending && _update.pending !== (window.XSCAPE_BUILD || "dev")) {
-    if (isMidFight()) showUpdateBanner(_update.pending);
+    if (isMidFight()) {
+      hideUpdateBanner();
+      flashBuildStatus("Update waiting");
+      return;
+    }
+    showUpdateBanner(_update.pending);
     flashBuildStatus("New version — tap to update");
     return;
   }
