@@ -409,6 +409,28 @@
     return out;
   }
 
+  function copyEquipment(eq) {
+    var out = {};
+    if (!eq || typeof eq !== "object") return out;
+    Object.keys(eq).forEach(function (k) { out[k] = eq[k]; });
+    return out;
+  }
+
+  // Profile.equipment must never be the same object as cloudProfile.equipment.
+  // Equipping mutates Profile.equipment in place; if that is also the last
+  // confirmed snapshot, the pre-save "gear dropped" guard sees a fake drop
+  // and re-applies the snapshot (item back in the bag, still worn).
+  function cloneCloudProfile(p) {
+    if (!p || typeof p !== "object") return p;
+    var out = {};
+    Object.keys(p).forEach(function (k) { out[k] = p[k]; });
+    if (p.equipment && typeof p.equipment === "object") out.equipment = copyEquipment(p.equipment);
+    if (itemListProvided(p.inventory)) out.inventory = expandHeldList(p.inventory);
+    if (itemListProvided(p.bank)) out.bank = expandHeldList(p.bank);
+    if (Array.isArray(p.unlockedItems)) out.unlockedItems = p.unlockedItems.slice();
+    return out;
+  }
+
   function compactHeldList(list) {
     if (global.XscapeItemStack && typeof XscapeItemStack.compactItemList === "function") {
       return XscapeItemStack.compactItemList(list);
@@ -701,7 +723,7 @@
   function applyCloudProfile(p, opts) {
     opts = opts || {};
     if (!p) return;
-    cloudProfile = p;
+    cloudProfile = cloneCloudProfile(p);
     var P = global.Profile;
     if (!P) return;
     if (p.username) P.name = p.username;
@@ -730,7 +752,7 @@
     if (p.hasFireCape) P.hasFireCape = true;
     if (p.seenFirstKill) P.seenFirstKill = true;
     if (p.levels && typeof p.levels === "object" && Object.keys(p.levels).length) P.levels = p.levels;
-    if (p.equipment && typeof p.equipment === "object" && Object.keys(p.equipment).length) P.equipment = p.equipment;
+    if (p.equipment && typeof p.equipment === "object" && Object.keys(p.equipment).length) P.equipment = copyEquipment(p.equipment);
     if (Array.isArray(p.unlockedItems)) P.unlockedItems = p.unlockedItems.slice();
     if (itemListProvided(p.bank)) P.bank = expandHeldList(p.bank);
     if (itemListProvided(p.inventory)) P.inventory = expandHeldList(p.inventory);
@@ -931,7 +953,7 @@
     if (signInGate) return signInGate;
     signInGate = (async function () {
       var mine = await rpc("my_profile", {});
-      if (mine.ok && mine.profile) cloudProfile = mine.profile;
+      if (mine.ok && mine.profile) cloudProfile = cloneCloudProfile(mine.profile);
       var hasName = !!(cloudProfile && cloudProfile.username);
       var localName = (global.Profile && Profile.name) || "";
       if (hasName) {
@@ -1920,7 +1942,7 @@
     try {
       var mine = await rpc("my_profile", {});
       if (mine && mine.ok && mine.profile) {
-        cloudProfile = mine.profile;
+        cloudProfile = cloneCloudProfile(mine.profile);
         applyCloudProfile(cloudProfile);
         if (typeof global.refreshGearViews === "function") {
           try { global.refreshGearViews(); } catch (e) {}
@@ -2540,9 +2562,9 @@
     }
     if (typeof global.unequipSlot === "function" && !global.unequipSlot._cloud) {
       var rawUnequip = global.unequipSlot;
-      global.unequipSlot = function () {
+      global.unequipSlot = function (slot, silent) {
         var ok = rawUnequip.apply(this, arguments);
-        if (ok && typeof flushSave === "function") {
+        if (ok && !silent && typeof flushSave === "function") {
           try { flushSave(); } catch (e) {}
         }
         return ok;
@@ -2908,13 +2930,6 @@
     return counts;
   }
 
-  function copyEquipment(eq) {
-    var out = {};
-    if (!eq || typeof eq !== "object") return out;
-    Object.keys(eq).forEach(function (k) { out[k] = eq[k]; });
-    return out;
-  }
-
   function inventoryForCloudSave(P) {
     var inv = expandHeldList((P && P.inventory) || []);
     var supplies = global.XscapeSupplies;
@@ -3041,6 +3056,9 @@
         if (Array.isArray(res.profile.unlockedItems)) cloudProfile.unlockedItems = res.profile.unlockedItems.slice();
         if (itemListProvided(res.profile.bank)) cloudProfile.bank = expandHeldList(res.profile.bank);
         if (itemListProvided(res.profile.inventory)) cloudProfile.inventory = expandHeldList(res.profile.inventory);
+        if (res.profile.equipment && typeof res.profile.equipment === "object") {
+          cloudProfile.equipment = copyEquipment(res.profile.equipment);
+        }
         if (res.profile.revision != null) cloudProfile.revision = res.profile.revision;
       }
       if (global.Profile && mergeHeldState(global.Profile, res.profile)) {
@@ -3138,7 +3156,7 @@
         try {
           var mine = await rpc("my_profile", {});
           if (mine.ok && mine.profile) {
-            cloudProfile = mine.profile;
+            cloudProfile = cloneCloudProfile(mine.profile);
             if (cloudHasCharacter(cloudProfile) || alreadyMigratedHere() || (cloudProfile && cloudProfile.migratedAt)) applyCloudProfile(cloudProfile, { fromCloudLoad: true });
           }
         } catch (e) {}
