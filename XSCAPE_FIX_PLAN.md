@@ -11,26 +11,50 @@ Every task has:
 
 Phases are ordered by risk. Phase 1 blocks everything else, because until it lands any player can mint items.
 
+
+**Status (12 November 2026, America/New_York).** Source: git log, `docs/COMBAT_RULES_DIFF.md`, and shipped builds on `main`. Later equip-persist hotfixes (commits d7dcb2b, 2ae8f84, a1d6256) are not plan items; the last of those is noted under 2.2.
+
+| Item | Status |
+|---|---|
+| 0.1–0.4 | Skipped on purpose |
+| 1.1, 1.4, 1.5, 1.7, 1.8 | Done (commit a56eeaa, SQL only) |
+| 1.3, 1.6, 1.9 | Done, build 20261112154425-a56eeaa (commit 690316a) |
+| 1.2 | Done, build 20261112162309-690316a (commit b492aa6); enforcing |
+| 2.1–2.3, 3.2 | Done, build 20261112163613-b492aa6 (commit 94fc5ae) |
+| 3.1, 4.7–4.9 | Done, build 20261112165257-94fc5ae (commit 3502a2b) |
+| 4.1–4.4, 4.6 | Done, build 20261112171512-3502a2b (commit d5581ea) |
+| 4.5 | Audit done (same build / d5581ea). Waiting on Kellen for remaining design questions (see 4.5) |
+| 4.2 add-on | Worn-prayer-bonus drain, build 20261112173828-4a56795 (commit f6a6bb4) |
+| 3.3 | Done, build 20261112180244-f6a6bb4 (commit 1ba3749) |
+| 6.1, 6.3 | Done, build 20261112172355-d5581ea (commit 4a56795) |
+| 6.2 | Done, build 20261112181019-1ba3749 (commit f706091); stackables-only UI 20261112182303-f706091 (commit 54fcc3b) |
+| 5.1, 5.2, 7.1–7.6 | Not started (planned after the Nov 18 reset) |
+
+
 ---
 
 ## Phase 0: Foundations (needed to verify everything else)
 
 ### 0.1 Staging Supabase project
+- **Status:** Skipped on purpose.
 - **Do:** Create a second Supabase project (free tier) and apply every `supabase/*.sql` in the order production used. Point a `?backend=staging` query flag in `cloud.js` at it.
 - **Done when:** the game boots against staging, sign-in works, and a Jad kill records.
 - **Verify:** `select proname from pg_proc` on staging and on prod return the same function list. Diff the live `pg_get_functiondef` for each `public.*` / `game.*` RPC between the two.
 
 ### 0.2 Fix migration ordering
+- **Status:** Skipped on purpose.
 - **Do:** The SQL files have no order prefix, so nobody can tell which definition of a function is live. Rename them `NNNN_name.sql` in the order they were applied to prod (ask whoever applied them, or match `pg_get_functiondef` output). Add `supabase/README.md`: "new migrations get the next number; never edit an applied file."
 - **Done when:** applying the files in numeric order to an empty project reproduces prod's function definitions.
 - **Verify:** apply from scratch to a throwaway project and diff the function definitions against prod. No differences.
 
 ### 0.3 Security test script
+- **Status:** Skipped on purpose.
 - **Do:** Add `tests/sql/exploits.sh` (or a small Node script using `@supabase/supabase-js`). It signs in as two test users on staging and attempts every exploit in Phase 1, one function per exploit. Each test expects **rejection**.
 - **Done when:** the script runs end to end against staging. Before Phase 1 lands, every test fails, which proves the exploits are real.
 - **Verify:** after each Phase 1 task, its test flips to pass. The full script is green before Phase 1 ships to prod.
 
 ### 0.4 Two-client test setup
+- **Status:** Skipped on purpose.
 - **Do:** Document how to run two signed-in clients side by side (two browser profiles, or desktop + phone) against staging, with a debug overlay showing tick number, HP of both sides, and a state hash. Raid already has `syncRaidDebugTile`; extend that idea to duels.
 - **Done when:** QA can start a duel and a 2-player raid on staging and see the overlay on both screens.
 - **Verify:** QA records one clean duel and one clean raid as the baseline for Phase 5.
@@ -40,6 +64,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 ## Phase 1: Server owns GP and items (economy)
 
 ### 1.1 Remove direct writes to `player_state`
+- **Status:** Done, commit a56eeaa (SQL only; no new client build stamp).
 - **Why:** `xscape_backend.sql:1063` grants `UPDATE` on `player_state` to every signed-in user, and the `player_state_update_own` policy (`:1082`) lets them write their own row. Anyone can PATCH their inventory over the REST API and skip every check in `save_player_state`.
 - **Do:** New migration: `REVOKE UPDATE ON public.player_state FROM authenticated; DROP POLICY player_state_update_own ON public.player_state;`. Keep SELECT.
 - **Done when:** the only way to change `player_state` is through `save_player_state` and the other RPCs.
@@ -48,6 +73,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Normal play still saves (equip an item, reload, it's still equipped).
 
 ### 1.2 `save_player_state` can only rearrange, not create
+- **Status:** Done, build 20261112162309-690316a (commit b492aa6); enforcing.
 - **Why:** The live definition (`alcove_grant_merge.sql:131-141`) stores whatever inventory, bank and equipment the client sends, as long as the item ids match a regex. This is the root of item minting, and also of item *loss* (see 2.1).
 - **Do:** Rewrite it as a conservation check.
   1. Load the stored row. Count every item id across inventory + bank + equipment, before and after.
@@ -62,6 +88,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Regular play on staging: bank/withdraw, equip and unequip every slot, drink potions down to empty vials, cast spells, eat food. Every save is accepted and nothing is reverted unexpectedly. Check `cloud.js` logs for any `ok:false`.
 
 ### 1.3 Duel settlement agreed by both sides
+- **Status:** Done, build 20261112154425-a56eeaa (commit 690316a).
 - **Why:** In `duel_forfeit_winner.sql:75-77`, whoever calls `settle_duel` first names the winner and the server believes them. A player can call it 4 seconds in, name themselves, and collect both stakes regardless of the fight.
 - **Do:**
   1. Add `from_report uuid, to_report uuid, from_hp int, to_hp int, reported_at timestamptz` to `duel_challenges`.
@@ -78,6 +105,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Mid-fight `refund_duel` from the losing side is rejected.
 
 ### 1.4 Close the 80M import for new accounts
+- **Status:** Done, commit a56eeaa (SQL only; legacy import once with 0 GP).
 - **Why:** `migrate_local_save` (`xscape_backend.sql:346`) accepts up to 80M GP once per account, and new accounts start with `migrated_at` NULL. Any alt can import 80M and trade it to a main.
 - **Do:**
   1. Set `migrated_at = now()` in `handle_new_user` for every account created after this migration.
@@ -91,6 +119,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - `grep -n "p_profile->>'gp'\|->>'gp'" supabase/*.sql` finds no live definition that writes it to `profiles.gp`.
 
 ### 1.5 Stop alcove grants from respawning
+- **Status:** Done, commit a56eeaa (SQL only; no new client build stamp).
 - **Why:** `merge_alcove_grants` (`alcove_grant_merge.sql:61-79`) runs on every save and puts back any granted item that isn't currently held. A player can trade the item away and get it back again, without limit.
 - **Do:**
   1. Add `merged_at timestamptz` to the claim/grant rows.
@@ -103,6 +132,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Run a query for players who hold more copies of an alcove item than they have claims. Report the list to Kellen so a decision can be made on existing dupes.
 
 ### 1.6 Group raid payouts need real elapsed time
+- **Status:** Done, build 20261112154425-a56eeaa (commit 690316a).
 - **Why (plain version):** Each raid run can only be completed once; that part works. But the leader can **start a new run and complete it immediately**. `complete_raid_run` (`gloamhold_t3_loot.sql:241`) only checks that the client *says* it took at least 20 ticks. It never checks how much real time has passed since the run started, and it never applies the `last_raid_at` cooldown. Each member's score also comes from the client (`p_scores`), and score drives loot up to 8M. So a leader plus an alt can loop start → complete → start → complete every few seconds and print GP.
 - **Do:**
   1. Reject completion unless `now() - raid_runs.started_at >= interval '<minimum realistic clear>'`. Ask Boss Mechanics for the fastest legitimate clear; use about 80% of it.
@@ -116,18 +146,21 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - A real 2-player clear on staging pays both players.
 
 ### 1.7 Staking one stackable item must not wipe the stack
+- **Status:** Done, commit a56eeaa (SQL only; no new client build stamp).
 - **Why:** `take_held_item` uses `array_remove` (`duel_item_escrow.sql:97,100`), which deletes *every* copy of that id. `give_held_items` (`:129-133`) can drop payouts the same way.
 - **Do:** Use `game.inventory_remove_one` (already exists) and an append-based give. Grep all live SQL for other `array_remove` uses on inventory or bank, and fix those too.
 - **Done when:** staking or paying out N items moves exactly N.
 - **Verify:** Stake 1 shark from a stack of 20 and confirm 19 remain. Win the duel and confirm the stakes add on top. Repeat with runes.
 
 ### 1.8 Revoke client access to internal `game.*` helpers
+- **Status:** Done, commit a56eeaa (SQL only; no new client build stamp).
 - **Why:** `duel_item_escrow.sql:709-711` grants `authenticated` access to helpers like `game.return_stake_to_player(uid, gp, items)`, which give anything to anyone. They are protected only because the `game` schema isn't exposed in the API settings.
 - **Do:** `REVOKE ALL ON ALL FUNCTIONS IN SCHEMA game FROM authenticated, anon;`. Grant back only what's needed, which should be nothing, since the `public.*` wrappers are SECURITY DEFINER. Add the same REVOKE at the end of every future migration that touches `game`.
 - **Done when:** `authenticated` has EXECUTE on no `game.*` function.
 - **Verify:** Query `information_schema.routine_privileges` for `grantee='authenticated' AND routine_schema='game'` and get 0 rows. Run a full duel, trade and raid on staging to confirm nothing broke.
 
 ### 1.9 Sweep every reward RPC for the same holes
+- **Status:** Done, build 20261112154425-a56eeaa (commit 690316a).
 - **Do:** For each RPC that adds GP or items (`record_*_kill`, `record_raid_clear`, `buy_shop_item`, `claim_alcove_*`, trade, duel), list in a table:
   - whether it's rate-limited
   - whether it checks real elapsed time
@@ -142,6 +175,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 ## Phase 2: Players never lose items
 
 ### 2.1 Client normalization must not drop unknown items
+- **Status:** Done, build 20261112163613-b492aa6 (commit 94fc5ae).
 - **Why:** The patched `normalizeContainers` (`supplies.js:309-341`) deletes any id not in `ITEMS`. The original in `index.html` deliberately kept them. If `raid.js` fails to load once, all raid uniques are removed from the bank and that state is saved.
 - **Do:**
   1. Keep unknown ids in both inventory and bank. Display them as a generic "Unknown item" icon rather than hiding them.
@@ -153,11 +187,13 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - With 1.2 in place the server would also reject this save. Confirm the client logs a rejection *zero* times during normal play.
 
 ### 2.2 Pre-save sanity guard (defence in depth)
+- **Status:** Done, build 20261112163613-b492aa6 (commit 94fc5ae). Follow-up so a just-worn piece is not treated as a drop: build 20261112190046-2ae8f84 (commit a1d6256).
 - **Do:** In `pushStateOnce` (`cloud.js`), compare the outgoing gear count to the last server-confirmed copy. If any non-consumable count dropped, don't push. Log it and resync from the server instead.
 - **Done when:** the client never even asks to delete gear.
 - **Verify:** Run `Profile.bank.pop()` in the console, then trigger a save. The push is skipped, a warning is logged, and after resync the item is back.
 
 ### 2.3 Local save quota failures are visible
+- **Status:** Done, build 20261112163613-b492aa6 (commit 94fc5ae).
 - **Do:** `saveProfile`'s empty `catch` (`index.html:3877`) should log and surface a one-time warning. Fixing the rune storage in 6.2 removes the main cause.
 - **Verify:** Fill localStorage in DevTools, play, and the warning appears.
 
@@ -166,6 +202,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 ## Phase 3: Time and scenes
 
 ### 3.1 Background tab behaviour matches "the game can't be paused"
+- **Status:** Done, build 20261112165257-94fc5ae (commit 3502a2b). Mid-fight background or leave of 3+ minutes abandons with no loot, no kill, and no death penalty.
 - **Context:** The fight currently runs only in the browser. When the app is backgrounded the browser stops the loop, then on return replays every missed tick in a single frame (`index.html:6371`). So the outcome already matches your rule: the fight continued while you were away. The problems are that it's invisible (you're dead before the screen redraws) and that closing or reloading the app instead of switching back avoids the fight entirely.
 - **Do:**
   1. Keep catching up, but spread it over frames: run at most N ticks per frame (e.g. 10) until caught up, with the screen rendering in between, so the player sees what happened. Keep the existing hub `dt` cap for the hub only.
@@ -177,11 +214,13 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Start Jad and reload. The fight counts as lost, and no kill can be submitted for that fight id.
 
 ### 3.2 Knight-King, Gorehorn and Colossus cleanup on exit
+- **Status:** Done, build 20261112163613-b492aa6 (commit 94fc5ae).
 - **Why:** These scenes define `leave`, but `enterScene` only calls `exit` (`index.html:6829`), so leaving skips their cleanup entirely. The result is that the next **Jad** fight runs on a 5-row arena, music keeps playing, and supplies aren't saved. This is a one-word fix, separate from the planned reworks of those bosses.
 - **Do:** Rename `leave` to `exit` in `knight.js:1200`, `gorehorn.js:993` and `colossus.js:988`, add the `id` field, and stop the music on Knight's online-win path (`knight.js:1078`).
 - **Verify:** Fight each of the three, leave, then start Jad. The arena is 1 row, no boss music, and supplies used in the previous fight are saved.
 
 ### 3.3 One scene registry (prevents 3.2 recurring)
+- **Status:** Done, build 20261112180244-f6a6bb4 (commit 1ba3749).
 - **Do:** Replace the copied 8-way scene if-chains in `frame`, `gameTick`, `keydown`, `pointerdown`, `isMidFight` and `hideAllOverlays` with one `Scenes` registry. Each scene declares `{id, frame, tick, key, click, overlays, isFight, enter, exit}`. `enterScene` warns in the console if a scene has `leave` but no `exit`.
 - **Verify:** Each of the 8 scenes enters, plays and exits. Adding a dummy scene means editing one file.
 
@@ -192,15 +231,18 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 **Why things diverged:** Each boss file was copied from the previous one and carries its own copy of the combat glue. Shared constants such as `PRAYER_DRAIN_EVERY` are declared with `const` in `index.html`, which isn't visible on `window`. Each boss file therefore falls back to its own hardcoded default, and the copies picked different numbers: Kree and Widow use 2, Knight, Gorehorn and Colossus use 6. Widow has its own `attackSpeed()` (`widow.js:534`) that hardcodes 5 ticks for magic, and its own hit code (`widow.js:580`) that never calls `meleeSetMaxHit`, which is where the Gorehorn low-HP bonus lives. Fix the pattern, not just the numbers: every fight calls the shared functions in `combat.js`.
 
 ### 4.1 Export the shared constants and delete the fallbacks
+- **Status:** Done, build 20261112171512-3502a2b (commit d5581ea).
 - **Do:** Put `TICK_MS`, `PLAYER_ATTACK_TICKS`, `PRAYER_DRAIN_EVERY` and `CONSUME_COOLDOWN_TICKS` on `window.XscapeCombat.const` (and `window`). Then delete every `global.X || N` fallback in the boss, raid, duel and hub files.
 - **Done when:** `grep -nE "global\.(TICK_MS|PLAYER_ATTACK_TICKS|PRAYER_DRAIN_EVERY)\s*\|\|" *.js` returns nothing.
 - **Verify:** With one prayer on, count ticks per prayer point lost at Jad, Kree, Widow, Knight, Gorehorn, Colossus, the raid and a duel. All the numbers are identical. Write them into the test in 4.6.
 
 ### 4.2 One prayer drain function
+- **Status:** Done, build 20261112171512-3502a2b (commit d5581ea). Worn-prayer-bonus drain: build 20261112173828-4a56795 (commit f6a6bb4).
 - **Do:** Move drain into `combat.js` (`XscapeCombat.drainPrayer(G)`), including the prayer bonus if one exists. Remove the copies in each boss file, `raid.js:25/1270/2043` and `duel.js` `PRAY_DRAIN`.
 - **Verify:** Same as 4.1, plus the raid and duel numbers match the solo bosses.
 
 ### 4.3 One attack speed and max-hit pipeline
+- **Status:** Done, build 20261112171512-3502a2b (commit d5581ea).
 - **Do:**
   1. Every fight gets attack speed from `XscapeCombat.playerSpeed(eq)` (`combat.js:303`). Delete Widow's `attackSpeed()` and the per-boss `playerSpeed()` copies (kree, knight, gorehorn, colossus).
   2. Give every weapon in `ITEMS` an explicit `speed` so no fallback is ever used.
@@ -210,6 +252,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 - **Verify:** The table test (4.6) covers Gorehorn set at 10% HP, tentacle whip, a staff with a spell and a crossbow. Max hit and speed are identical across all fight modules. Then in game: Gorehorn set at low HP visibly hits harder at Widow.
 
 ### 4.4 Defence boosts and drains affect incoming hits
+- **Status:** Done, build 20261112171512-3502a2b (commit d5581ea).
 - **Why:** `npcHitChance` always uses defence level 99 (`combat.js:883-889`), so Super defence, Gloam brew's defence part and boss defence drains do nothing.
 - **Do:** Pass the current boosted or drained defence level (`PlayerStats.level("defence")`) into the NPC hit-chance calculation for all fights. Same for raid fighters (per-fighter stats) and duels (each side's stats).
 - **Verify:**
@@ -217,6 +260,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - In game: compare damage taken over 50 Jad attacks with and without Super defence (use `godMode` plus a damage log).
 
 ### 4.5 Potion and food audit
+- **Status:** Done as an audit, build 20261112171512-3502a2b (commit d5581ea). Waiting on Kellen: Gloam brew Defence past 120, raid specials ignore Defence, raid Gloam heal 99 HP base, duel magic formula, Shade defence 8 vs 5, Knight-King/Gorehorn/Colossus max hit 28 vs 30.
 - **Behaviour you want:** a potion or food can always be consumed, even at full stats or HP. That is what the code does today, so the Super restore item from the review is **not** a bug and gets no change.
 - **Do:** For every consumable in `supplies.js` `PRICES`, write down what it should do (stats, amount, duration, decay). Then check each one in each fight type (solo boss, raid, duel) that:
   - the boost is applied
@@ -227,6 +271,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 - **Verify:** QA drinks each potion and reads `Xscape.getState()` before and after. Each boosted stat changes max hit, accuracy or defence as expected. Re-check after 100 ticks.
 
 ### 4.6 Combat rules test (locks Phase 4)
+- **Status:** Done, build 20261112171512-3502a2b (commit d5581ea).
 - **Do:** `tests/combat.test.js` (Node's built-in test runner, no dependencies) loads `combat.js` and `stats.js` with a fake `window`. It asserts:
   - speeds, max hits and accuracy for a fixed table of loadouts × monsters
   - prayer drain rate
@@ -237,6 +282,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 - **Verify:** Changing one weapon speed by 1 makes the test fail.
 
 ### 4.7 Player-side weapon range
+- **Status:** Done, build 20261112165257-94fc5ae (commit 3502a2b).
 - **Answer to "boss or player checks range?":** The player checks. You attack with your weapon's reach, and if the target is out of range you walk toward it until you're in range, then attack. Raid already does exactly this (`raid.js:1635-1750`: `meleeReachFor`, `inMeleeReach`, `pathTowardReach`), so it's the template. The solo bosses never check.
 - **Do:**
   1. Move `meleeReachFor` / `inReach` / `pathTowardReach` into `combat.js` as shared helpers. Reach comes from the item (`reach` field, default 1 for melee; the halberd already has `reach: 2`).
@@ -247,6 +293,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 - **Verify:** At each boss, a whip from 3 tiles away walks up, then hits. A crossbow at 2 tiles hits without moving. A melee hit never registers from outside reach (check the damage log).
 
 ### 4.8 Boss melee must not hit from range (Widow's "red dart")
+- **Status:** Done, build 20261112165257-94fc5ae (commit 3502a2b).
 - **Why:**
   1. Widow chooses melee when you're adjacent at the start of her tell (`widow.js:166`).
   2. When the attack fires, `fireAttack` (`widow.js:183-196`) launches it at your *current* position, wherever you are.
@@ -271,6 +318,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Repeat at each boss that has melee, using that boss's reach. Add a unit test for the reach helper with 3×3 and 5×5 footprints.
 
 ### 4.9 Players and minions can't stand inside a boss
+- **Status:** Done, build 20261112165257-94fc5ae (commit 3502a2b).
 - **Why:** `widow.js` defines `inFoot()` (`:59`) but nothing calls it. A player can walk into Widow's 3×3 body and stand inside her, and baby spiders and skeletons can too. Check the other bosses for the same gap.
 - **Do:**
   - In `queueMoveTo` / `processMovement` (`index.html:2749, 2783`), treat footprint tiles as blocked for the scene that owns them. Each boss scene supplies `isBlocked(col,row)`.
@@ -290,6 +338,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 **Principle:** In a raid the leader's client simulates everyone; in a duel each client simulates both players. Each client may only send *its own player's inputs*, stamped with the tick they apply on. The server settles results only when the clients agree (1.3, 1.6). The long-term direction for "server is the source of truth" is a server-side simulation, but that's a large separate project. This phase makes the clients agree reliably first.
 
 ### 5.1 Group raid
+- **Status:** Not started (planned after the Nov 18 reset).
 1. **A guest's movement moves the leader** (`raid.js:1732`, `3579-3581`). `pathTowardReach` calls `sendRaidInput`, which writes into `inputs[group.localId]`, the leader's own slot on the leader's machine.
    - **Do:** When simulating any fighter, set `f.path` directly. `sendRaidInput` may only be called from local UI handlers. Add a guard: `sendRaidInput` throws in dev if called during simulation.
 2. **Guests cast spells with the leader's runes** (`raid.js:1759-1763`).
@@ -311,6 +360,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 - three full clears with no desync on the debug overlay
 
 ### 5.2 Duels
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   1. Every input (prayer, attack, move, eat) carries `applyTick = currentTick + INPUT_DELAY` (e.g. 2 ticks). The receiver queues it and applies it exactly on that tick. Both clients apply their own inputs with the same delay, so both sides run identical sequences. The tick in the payload is currently ignored (`duel.js:873, 896-899`).
   2. A client doesn't advance past tick T until it has the opponent's input packet for T (an empty packet if nothing happened). This is standard lockstep. Replace the 20-tick catch-up cap and the one-sided 8 s freeze with this rule. A long stall uses the forfeit timeout.
@@ -325,6 +375,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
 ## Phase 6: Phone performance
 
 ### 6.1 Stop redoing HUD work every frame
+- **Status:** Done, build 20261112172355-d5581ea (commit 4a56795).
 - **Do:**
   1. `updateHud()` / `XscapeSupplies.refresh()` run only when something changed. Use a `dirty` flag set by inventory, prayer, HP or stat changes, not every rAF.
   2. Use the hoisted `POTION_ID_RE` (`supplies.js:83`) in `parseDose` instead of building a RegExp per call (`:131`).
@@ -334,6 +385,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Hotbar counts stay correct after eating, drinking and casting.
 
 ### 6.2 Store stackables as counts
+- **Status:** Done, build 20261112181019-1ba3749 (commit f706091). Inventory stackables-only UI: build 20261112182303-f706091 (commit 54fcc3b).
 - **Do:** Runes (and ideally all stackables) become `{id: count}` instead of one array entry each. This change needs matching server work: `save_player_state` and the 1.2 conservation check, the shop, trade and escrow. Migrate existing rows in one SQL migration, keeping the old format readable for one release.
 - **Verify:**
   - A player with 50k runes has a small save payload (check the request size in the Network tab).
@@ -341,6 +393,7 @@ Phases are ordered by risk. Phase 1 blocks everything else, because until it lan
   - Old saves load correctly.
 
 ### 6.3 Don't save on every cast or bite
+- **Status:** Done, build 20261112172355-d5581ea (commit 4a56795).
 - **Do:** During a fight, mark the save dirty but only flush (localStorage + `save_player_state`) at fight end, on `visibilitychange: hidden`, or every 30 s. Out of combat, keep the current debounce.
 - **Verify:** Over a 2-minute fight with 40 casts, the Network tab shows at most about 5 save requests. Killing the tab mid-fight loses at most 30 s of consumable use, which is acceptable since the server only lets consumables go down.
 
@@ -375,6 +428,7 @@ Item ids are the riskiest part of any rename. They're stored in every player's i
 Saved data has to be renamed without breaking old saves or old clients. Do it in this order, one task at a time.
 
 ### 7.1 Comments, docs and in-file names (no saved data)
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   - Rename local variables, functions, constants, DOM ids and CSS classes (for example `JAD_MAX_HP` to `MAGMOR_MAX_HP`, `kree-help` to `vaelkor-help`, `drawKreeArra` to `drawVaelkor`).
   - Fix the comments and the four `.md` files, and the `combat.js:322` comment.
@@ -383,6 +437,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
 - **Verify:** Run a full Magmor fight and a full Vaelkor fight, including loot and the briefing card. Run every `?test=` URL. There are no console errors, and every DOM id lookup still resolves; add a dev check in boot that warns on `getElementById` returning null for any listed id.
 
 ### 7.2 Files, global objects, scene ids and test URLs
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   - Rename `kree.js` to `vaelkor.js` and `kree-sprites.js` to `vaelkor-sprites.js`. Update the script tags in `index.html` and `lab.html`, and the precache list in `sw.js`.
   - Rename `window.XscapeKree` to `window.XscapeVaelkor`. Keep `XscapeKree` as an alias for one release, with a console warning.
@@ -394,6 +449,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
   - Leaving the fight cleans up properly (scene `exit` runs).
 
 ### 7.3 Client saved data (profile + localStorage), with migration
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   - `loadProfile` reads the new keys (`magmorKills`, `vaelkorKills`, …) and falls back to the old ones. `saveProfile` writes only the new keys.
   - Same for localStorage keys: read the old key, write the new key, then delete the old one.
@@ -404,6 +460,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
   - Briefing-seen flags survive the rename, so the briefing doesn't pop up again.
 
 ### 7.4 Database: new RPC names with old ones as wrappers
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   - Add `record_magmor_kill` and `record_vaelkor_kill` with identical bodies. Turn the old `record_jad_kill` and `record_kree_kill` into one-line wrappers that call the new ones, so old cached clients keep working.
   - Switch `cloud.js` to the new names.
@@ -411,6 +468,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
 - **Verify:** Exploit tests from 0.3 pass against both names. A kill recorded through the old name and one through the new name land in the same column. Rate limits are shared, so alternating names can't bypass the cooldown.
 
 ### 7.5 Database columns
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   - In one migration, `ALTER TABLE … RENAME COLUMN` for each `jad_*` and `kree_*` column, and update every function, view, trigger and leaderboard row that references them.
   - The JSON that `profile_payload` returns sends **both** old and new field names for one release, then only the new ones.
@@ -421,6 +479,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
   - Then apply to prod and repeat the check.
 
 ### 7.5b Item ids `armadyl_*` → `stormwing_*`
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:**
   1. **Alias table, one source:** `ITEM_ID_ALIASES = { armadyl_helmet: "stormwing_helm", armadyl_chestplate: "stormwing_chestplate", armadyl_chainskirt: "stormwing_chainskirt", armadyl_crossbow: "stormwing_crossbow" }`. It lives in `combat.js` with a matching `game.item_alias(text)` SQL function.
   2. **Client:**
@@ -443,6 +502,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
   - The set-complete bonus from Vaelkor still triggers for a player with the full set.
 
 ### 7.6 Final sweep
+- **Status:** Not started (planned after the Nov 18 reset).
 - **Do:** `grep -rniE "jad|kree|armadyl" .` across the repo and `supabase/`. Every remaining hit is a deliberate OSRS reference, a compatibility alias with a removal date, or a migration file that has already been applied (never edit those). Record the remaining aliases and their removal dates in `RELEASE.md`.
 - **Verify:** QA does a full play-through on the live build (Magmor kill, Vaelkor kill, leaderboard, hub boss menu, info pages). Players see no old names, and no errors.
 
