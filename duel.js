@@ -808,6 +808,33 @@
   }
   function unhookTicks() {
     if (state.unsubTick) { try { state.unsubTick(); } catch (e) {} state.unsubTick = null; }
+    clearSettleRetry();
+  }
+
+  var SETTLE_RETRY_MS = 5000;
+  var settleRetryTimer = null;
+  function clearSettleRetry() {
+    if (settleRetryTimer) { clearTimeout(settleRetryTimer); settleRetryTimer = null; }
+  }
+  function scheduleSettleRetry(winnerId, ticks) {
+    clearSettleRetry();
+    settleRetryTimer = setTimeout(function () {
+      settleRetryTimer = null;
+      state.settling = false;
+      settleWin(winnerId, ticks);
+    }, SETTLE_RETRY_MS);
+  }
+  function settleArgs(id, winnerId, ticks, forfeit) {
+    var f = state.fight;
+    var args = { p_id: id, p_winner: winnerId, p_ticks: ticks, p_forfeit: !!forfeit };
+    if (f && f.me && f.me.hp != null) args.p_my_hp = f.me.hp;
+    if (f && f.them && f.them.hp != null) args.p_their_hp = f.them.hp;
+    return args;
+  }
+  function isDisputedResult(res, ch) {
+    ch = ch || (res && res.challenge);
+    var st = ch && ch.status;
+    return !!(res && (res.disputed || res.refunded || st === "disputed" || st === "cancelled"));
   }
 
   async function joinDuelChannel(id) {
@@ -994,12 +1021,27 @@
       setTimeout(function () { state.settling = false; settleWin(winnerId, MIN_SETTLE_TICKS); }, need * 600 + 200);
       return;
     }
-    var res = await c.rpc("settle_duel", { p_id: id, p_winner: winnerId, p_ticks: ticks, p_forfeit: false });
+    var res = await c.rpc("settle_duel", settleArgs(id, winnerId, ticks, false));
     state.settling = false;
-    if (!res || !res.ok) {
-      flash((res && res.error) || "Could not settle the duel", "#ff8a70");
+    if (isDisputedResult(res)) {
+      clearSettleRetry();
+      if (res.profile) applyProfile(res.profile);
+      showRefund(res.challenge || state.challenge);
       return;
     }
+    if (res && res.pending) {
+      flash("Waiting for your opponent to confirm the result.", "#ffe9a0");
+      scheduleSettleRetry(winnerId, ticks);
+      return;
+    }
+    if (!res || !res.ok) {
+      flash((res && res.error) || "Could not settle the duel", "#ff8a70");
+      if (res && res.error && /waiting|opponent to confirm/i.test(res.error)) {
+        scheduleSettleRetry(winnerId, ticks);
+      }
+      return;
+    }
+    clearSettleRetry();
     if (res.profile) applyProfile(res.profile);
     sendFightMsg("duel-settle", { challengeId: id, challenge: res.challenge, winnerId: winnerId });
     showResult(res.challenge || state.challenge, winnerId, false);
@@ -1016,7 +1058,7 @@
     f.winner = winner;
     state.settling = true;
     var c = cloud();
-    var res = c && c.rpc ? await c.rpc("settle_duel", { p_id: f.id, p_winner: winner, p_ticks: f.tick, p_forfeit: true }) : null;
+    var res = c && c.rpc ? await c.rpc("settle_duel", settleArgs(f.id, winner, f.tick, true)) : null;
     state.settling = false;
     if (res && res.ok) {
       if (res.profile) applyProfile(res.profile);
@@ -1030,12 +1072,44 @@
 
   function finishFromServer(ch, extra) {
     extra = extra || {};
+    if (!ch) return;
+    if (ch.status === "disputed" || ch.status === "cancelled" || extra.disputed || extra.refunded) {
+      if (state.fight) state.fight.over = true;
+      showRefund(ch);
+      return;
+    }
+    if (ch.status && ch.status !== "completed") return;
     if (state.fight) state.fight.over = true;
     var forfeit = !!(extra.forfeit || (ch && ch.forfeit) || (state.result && state.result.forfeit));
     if (ch && ch.winnerId) showResult(ch, ch.winnerId, forfeit);
   }
 
+  function showRefund(ch) {
+    clearSettleRetry();
+    unhookTicks();
+    leaveDuelChannel();
+    hideOverlay("overlay-stake");
+    hideOverlay("overlay-stake-confirm");
+    var f = $("btn-duel-forfeit");
+    if (f) f.classList.add("hidden");
+    state.phase = "result";
+    state.result = { challenge: ch, winnerId: null, forfeit: false, refunded: true };
+    var title = $("duel-result-title");
+    var body = $("duel-result-body");
+    if (title) title.textContent = "Duel refunded";
+    if (body) {
+      body.innerHTML = '<p class="duel-note">' + escapeHtml("The fight could not be agreed. Your stake was returned.") + "</p>";
+    }
+    showOverlay("overlay-duel-result");
+    if (cloud() && cloud().reloadProfile) cloud().reloadProfile();
+  }
+
   function showResult(ch, winnerId, forfeit) {
+    if (ch && (ch.status === "disputed" || ch.status === "cancelled")) {
+      showRefund(ch);
+      return;
+    }
+    clearSettleRetry();
     unhookTicks();
     leaveDuelChannel();
     hideOverlay("overlay-stake");

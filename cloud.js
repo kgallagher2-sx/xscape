@@ -2962,8 +2962,11 @@
       });
     },
     escrowDuel: function (id) { return rpc("escrow_duel", { p_id: id }); },
-    settleDuel: function (id, winner, ticks, forfeit) {
-      return rpc("settle_duel", { p_id: id, p_winner: winner, p_ticks: ticks || null, p_forfeit: !!forfeit });
+    settleDuel: function (id, winner, ticks, forfeit, myHp, theirHp) {
+      var args = { p_id: id, p_winner: winner, p_ticks: ticks || null, p_forfeit: !!forfeit };
+      if (myHp != null) args.p_my_hp = myHp;
+      if (theirHp != null) args.p_their_hp = theirHp;
+      return rpc("settle_duel", args);
     },
     refundDuel: function (id) { return rpc("refund_duel", { p_id: id }); },
     challengeUser: challengeUser,
