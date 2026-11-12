@@ -379,11 +379,13 @@
     return "ranged";
   }
   function playerSpeed() {
-    if (typeof global.playerSpeed === "function") return global.playerSpeed();
+    if (global.XscapeCombat && typeof XscapeCombat.playerSpeed === "function") {
+      return XscapeCombat.playerSpeed((global.Profile && Profile.equipment) || {});
+    }
     const eq = (global.Profile && Profile.equipment) || {};
     const it = (global.ITEMS || {})[eq.weapon];
     if (it && it.speed) return it.speed | 0;
-    return global.PLAYER_ATTACK_TICKS || 4;
+    return global.PLAYER_ATTACK_TICKS;
   }
   function vsStyleOf(style) {
     if (style === "ranged" || style === "range") return "ranged";
@@ -447,14 +449,13 @@
       dmg = 0;
       if (typeof global.flashMsg === "function") flashMsg("It flies out of melee reach", "#c0c0c0");
     } else {
-      const vs = (typeof global.combatVsMonster === "function")
-        ? combatVsMonster(dest.monId, vsStyle, isMagic ? { spellId: spellId } : undefined)
-        : { maxHit: 20, chance: 0.5 };
-      let max = vs.maxHit;
-      if (typeof global.meleeSetMaxHit === "function" && !isMagic && vsStyle !== "ranged") {
-        max = global.meleeSetMaxHit(max);
-      }
-      dmg = (typeof global.rollHit === "function") ? rollHit(max, vs.chance) : irand(0, max);
+      const eq = (global.Profile && Profile.equipment) || {};
+      const vs = (global.XscapeCombat && typeof XscapeCombat.playerHit === "function")
+        ? XscapeCombat.playerHit(dest.monId, eq, { style: vsStyle, spellId: isMagic ? spellId : undefined, hp: G.player && G.player.hp })
+        : ((typeof global.combatVsMonster === "function")
+          ? combatVsMonster(dest.monId, vsStyle, isMagic ? { spellId: spellId } : undefined)
+          : { maxHit: 20, chance: 0.5 });
+      dmg = (typeof global.rollHit === "function") ? rollHit(vs.maxHit, vs.chance) : irand(0, vs.maxHit);
     }
     if (isMelee) {
       applyBoltHit(dest, dmg);
@@ -524,13 +525,11 @@
     if (typeof global.PlayerStats !== "undefined" && PlayerStats.tick) PlayerStats.tick();
     updateRangeBtn();
 
-    if (G.prayer && G.ticks % (global.PRAYER_DRAIN_EVERY || 2) === 0) {
-      G.player.prayerPts = clamp(G.player.prayerPts - 1, 0, global.PLAYER_MAX_PRAYER || 99);
-      if (G.player.prayerPts <= 0) {
-        G.prayer = null;
+    global.XscapeCombat.drainPrayer(G, {
+      onDeplete: function () {
         if (typeof global.updatePrayerButtons === "function") updatePrayerButtons();
       }
-    }
+    });
 
     const k = G.kree;
     if (k && k.hp > 0) {
@@ -698,10 +697,10 @@
         G.elapsedMs = ts - (G.startMs || ts);
         hostAcc += ts - (hostLast || ts);
         hostLast = ts;
-        while (hostAcc >= (global.TICK_MS || 600)) {
+        while (hostAcc >= (global.TICK_MS)) {
           G.lastTickMs = (typeof global.now === "function") ? now() : Date.now();
           tick();
-          hostAcc -= (global.TICK_MS || 600);
+          hostAcc -= (global.TICK_MS);
         }
       }
       if (typeof global.updateConsumeVisuals === "function") updateConsumeVisuals();

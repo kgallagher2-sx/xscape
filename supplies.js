@@ -539,23 +539,21 @@
     if (!p || p.hp <= 0) return false;
     const PS = global.PlayerStats;
     if (isFood(fam)) {
-      if (p.hp >= (global.PLAYER_MAX_HP || 99)) return false;
       const before = p.hp;
       const maxHp = global.PLAYER_MAX_HP || 99;
       p.hp = Math.min(maxHp, p.hp + foodHeal(fam));
       if (typeof global.spawnSplat === "function") spawnSplat(p.x + 0.08, p.y - 0.14, p.hp - before, "green");
       p.atkCd += (global.SHARK_ATTACK_DELAY_TICKS || 3);
-      G.eatCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.eatCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.eat) audio.eat();
       return true;
     }
     if (fam === "prayer_potion") {
       const maxP = global.PLAYER_MAX_PRAYER || 99;
-      if (p.prayerPts >= maxP) return false;
       const base = (PS && PS.baseLevel) ? PS.baseLevel("prayer") : 99;
       const amt = 7 + Math.floor(base * 0.25);
       p.prayerPts = Math.min(maxP, p.prayerPts + amt);
-      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.potCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Prayer potion", "#9ad0ff");
       return true;
@@ -564,11 +562,9 @@
       const maxP = global.PLAYER_MAX_PRAYER || 99;
       const amt = (PS && PS.restoreAmount) ? PS.restoreAmount("prayer") : (8 + Math.floor((PS ? PS.baseLevel("prayer") : 99) * 0.25));
       const needPray = p.prayerPts < maxP;
-      const needStat = PS && PS.needsRestore && PS.needsRestore();
-      if (!needPray && !needStat) return false;
       if (needPray) p.prayerPts = Math.min(maxP, p.prayerPts + amt);
       if (PS && PS.applySuperRestore) PS.applySuperRestore();
-      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.potCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Super restore", "#d8a0ff");
       return true;
@@ -584,7 +580,7 @@
         p.hp = Math.min((global.PLAYER_MAX_HP || 99), p.hp + 16);
         if (typeof global.spawnSplat === "function") spawnSplat(p.x + 0.08, p.y - 0.14, p.hp - before, "green");
       }
-      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.potCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Gloam brew", "#e8e0b0");
       return true;
@@ -597,21 +593,21 @@
         p.antipoisonLeft = 150; // 90s at 0.6s ticks
       }
       if (PS && PS.applyAntipoison) PS.applyAntipoison();
-      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.potCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Antipoison", "#7dff7d");
       return true;
     }
     if (fam === "ranging_potion") {
       if (PS && PS.applyRangingPotion) PS.applyRangingPotion();
-      G.rangeCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.rangeCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Ranging potion", "#7af07a");
       return true;
     }
     if (fam === "magic_potion") {
       if (PS && PS.applyMagicPotion) PS.applyMagicPotion();
-      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.potCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg("Magic potion", "#7ad8ff");
       return true;
@@ -619,7 +615,7 @@
     if (fam === "super_attack" || fam === "super_strength" || fam === "super_defence") {
       const skill = POTION_FAMILIES[fam].skill;
       if (PS && PS.applySuperPotion) PS.applySuperPotion(skill);
-      G.potCd = global.CONSUME_COOLDOWN_TICKS || 3;
+      G.potCd = global.CONSUME_COOLDOWN_TICKS;
       if (global.audio && audio.sip) audio.sip();
       if (typeof global.flashMsg === "function") flashMsg(POTION_FAMILIES[fam].name, "#7af07a");
       return true;
@@ -632,14 +628,12 @@
     const G = global.G, p = G && G.player;
     if (!G || !p || p.hp <= 0 || G.mode !== "playing") return false;
     if (available(fam) <= 0) return false;
-    const cd = global.CONSUME_COOLDOWN_TICKS || 3;
+    const cd = global.CONSUME_COOLDOWN_TICKS;
     if (isFood(fam)) {
       if (G.pendingUse || G.pendingEat || (G.eatCd || 0) > 0) return "busy";
-      if (p.hp >= (global.PLAYER_MAX_HP || 99)) return "fullhp";
       return true;
     }
     if ((G.pendingUse || G.pendingPot || G.pendingRange || (G.potCd || 0) > 0 || (G.rangeCd || 0) > 0)) return "busy";
-    if (fam === "prayer_potion" && p.prayerPts >= (global.PLAYER_MAX_PRAYER || 99)) return "fullpray";
     return true;
   }
 
@@ -841,7 +835,7 @@
         btn.classList.toggle("pending", !!(G && G.pendingUse === fam) && !editing);
         const sweep = btn.querySelector(".cd-sweep");
         if (sweep && typeof global.tickProgress === "function") {
-          const maxCd = global.CONSUME_COOLDOWN_TICKS || 3;
+          const maxCd = global.CONSUME_COOLDOWN_TICKS;
           const cd = isFood(fam) ? (G.eatCd || 0) : (fam === "ranging_potion" ? (G.rangeCd || 0) : (G.potCd || 0));
           const pending = !!(G && G.pendingUse === fam);
           const remain = pending ? maxCd : Math.max(0, cd - tickProgress());

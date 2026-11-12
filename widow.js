@@ -557,11 +557,9 @@
   }
 
   function attackSpeed() {
-    const w = (typeof global.itemInSlot === "function") ? itemInSlot("weapon") : null;
-    if (w && w.speed) return w.speed;
-    const st = playerAttackStyle();
-    if (st === "magic" || st === "mage") return 5;
-    return global.PLAYER_ATTACK_TICKS || 4;
+    if (typeof global.playerSpeed === "function") return global.playerSpeed();
+    const eq = (global.Profile && Profile.equipment) || {};
+    return (global.XscapeCombat && XscapeCombat.playerSpeed) ? XscapeCombat.playerSpeed(eq) : global.PLAYER_ATTACK_TICKS;
   }
 
   function currentTarget() {
@@ -612,9 +610,12 @@
       }
       spellId = cast.spell && cast.spell.id;
     }
-    const vs = (typeof global.combatVsMonster === "function")
-      ? combatVsMonster(dest.monId, style, isMagic ? { spellId: spellId } : undefined)
-      : { maxHit: 20, chance: 0.5 };
+    const eq = (global.Profile && Profile.equipment) || {};
+    const vs = (global.XscapeCombat && typeof XscapeCombat.playerHit === "function")
+      ? XscapeCombat.playerHit(dest.monId, eq, { style: style, spellId: isMagic ? spellId : undefined, hp: G.player && G.player.hp })
+      : ((typeof global.combatVsMonster === "function")
+        ? combatVsMonster(dest.monId, style, isMagic ? { spellId: spellId } : undefined)
+        : { maxHit: 20, chance: 0.5 });
     const dmg = (typeof global.rollHit === "function") ? rollHit(vs.maxHit, vs.chance) : irand(0, vs.maxHit);
     if (G._playerBoltTick === G.ticks) return false;
     G._playerBoltTick = G.ticks;
@@ -688,13 +689,11 @@
     if (typeof global.PlayerStats !== "undefined" && PlayerStats.tick) PlayerStats.tick();
     if (typeof global.updateConsumableChrome === "function") updateConsumableChrome();
 
-    if (G.prayer && G.ticks % (global.PRAYER_DRAIN_EVERY || 2) === 0) {
-      G.player.prayerPts = clamp(G.player.prayerPts - 1, 0, global.PLAYER_MAX_PRAYER || 99);
-      if (G.player.prayerPts <= 0) {
-        G.prayer = null;
+    global.XscapeCombat.drainPrayer(G, {
+      onDeplete: function () {
         if (typeof global.updatePrayerButtons === "function") updatePrayerButtons();
       }
-    }
+    });
 
     tickPoison();
 
@@ -901,10 +900,10 @@
         G.elapsedMs = ts - (G.startMs || ts);
         hostAcc += ts - (hostLast || ts);
         hostLast = ts;
-        while (hostAcc >= (global.TICK_MS || 600)) {
+        while (hostAcc >= (global.TICK_MS)) {
           G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
           tick();
-          hostAcc -= (global.TICK_MS || 600);
+          hostAcc -= (global.TICK_MS);
         }
       }
       if (typeof global.updateConsumeVisuals === "function") updateConsumeVisuals();

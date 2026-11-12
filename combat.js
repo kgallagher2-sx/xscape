@@ -41,6 +41,17 @@
     strength is arcade-tuned so a starter Jad kill lands near 1:45–2:00
     against 360-HP arcade Jad (OSRS mithril bolts are +82).
   */
+  var CONST = {
+    TICK_MS: 600,
+    PLAYER_ATTACK_TICKS: 4,
+    PRAYER_DRAIN_EVERY: 2,
+    CONSUME_COOLDOWN_TICKS: 3
+  };
+  global.TICK_MS = CONST.TICK_MS;
+  global.PLAYER_ATTACK_TICKS = CONST.PLAYER_ATTACK_TICKS;
+  global.PRAYER_DRAIN_EVERY = CONST.PRAYER_DRAIN_EVERY;
+  global.CONSUME_COOLDOWN_TICKS = CONST.CONSUME_COOLDOWN_TICKS;
+
   const ITEMS = {
     green_dhide_coif:   { id: "green_dhide_coif", name: "Green d'hide coif", slot: "head", tier: "starter", bonuses: b({ arange: 2, amagic: -1, dstab: 4, dslash: 6, dcrush: 8, dmagic: 4, drange: 4 }) },
     green_dhide_body:   { id: "green_dhide_body", name: "Green d'hide body", slot: "body", tier: "starter", bonuses: b({ arange: 15, amagic: -15, dstab: 18, dslash: 27, dcrush: 24, dmagic: 20, drange: 35 }) },
@@ -304,7 +315,7 @@
     eq = eq || (typeof Profile !== "undefined" && Profile && Profile.equipment) || {};
     const it = (typeof ITEMS !== "undefined" && ITEMS) ? ITEMS[eq.weapon] : null;
     if (it && it.speed) return it.speed | 0;
-    return (typeof PLAYER_ATTACK_TICKS === "number" ? PLAYER_ATTACK_TICKS : 4);
+    return CONST.PLAYER_ATTACK_TICKS;
   }
 
   function playerBonuses(eq) {
@@ -681,13 +692,74 @@
     return { style, maxHit: max, chance, atkRoll, defRoll, expected: expectedDamage(max, chance) };
   }
 
-  function meleeSetMaxHit(max) {
-    // Gorehorn (Dharok-style) set: damage rises as Hitpoints fall. Other melee sets may hook in later.
-    if (typeof window.gorehornSetMultiplier === "function") {
-      return Math.max(0, Math.floor(max * window.gorehornSetMultiplier()));
-    }
-    return max;
+  function wearingGorehornSet(eq) {
+    eq = eq || (global.Profile && global.Profile.equipment) || {};
+    return eq.head === "gorehorn_helm" && eq.body === "gorehorn_plate" && eq.legs === "gorehorn_legs" && eq.weapon === "gorehorn_axe";
   }
+  function gorehornSetMultiplier(eq, hp) {
+    if (!wearingGorehornSet(eq)) return 1;
+    var maxHp = global.PLAYER_MAX_HP || 99;
+    var cur = hp;
+    if (cur == null) {
+      cur = (global.G && global.G.player && global.G.player.hp != null) ? global.G.player.hp : maxHp;
+    }
+    return 1 + Math.max(0, (maxHp - cur) / 100);
+  }
+  function meleeSetMaxHit(max, eq, hp) {
+    // Gorehorn (Dharok-style) set: damage rises as Hitpoints fall. Other melee sets may hook in later.
+    return Math.max(0, Math.floor(max * gorehornSetMultiplier(eq, hp)));
+  }
+  function playerHit(monsterId, eq, opts) {
+    opts = opts || {};
+    eq = eq || opts.equipment || (global.Profile && global.Profile.equipment) || {};
+    var style = opts.style || playerStyle(eq);
+    var vs = combatVsMonster(monsterId, style, {
+      equipment: eq,
+      spellId: opts.spellId,
+      useBase: opts.useBase
+    });
+    var max = vs.maxHit;
+    var isMelee = style !== "ranged" && style !== "range" && style !== "mage" && style !== "magic";
+    if (isMelee) max = meleeSetMaxHit(max, eq, opts.hp);
+    return {
+      style: vs.style,
+      maxHit: max,
+      chance: vs.chance,
+      speed: playerSpeed(eq),
+      atkRoll: vs.atkRoll,
+      defRoll: vs.defRoll,
+      expected: expectedDamage(max, vs.chance)
+    };
+  }
+  function drainPrayer(state, opts) {
+    opts = opts || {};
+    if (!state) return 0;
+    if (state.god) return 0;
+    var prayerOn = (opts.prayer !== undefined) ? opts.prayer : state.prayer;
+    if (!prayerOn) return 0;
+    var ticks = (opts.ticks != null) ? opts.ticks : state.ticks;
+    var every = CONST.PRAYER_DRAIN_EVERY;
+    if (!ticks || (ticks % every) !== 0) return 0;
+    var amt = (opts.amount != null) ? opts.amount : (1 + (opts.extra || 0));
+    if (amt <= 0) return 0;
+    var player = state.player || state;
+    var maxP = global.PLAYER_MAX_PRAYER || 99;
+    var pts = (player.prayerPts != null) ? player.prayerPts : player.pray;
+    pts = Math.max(0, (pts || 0) - amt);
+    if (player.prayerPts != null) player.prayerPts = Math.min(maxP, pts);
+    if (player.pray != null) player.pray = Math.min(maxP, pts);
+    if (pts <= 0) {
+      state.prayer = null;
+      if (player.prayer !== undefined) player.prayer = null;
+      if (typeof opts.onDeplete === "function") opts.onDeplete(state);
+    }
+    return amt;
+  }
+  // Alias so existing gorehorn.js / window callers keep working.
+  global.gorehornSetMultiplier = function (eq, hp) { return gorehornSetMultiplier(eq, hp); };
+  global.wearingGorehornSet = wearingGorehornSet;
+  global.drainPrayer = drainPrayer;
+  global.playerHit = playerHit;
 
 
 
@@ -880,12 +952,29 @@
     return maxHitFrom(effectiveNpcLevel(stats.levels.strength), stats.atk.str || 0);
   }
 
-  function npcPlayerDefenceLevel(style, stanceDef) {
-    stanceDef = stanceDef || 0;
-    if (normalizeNpcStyle(style) === "magic") {
-      return Math.floor(0.7 * NPC_PLAYER_LEVEL + 0.3 * NPC_PLAYER_LEVEL) + 8 + stanceDef;
+  function currentSkillLevel(name) {
+    if (typeof PlayerStats !== "undefined" && PlayerStats && typeof PlayerStats.level === "function") {
+      var cur = PlayerStats.level(name);
+      if (cur != null && isFinite(cur)) return cur;
     }
-    return NPC_PLAYER_LEVEL + 8 + stanceDef;
+    var lv = (global.Profile && global.Profile.levels) || {};
+    var n = Number(lv[name]);
+    return isFinite(n) ? n : NPC_PLAYER_LEVEL;
+  }
+  function npcPlayerDefenceLevel(style, stanceDef, levels) {
+    stanceDef = stanceDef || 0;
+    var defLv, mageLv;
+    if (levels && typeof levels === "object") {
+      defLv = levels.defence != null && isFinite(Number(levels.defence)) ? Number(levels.defence) : currentSkillLevel("defence");
+      mageLv = levels.magic != null && isFinite(Number(levels.magic)) ? Number(levels.magic) : currentSkillLevel("magic");
+    } else {
+      defLv = currentSkillLevel("defence");
+      mageLv = currentSkillLevel("magic");
+    }
+    if (normalizeNpcStyle(style) === "magic") {
+      return Math.floor(0.7 * defLv + 0.3 * mageLv) + 8 + stanceDef;
+    }
+    return defLv + 8 + stanceDef;
   }
 
   function npcHitChance(mon, attack, playerEq, phaseIdx) {
@@ -1292,7 +1381,7 @@
   var BOSS_MELEE_REACH = 1;
 
   function tickMs() {
-    return global.TICK_MS || 600;
+    return CONST.TICK_MS;
   }
   function fightElapsedMs(ticks) {
     return (ticks || 0) * tickMs();
@@ -1583,6 +1672,12 @@
     combatVsPlayer: combatVsPlayer,
     monsterVsPlayer: monsterVsPlayer,
     meleeSetMaxHit: meleeSetMaxHit,
+    wearingGorehornSet: wearingGorehornSet,
+    gorehornSetMultiplier: gorehornSetMultiplier,
+    playerHit: playerHit,
+    drainPrayer: drainPrayer,
+    currentSkillLevel: currentSkillLevel,
+
     rand: rand,
     RUNES: RUNES,
     SPELLS: SPELLS,
@@ -1600,6 +1695,8 @@
     canCast: canCast,
     consumeRunes: consumeRunes,
     tryCastSpell: tryCastSpell,
+    const: CONST,
+    CONST: CONST,
     CATCH_UP_TICKS_PER_FRAME: CATCH_UP_TICKS_PER_FRAME,
     FIGHT_ABANDON_MS: FIGHT_ABANDON_MS,
     BOSS_MELEE_REACH: BOSS_MELEE_REACH,

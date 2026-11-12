@@ -7,7 +7,7 @@
   var ARENA_COLS = 11, ARENA_ROWS = 11;
   var COLS = BANK_COLS;
   var ROWS = BANK_ROWS;
-  var TICK = (typeof TICK_MS === "number" ? TICK_MS : 600);
+  var TICK = global.TICK_MS;
 
   var state = {
     active: false,

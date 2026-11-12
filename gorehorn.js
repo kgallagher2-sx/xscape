@@ -30,11 +30,13 @@
     return eq.head === "gorehorn_helm" && eq.body === "gorehorn_plate" && eq.legs === "gorehorn_legs" && eq.weapon === "gorehorn_axe";
   }
   function gorehornSetMultiplier() {
+    if (global.XscapeCombat && typeof XscapeCombat.gorehornSetMultiplier === "function") {
+      return XscapeCombat.gorehornSetMultiplier((global.Profile && Profile.equipment) || {});
+    }
     if (!wearingGorehornSet()) return 1;
     const G = g();
     const hp = (G && G.player && G.player.hp != null) ? G.player.hp : (global.PLAYER_MAX_HP || 99);
     const max = global.PLAYER_MAX_HP || 99;
-    // OSRS Dharok: roughly 1 + (max - current) / 100.
     return 1 + Math.max(0, (max - hp) / 100);
   }
   global.gorehornSetMultiplier = gorehornSetMultiplier;
@@ -408,10 +410,13 @@
   }
 
   function playerSpeed() {
+    if (global.XscapeCombat && typeof XscapeCombat.playerSpeed === "function") {
+      return XscapeCombat.playerSpeed((global.Profile && Profile.equipment) || {});
+    }
     const eq = (global.Profile && Profile.equipment) || {};
     const it = (global.ITEMS || {})[eq.weapon];
     if (it && it.speed) return it.speed | 0;
-    return global.PLAYER_ATTACK_TICKS || 4;
+    return global.PLAYER_ATTACK_TICKS;
   }
 
   function playerAttack() {
@@ -455,14 +460,13 @@
       : isMagic ? "magic"
       : (style === "stab" || style === "crush" || style === "slash") ? style
       : "slash";
-    const vs = (typeof global.combatVsMonster === "function")
-      ? combatVsMonster(monId, vsStyle, isMagic ? { spellId: spellId } : undefined)
-      : { maxHit: 20, chance: 0.7 };
-    let max = vs.maxHit;
-    if (typeof global.meleeSetMaxHit === "function" && !isMagic && vsStyle !== "ranged") {
-      max = global.meleeSetMaxHit(max);
-    }
-    const dmg = (typeof global.rollHit === "function") ? rollHit(max, vs.chance) : irand(0, max);
+    const eq = (global.Profile && Profile.equipment) || {};
+    const vs = (global.XscapeCombat && typeof XscapeCombat.playerHit === "function")
+      ? XscapeCombat.playerHit(monId, eq, { style: vsStyle, spellId: isMagic ? spellId : undefined, hp: G.player && G.player.hp })
+      : ((typeof global.combatVsMonster === "function")
+        ? combatVsMonster(monId, vsStyle, isMagic ? { spellId: spellId } : undefined)
+        : { maxHit: 20, chance: 0.7 });
+    const dmg = (typeof global.rollHit === "function") ? rollHit(vs.maxHit, vs.chance) : irand(0, vs.maxHit);
     if (G._playerBoltTick === G.ticks) return false;
     G._playerBoltTick = G.ticks;
     G.bolts = (G.bolts || []).filter(function (b) { return b && b.t > 0 && b.t < (b.dur || 0); });
@@ -519,13 +523,11 @@
     if (typeof global.resolveConsumables === "function") resolveConsumables();
     if (typeof global.PlayerStats !== "undefined" && PlayerStats.tick) PlayerStats.tick();
 
-    if (G.prayer && G.ticks % (global.PRAYER_DRAIN_EVERY || 6) === 0) {
-      G.player.prayerPts = clamp(G.player.prayerPts - 1, 0, global.PLAYER_MAX_PRAYER || 99);
-      if (G.player.prayerPts <= 0) {
-        G.prayer = null;
+    global.XscapeCombat.drainPrayer(G, {
+      onDeplete: function () {
         if (typeof global.updatePrayerButtons === "function") updatePrayerButtons();
       }
-    }
+    });
 
     const k = G.gorehorn;
     if (k && k.hp > 0) {
@@ -690,10 +692,10 @@
         G.elapsedMs = ts - (G.startMs || ts);
         hostAcc += ts - (hostLast || ts);
         hostLast = ts;
-        while (hostAcc >= (global.TICK_MS || 600)) {
+        while (hostAcc >= (global.TICK_MS)) {
           G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
           tick();
-          hostAcc -= (global.TICK_MS || 600);
+          hostAcc -= (global.TICK_MS);
         }
       }
       if (typeof global.updateConsumeVisuals === "function") updateConsumeVisuals();
@@ -872,7 +874,7 @@
       name: (global.Profile && Profile.name) || "Adventurer",
       bossName: "Gorehorn, the Minotaur",
       bossId: "gorehorn-the-minotaur",
-      killTimeSeconds: Math.round(((G.elapsedMs || G.ticks * (global.TICK_MS || 600)) / 1000) * 10) / 10,
+      killTimeSeconds: Math.round(((G.elapsedMs || G.ticks * (global.TICK_MS)) / 1000) * 10) / 10,
       killTimeTicks: G.ticks,
       damageTaken: G.damageTaken,
       perfectPrayers: G.perfectPrayers

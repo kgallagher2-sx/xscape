@@ -84,9 +84,9 @@
     "ranging-potion": { id: "ranging-potion", name: "Ranging potion", slot: "inventory", stackable: true }
   };
 
-  RAID_ITEMS["worn-xbow"].range = 5;
-  RAID_ITEMS["tempered-xbow"].range = 5;
-  RAID_ITEMS["hollowbolt-xbow"].range = 5;
+  RAID_ITEMS["worn-xbow"].range = 5; RAID_ITEMS["worn-xbow"].speed = 4;
+  RAID_ITEMS["tempered-xbow"].range = 5; RAID_ITEMS["tempered-xbow"].speed = 4;
+  RAID_ITEMS["hollowbolt-xbow"].range = 5; RAID_ITEMS["hollowbolt-xbow"].speed = 4;
 
   const STARTER_LOADOUT = { weapon: "worn-xbow", body: "patched-body", legs: "patched-chaps", hands: "patched-vambs", boots: "starter-boots", neck: null, cape: null };
   const MID_LOADOUT = { weapon: "tempered-xbow", body: "duskhide-body", legs: "duskhide-chaps", hands: "duskhide-vambs", boots: "starter-boots", neck: null, cape: null };
@@ -413,12 +413,23 @@
     return 1 + Math.max(0, (maxHp - cur) / 100);
   }
   function meleeSetMaxHitFrom(max, eq, hp) {
+    if (global.XscapeCombat && typeof XscapeCombat.meleeSetMaxHit === "function") {
+      return XscapeCombat.meleeSetMaxHit(max, eq, hp);
+    }
     return Math.max(0, Math.floor(max * gorehornSetMultiplierFrom(eq, hp)));
   }
   function rollPlayerHit(rng, mon, loadout, potOn, hp, spellId) {
     const eq = fighterGear(loadout);
     const vsStyle = vsStyleOf(playerStyleFrom(eq));
     const hitHp = (hp != null) ? hp : (loadout && loadout.hp != null ? loadout.hp : null);
+    if (global.XscapeCombat && typeof XscapeCombat.playerHit === "function" && mon && mon.id) {
+      const vs = XscapeCombat.playerHit(mon.id, eq, { style: vsStyle, spellId: spellId, hp: hitHp });
+      const ch = vs.chance || 0;
+      const max = vs.maxHit || 0;
+      const hit = rng() < ch;
+      const dmg = hit ? irand(rng, 0, max) : 0;
+      return { hit: hit && dmg > 0, dmg: hit ? dmg : 0, max: max, chance: ch, style: vsStyle, speed: vs.speed };
+    }
     if (typeof global.combatVsMonster === "function" && mon && mon.id) {
       const vsOpts = { equipment: eq };
       if (spellId) vsOpts.spellId = spellId;
@@ -1048,7 +1059,15 @@
     if (st.mode !== "playing") { restoreLocalFighter(st); return; }
     livingFighters(st).forEach(function (f) {
       withFighter(st, f, function (s) {
-        if (s.prayer && s.ticks % PRAYER_DRAIN_EVERY === 0) {
+        if (global.XscapeCombat && typeof XscapeCombat.drainPrayer === "function") {
+          var extra = (s.boss && s.boss.kind === "morvane" && phaseOf(s) >= 4) ? 1 : 0;
+          XscapeCombat.drainPrayer(s, {
+            extra: extra,
+            onDeplete: function () {
+              if (s.prayer) { s.prayer = null; if (s.player) s.player.prayer = null; }
+            }
+          });
+        } else if (s.prayer && s.ticks % PRAYER_DRAIN_EVERY === 0) {
           var extra = (s.boss && s.boss.kind === "morvane" && phaseOf(s) >= 4) ? 1 : 0;
           drainPrayer(s, 1 + extra);
         }
@@ -1593,7 +1612,15 @@
     }
     if (st.mode !== "playing") return;
 
-    if (st.prayer && st.ticks % PRAYER_DRAIN_EVERY === 0) {
+    if (global.XscapeCombat && typeof XscapeCombat.drainPrayer === "function") {
+      const extra = (st.boss && st.boss.kind === "morvane" && phaseOf(st) >= 4) ? 1 : 0;
+      XscapeCombat.drainPrayer(st, {
+        extra: extra,
+        onDeplete: function () {
+          if (st.prayer) { st.prayer = null; if (st.player) st.player.prayer = null; }
+        }
+      });
+    } else if (st.prayer && st.ticks % PRAYER_DRAIN_EVERY === 0) {
       const extra = (st.boss && st.boss.kind === "morvane" && phaseOf(st) >= 4) ? 1 : 0;
       drainPrayer(st, 1 + extra);
     }

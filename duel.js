@@ -129,6 +129,7 @@
     return "melee";
   }
   function speedOf(eq) {
+    if (global.XscapeCombat && typeof XscapeCombat.playerSpeed === "function") return XscapeCombat.playerSpeed(eq);
     var it = global.ITEMS && ITEMS[(eq && eq.weapon) || ""];
     return (it && it.speed) || 4;
   }
@@ -925,8 +926,17 @@
       fighter.prayer = fighter.queuedPrayer;
     }
     if (fighter.prayer && fighter.pray > 0) {
-      fighter.pray = Math.max(0, fighter.pray - PRAY_DRAIN);
-      if (fighter.pray <= 0) fighter.prayer = null;
+      var XC = global.XscapeCombat;
+      var fight = state.fight;
+      if (XC && typeof XC.drainPrayer === "function" && fight) {
+        XC.drainPrayer({ prayer: fighter.prayer, ticks: fight.tick, player: fighter }, {
+          onDeplete: function () { fighter.prayer = null; }
+        });
+      } else {
+        // Legacy copy, kept only if combat.js is missing.
+        fighter.pray = Math.max(0, fighter.pray - PRAY_DRAIN);
+        if (fighter.pray <= 0) fighter.prayer = null;
+      }
     }
   }
 
