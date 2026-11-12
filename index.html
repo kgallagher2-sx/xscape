@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112173828-4a56795";</script>
+  <script>window.XSCAPE_BUILD = "20261112180244-f6a6bb4";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2742,9 +2742,11 @@ function syncPlayerWorldPos(snap) {
 }
 
 function queueMoveTo(col, row) {
-  if (G.scene === "hub" && window.XscapeHub && XscapeHub.clickTile) { window.XscapeHub.clickTile(col, row == null ? 0 : row); return true; }
-  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.clickTile) { window.XscapeDuel.clickTile(col, row == null ? 0 : row); return true; }
-  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.clickTile(col, row == null ? 0 : row); return true; }
+  const scMove = currentScene();
+  if (scMove && typeof scMove.clickTile === "function") {
+    scMove.clickTile(col, row == null ? 0 : row);
+    return true;
+  }
   if (!G.player || G.mode !== "playing" || G.player.hp <= 0) return false;
   if (G.player.stuckTicks > 0) return false;
   ensurePlayerTile();
@@ -2771,7 +2773,11 @@ function queueMoveTo(col, row) {
 }
 
 function queueMoveBy(dcol, drow) {
-  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.stepDir(dcol || 0, drow || 0); return true; }
+  const scStep = currentScene();
+  if (scStep && typeof scStep.stepDir === "function") {
+    scStep.stepDir(dcol || 0, drow || 0);
+    return true;
+  }
   if (!G.player) return false;
   ensurePlayerTile();
   const fromC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
@@ -5130,12 +5136,8 @@ function tickHealers() {
 }
 
 function gameTick() {
-  if (G.scene === "raid" && window.XscapeRaid) { window.XscapeRaid.hostTick(); return; }
-  if (G.scene === "kree" && window.XscapeKree) { window.XscapeKree.hostTick(); return; }
-  if (G.scene === "widow" && window.XscapeWidow) { window.XscapeWidow.hostTick(); return; }
-  if (G.scene === "knight" && window.XscapeKnight) { window.XscapeKnight.hostTick(); return; }
-  if (G.scene === "gorehorn" && window.XscapeGorehorn) { window.XscapeGorehorn.hostTick(); return; }
-  if (G.scene === "colossus" && window.XscapeColossus) { window.XscapeColossus.hostTick(); return; }
+  const sc = currentScene();
+  if (sc && typeof sc.tick === "function") { sc.tick(); return; }
   if (G.mode !== "playing") return;
   G.ticks++;
 
@@ -6426,36 +6428,9 @@ function frame(ts) {
   if (!lastTs) lastTs = ts;
   const dt = Math.min(0.05, (ts - lastTs) / 1000);
   lastTs = ts;
-  if (G.scene === "hub" && window.XscapeHub && XscapeHub.hostFrame) {
-    window.XscapeHub.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.hostFrame) {
-    window.XscapeDuel.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "raid" && window.XscapeRaid) {
-    window.XscapeRaid.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "kree" && window.XscapeKree) {
-    window.XscapeKree.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "widow" && window.XscapeWidow) {
-    window.XscapeWidow.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "knight" && window.XscapeKnight) {
-    window.XscapeKnight.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "gorehorn" && window.XscapeGorehorn) {
-    window.XscapeGorehorn.hostFrame(ts, ctx, cssW, cssH, dpr);
-    return;
-  }
-  if (G.scene === "colossus" && window.XscapeColossus) {
-    window.XscapeColossus.hostFrame(ts, ctx, cssW, cssH, dpr);
+  const scFrame = currentScene();
+  if (scFrame && typeof scFrame.frame === "function") {
+    scFrame.frame(ts, ctx, cssW, cssH, dpr);
     return;
   }
 
@@ -6556,38 +6531,13 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (dismissTopOverlay()) { e.preventDefault(); return; }
   }
-  if (G.scene === "raid" && window.XscapeRaid) {
-    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); window.XscapeRaid.stepDir(-1, 0); return; }
-    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); window.XscapeRaid.stepDir(1, 0); return; }
-    if (e.key === "b" || e.key === "B") { window.XscapeRaid.brew(); return; }
-    if (e.key === "r" || e.key === "R") { window.XscapeRaid.ranging(); return; }
-  }
-  if (G.scene === "kree" && window.XscapeKree) {
-    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
-  }
-  if (G.scene === "widow" && window.XscapeWidow) {
-    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
-  }
-  if (G.scene === "knight" && window.XscapeKnight) {
-    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
-  }
-  if (G.scene === "gorehorn" && window.XscapeGorehorn) {
-    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
-  }
-  if (G.scene === "colossus" && window.XscapeColossus) {
-    if (e.key === "r" || e.key === "R") { sipRangePot(); return; }
-  }
+  const scKey = currentScene();
+  if (scKey && typeof scKey.key === "function" && scKey.key(e)) return;
   if (e.key === "1") setPrayer("mage");
   if (e.key === "2") setPrayer("range");
   if (e.key === "3") setPrayer("melee");
   if (e.key === "f" || e.key === "F") eatShark();
   if (e.key === "p" || e.key === "P") sipPot();
-  if (G.scene === "hub" && window.XscapeHub && XscapeHub.stepDir) {
-    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); XscapeHub.stepDir(-1, 0); return; }
-    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); XscapeHub.stepDir(1, 0); return; }
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); XscapeHub.stepDir(0, -1); return; }
-    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { e.preventDefault(); XscapeHub.stepDir(0, 1); return; }
-  }
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); queueMoveBy(-1, 0); }
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); queueMoveBy(1, 0); }
   if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); queueMoveBy(0, 1); }
@@ -6599,53 +6549,14 @@ window.addEventListener("keydown", (e) => {
 });
 
 canvas.addEventListener("pointerdown", (e) => {
-  if (G.scene === "hub" && window.XscapeHub && XscapeHub.clickPx) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    window.XscapeHub.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
+  const scClick = currentScene();
+  if (scClick && typeof scClick.click === "function") {
+    if (scClick.click(e) !== false) return;
   }
-  if (G.scene === "duel" && window.XscapeDuel && XscapeDuel.clickPx) {
+  if (scClick && typeof scClick.clickPx === "function") {
     audio.unlock();
     const pt = eventToArena(e);
-    window.XscapeDuel.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
-  }
-  if (G.scene === "raid" && window.XscapeRaid) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    // clickPx already queues the single OSRS click-X (npc or ground).
-    window.XscapeRaid.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
-  }
-  if (G.scene === "kree" && window.XscapeKree) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    window.XscapeKree.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
-  }
-  if (G.scene === "widow" && window.XscapeWidow) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    window.XscapeWidow.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
-  }
-  if (G.scene === "knight" && window.XscapeKnight) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    window.XscapeKnight.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
-  }
-  if (G.scene === "gorehorn" && window.XscapeGorehorn) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    window.XscapeGorehorn.clickPx(pt.x, pt.y, cssW, cssH);
-    return;
-  }
-  if (G.scene === "colossus" && window.XscapeColossus) {
-    audio.unlock();
-    const pt = eventToArena(e);
-    window.XscapeColossus.clickPx(pt.x, pt.y, cssW, cssH);
+    scClick.clickPx(pt.x, pt.y, cssW, cssH);
     return;
   }
   if (G.mode === "intro") {
@@ -6831,8 +6742,27 @@ function teardownHubForFight(scene) {
   if (typeof relayoutFightHud === "function") relayoutFightHud();
 }
 
+const SHARED_OVERLAYS = ["overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-online","overlay-inv","overlay-spellbook"];
+
+function allOverlayIds() {
+  const ids = SHARED_OVERLAYS.slice();
+  const seen = Object.create(null);
+  for (let i = 0; i < ids.length; i++) seen[ids[i]] = true;
+  if (typeof Scenes !== "undefined") {
+    const keys = Object.keys(Scenes);
+    for (let i = 0; i < keys.length; i++) {
+      const ov = Scenes[keys[i]] && Scenes[keys[i]].overlays;
+      if (!ov) continue;
+      for (let j = 0; j < ov.length; j++) {
+        if (ov[j] && !seen[ov[j]]) { seen[ov[j]] = true; ids.push(ov[j]); }
+      }
+    }
+  }
+  return ids;
+}
+
 function hideAllOverlays() {
-  ["overlay-login","overlay-hub","overlay-tut","overlay-raid-tut","overlay-kree-tut","overlay-kree-loot","overlay-widow-tut","overlay-widow-loot","overlay-knight-tut","overlay-knight-loot","overlay-gorehorn-tut","overlay-gorehorn-loot","overlay-colossus-tut","overlay-colossus-loot","overlay-gear","overlay-shop","overlay-supply-shop","overlay-hotkeys","overlay-quick-edit","overlay-chat-history","overlay-trade","overlay-trade-history","overlay-help","overlay-win","overlay-lose","overlay-bank","overlay-boss","overlay-raid-choice","overlay-party","overlay-online","overlay-inv","overlay-spellbook","overlay-stake","overlay-stake-confirm","overlay-duel-result"].forEach((id) => {
+  allOverlayIds().forEach((id) => {
     // Only keep the bank/arena dock while actually in the hub. G.mode can
     // linger as "hub" after a fight starts, which used to leak the dock
     // over Vaelkor the Stormwing / Jad / Gloamhold.
@@ -6858,11 +6788,32 @@ function refreshHub() {
   updateRaidLock();
 }
 
+function currentScene() {
+  return (typeof Scenes !== "undefined" && G && G.scene && Scenes[G.scene]) || null;
+}
+
+function warnLeaveWithoutExit(sc, when) {
+  if (sc && typeof sc.leave === "function" && typeof sc.exit !== "function") {
+    console.warn("Scenes." + (sc.id || "?") + " has leave but no exit; " + (when || "enterScene") + " will not call leave");
+  }
+}
+
+function registerScene(spec) {
+  if (!spec || !spec.id) return spec;
+  warnLeaveWithoutExit(spec, "registerScene");
+  Scenes[spec.id] = spec;
+  return spec;
+}
+
 /* Modes are separate scene objects so Duel Arena can be plugged in later
-   (real-time 1v1 vs friends: boxing, whip + spec, barrage mage boxing, GP staking). */
+   (real-time 1v1 vs friends: boxing, whip + spec, barrage mage boxing, GP staking).
+   Each scene declares {id, frame, tick, key, click/clickPx, overlays, isFight, enter, exit}.
+   Adding a dummy scene means calling registerScene from one file. */
 const Scenes = {
   login: {
     id: "login",
+    isFight: false,
+    overlays: ["overlay-login"],
     enter() {
       G.mode = "login";
       hideAllOverlays();
@@ -6873,6 +6824,25 @@ const Scenes = {
   },
   hub: {
     id: "hub",
+    isFight: false,
+    overlays: ["overlay-hub"],
+    frame(ts, ctx, cssW, cssH, dpr) {
+      if (window.XscapeHub && XscapeHub.hostFrame) XscapeHub.hostFrame(ts, ctx, cssW, cssH, dpr);
+    },
+    clickPx(x, y, w, h) {
+      if (window.XscapeHub && XscapeHub.clickPx) XscapeHub.clickPx(x, y, w, h);
+    },
+    clickTile(col, row) {
+      if (window.XscapeHub && XscapeHub.clickTile) XscapeHub.clickTile(col, row);
+    },
+    key(e) {
+      if (!(window.XscapeHub && XscapeHub.stepDir)) return false;
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); XscapeHub.stepDir(-1, 0); return true; }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); XscapeHub.stepDir(1, 0); return true; }
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); XscapeHub.stepDir(0, -1); return true; }
+      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { e.preventDefault(); XscapeHub.stepDir(0, 1); return true; }
+      return false;
+    },
     enter() {
       G.mode = "hub";
       if (window.XscapeSupplies && XscapeSupplies.clearJadKit) XscapeSupplies.clearJadKit();
@@ -6892,6 +6862,8 @@ const Scenes = {
   },
   jad: {
     id: "jad",
+    isFight: true,
+    overlays: ["overlay-tut","overlay-win","overlay-lose"],
     enter() { beginFight(); },
     exit() {
       $("overlay-tut").classList.add("hidden");
@@ -6903,6 +6875,17 @@ const Scenes = {
   duel: {
     id: "duel",
     title: "Duel Arena",
+    isFight: true,
+    overlays: ["overlay-stake","overlay-stake-confirm","overlay-duel-result"],
+    frame(ts, ctx, cssW, cssH, dpr) {
+      if (window.XscapeDuel && XscapeDuel.hostFrame) XscapeDuel.hostFrame(ts, ctx, cssW, cssH, dpr);
+    },
+    clickPx(x, y, w, h) {
+      if (window.XscapeDuel && XscapeDuel.clickPx) XscapeDuel.clickPx(x, y, w, h);
+    },
+    clickTile(col, row) {
+      if (window.XscapeDuel && XscapeDuel.clickTile) XscapeDuel.clickTile(col, row);
+    },
     enter() {
       G.mode = "duel";
       hideAllOverlays();
@@ -6925,7 +6908,9 @@ function enterScene(id) {
   }
   const next = Scenes[id];
   if (!next || next.locked) return;
+  warnLeaveWithoutExit(next, "enterScene");
   const prev = G.scene && Scenes[G.scene];
+  warnLeaveWithoutExit(prev, "enterScene");
   if (prev && prev.exit && prev.id !== next.id) {
     // Leaving the world for a boss or raid returns you to the bank, not the arena.
     // A duel fight should drop you back in the arena you came from.
@@ -8243,6 +8228,8 @@ if (typeof PlayerStats !== "undefined" && PlayerStats.ensureHud) PlayerStats.ens
 window.G = G;
 window.Profile = Profile;
 window.Scenes = Scenes;
+window.currentScene = currentScene;
+window.registerScene = registerScene;
 window.audio = audio;
 window.TILE = TILE;
 window.ITEMS = ITEMS;
@@ -8637,8 +8624,8 @@ function isMidFight() {
   var G = window.G;
   if (!G) return false;
   var scene = G.scene, mode = G.mode;
-  var fightScenes = { jad:1, raid:1, kree:1, widow:1, knight:1, gorehorn:1, colossus:1, duel:1 };
-  if (fightScenes[scene] && mode !== "hub" && mode !== "login") {
+  var scFight = (typeof Scenes !== "undefined" && Scenes[scene]) || null;
+  if (scFight && scFight.isFight && mode !== "hub" && mode !== "login") {
     if (mode === "playing" || mode === "intro" || mode === "firstkill" || mode === "win" || mode === "lose") return true;
     if (scene === "raid" || scene === "duel") return true;
   }

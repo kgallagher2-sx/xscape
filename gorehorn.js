@@ -1009,6 +1009,18 @@
     if (global.Scenes) {
       global.Scenes.gorehorn = {
         id: "gorehorn",
+        isFight: true,
+        overlays: ["overlay-gorehorn-tut","overlay-gorehorn-loot"],
+        tick: tick,
+        frame: hostFrame,
+        clickPx: clickPx,
+        key: function (e) {
+          if (e.key === "r" || e.key === "R") {
+            if (typeof sipRangePot === "function") sipRangePot();
+            return true;
+          }
+          return false;
+        },
         enter: function () { tryEnter({}); },
         exit: function () {
           releaseTiles();

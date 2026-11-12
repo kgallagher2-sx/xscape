@@ -1240,6 +1240,18 @@
     if (global.Scenes) {
       global.Scenes.widow = {
         id: "widow",
+        isFight: true,
+        overlays: ["overlay-widow-tut","overlay-widow-loot"],
+        tick: tick,
+        frame: hostFrame,
+        clickPx: clickPx,
+        key: function (e) {
+          if (e.key === "r" || e.key === "R") {
+            if (typeof sipRangePot === "function") sipRangePot();
+            return true;
+          }
+          return false;
+        },
         enter: function () { tryEnter({}); },
         exit: function () {
           setWidowChrome(false);

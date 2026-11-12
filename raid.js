@@ -4390,6 +4390,20 @@
     if (typeof global.Scenes !== "undefined") {
       global.Scenes.raid = {
         id: "raid",
+        isFight: true,
+        overlays: ["overlay-raid-tut","overlay-raid-choice","overlay-party"],
+        tick: hostTick,
+        frame: hostFrame,
+        clickPx: function (x, y, w, h) { api.clickPx(x, y, w, h); },
+        clickTile: function (col, row) { api.clickTile(col, row); },
+        stepDir: function (dc, dr) { api.stepDir(dc || 0, dr || 0); },
+        key: function (e) {
+          if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); api.stepDir(-1, 0); return true; }
+          if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); api.stepDir(1, 0); return true; }
+          if (e.key === "b" || e.key === "B") { api.brew(); return true; }
+          if (e.key === "r" || e.key === "R") { api.ranging(); return true; }
+          return false;
+        },
         enter: function () {
           var g = api.pendingGroup;
           api.pendingGroup = null;
