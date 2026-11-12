@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112180244-f6a6bb4";</script>
+  <script>window.XSCAPE_BUILD = "20261112181019-1ba3749";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1995,6 +1995,7 @@
 <script src="kree-sprites.js"></script>
 <script src="stats.js"></script>
 <script src="combat.js"></script>
+<script src="items-stack.js"></script>
 <script>
 
 /* ============================================================
@@ -3848,12 +3849,20 @@ function loadProfile() {
       Profile.colossusKills = Number(raw.colossusKills) || 0;
       if (raw.colossusBestTicks != null) Profile.colossusBestTicks = raw.colossusBestTicks;
       Profile.widowBestTicks = raw.widowBestTicks || null;
-      Profile.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : [];
+      Profile.inventory = (typeof XscapeItemStack !== "undefined" && XscapeItemStack.expandItemList)
+        ? XscapeItemStack.expandItemList(raw.inventory)
+        : (Array.isArray(raw.inventory) ? raw.inventory.filter((id) => typeof id === "string") : []);
       if (raw.equipment && typeof raw.equipment === "object") {
         reclaimStrayEquipment(raw.equipment, Profile.inventory);
       }
       Profile.equipment = normalizeEquipment(raw.equipment);
-      Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
+      if (raw.bank == null) {
+        Profile.bank = migrateOwned(null, Profile.equipment, Profile.unlockedItems);
+      } else if (typeof XscapeItemStack !== "undefined" && XscapeItemStack.expandItemList) {
+        Profile.bank = XscapeItemStack.expandItemList(raw.bank);
+      } else {
+        Profile.bank = Array.isArray(raw.bank) ? raw.bank.filter((id) => typeof id === "string") : migrateOwned(null, Profile.equipment, Profile.unlockedItems);
+      }
       Profile.autocast = raw.autocast || (raw.settings && raw.settings.autocast) || null;
       if (!Profile.settings || typeof Profile.settings !== "object") Profile.settings = {};
       if (Profile.autocast) Profile.settings.autocast = Profile.autocast;

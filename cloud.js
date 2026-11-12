@@ -391,6 +391,31 @@
     return false;
   }
 
+  function itemListProvided(value) {
+    if (value == null) return false;
+    if (Array.isArray(value)) return true;
+    return typeof value === "object";
+  }
+
+  function expandHeldList(value) {
+    if (global.XscapeItemStack && typeof XscapeItemStack.expandItemList === "function") {
+      return XscapeItemStack.expandItemList(value);
+    }
+    if (!Array.isArray(value)) return [];
+    var out = [];
+    for (var i = 0; i < value.length; i++) {
+      if (typeof value[i] === "string" && value[i]) out.push(value[i]);
+    }
+    return out;
+  }
+
+  function compactHeldList(list) {
+    if (global.XscapeItemStack && typeof XscapeItemStack.compactItemList === "function") {
+      return XscapeItemStack.compactItemList(list);
+    }
+    return Array.isArray(list) ? list : [];
+  }
+
   function filterAlcoveMidsFromList(list, allowed) {
     if (!Array.isArray(list)) return list;
     var out = [];
@@ -472,8 +497,8 @@
   function snapshotHeldState(p) {
     return {
       unlockedItems: (p && Array.isArray(p.unlockedItems)) ? p.unlockedItems.slice() : [],
-      bank: (p && Array.isArray(p.bank)) ? p.bank.slice() : [],
-      inventory: (p && Array.isArray(p.inventory)) ? p.inventory.slice() : [],
+      bank: itemListProvided(p && p.bank) ? expandHeldList(p.bank) : [],
+      inventory: itemListProvided(p && p.inventory) ? expandHeldList(p.inventory) : [],
       equipment: (p && p.equipment && typeof p.equipment === "object") ? Object.assign({}, p.equipment) : {}
     };
   }
@@ -637,8 +662,8 @@
       levels: P.levels || raw.levels || {},
       equipment: (P.equipment && Object.keys(P.equipment).length ? P.equipment : null) || raw.equipment || {},
       unlockedItems: (P.unlockedItems && P.unlockedItems.length ? P.unlockedItems : null) || raw.unlockedItems || [],
-      bank: (P.bank && P.bank.length ? P.bank : null) || raw.bank || [],
-      inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : ((P.inventory && P.inventory.length ? P.inventory : null) || raw.inventory || []),
+      bank: expandHeldList((P.bank && P.bank.length ? P.bank : null) || raw.bank || []),
+      inventory: expandHeldList((funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : ((P.inventory && P.inventory.length ? P.inventory : null) || raw.inventory || [])),
       raidCompletions: P.raidCompletions || Number(raw.raidCompletions) || 0,
       raidBestTicks: P.raidBestTicks || raw.raidBestTicks || null,
       kreeKills: P.kreeKills || Number(raw.kreeKills) || 0,
@@ -706,8 +731,8 @@
     if (p.levels && typeof p.levels === "object" && Object.keys(p.levels).length) P.levels = p.levels;
     if (p.equipment && typeof p.equipment === "object" && Object.keys(p.equipment).length) P.equipment = p.equipment;
     if (Array.isArray(p.unlockedItems)) P.unlockedItems = p.unlockedItems.slice();
-    if (Array.isArray(p.bank)) P.bank = p.bank.slice();
-    if (Array.isArray(p.inventory)) P.inventory = p.inventory.slice();
+    if (itemListProvided(p.bank)) P.bank = expandHeldList(p.bank);
+    if (itemListProvided(p.inventory)) P.inventory = expandHeldList(p.inventory);
     if (global.XscapeSupplies && typeof XscapeSupplies.relayerPendingBuys === "function") {
       try { XscapeSupplies.relayerPendingBuys(opts); } catch (e) {}
     }
@@ -2857,8 +2882,8 @@
       var can = catalogCanonical(id);
       counts[can] = (counts[can] || 0) + 1;
     }
-    var inv = (state && state.inventory) || [];
-    var bank = (state && state.bank) || [];
+    var inv = expandHeldList((state && state.inventory) || []);
+    var bank = expandHeldList((state && state.bank) || []);
     var i;
     for (i = 0; i < inv.length; i++) add(inv[i]);
     for (i = 0; i < bank.length; i++) add(bank[i]);
@@ -2905,6 +2930,9 @@
         return;
       }
     }
+    // Compact only on the wire. In-memory lists and the pre-save guard stay arrays.
+    outgoing.inventory = compactHeldList(outgoing.inventory);
+    outgoing.bank = compactHeldList(outgoing.bank);
     var res = await rpc("save_player_state", {
       p_payload: outgoing
     });
@@ -2927,8 +2955,8 @@
       rememberCloudAlcoveMids(res.profile);
       if (cloudProfile) {
         if (Array.isArray(res.profile.unlockedItems)) cloudProfile.unlockedItems = res.profile.unlockedItems.slice();
-        if (Array.isArray(res.profile.bank)) cloudProfile.bank = res.profile.bank.slice();
-        if (Array.isArray(res.profile.inventory)) cloudProfile.inventory = res.profile.inventory.slice();
+        if (itemListProvided(res.profile.bank)) cloudProfile.bank = expandHeldList(res.profile.bank);
+        if (itemListProvided(res.profile.inventory)) cloudProfile.inventory = expandHeldList(res.profile.inventory);
         if (res.profile.revision != null) cloudProfile.revision = res.profile.revision;
       }
       if (global.Profile && mergeHeldState(global.Profile, res.profile)) {
@@ -3127,6 +3155,8 @@
       });
     },
     filterAlcoveMidsFromPayload: filterAlcoveMidsFromPayload,
+    compactHeldList: compactHeldList,
+    expandHeldList: expandHeldList,
     ALCOVE_MID_IDS: ALCOVE_MID_IDS,
     GLOAMHOLD_UNIQUE_IDS: GLOAMHOLD_UNIQUE_IDS,
     recordRaidClear: function (ticks, score, nonce) {

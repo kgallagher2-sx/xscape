@@ -20,6 +20,7 @@ Maps, bugs, vendors, features, `index.html` glue, `cloud.js`, and releases.
 
 - `index.html` (page shell, host glue, HUD, equipment UI, profile I/O, Jad is hosted here — see note below)
 - `cloud.js`
+- `items-stack.js` (6.2 compact/expand at the save-wire boundary; in-memory lists stay arrays)
 - `hub.js`
 - `sw.js`, `scripts/stamp-build.sh`, `version.json`, `manifest.json`, `.nojekyll`
 - `RELEASE.md`
@@ -45,6 +46,7 @@ Maps, bugs, vendors, features, `index.html` glue, `cloud.js`, and releases.
 - `supabase/add_antipoison.sql`
 - `supabase/drop_buy_supply_rate_limit.sql`
 - `supabase/bank_stack_all_items.sql`
+- `supabase/20261112_10_phase6_6_2_stackable_counts.sql`
 - `supabase/redose_potions_migrate.sql`
 - `supabase/single_use_potions_migrate.sql`
 - `supabase/player_trading.sql`
