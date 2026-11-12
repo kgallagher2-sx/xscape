@@ -47,7 +47,7 @@
     green_dhide_chaps:  { id: "green_dhide_chaps", name: "Green d'hide chaps", slot: "legs", tier: "starter", bonuses: b({ arange: 8, amagic: -10, dstab: 12, dslash: 15, dcrush: 18, dmagic: 8, drange: 17 }) },
     green_dhide_vambs:  { id: "green_dhide_vambs", name: "Green d'hide vambs", slot: "hands", tier: "starter", bonuses: b({ arange: 8, amagic: -10, dstab: 1, dslash: 2, dcrush: 2, dmagic: 2, drange: 0 }) },
     green_dhide_boots:  { id: "green_dhide_boots", name: "Green d'hide boots", slot: "feet", tier: "starter", bonuses: b({ arange: 3, dstab: 1, dslash: 1, dcrush: 2, dmagic: 0, drange: 1 }) },
-    rune_crossbow:      { id: "rune_crossbow", name: "Rune crossbow", slot: "weapon", tier: "starter", twohand: false, speed: 4, bonuses: b({ arange: 90 }) },
+    rune_crossbow:      { id: "rune_crossbow", name: "Rune crossbow", slot: "weapon", tier: "starter", twohand: false, speed: 4, range: 5, bonuses: b({ arange: 90 }) },
     mithril_bolts:      { id: "mithril_bolts", name: "Mithril bolts", slot: "ammo", tier: "starter", bonuses: b({ rstr: 40 }) },
 
     black_dhide_coif:   { id: "black_dhide_coif", name: "Black d'hide coif", slot: "head", tier: "tier2", bonuses: b({ arange: 6, amagic: -1, dstab: 6, dslash: 8, dcrush: 10, dmagic: 7, drange: 8 }) },
@@ -57,7 +57,7 @@
     black_dhide_boots:  { id: "black_dhide_boots", name: "Black d'hide boots", slot: "feet", tier: "tier2", bonuses: b({ arange: 5, dstab: 3, dslash: 3, dcrush: 3, dmagic: 2, drange: 1 }) },
     rune_bolts:         { id: "rune_bolts", name: "Rune bolts", slot: "ammo", tier: "tier2", bonuses: b({ rstr: 115 }) },
     amulet_of_glory:    { id: "amulet_of_glory", name: "Amulet of glory", slot: "neck", tier: "tier2", bonuses: b({ astab: 10, aslash: 10, acrush: 10, amagic: 10, arange: 10, dstab: 3, dslash: 3, dcrush: 3, dmagic: 3, drange: 3, str: 6 }) },
-    ashen_staff:        { id: "ashen_staff", name: "Ashen staff", slot: "weapon", tier: "shop", kind: "staff", twohand: true, speed: 5, style: "magic", bonuses: b({ amagic: 20, mdmg: 0 }) },
+    ashen_staff:        { id: "ashen_staff", name: "Ashen staff", slot: "weapon", tier: "shop", kind: "staff", twohand: true, speed: 5, range: 7, style: "magic", bonuses: b({ amagic: 20, mdmg: 0 }) },
     ashen_hood:         { id: "ashen_hood", name: "Ashen hood", slot: "head", tier: "shop", bonuses: b({ amagic: 4, dstab: 1, dslash: 1, dcrush: 1, dmagic: 6, drange: 0, mdmg: 0 }) },
     ashen_robe_top:     { id: "ashen_robe_top", name: "Ashen robe top", slot: "body", tier: "shop", bonuses: b({ amagic: 12, dstab: 2, dslash: 2, dcrush: 3, dmagic: 14, drange: 1, mdmg: 0 }) },
     ashen_robe_bottom:  { id: "ashen_robe_bottom", name: "Ashen robe bottom", slot: "legs", tier: "shop", bonuses: b({ amagic: 8, dstab: 1, dslash: 1, dcrush: 2, dmagic: 8, drange: 1, mdmg: 0 }) },
@@ -75,13 +75,13 @@
     armadyl_helmet:     { id: "armadyl_helmet", name: "Stormwing helm", slot: "head", tier: "armadyl", bonuses: b({ arange: 10, amagic: 6, dstab: 6, dslash: 8, dcrush: 10, dmagic: 7, drange: 8 }) },
     armadyl_chestplate: { id: "armadyl_chestplate", name: "Stormwing chestplate", slot: "body", tier: "armadyl", bonuses: b({ arange: 33, amagic: -8, dstab: 62, dslash: 54, dcrush: 67, dmagic: 80, drange: 57 }) },
     armadyl_chainskirt: { id: "armadyl_chainskirt", name: "Stormwing chainskirt", slot: "legs", tier: "armadyl", bonuses: b({ arange: 20, amagic: -11, dstab: 33, dslash: 26, dcrush: 39, dmagic: 43, drange: 33 }) },
-    armadyl_crossbow:   { id: "armadyl_crossbow", name: "Stormwing crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, bonuses: b({ arange: 100, rstr: 28 }) },
+    armadyl_crossbow:   { id: "armadyl_crossbow", name: "Stormwing crossbow", slot: "weapon", tier: "armadyl", twohand: false, speed: 4, range: 5, bonuses: b({ arange: 100, rstr: 28 }) },
 
     /* Widow Queen drop only — never listed in the Shop. Not unique:true (that flag blocks trading). */
     widow_weaver_hood:   { id: "widow_weaver_hood", name: "Widow Weaver hood", slot: "head", tier: "widow", kind: "widow", bonuses: b({ amagic: 10, mdmg: 2, dstab: 3, dslash: 3, dcrush: 3, dmagic: 10, drange: 2 }) },
     widow_weaver_top:    { id: "widow_weaver_top", name: "Widow Weaver robe top", slot: "body", tier: "widow", kind: "widow", bonuses: b({ amagic: 35, mdmg: 2, dstab: 6, dslash: 6, dcrush: 6, dmagic: 30, drange: 4 }) },
     widow_weaver_bottom: { id: "widow_weaver_bottom", name: "Widow Weaver robe bottom", slot: "legs", tier: "widow", kind: "widow", bonuses: b({ amagic: 22, mdmg: 2, dstab: 4, dslash: 4, dcrush: 4, dmagic: 22, drange: 2 }) },
-    widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow", twohand: false, speed: 5, magicBase: 30, style: "magic", bonuses: b({ amagic: 80, mdmg: 12, dmagic: 15 }) },
+    widow_weaver_wand:   { id: "widow_weaver_wand", name: "Widow Weaver wand", slot: "weapon", tier: "widow", kind: "widow", twohand: false, speed: 5, magicBase: 30, range: 5, style: "magic", bonuses: b({ amagic: 80, mdmg: 12, dmagic: 15 }) },
     widow_weaver_book:   { id: "widow_weaver_book", name: "Widow Weaver spellbook", slot: "shield", tier: "widow", kind: "widow", bonuses: b({ amagic: 20, mdmg: 8, dmagic: 18 }) },
 
     kingsguard_helm:    { id: "kingsguard_helm", name: "Kingsguard full helm", slot: "head", tier: "kingsguard", kind: "kingsguard", bonuses: b({ dstab: 33, dslash: 35, dcrush: 32, dmagic: -6, drange: 31, str: 1 }) },
@@ -108,13 +108,13 @@
     eclipse_coif:       { id: "eclipse_coif", name: "Eclipse coif", slot: "head", tier: "unique", bonuses: b({ amagic: 8, arange: 14, dstab: 8, dslash: 10, dcrush: 12, dmagic: 12, drange: 10 }) },
     eclipse_body:       { id: "eclipse_body", name: "Eclipse body", slot: "body", tier: "unique", bonuses: b({ amagic: -6, arange: 48, rstr: 6, dstab: 48, dslash: 48, dcrush: 52, dmagic: 57, drange: 56 }) },
     eclipse_chaps:      { id: "eclipse_chaps", name: "Eclipse chaps", slot: "legs", tier: "unique", bonuses: b({ amagic: -5, arange: 30, dstab: 28, dslash: 26, dcrush: 30, dmagic: 31, drange: 38 }) },
-    eclipse_longbow:    { id: "eclipse_longbow", name: "Eclipse longbow", slot: "weapon", tier: "unique", kind: "bow", twohand: true, speed: 5, style: "ranged", bonuses: b({ amagic: -8, arange: 120, rstr: 340 }) },
+    eclipse_longbow:    { id: "eclipse_longbow", name: "Eclipse longbow", slot: "weapon", tier: "unique", kind: "bow", twohand: true, speed: 5, range: 7, style: "ranged", bonuses: b({ amagic: -8, arange: 120, rstr: 340 }) },
     eclipse_pendant:    { id: "eclipse_pendant", name: "Eclipse pendant", slot: "neck", tier: "unique", bonuses: b({ arange: 18, rstr: 4, dstab: 6, dslash: 6, dcrush: 6, dmagic: 6, drange: 6 }) },
     eclipse_band:       { id: "eclipse_band", name: "Eclipse band", slot: "ring", tier: "unique", bonuses: b({ arange: 12, rstr: 4 }) },
     unsleeping_hood:        { id: "unsleeping_hood", name: "Unsleeping hood", slot: "head", tier: "unique", bonuses: b({ amagic: 14, mdmg: 3, dstab: 6, dslash: 6, dcrush: 6, dmagic: 16, drange: 5 }) },
     unsleeping_robe_top:    { id: "unsleeping_robe_top", name: "Unsleeping robe top", slot: "body", tier: "unique", bonuses: b({ amagic: 42, mdmg: 4, dstab: 14, dslash: 12, dcrush: 16, dmagic: 38, drange: 7 }) },
     unsleeping_robe_bottom: { id: "unsleeping_robe_bottom", name: "Unsleeping robe bottom", slot: "legs", tier: "unique", bonuses: b({ amagic: 26, mdmg: 3, dstab: 10, dslash: 8, dcrush: 12, dmagic: 28, drange: 4 }) },
-    nightfall_staff:        { id: "nightfall_staff", name: "Nightfall staff", slot: "weapon", tier: "unique", kind: "staff", twohand: true, speed: 5, magicBase: 38, style: "magic", bonuses: b({ amagic: 95, mdmg: 20 }) },
+    nightfall_staff:        { id: "nightfall_staff", name: "Nightfall staff", slot: "weapon", tier: "unique", kind: "staff", twohand: true, speed: 5, magicBase: 38, range: 7, style: "magic", bonuses: b({ amagic: 95, mdmg: 20 }) },
     unsleeping_charm:       { id: "unsleeping_charm", name: "Unsleeping charm", slot: "neck", tier: "unique", bonuses: b({ amagic: 16, mdmg: 4, dmagic: 8 }) },
     dreamless_ring:         { id: "dreamless_ring", name: "Dreamless ring", slot: "ring", tier: "unique", bonuses: b({ amagic: 10, mdmg: 3 }) },
     hollowplate_helm:   { id: "hollowplate_helm", name: "Hollowplate helm", slot: "head", tier: "unique", bonuses: b({ astab: 12, aslash: 12, acrush: 12, str: 5, dstab: 38, dslash: 40, dcrush: 36, dmagic: -5, drange: 36 }) },
@@ -132,7 +132,7 @@
     leather_chaps:      { id: "leather_chaps", name: "Leather chaps", slot: "legs", tier: "legacy", hidden: true, bonuses: b({ arange: 2, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 1 }) },
     leather_vambraces:  { id: "leather_vambraces", name: "Leather vambraces", slot: "hands", tier: "legacy", hidden: true, bonuses: b({ arange: 3, dstab: 2, dslash: 2, dcrush: 1, dmagic: 1, drange: 0 }) },
     leather_boots:      { id: "leather_boots", name: "Leather boots", slot: "feet", tier: "legacy", hidden: true, bonuses: b({ dstab: 1, dslash: 1, dcrush: 2, dmagic: 0, drange: 0 }) },
-    bronze_crossbow:    { id: "bronze_crossbow", name: "Bronze crossbow", slot: "weapon", tier: "legacy", hidden: true, twohand: false, speed: 4, bonuses: b({ arange: 16 }) },
+    bronze_crossbow:    { id: "bronze_crossbow", name: "Bronze crossbow", slot: "weapon", tier: "legacy", hidden: true, twohand: false, speed: 4, range: 5, bonuses: b({ arange: 16 }) },
     bronze_bolts:       { id: "bronze_bolts", name: "Bronze bolts", slot: "ammo", tier: "legacy", hidden: true, bonuses: b({ rstr: 14 }) }
   };
 
@@ -1286,6 +1286,266 @@
     });
   })(MONSTERS);
 
+
+  var CATCH_UP_TICKS_PER_FRAME = 10;
+  var FIGHT_ABANDON_MS = 3 * 60 * 1000;
+  var BOSS_MELEE_REACH = 1;
+
+  function tickMs() {
+    return global.TICK_MS || 600;
+  }
+  function fightElapsedMs(ticks) {
+    return (ticks || 0) * tickMs();
+  }
+  function syncElapsedFromTicks(G) {
+    if (G) G.elapsedMs = fightElapsedMs(G.ticks);
+  }
+  function clampInt(n, a, b) {
+    n = n | 0;
+    if (n < a) return a;
+    if (n > b) return b;
+    return n;
+  }
+  function chebyshev(c1, r1, c2, r2) {
+    return Math.max(Math.abs((c1 | 0) - (c2 | 0)), Math.abs((r1 | 0) - (r2 | 0)));
+  }
+  function normalizeFootprint(foot) {
+    if (!foot) return null;
+    if (foot.c0 != null) {
+      return { c0: foot.c0 | 0, c1: foot.c1 | 0, r0: foot.r0 | 0, r1: foot.r1 | 0 };
+    }
+    if (foot.col != null) {
+      var w = (foot.w || 1) | 0;
+      var h = (foot.h || 1) | 0;
+      return { c0: foot.col | 0, c1: (foot.col | 0) + w - 1, r0: foot.row | 0, r1: (foot.row | 0) + h - 1 };
+    }
+    return null;
+  }
+  function tileFoot(col, row) {
+    if (col == null) return null;
+    return { c0: col | 0, c1: col | 0, r0: (row || 0) | 0, r1: (row || 0) | 0 };
+  }
+  function inFootprint(c, r, foot) {
+    var f = normalizeFootprint(foot);
+    if (!f) return false;
+    return c >= f.c0 && c <= f.c1 && r >= f.r0 && r <= f.r1;
+  }
+  function chebyshevToFootprint(c, r, foot) {
+    var f = normalizeFootprint(foot);
+    if (!f) return 99;
+    var cc = clampInt(c, f.c0, f.c1);
+    var rr = clampInt(r, f.r0, f.r1);
+    return chebyshev(c, r, cc, rr);
+  }
+  function inReach(c, r, foot, reach) {
+    reach = reach == null ? 1 : reach;
+    return chebyshevToFootprint(c, r, foot) <= reach;
+  }
+  function bossMeleeInReach(c, r, foot, reach) {
+    return inReach(c, r, foot, reach == null ? BOSS_MELEE_REACH : reach);
+  }
+  function normItemId(id) {
+    return String(id || "").toLowerCase();
+  }
+  function looksLikeCrossbowOrWand(it, id) {
+    var kind = normItemId(it && it.kind);
+    return kind === "wand" || kind === "crossbow" || /(?:^|_|-)(?:wand)(?:$|_|-)/.test(id) || /wand/.test(id) || /xbow/.test(id) || /crossbow/.test(id);
+  }
+  function looksLikeBow(it, id) {
+    var kind = normItemId(it && it.kind);
+    if (looksLikeCrossbowOrWand(it, id)) return false;
+    return kind === "bow" || (/(?:^|_|-)bow(?:$|_|-)/.test(id) || /longbow|shortbow/.test(id));
+  }
+  function looksLikeStaff(it, id) {
+    var kind = normItemId(it && it.kind);
+    return kind === "staff" || /staff/.test(id);
+  }
+  function looksLikeHalberd(it, id) {
+    var kind = normItemId(it && it.kind);
+    return kind === "halberd" || /halberd/.test(id);
+  }
+  function weaponRangeFor(itemOrId) {
+    var it = itemOrId;
+    if (typeof itemOrId === "string") {
+      var raw = itemOrId;
+      it = (ITEMS && (ITEMS[raw] || ITEMS[raw.replace(/-/g, "_")] || ITEMS[raw.replace(/_/g, "-")])) || { id: raw };
+    }
+    if (!it) return 1;
+    var id = normItemId(it.id || itemOrId);
+    // Melee: every melee weapon is 1 tile except halberds, which are 2.
+    // Keyed on kind/id so a future halberd without a reach field still gets 2.
+    // Do not honor a stray reach/range field on other melee weapons.
+    if (looksLikeHalberd(it, id)) return 2;
+    if (looksLikeCrossbowOrWand(it, id)) return (it.range != null && isFinite(it.range)) ? (it.range | 0) : 5;
+    if (looksLikeBow(it, id)) return (it.range != null && isFinite(it.range)) ? (it.range | 0) : 7;
+    if (looksLikeStaff(it, id)) return (it.range != null && isFinite(it.range)) ? (it.range | 0) : (it.twohand ? 7 : 5);
+    if (/dart|knife|thrown|javelin|chinchompa/.test(id) || normItemId(it.kind) === "thrown") {
+      return (it.range != null && isFinite(it.range)) ? (it.range | 0) : 5;
+    }
+    return 1;
+  }
+  function equippedWeaponItem() {
+    var eq = (global.Profile && global.Profile.equipment) || {};
+    var id = eq.weapon;
+    if (typeof global.itemInSlot === "function") {
+      var slotted = global.itemInSlot("weapon");
+      if (slotted) return slotted;
+    }
+    if (id && ITEMS && (ITEMS[id] || ITEMS[String(id).replace(/-/g, "_")] || ITEMS[String(id).replace(/_/g, "-")])) {
+      return ITEMS[id] || ITEMS[String(id).replace(/-/g, "_")] || ITEMS[String(id).replace(/_/g, "-")];
+    }
+    return id ? { id: id } : null;
+  }
+  function playerWeaponRange() {
+    return weaponRangeFor(equippedWeaponItem());
+  }
+  function gridBounds(opts) {
+    opts = opts || {};
+    var T = global.TILE || { cols: 5, rows: 1 };
+    return {
+      cols: opts.cols != null ? opts.cols : (T.cols || 5),
+      rows: opts.rows != null ? opts.rows : Math.max(1, T.rows || 1)
+    };
+  }
+  function sceneFootprint() {
+    var G = global.G;
+    if (!G) return null;
+    var host = null;
+    if (G.scene === "widow") host = global.XscapeWidow;
+    else if (G.scene === "kree") host = global.XscapeKree;
+    else if (G.scene === "knight") host = global.XscapeKnight;
+    else if (G.scene === "gorehorn") host = global.XscapeGorehorn;
+    else if (G.scene === "colossus") host = global.XscapeColossus;
+    if (host && typeof host.footprint === "function") return normalizeFootprint(host.footprint());
+    if (G.scene === "widow") return { c0: 1, c1: 3, r0: 2, r1: 4 };
+    if (G.scene === "kree") return { c0: 1, c1: 3, r0: 2, r1: 4 };
+    if (G.scene === "knight" && G.knight) return tileFoot(G.knight.tileCol, G.knight.tileRow);
+    if (G.scene === "gorehorn" && G.gorehorn) return tileFoot(G.gorehorn.tileCol, G.gorehorn.tileRow);
+    if (G.scene === "colossus") return { c0: 2, c1: 2, r0: 3, r1: 3 };
+    return null;
+  }
+  function sceneIsBlocked(c, r) {
+    return inFootprint(c, r, sceneFootprint());
+  }
+  function tileBlocked(c, r, opts) {
+    opts = opts || {};
+    var g = gridBounds(opts);
+    if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return true;
+    if (typeof opts.isBlocked === "function" && opts.isBlocked(c, r)) return true;
+    return false;
+  }
+  function nearestWalkable(fromC, fromR, opts) {
+    opts = opts || {};
+    if (!tileBlocked(fromC, fromR, opts)) return { col: fromC, row: fromR };
+    var g = gridBounds(opts);
+    var best = null, bestD = 1e9;
+    for (var r = 0; r < g.rows; r++) {
+      for (var c = 0; c < g.cols; c++) {
+        if (tileBlocked(c, r, opts)) continue;
+        var d = chebyshev(fromC, fromR, c, r);
+        if (d < bestD) { bestD = d; best = { col: c, row: r }; }
+      }
+    }
+    return best;
+  }
+  function nearestTileInReach(fromC, fromR, foot, reach, opts) {
+    opts = opts || {};
+    var g = gridBounds(opts);
+    var blocked = function (c, r) {
+      if (inFootprint(c, r, foot)) return true;
+      return tileBlocked(c, r, opts);
+    };
+    var best = null, bestPd = 1e9, bestD = 1e9;
+    for (var r = 0; r < g.rows; r++) {
+      for (var c = 0; c < g.cols; c++) {
+        if (blocked(c, r)) continue;
+        var d = chebyshevToFootprint(c, r, foot);
+        if (d > reach) continue;
+        var pd = chebyshev(fromC, fromR, c, r);
+        if (pd < bestPd || (pd === bestPd && d < bestD)) {
+          bestPd = pd; bestD = d; best = { col: c, row: r };
+        }
+      }
+    }
+    return best;
+  }
+  function stepOnceToward(fromC, fromR, destC, destR, opts) {
+    opts = opts || {};
+    var dc = destC === fromC ? 0 : (destC > fromC ? 1 : -1);
+    var dr = destR === fromR ? 0 : (destR > fromR ? 1 : -1);
+    if (dc === 0 && dr === 0) return { col: fromC, row: fromR, moved: false };
+    function ok(c, r) { return !tileBlocked(c, r, opts); }
+    // Prefer the existing column-first step; if that tile is blocked, try the row.
+    if (dc !== 0 && ok(fromC + dc, fromR)) return { col: fromC + dc, row: fromR, moved: true };
+    if (dr !== 0 && ok(fromC, fromR + dr)) return { col: fromC, row: fromR + dr, moved: true };
+    return { col: fromC, row: fromR, moved: false };
+  }
+  function ensurePlayerInRange(foot) {
+    var G = global.G;
+    if (!G || !G.player) return false;
+    if (!foot) return true;
+    var reach = playerWeaponRange();
+    var pc = G.player.tileCol, pr = G.player.tileRow || 0;
+    if (inReach(pc, pr, foot, reach)) return true;
+    var dest = nearestTileInReach(pc, pr, foot, reach, {
+      isBlocked: function (c, r) { return sceneIsBlocked(c, r); }
+    });
+    if (dest && typeof global.queueMoveTo === "function") global.queueMoveTo(dest.col, dest.row);
+    return false;
+  }
+  function isFightPlaying() {
+    var G = global.G;
+    if (!G || G.mode !== "playing") return false;
+    var s = G.scene;
+    if (s === "jad" || s === "kree" || s === "widow" || s === "knight" || s === "gorehorn" || s === "colossus" || s === "raid") return true;
+    if ((s == null || s === "") && G.jad) return true;
+    return false;
+  }
+  function onFightVisibility(state) {
+    var G = global.G;
+    if (!G) return;
+    if (state === "hidden") {
+      if (!G._hiddenAt) G._hiddenAt = Date.now();
+      return;
+    }
+    if (state === "visible") {
+      var hid = G._hiddenAt;
+      G._hiddenAt = 0;
+      if (hid && isFightPlaying() && (Date.now() - hid) >= FIGHT_ABANDON_MS) {
+        if (typeof global.abandonActiveFight === "function") global.abandonActiveFight("away");
+      }
+    }
+  }
+  function consumeCatchUpTicks(acc, tickFn, cap) {
+    cap = cap == null ? CATCH_UP_TICKS_PER_FRAME : cap;
+    var ms = tickMs();
+    var n = 0;
+    while (acc >= ms && n < cap) {
+      tickFn();
+      acc -= ms;
+      n += 1;
+    }
+    return acc;
+  }
+  function advanceFightClock(ts, acc, last, tickFn) {
+    var G = global.G;
+    if (G && G._hiddenAt && typeof document !== "undefined" && document.visibilityState === "visible") {
+      onFightVisibility("visible");
+    }
+    if (!isFightPlaying()) {
+      syncElapsedFromTicks(G);
+      return { acc: 0, last: ts };
+    }
+    acc += ts - (last || ts);
+    last = ts;
+    acc = consumeCatchUpTicks(acc, function () {
+      if (G) G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
+      tickFn();
+    });
+    syncElapsedFromTicks(G);
+    return { acc: acc, last: last };
+  }
+
   var api = {
     ITEMS: ITEMS,
     MONSTERS: MONSTERS,
@@ -1340,6 +1600,33 @@
     canCast: canCast,
     consumeRunes: consumeRunes,
     tryCastSpell: tryCastSpell,
+    CATCH_UP_TICKS_PER_FRAME: CATCH_UP_TICKS_PER_FRAME,
+    FIGHT_ABANDON_MS: FIGHT_ABANDON_MS,
+    BOSS_MELEE_REACH: BOSS_MELEE_REACH,
+    chebyshev: chebyshev,
+    chebyshevToFootprint: chebyshevToFootprint,
+    inFootprint: inFootprint,
+    inReach: inReach,
+    bossMeleeInReach: bossMeleeInReach,
+    tileFoot: tileFoot,
+    looksLikeHalberd: looksLikeHalberd,
+    weaponRangeFor: weaponRangeFor,
+    playerWeaponRange: playerWeaponRange,
+    equippedWeaponItem: equippedWeaponItem,
+    sceneFootprint: sceneFootprint,
+    sceneIsBlocked: sceneIsBlocked,
+    nearestWalkable: nearestWalkable,
+    nearestTileInReach: nearestTileInReach,
+    stepOnceToward: stepOnceToward,
+    ensurePlayerInRange: ensurePlayerInRange,
+    fightElapsedMs: fightElapsedMs,
+    syncElapsedFromTicks: syncElapsedFromTicks,
+    consumeCatchUpTicks: consumeCatchUpTicks,
+    advanceFightClock: advanceFightClock,
+    isFightPlaying: isFightPlaying,
+    onFightVisibility: onFightVisibility,
+    gridBounds: gridBounds,
+    tileBlocked: tileBlocked,
     FLAGS: FLAGS,
     npcStats: npcStats,
     npcMaxHit: npcMaxHit,

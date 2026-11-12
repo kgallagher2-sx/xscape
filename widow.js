@@ -186,15 +186,25 @@
     const style = w.style;
     const p = G.player;
     if (!p) return;
+    if (style === "melee") {
+      // Instant lunge: never a ranged "red dart". Re-check adjacency on the
+      // hitting tick so stepping out during the tell is a silent whiff.
+      w.lunge = 1;
+      if (p && isAdjacent(p.tileCol, p.tileRow)) applyWidowHit("melee");
+      if (global.audio && audio.impact) audio.impact("melee");
+      w.phase = "recover";
+      w.recLeft = Math.max(1, WIDOW_SPEED - WIDOW_TEL - 1);
+      w.style = null;
+      return;
+    }
     const shot = {
       kind: style, t: 0,
-      dur: style === "melee" ? 0.12 : 0.22,
+      dur: 0.22,
       from: { x: w.x, y: w.y + 0.04 },
       to: { x: p.x, y: p.y - 0.04 },
       style: style
     };
     G.widowShots.push(shot);
-    if (style === "melee") w.lunge = 1;
     if (global.audio) {
       if (style === "mage" && audio.wind) audio.wind();
       else if (audio.impact) audio.impact(style);
@@ -209,6 +219,7 @@
     const G = g();
     const p = G.player;
     if (!p || p.hp <= 0 || G.mode !== "playing") return;
+    if (style === "melee" && !isAdjacent(p.tileCol, p.tileRow)) return;
     if (G.widowGod) {
       if (typeof global.spawnSplat === "function") spawnSplat(p.x, p.y - 0.1, 0, "blue");
       return;
@@ -438,14 +449,28 @@
     m.walkCd = (m.walkCd || 0) - 1;
     if (m.walkCd > 0) return;
     m.walkCd = every || 1;
-    const dc = destC - m.col;
-    const dr = destR - m.row;
-    if (dc === 0 && dr === 0) return;
-    if (Math.abs(dc) >= Math.abs(dr) && dc !== 0) m.col += dc > 0 ? 1 : -1;
-    else if (dr !== 0) m.row += dr > 0 ? 1 : -1;
+    const XC = global.XscapeCombat;
+    const opts = {
+      isBlocked: function (c, r) { return inFoot(c, r); }
+    };
+    if (inFoot(m.col, m.row) && XC && XC.nearestWalkable) {
+      const safe = XC.nearestWalkable(m.col, m.row, opts);
+      if (safe) { m.col = safe.col; m.row = safe.row; }
+    } else if (XC && typeof XC.stepOnceToward === "function") {
+      const step = XC.stepOnceToward(m.col, m.row, destC, destR, opts);
+      if (step.moved) { m.col = step.col; m.row = step.row; }
+    } else {
+      const dc = destC - m.col;
+      const dr = destR - m.row;
+      if (dc === 0 && dr === 0) return;
+      let nc = m.col, nr = m.row;
+      if (Math.abs(dc) >= Math.abs(dr) && dc !== 0) nc += dc > 0 ? 1 : -1;
+      else if (dr !== 0) nr += dr > 0 ? 1 : -1;
+      if (!inFoot(nc, nr)) { m.col = nc; m.row = nr; }
+    }
     const pos = (typeof global.tileCenter === "function") ? tileCenter(m.col, m.row) : { x: m.x, y: m.y };
     m.x = pos.x; m.y = pos.y;
-    m.facing = dc < 0 ? "left" : "right";
+    m.facing = destC < m.col ? "left" : "right";
   }
 
   function tickMinions() {
@@ -561,6 +586,16 @@
     if (G.player.stuckTicks > 0) return;
     const dest = currentTarget();
     if (dest.kind === "widow" && (!G.widow || G.widow.hp <= 0)) return;
+    const XC = global.XscapeCombat;
+    if (XC && typeof XC.ensurePlayerInRange === "function") {
+      let foot = FOOT;
+      if (dest.kind === "baby" || dest.kind === "skel") {
+        const pack = dest.kind === "baby" ? G.widowBabies : G.widowSkels;
+        const m = pack && pack[dest.index];
+        if (m && m.col != null) foot = { c0: m.col, c1: m.col, r0: m.row || 0, r1: m.row || 0 };
+      }
+      if (!XC.ensurePlayerInRange(foot)) return false;
+    }
     const style = playerAttackStyle();
     const isMagic = style === "magic" || style === "mage";
     let spellId = null;
@@ -857,13 +892,20 @@
     const G = g();
     if (!G) return;
     if (G.mode === "playing") {
-      G.elapsedMs = ts - (G.startMs || ts);
-      hostAcc += ts - (hostLast || ts);
-      hostLast = ts;
-      while (hostAcc >= (global.TICK_MS || 600)) {
-        G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
-        tick();
-        hostAcc -= (global.TICK_MS || 600);
+      const XC = global.XscapeCombat;
+      if (XC && typeof XC.advanceFightClock === "function") {
+        const clock = XC.advanceFightClock(ts, hostAcc, hostLast, tick);
+        hostAcc = clock.acc;
+        hostLast = clock.last;
+      } else {
+        G.elapsedMs = ts - (G.startMs || ts);
+        hostAcc += ts - (hostLast || ts);
+        hostLast = ts;
+        while (hostAcc >= (global.TICK_MS || 600)) {
+          G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
+          tick();
+          hostAcc -= (global.TICK_MS || 600);
+        }
       }
       if (typeof global.updateConsumeVisuals === "function") updateConsumeVisuals();
       if (audio && audio.ambientOn && audio.scheduleMusic) audio.scheduleMusic();
@@ -1232,6 +1274,7 @@
     startFight: startFight,
     tick: tick,
     hostFrame: hostFrame,
+    footprint: function () { return FOOT; },
     hostTick: tick,
     clickPx: clickPx,
     applyBoltHit: applyBoltHit,

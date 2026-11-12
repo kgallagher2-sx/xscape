@@ -14,6 +14,7 @@
   const TORNADO_EVERY = 9;
   const TORNADO_DELAY = 3;
   const TILE_ROWS = 5;
+  const FOOT = { c0: 1, c1: 3, r0: 2, r1: 4 };
   const SHARKS = 4;
   const POTS = 2;
   const RANGE_POTS = 1;
@@ -41,6 +42,18 @@
   let rangingCd = 0;
   let savedTileRows = 1;
   let tileOwned = false;
+
+  function inFoot(c, r) {
+    return c >= FOOT.c0 && c <= FOOT.c1 && r >= FOOT.r0 && r <= FOOT.r1;
+  }
+  function chebyshevToFoot(c, r) {
+    const cc = c < FOOT.c0 ? FOOT.c0 : (c > FOOT.c1 ? FOOT.c1 : c);
+    const rr = r < FOOT.r0 ? FOOT.r0 : (r > FOOT.r1 ? FOOT.r1 : r);
+    return Math.max(Math.abs(c - cc), Math.abs(r - rr));
+  }
+  function isAdjacent(c, r) {
+    return chebyshevToFoot(c, r) <= 1;
+  }
 
   function claimTiles() {
     if (!global.TILE || tileOwned) return;
@@ -167,6 +180,8 @@
       const s = spots[i] || spots[spots.length - 1];
       if (typeof global.tileCenter === "function") {
         const t = tileCenter(s.c, s.r);
+        G.minions[i].col = s.c;
+        G.minions[i].row = s.r;
         G.minions[i].x = t.x;
         G.minions[i].y = t.y + (s.dy || 0);
       } else {
@@ -178,8 +193,8 @@
 
   function pickStyle() {
     const G = g();
-    const col = G.player && G.player.tileCol;
-    const close = col != null && col >= 1 && col <= 3;
+    const p = G.player;
+    const close = p && isAdjacent(p.tileCol, p.tileRow);
     const r = Math.random();
     if (close && r < 0.22) return "melee";
     if (r < 0.28) return "mage";
@@ -208,10 +223,18 @@
     const style = k.style;
     const p = G.player;
     if (!p) return;
+    if (style === "melee") {
+      if (p && isAdjacent(p.tileCol, p.tileRow)) applyKreeHit("melee");
+      if (global.audio && audio.impact) audio.impact("melee");
+      k.phase = "recover";
+      k.recLeft = Math.max(1, KREE_SPEED - KREE_TEL - 1);
+      k.style = null;
+      return;
+    }
     const shot = {
       kind: style, t: 0,
-      dur: style === "melee" ? 0.08 : 0.16,
-      from: { x: k.x + (style === "range" ? (Math.random() - 0.5) * 0.08 : 0), y: k.y + (style === "melee" ? 0.08 : -0.04) },
+      dur: 0.16,
+      from: { x: k.x + (style === "range" ? (Math.random() - 0.5) * 0.08 : 0), y: k.y - 0.04 },
       to: { x: p.x, y: p.y - 0.04 },
       style: style
     };
@@ -231,6 +254,7 @@
     const G = g();
     const p = G.player;
     if (!p || p.hp <= 0 || G.mode !== "playing") return;
+    if (style === "melee" && !isAdjacent(p.tileCol, p.tileRow)) return;
     if (G.kreeGod) {
       if (typeof global.spawnSplat === "function") spawnSplat(p.x, p.y - 0.1, 0, "blue");
       return;
@@ -391,6 +415,15 @@
     if (typeof G.target === "number" && (!G.minions[G.target] || !G.minions[G.target].alive)) G.target = "kree";
     if (G.target === "kree" && (!G.kree || G.kree.hp <= 0)) return;
     const dest = currentTarget();
+    const XC = global.XscapeCombat;
+    if (XC && typeof XC.ensurePlayerInRange === "function") {
+      let foot = FOOT;
+      if (dest.kind === "minion") {
+        const m = G.minions && G.minions[dest.index];
+        if (m && m.col != null) foot = { c0: m.col, c1: m.col, r0: m.row || 0, r1: m.row || 0 };
+      }
+      if (!XC.ensurePlayerInRange(foot)) return false;
+    }
     const style = playerStyle();
     const vsStyle = vsStyleOf(style);
     const isMagic = vsStyle === "magic" || vsStyle === "mage";
@@ -656,13 +689,20 @@
     const G = g();
     if (!G) return;
     if (G.mode === "playing") {
-      G.elapsedMs = ts - (G.startMs || ts);
-      hostAcc += ts - (hostLast || ts);
-      hostLast = ts;
-      while (hostAcc >= (global.TICK_MS || 600)) {
-        G.lastTickMs = (typeof global.now === "function") ? now() : Date.now();
-        tick();
-        hostAcc -= (global.TICK_MS || 600);
+      const XC = global.XscapeCombat;
+      if (XC && typeof XC.advanceFightClock === "function") {
+        const clock = XC.advanceFightClock(ts, hostAcc, hostLast, tick);
+        hostAcc = clock.acc;
+        hostLast = clock.last;
+      } else {
+        G.elapsedMs = ts - (G.startMs || ts);
+        hostAcc += ts - (hostLast || ts);
+        hostLast = ts;
+        while (hostAcc >= (global.TICK_MS || 600)) {
+          G.lastTickMs = (typeof global.now === "function") ? now() : Date.now();
+          tick();
+          hostAcc -= (global.TICK_MS || 600);
+        }
       }
       if (typeof global.updateConsumeVisuals === "function") updateConsumeVisuals();
       updateRangeBtn();
@@ -1020,6 +1060,7 @@
     startFight: startFight,
     tick: tick,
     hostFrame: hostFrame,
+    footprint: function () { return FOOT; },
     hostTick: tick,
     clickPx: clickPx,
     applyBoltHit: applyBoltHit,

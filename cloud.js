@@ -2626,6 +2626,26 @@
     } catch (e) { return false; }
   }
 
+  function cancelPendingFightRecords() {
+    // Mid-fight abandon: drop an unconfirmed pending record so pagehide cannot
+    // submit it. A finished win already left mode !== "playing" and should flush.
+    if (pendingJad.dirty) {
+      var live = false;
+      try {
+        live = !!(global.XscapeCombat && XscapeCombat.isFightPlaying && XscapeCombat.isFightPlaying())
+          || (global.G && global.G.mode === "abandoned");
+      } catch (eC) {}
+      if (live || (global.G && global.G.mode === "abandoned")) {
+        pendingJad.dirty = false;
+        pendingJad.ticks = null;
+        pendingJad.score = null;
+        pendingJad.nonce = null;
+        pendingJad.retries = 0;
+        if (pendingJad.timer) { clearTimeout(pendingJad.timer); pendingJad.timer = null; }
+      }
+    }
+  }
+
   function queueJadRecord(local) {
     if (local && (local.gpAwarded || local.firstCape)) pendingJad.dirty = true;
     // Always mark dirty once submitScore/award has queued a record.
@@ -2693,7 +2713,16 @@
     // Only record a kill that has not yet been confirmed. Leftover ticks/score
     // after a successful payout must not trigger another record_jad_kill on
     // pagehide / reload.
-    if (pendingJad.dirty) jadRes = await flushJadRecord();
+    // Never record a kill while a fight is still in progress (reload / close
+    // mid-fight abandons: no loot, no kill). A completed win (mode !== "playing")
+    // can still flush pendingJad.dirty. Unused boss_fight_starts nonces expire.
+    var fightLive = false;
+    try {
+      fightLive = !!(global.XscapeCombat && typeof XscapeCombat.isFightPlaying === "function"
+        ? XscapeCombat.isFightPlaying()
+        : (global.G && global.G.mode === "playing"));
+    } catch (eLive) { fightLive = false; }
+    if (pendingJad.dirty && !fightLive) jadRes = await flushJadRecord();
     try { await pushState(); } catch (e) {}
     return jadRes || { ok: true };
   }
@@ -3001,6 +3030,7 @@
 
     reloadProfile: reloadProfile,
     flushSave: flushSave,
+    cancelPendingFightRecords: cancelPendingFightRecords,
     applyProfile: applyCloudProfile,
     noteRevision: function (rev) {
       var n = Number(rev);

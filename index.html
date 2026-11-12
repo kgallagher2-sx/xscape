@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112163613-b492aa6";</script>
+  <script>window.XSCAPE_BUILD = "20261112165257-94fc5ae";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2748,8 +2748,22 @@ function queueMoveTo(col, row) {
   if (!G.player || G.mode !== "playing" || G.player.hp <= 0) return false;
   if (G.player.stuckTicks > 0) return false;
   ensurePlayerTile();
-  const c = clamp(col, 0, TILE.cols - 1);
-  const r = clamp(row == null ? G.player.tileRow : row, 0, Math.max(0, TILE.rows - 1));
+  let c = clamp(col, 0, TILE.cols - 1);
+  let r = clamp(row == null ? G.player.tileRow : row, 0, Math.max(0, TILE.rows - 1));
+  const XC = window.XscapeCombat;
+  if (XC && typeof XC.inFootprint === "function" && XC.inFootprint(c, r, XC.sceneFootprint && XC.sceneFootprint())) {
+    if (G.scene === "widow") G.target = "widow";
+    else if (G.scene === "kree") G.target = "kree";
+    else if (G.scene === "knight") G.target = "knight";
+    else if (G.scene === "gorehorn") G.target = "gorehorn";
+    else if (G.scene === "colossus") G.target = "colossus";
+    const dest = XC.nearestTileInReach(G.player.tileCol, G.player.tileRow, XC.sceneFootprint(), XC.playerWeaponRange(), {
+      isBlocked: function (cc, rr) { return XC.sceneIsBlocked(cc, rr); }
+    });
+    if (!dest) return false;
+    c = dest.col;
+    r = dest.row;
+  }
   if (c === G.player.tileCol && r === G.player.tileRow && G.player.destCol == null) return false;
   G.player.destCol = c;
   G.player.destRow = r;
@@ -2784,8 +2798,24 @@ function processMovement() {
     return false;
   }
   ensurePlayerTile();
-  const destC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
-  const destR = (G.player.destRow != null) ? G.player.destRow : G.player.tileRow;
+  const XC = window.XscapeCombat;
+  const blockedOpts = {
+    isBlocked: function (c, r) { return XC && XC.sceneIsBlocked && XC.sceneIsBlocked(c, r); }
+  };
+  if (XC && XC.inFootprint && XC.inFootprint(G.player.tileCol, G.player.tileRow, XC.sceneFootprint && XC.sceneFootprint())) {
+    const safe = XC.nearestWalkable(G.player.tileCol, G.player.tileRow, blockedOpts);
+    if (safe) {
+      G.player.tileCol = safe.col;
+      G.player.tileRow = safe.row;
+    }
+  }
+  let destC = (G.player.destCol != null) ? G.player.destCol : G.player.tileCol;
+  let destR = (G.player.destRow != null) ? G.player.destRow : G.player.tileRow;
+  if (XC && XC.sceneIsBlocked && XC.sceneIsBlocked(destC, destR)) {
+    const dest = XC.nearestTileInReach(G.player.tileCol, G.player.tileRow, XC.sceneFootprint(), XC.playerWeaponRange ? XC.playerWeaponRange() : 1, blockedOpts);
+    if (dest) { destC = dest.col; destR = dest.row; G.player.destCol = dest.col; G.player.destRow = dest.row; }
+    else { G.player.destCol = null; G.player.destRow = null; destC = G.player.tileCol; destR = G.player.tileRow; }
+  }
   if (destC === G.player.tileCol && destR === G.player.tileRow) {
     G.player.movedThisTick = false;
     G.player.prevCol = G.player.tileCol;
@@ -2797,13 +2827,23 @@ function processMovement() {
   G.player.prevCol = G.player.tileCol;
   G.player.prevRow = G.player.tileRow;
   let remaining = G.running ? 2 : 1;
-  const dc = destC - G.player.tileCol;
-  const stepC = Math.min(remaining, Math.abs(dc)) * (dc > 0 ? 1 : dc < 0 ? -1 : 0);
-  G.player.tileCol = clamp(G.player.tileCol + stepC, 0, TILE.cols - 1);
-  remaining -= Math.abs(stepC);
-  const dr = destR - G.player.tileRow;
-  const stepR = Math.min(remaining, Math.abs(dr)) * (dr > 0 ? 1 : dr < 0 ? -1 : 0);
-  G.player.tileRow = clamp(G.player.tileRow + stepR, 0, Math.max(0, TILE.rows - 1));
+  if (XC && typeof XC.stepOnceToward === "function") {
+    while (remaining > 0) {
+      const step = XC.stepOnceToward(G.player.tileCol, G.player.tileRow, destC, destR, blockedOpts);
+      if (!step.moved) break;
+      G.player.tileCol = step.col;
+      G.player.tileRow = step.row;
+      remaining--;
+    }
+  } else {
+    const dc = destC - G.player.tileCol;
+    const stepC = Math.min(remaining, Math.abs(dc)) * (dc > 0 ? 1 : dc < 0 ? -1 : 0);
+    G.player.tileCol = clamp(G.player.tileCol + stepC, 0, TILE.cols - 1);
+    remaining -= Math.abs(stepC);
+    const dr = destR - G.player.tileRow;
+    const stepR = Math.min(remaining, Math.abs(dr)) * (dr > 0 ? 1 : dr < 0 ? -1 : 0);
+    G.player.tileRow = clamp(G.player.tileRow + stepR, 0, Math.max(0, TILE.rows - 1));
+  }
   G.player.movedThisTick = (G.player.tileCol !== G.player.prevCol) || (G.player.tileRow !== G.player.prevRow);
   if (G.player.tileCol === destC && G.player.tileRow === destR) {
     G.player.destCol = null;
@@ -4982,6 +5022,11 @@ function playerAttack() {
     G.target = "jad";
   }
   const dest = boltTarget();
+  const XC = window.XscapeCombat;
+  if (XC && typeof XC.ensurePlayerInRange === "function" && dest && dest.kind !== "healer") {
+    // Jad stands behind the single floor row; range is column distance to center (col 2). No floor footprint.
+    if (!XC.ensurePlayerInRange({ c0: 2, c1: 2, r0: 0, r1: 0 })) return false;
+  }
   const monId = dest.kind === "healer" ? "healer" : "tztok-jad";
   const style = (typeof playerStyle === "function") ? playerStyle() : "ranged";
   const vsStyle = (style === "ranged" || style === "range") ? "ranged"
@@ -6381,13 +6426,20 @@ function frame(ts) {
   }
 
   if (G.mode === "playing") {
-    G.elapsedMs = ts - G.startMs;
-    acc += ts - (G._last || ts);
-    G._last = ts;
-    while (acc >= TICK_MS) {
-      G.lastTickMs = now();
-      gameTick();
-      acc -= TICK_MS;
+    const XC = window.XscapeCombat;
+    if (XC && typeof XC.advanceFightClock === "function") {
+      const clock = XC.advanceFightClock(ts, acc, G._last || ts, gameTick);
+      acc = clock.acc;
+      G._last = clock.last;
+    } else {
+      G.elapsedMs = ts - G.startMs;
+      acc += ts - (G._last || ts);
+      G._last = ts;
+      while (acc >= TICK_MS) {
+        G.lastTickMs = now();
+        gameTick();
+        acc -= TICK_MS;
+      }
     }
     updateConsumeVisuals();
     if (audio.ambientOn) audio.scheduleMusic();
@@ -8531,6 +8583,20 @@ if (navigator.serviceWorker) {
 /* ----- Force-update: compare embedded BUILD to version.json ----- */
 var _update = { pending: null, checking: false, lastCheck: 0, reloading: false };
 
+function abandonActiveFight(reason) {
+  const XC = window.XscapeCombat;
+  const playing = XC && typeof XC.isFightPlaying === "function" ? XC.isFightPlaying() : (G && G.mode === "playing");
+  if (!playing) return false;
+  G.mode = "abandoned";
+  G._hiddenAt = 0;
+  if (window.XscapeCloud && typeof XscapeCloud.cancelPendingFightRecords === "function") {
+    try { XscapeCloud.cancelPendingFightRecords(); } catch (e) {}
+  }
+  if (typeof flashMsg === "function") flashMsg("Fight abandoned — no loot, no kill", "#c0c0c0");
+  if (typeof enterScene === "function") enterScene("hub");
+  return true;
+}
+
 function isMidFight() {
   var app = document.getElementById("app");
   if (app && app.classList.contains("fight-world")) return true;
@@ -8734,6 +8800,9 @@ window.shortBuildLabel = shortBuildLabel;
     }
   }, 4000);
   document.addEventListener("visibilitychange", function () {
+    if (window.XscapeCombat && typeof XscapeCombat.onFightVisibility === "function") {
+      XscapeCombat.onFightVisibility(document.visibilityState);
+    }
     if (document.visibilityState === "visible") checkXscapeVersion();
   });
   window.addEventListener("pageshow", function () { checkXscapeVersion(); });

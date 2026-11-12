@@ -411,6 +411,15 @@
     const G = g();
     if (!G.player || G.player.hp <= 0) return;
     const style = playerStyle();
+    const XC0 = global.XscapeCombat;
+    if (XC0 && typeof XC0.ensurePlayerInRange === "function") {
+      let foot = { c0: COLO_TILE_COL, c1: COLO_TILE_COL, r0: COLO_TILE_ROW, r1: COLO_TILE_ROW };
+      if (G.target && typeof G.target === "number" && G.colossusEels[G.target] && G.colossusEels[G.target].alive) {
+        const eel = G.colossusEels[G.target];
+        foot = { c0: eel.c, c1: eel.c, r0: eel.r, r1: eel.r };
+      }
+      if (foot && !XC0.ensurePlayerInRange(foot)) return false;
+    }
 
     const isMagic = style === "mage" || style === "magic";
     let spellId = null;
@@ -674,13 +683,20 @@
     const G = g();
     if (!G) return;
     if (G.mode === "playing" && !G.colossusFrozen) {
-      G.elapsedMs = ts - (G.startMs || ts);
-      hostAcc += ts - (hostLast || ts);
-      hostLast = ts;
-      while (hostAcc >= (global.TICK_MS || 600)) {
-        G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
-        tick();
-        hostAcc -= (global.TICK_MS || 600);
+      const XC = global.XscapeCombat;
+      if (XC && typeof XC.advanceFightClock === "function") {
+        const clock = XC.advanceFightClock(ts, hostAcc, hostLast, tick);
+        hostAcc = clock.acc;
+        hostLast = clock.last;
+      } else {
+        G.elapsedMs = ts - (G.startMs || ts);
+        hostAcc += ts - (hostLast || ts);
+        hostLast = ts;
+        while (hostAcc >= (global.TICK_MS || 600)) {
+          G.lastTickMs = (typeof global.now === "function") ? global.now() : Date.now();
+          tick();
+          hostAcc -= (global.TICK_MS || 600);
+        }
       }
       if (typeof global.updateConsumeVisuals === "function") updateConsumeVisuals();
       if (audio() && audio().ambientOn && audio().scheduleMusic) audio().scheduleMusic();
@@ -1012,6 +1028,7 @@
     startFight: startFight,
     tick: tick,
     hostFrame: hostFrame,
+    footprint: function () { return { c0: COLO_TILE_COL, c1: COLO_TILE_COL, r0: COLO_TILE_ROW, r1: COLO_TILE_ROW }; },
     hostTick: tick,
     clickPx: clickPx,
     applyBoltHit: applyBoltHit,

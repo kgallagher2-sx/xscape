@@ -84,6 +84,10 @@
     "ranging-potion": { id: "ranging-potion", name: "Ranging potion", slot: "inventory", stackable: true }
   };
 
+  RAID_ITEMS["worn-xbow"].range = 5;
+  RAID_ITEMS["tempered-xbow"].range = 5;
+  RAID_ITEMS["hollowbolt-xbow"].range = 5;
+
   const STARTER_LOADOUT = { weapon: "worn-xbow", body: "patched-body", legs: "patched-chaps", hands: "patched-vambs", boots: "starter-boots", neck: null, cape: null };
   const MID_LOADOUT = { weapon: "tempered-xbow", body: "duskhide-body", legs: "duskhide-chaps", hands: "duskhide-vambs", boots: "starter-boots", neck: null, cape: null };
   const BEST_LOADOUT = { weapon: "hollowbolt-xbow", body: "veilhide-body", legs: "veilhide-chaps", hands: "veilhide-vambs", boots: "crownshard-boots", neck: "unsleeping-stole", cape: "gloamheart-cape" };
@@ -224,7 +228,7 @@
     return RAID_ITEMS[id] || null;
   }
   const HOST_RAID_ITEMS = {
-    hollowbolt_xbow: { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", twohand: false, speed: 4, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:105, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:100, mdmg:0 } },
+    hollowbolt_xbow: { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", twohand: false, speed: 4, range: 5, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:105, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:100, mdmg:0 } },
     hollow_bolts: { id: "hollow_bolts", name: "Hollow bolts", slot: "ammo", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:0, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:140, mdmg:0 } },
     veilhide_body: { id: "veilhide_body", name: "Veilhide body", slot: "body", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:-8,arange:42, dstab:40,dslash:40,dcrush:44,dmagic:30,drange:50, str:0, rstr:4, mdmg:0 } },
     veilhide_chaps: { id: "veilhide_chaps", name: "Veilhide chaps", slot: "legs", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:-6,arange:25, dstab:22,dslash:20,dcrush:24,dmagic:16,drange:32, str:0, rstr:0, mdmg:0 } },
@@ -233,7 +237,7 @@
     unsleeping_stole: { id: "unsleeping_stole", name: "Unsleeping stole", slot: "neck", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:4,dslash:4,dcrush:4,dmagic:4,drange:4, str:0, rstr:0, mdmg:0 } },
     gloamheart_cape: { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:10,dslash:10,dcrush:10,dmagic:8,drange:16, str:0, rstr:6, mdmg:0 } },
     /* Mid-tier alcove ids match midPool() (hyphens). Stats match RAID_ITEMS. */
-    "tempered-xbow": { id: "tempered-xbow", name: "Tempered crossbow", slot: "weapon", tier: "mid", twohand: false, speed: 4, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:50, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:40, mdmg:0 } },
+    "tempered-xbow": { id: "tempered-xbow", name: "Tempered crossbow", slot: "weapon", tier: "mid", twohand: false, speed: 4, range: 5, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:50, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:40, mdmg:0 } },
     "duskhide-body": { id: "duskhide-body", name: "Duskhide body", slot: "body", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:8, dstab:20,dslash:18,dcrush:22,dmagic:8,drange:30, str:0, rstr:0, mdmg:0 } },
     "duskhide-chaps": { id: "duskhide-chaps", name: "Duskhide chaps", slot: "legs", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:-2,arange:4, dstab:10,dslash:10,dcrush:10,dmagic:4,drange:16, str:0, rstr:0, mdmg:0 } },
     "duskhide-vambs": { id: "duskhide-vambs", name: "Duskhide vambraces", slot: "hands", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:6, dstab:2,dslash:2,dcrush:2,dmagic:1,drange:2, str:0, rstr:0, mdmg:0 } }
@@ -1633,13 +1637,20 @@
     };
   }
   function meleeReachFor(eq) {
+    var XC = global.XscapeCombat;
     var it = getItem(eq && eq.weapon);
+    if (XC && typeof XC.weaponRangeFor === "function") return XC.weaponRangeFor(it || (eq && eq.weapon));
+    if (it && it.range != null) return Math.max(1, it.range | 0);
     if (it && it.reach != null) return Math.max(1, it.reach | 0);
     return 1;
   }
   function inMeleeReach(st, t, reach) {
     var tt = targetTile(t);
-    return tileManhattan(st.player.col, st.player.row, tt.col, tt.row) <= reach;
+    var XC = global.XscapeCombat;
+    if (XC && typeof XC.inReach === "function") {
+      return XC.inReach(st.player.col, st.player.row || 0, { c0: tt.col, c1: tt.col, r0: tt.row, r1: tt.row }, reach);
+    }
+    return Math.max(Math.abs(st.player.col - tt.col), Math.abs((st.player.row || 0) - tt.row)) <= reach;
   }
   function raidViewSize(W, H) {
     if (W > 0 && H > 0) return { w: W, h: H };
@@ -1715,14 +1726,26 @@
     if (!st || !st.player) return;
     if (st._holdPosition) return;
     var tt = targetTile(t);
-    var bestC = null, bestR = null, bestPd = 99, bestD = 99;
-    for (var r = 0; r < ROWS; r++) {
-      for (var c = 0; c < COLS; c++) {
-        var d = tileManhattan(c, r, tt.col, tt.row);
-        if (d > reach) continue;
-        var pd = tileManhattan(st.player.col, st.player.row, c, r);
-        if (pd < bestPd || (pd === bestPd && d < bestD)) {
-          bestPd = pd; bestD = d; bestC = c; bestR = r;
+    var foot = { c0: tt.col, c1: tt.col, r0: tt.row, r1: tt.row };
+    var XC = global.XscapeCombat;
+    var bestC = null, bestR = null;
+    if (XC && typeof XC.nearestTileInReach === "function") {
+      var dest = XC.nearestTileInReach(st.player.col, st.player.row || 0, foot, reach, {
+        cols: COLS, rows: ROWS,
+        isBlocked: function (c, r) { return raidAvoid(st, c, r); }
+      });
+      if (dest) { bestC = dest.col; bestR = dest.row; }
+    } else {
+      var bestPd = 99, bestD = 99;
+      for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+          if (raidAvoid(st, c, r)) continue;
+          var d = Math.max(Math.abs(c - tt.col), Math.abs(r - tt.row));
+          if (d > reach) continue;
+          var pd = Math.max(Math.abs(st.player.col - c), Math.abs((st.player.row || 0) - r));
+          if (pd < bestPd || (pd === bestPd && d < bestD)) {
+            bestPd = pd; bestD = d; bestC = c; bestR = r;
+          }
         }
       }
     }
@@ -1740,17 +1763,15 @@
     const vsStyle = vsStyleOf(style);
     const isMagic = vsStyle === "magic" || vsStyle === "mage";
     const isMelee = !isMagic && vsStyle !== "ranged";
-    if (isMelee) {
-      var reach = meleeReachFor(eq);
-      if (!inMeleeReach(st, t, reach)) {
-        if (!st._tooFarAt || (st.ticks - st._tooFarAt) >= 8) {
-          st._tooFarAt = st.ticks || 0;
-          flash(st, "Too far", "#ff8a70");
-        }
-        if (!st.player.path || !st.player.path.length) pathTowardReach(st, t, reach);
-        syncRaidDebugTile(st);
-        return;
+    var reach = meleeReachFor(eq);
+    if (!inMeleeReach(st, t, reach)) {
+      if (!st._tooFarAt || (st.ticks - st._tooFarAt) >= 8) {
+        st._tooFarAt = st.ticks || 0;
+        flash(st, "Too far", "#ff8a70");
       }
+      if (!st.player.path || !st.player.path.length) pathTowardReach(st, t, reach);
+      syncRaidDebugTile(st);
+      return;
     }
     var spellId = null;
     if (isMagic) {
@@ -1924,7 +1945,7 @@
       a.life = (a.life || 0) + 1;
       if (a.life % 2 === 0) {
         const prey = nearestFighter(st, a.col, a.row) || st.player;
-        const path = bfsPath(a.col, a.row, prey.col, prey.row);
+        const path = bfsPath(a.col, a.row, prey.col, prey.row, function (c, r) { return raidAvoid(st, c, r); });
         if (path.length) { a.col = path[0].c; a.row = path[0].r; }
       }
       const prey2 = nearestFighter(st, a.col, a.row) || st.player;
@@ -1981,6 +2002,12 @@
       b.telLeft--;
       if (b.telLeft <= 0) {
         const hitOne = function () {
+          if (b.style === "melee") {
+            const pc = st.player && st.player.col;
+            const pr = (st.player && st.player.row) || 0;
+            const d = Math.max(Math.abs(pc - b.col), Math.abs(pr - (b.row || 0)));
+            if (d > 1) return;
+          }
           const prot = st.prayer === b.style;
           const dmg = rollBossHit(st.rng, cfg.maxHit, cfg.accuracy, prot, st.god);
           if (prot) {
@@ -2558,11 +2585,28 @@
     sendRaidInput(st, { prayer: st.prayer });
     if (host && host.updatePrayer) host.updatePrayer(st.prayer);
   }
+  function raidBossFoot(st) {
+    if (st && st.boss && st.boss.hp > 0 && st.boss.col != null) {
+      return { c0: st.boss.col, c1: st.boss.col, r0: st.boss.row || 0, r1: st.boss.row || 0 };
+    }
+    return null;
+  }
+  function raidAvoid(st, c, r) {
+    if (gateAvoid(st, c, r)) return true;
+    const b = st && st.boss;
+    if (b && b.hp > 0 && c === b.col && r === (b.row || 0)) return true;
+    return false;
+  }
   function clickTile(st, col, row) {
     if (st.mode !== "playing") return;
     if (!inBounds(col, row)) return;
     const add = st.adds.find(function (a) { return a.hp > 0 && a.col === col && a.row === row; });
     if (add) { st.target = { kind: "add", id: add.id }; return; }
+    if (st.boss && st.boss.hp > 0 && col === st.boss.col && row === (st.boss.row || 0)) {
+      st.target = { kind: "boss" };
+      pathTowardReach(st, currentTarget(st), meleeReachFor(fighterGear(st.player)));
+      return;
+    }
     st.player.path = pathTo(st, col, row);
     sendRaidInput(st, { destCol: col, destRow: row, target: st.target });
   }
@@ -2576,10 +2620,21 @@
     return false;
   }
   function pathTo(st, col, row) {
-    const av = function (c, r) { return gateAvoid(st, c, r); };
+    if (raidAvoid(st, col, row)) {
+      const XC = global.XscapeCombat;
+      const foot = raidBossFoot(st);
+      if (foot && XC && XC.nearestWalkable) {
+        const safe = XC.nearestWalkable(col, row, {
+          cols: COLS, rows: ROWS,
+          isBlocked: function (c, r) { return raidAvoid(st, c, r); }
+        });
+        if (safe) { col = safe.col; row = safe.row; }
+      }
+    }
+    const av = function (c, r) { return raidAvoid(st, c, r); };
     const p1 = bfsPath(st.player.col, st.player.row, col, row, av);
     if (p1.length || (st.player.col === col && st.player.row === row)) return p1;
-    return bfsPath(st.player.col, st.player.row, col, row);
+    return bfsPath(st.player.col, st.player.row, col, row, av);
   }
   function stepDir(st, dc, dr) {
     if (st.mode !== "playing") return;
@@ -2924,9 +2979,17 @@
     const dt = Math.min(0.05, (ts - lastTs) / 1000);
     lastTs = ts;
     if (R && R.mode === "playing" && !briefPause) {
-      R.elapsedMs = ts - R.startMs;
-      acc += dt * 1000;
-      while (acc >= TICK_MS) { tickLive(); acc -= TICK_MS; }
+      var XC = global.XscapeCombat;
+      if (XC && typeof XC.consumeCatchUpTicks === "function") {
+        acc += ts - (R._tickLast || ts);
+        R._tickLast = ts;
+        acc = XC.consumeCatchUpTicks(acc, tickLive);
+        if (R.ticks != null) R.elapsedMs = XC.fightElapsedMs(R.ticks);
+      } else {
+        R.elapsedMs = ts - R.startMs;
+        acc += dt * 1000;
+        while (acc >= TICK_MS) { tickLive(); acc -= TICK_MS; }
+      }
     }
     try { raidAudio.schedule(); } catch (e) {}
     if (host && host.draw) host.draw(R, ts);
@@ -3936,6 +3999,19 @@
     syncRaidCombatFacing(R);
   }
   let hostAcc = 0, hostLast = 0;
+  function raidAdvanceTicks(ts, tickFn) {
+    var XC = global.XscapeCombat;
+    if (XC && typeof XC.consumeCatchUpTicks === "function") {
+      hostAcc += ts - (R._tickLast || ts);
+      R._tickLast = ts;
+      hostAcc = XC.consumeCatchUpTicks(hostAcc, tickFn);
+      if (R.ticks != null) R.elapsedMs = XC.fightElapsedMs(R.ticks);
+    } else {
+      hostAcc += Math.min(50, ts - (R._tickLast || ts));
+      R._tickLast = ts;
+      while (hostAcc >= TICK_MS) { tickFn(); hostAcc -= TICK_MS; }
+    }
+  }
   function hostFrame(ts, ctx, W, H, dpr) {
     if (!R) return;
     if (!hostLast) hostLast = ts;
@@ -3946,12 +4022,14 @@
       var locked = !!(R.group && cloud && cloud.clockReady && cloud.clockReady() && R.group.isLeader);
       var guest = !!(R.group && !R.group.isLeader);
       if (!locked && !guest) {
-        hostAcc += dt * 1000;
-        while (hostAcc >= TICK_MS) { hostTick(); hostAcc -= TICK_MS; }
+        raidAdvanceTicks(ts, hostTick);
       } else if (R.group && R.group.isLeader && !(cloud && cloud.clockReady && cloud.clockReady())) {
-        hostAcc += dt * 1000;
-        while (hostAcc >= TICK_MS) { hostTick(); hostAcc -= TICK_MS; }
+        raidAdvanceTicks(ts, hostTick);
+      } else {
+        R._tickLast = ts;
       }
+    } else {
+      if (R) R._tickLast = ts;
     }
     try { raidAudio.schedule(); } catch (e) {}
     if (ctx) {
