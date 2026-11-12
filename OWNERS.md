@@ -47,6 +47,7 @@ Maps, bugs, vendors, features, `index.html` glue, `cloud.js`, and releases.
 - `supabase/drop_buy_supply_rate_limit.sql`
 - `supabase/bank_stack_all_items.sql`
 - `supabase/20261112_10_phase6_6_2_stackable_counts.sql`
+- `supabase/20261112_12_stackable_inventory_slots.sql`
 - `supabase/redose_potions_migrate.sql`
 - `supabase/single_use_potions_migrate.sql`
 - `supabase/player_trading.sql`

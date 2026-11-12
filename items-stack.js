@@ -74,7 +74,62 @@
     return out;
   }
 
-  var api = { compactItemList: compactItemList, expandItemList: expandItemList };
+
+  /* Runes, ammo (bolts/arrows), and coins stack. Food, potions, and worn
+     gear do not, even if a fallback table (e.g. raid.js RAID_ITEMS) marks
+     a shark or potion as stackable. */
+  function isStackableItem(id) {
+    if (!id || typeof id !== "string") return false;
+    if (id === "coins" || id === "gp") return true;
+    if (/_rune$/.test(id)) return true;
+    if (/(_bolts|_arrows?)$/.test(id)) return true;
+    if (/^(swordfish|shark|dark_crab)$/.test(id)) return false;
+    if (/(potion|brew|antipoison)/.test(id)) return false;
+    var it = (global.ITEMS && global.ITEMS[id]) || null;
+    if (it) {
+      var kind = it.kind || "";
+      if (kind === "food" || kind === "potion") return false;
+      if (it.slot && it.slot !== "inventory" && it.slot !== "ammo") return false;
+      if (kind === "rune" || kind === "ammo" || it.slot === "ammo") return true;
+      if (it.stackable) {
+        if (it.consumable && kind !== "rune" && it.slot !== "ammo") return false;
+        return true;
+      }
+    }
+    if (global.XscapeCombat && typeof global.XscapeCombat.isRuneId === "function" && global.XscapeCombat.isRuneId(id)) {
+      return true;
+    }
+    return false;
+  }
+
+  /* Keep stackable copies contiguous at first seen order. Non-stackables stay put. */
+  function groupStackablesInList(list) {
+    if (!Array.isArray(list)) return [];
+    var counts = {};
+    var i, id;
+    for (i = 0; i < list.length; i++) {
+      id = list[i];
+      if (typeof id !== "string" || !id) continue;
+      if (!isStackableItem(id)) continue;
+      counts[id] = (counts[id] || 0) + 1;
+    }
+    var out = [];
+    var emitted = {};
+    for (i = 0; i < list.length; i++) {
+      id = list[i];
+      if (typeof id !== "string" || !id) continue;
+      if (!isStackableItem(id)) {
+        out.push(id);
+        continue;
+      }
+      if (emitted[id]) continue;
+      emitted[id] = true;
+      for (var n = 0; n < counts[id]; n++) out.push(id);
+    }
+    return out;
+  }
+
+  var api = { compactItemList: compactItemList, expandItemList: expandItemList, isStackableItem: isStackableItem, groupStackablesInList: groupStackablesInList };
   global.XscapeItemStack = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : this);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112181019-1ba3749";</script>
+  <script>window.XSCAPE_BUILD = "20261112182303-f706091";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1613,7 +1613,7 @@
             <button type="button" class="btn secondary" data-bank-qty="x">X</button>
             <button type="button" class="btn secondary" data-bank-qty="all">All</button>
           </div>
-          <p class="lead" style="margin-top:10px">Choose 1, 5, 10, X, or All, then tap a bank item to withdraw or an inventory item to deposit. Everything stacks in the bank (potions stack by dose). Unstackables take one inventory slot each.</p>
+          <p class="lead" style="margin-top:10px">Choose 1, 5, 10, X, or All, then tap a bank item to withdraw or an inventory item to deposit. Everything stacks in the bank (potions stack by dose). In the inventory, runes, bolts, and other stackables share one slot; food, potions, and gear take one slot each.</p>
         </div>
         <div class="sheet-actions" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn secondary" type="button" data-deposit-all>Deposit inventory</button>
@@ -2208,6 +2208,13 @@ function isRuneItem(id) {
   return /_rune$/.test(String(id));
 }
 
+function isStackableItem(id) {
+  if (window.XscapeItemStack && typeof XscapeItemStack.isStackableItem === "function") {
+    return !!XscapeItemStack.isStackableItem(id);
+  }
+  return isRuneItem(id) || id === "coins" || id === "gp" || /(_bolts|_arrows?)$/.test(String(id || ""));
+}
+
 function runeItemName(id) {
   const combat = window.XscapeCombat;
   const rec = combat && combat.RUNES && combat.RUNES[id];
@@ -2231,7 +2238,7 @@ function inventoryHas(id) {
   return (Profile.inventory || []).indexOf(id) !== -1;
 }
 
-/* Each rune type occupies one of the 28 inventory slots, matching supplies.js. */
+/* Each stackable id (runes, bolts/arrows, coins) occupies one of the 28 inventory slots. Food, potions, and gear still take one slot per copy. */
 function uniqueInventorySlots(arr) {
   const list = arr || Profile.inventory || [];
   const seen = {};
@@ -2241,7 +2248,7 @@ function uniqueInventorySlots(arr) {
     if (!id) continue;
     const it = ITEMS[id];
     if (it && itemIsHidden(it)) continue;
-    if (isRuneItem(id)) {
+    if (isStackableItem(id)) {
       if (seen[id]) continue;
       seen[id] = true;
     }
@@ -2254,20 +2261,20 @@ function inventorySpace() {
   return Math.max(0, INVENTORY_CAP - uniqueInventorySlots());
 }
 
-/* Visual slots for inventory overlays: collapse rune copies into one cell with a qty badge. */
+/* Visual slots for inventory overlays: collapse stackable copies into one cell with a qty badge. Food, potions, and gear stay one cell each. */
 function inventoryDisplaySlots(arr) {
   const list = arr || inventoryList();
   const out = [];
-  const runeAt = {};
+  const stackAt = {};
   for (let i = 0; i < list.length; i++) {
     const id = list[i];
     if (!id) continue;
-    if (isRuneItem(id)) {
-      if (runeAt[id] != null) {
-        out[runeAt[id]].qty++;
+    if (isStackableItem(id)) {
+      if (stackAt[id] != null) {
+        out[stackAt[id]].qty++;
         continue;
       }
-      runeAt[id] = out.length;
+      stackAt[id] = out.length;
       out.push({ id: id, qty: 1 });
     } else {
       out.push({ id: id, qty: 1 });
@@ -2321,9 +2328,17 @@ function bankSpace() {
 function addToInventory(id) {
   if (!id) return false;
   if (!Profile.inventory) Profile.inventory = [];
-  const needsSlot = (isRuneItem(id) && inventoryHas(id)) ? 0 : 1;
+  const stackable = isStackableItem(id);
+  const needsSlot = (stackable && inventoryHas(id)) ? 0 : 1;
   if (needsSlot && uniqueInventorySlots() >= INVENTORY_CAP) return false;
-  Profile.inventory.push(id);
+  if (stackable && inventoryHas(id)) {
+    const inv = Profile.inventory;
+    let last = -1;
+    for (let i = 0; i < inv.length; i++) if (inv[i] === id) last = i;
+    inv.splice(last + 1, 0, id);
+  } else {
+    Profile.inventory.push(id);
+  }
   return true;
 }
 
@@ -2446,7 +2461,9 @@ function normalizeContainers() {
     // "gear decreased" to the 1.2 server check.
     inv.push(id);
   });
-  Profile.inventory = inv;
+  Profile.inventory = (window.XscapeItemStack && typeof XscapeItemStack.groupStackablesInList === "function")
+    ? XscapeItemStack.groupStackablesInList(inv)
+    : inv;
   const counts = {};
   const order = [];
   (Profile.bank || []).forEach((id) => {
@@ -2494,11 +2511,13 @@ function depositItem(id, silent, qty) {
 function withdrawItem(id, silent, qty) {
   const have = bankCount(id);
   if (have < 1) return 0;
+  const alreadyStacked = isStackableItem(id) && inventoryHas(id);
   const space = inventorySpace();
-  if (space < 1) return 0;
+  if (!alreadyStacked && space < 1) return 0;
   let want = (qty == null || qty === "all") ? have : Math.floor(Number(qty) || 0);
   if (want < 1) return 0;
-  want = Math.min(want, have, space);
+  want = Math.min(want, have);
+  if (!alreadyStacked && !isStackableItem(id)) want = Math.min(want, space);
   let n = 0;
   for (let i = 0; i < want; i++) {
     if (!addToInventory(id)) break;
@@ -3335,13 +3354,17 @@ function renderEquipPicker() {
     const name = it ? it.name : id;
     const two = (it && it.twohand) ? '<span class="tier"> · Two-handed</span>' : "";
     const klass = "slot-btn" + (it ? " " + gearTierClass(it.tier) : "");
-    return '<button type="button" class="' + klass + '" data-inv-item="' + id + '" data-item-id="' + id + '" title="' + name + '">' +
+    const qty = (typeof inventoryCount === "function") ? inventoryCount(id) : 1;
+    const title = name + (qty > 1 ? (" ×" + qty) : "");
+    return '<button type="button" class="' + klass + '" data-inv-item="' + id + '" data-item-id="' + id + '" data-qty="' + qty + '" title="' + title + '">' +
       '<canvas class="osrs-slot-icon" width="44" height="44" data-item-id="' + id + '"></canvas>' +
-      '<span class="nm">' + name + two + "</span></button>";
+      '<span class="nm">' + name + (qty > 1 ? (" ×" + qty) : "") + two + "</span></button>";
   }).join("");
   if (window.XscapeIcons) {
     listEl.querySelectorAll("canvas[data-item-id]").forEach(function (cv) {
-      XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"));
+      var btn = cv.closest("[data-qty]");
+      var q = btn ? Number(btn.getAttribute("data-qty") || 0) : 0;
+      XscapeIcons.paintCanvas(cv, cv.getAttribute("data-item-id"), q > 1 ? q : 0);
     });
   }
 }

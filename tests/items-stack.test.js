@@ -1,6 +1,6 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
-const { compactItemList, expandItemList } = require("../items-stack.js");
+const { compactItemList, expandItemList, isStackableItem, groupStackablesInList } = require("../items-stack.js");
 
 describe("6.2 item stack compact/expand", () => {
   it("round-trips counts and first-seen unique-item order losslessly", () => {
@@ -40,5 +40,29 @@ describe("6.2 item stack compact/expand", () => {
   it("round-trips CloudTestA-shaped inventory (150 ember_rune + 1 rune_crossbow)", () => {
     const src = Array(150).fill("ember_rune").concat(["rune_crossbow"]);
     assert.deepEqual(expandItemList(compactItemList(src)), src);
+  });
+});
+
+describe("stackable inventory grouping", () => {
+  it("treats runes, bolts, arrows, and coins as stackable, not food, potions, or gear", () => {
+    assert.equal(isStackableItem("ember_rune"), true);
+    assert.equal(isStackableItem("mithril_bolts"), true);
+    assert.equal(isStackableItem("rune_bolts"), true);
+    assert.equal(isStackableItem("bronze_arrows"), true);
+    assert.equal(isStackableItem("coins"), true);
+    assert.equal(isStackableItem("shark"), false);
+    assert.equal(isStackableItem("dark_crab"), false);
+    assert.equal(isStackableItem("prayer_potion_4"), false);
+    assert.equal(isStackableItem("saradomin_brew_3"), false);
+    assert.equal(isStackableItem("rune_crossbow"), false);
+    assert.equal(isStackableItem("green_dhide_body"), false);
+  });
+
+  it("groups stackable copies together and leaves food and gear in place", () => {
+    const src = ["shark", "ember_rune", "shark", "ember_rune", "mithril_bolts", "rune_crossbow", "mithril_bolts"];
+    assert.deepEqual(
+      groupStackablesInList(src),
+      ["shark", "ember_rune", "ember_rune", "shark", "mithril_bolts", "mithril_bolts", "rune_crossbow"]
+    );
   });
 });

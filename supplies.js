@@ -125,7 +125,14 @@
     return !!(combat && typeof combat.isRuneId === "function" && combat.isRuneId(id));
   }
 
-  // Unique inventory slots: each rune type occupies one slot no matter the stack size.
+  function isStackableId(id) {
+    if (global.XscapeItemStack && typeof XscapeItemStack.isStackableItem === "function") {
+      return !!XscapeItemStack.isStackableItem(id);
+    }
+    return isRuneId(id) || id === "coins" || id === "gp" || /(_bolts|_arrows?)$/.test(String(id || ""));
+  }
+
+  // Unique inventory slots: each stackable id occupies one slot no matter the stack size.
   function uniqueInventorySlots(arr) {
     arr = arr || invArr();
     const seen = {};
@@ -133,7 +140,7 @@
     for (let i = 0; i < arr.length; i++) {
       const id = arr[i];
       if (!id) continue;
-      if (isRuneId(id)) {
+      if (isStackableId(id)) {
         if (seen[id]) continue;
         seen[id] = true;
       }
@@ -303,13 +310,22 @@
       id = canonicalSupplyId(id);
       const P = profile();
       if (!P.inventory) P.inventory = [];
-      if (isRuneId(id)) {
+      const stackable = isStackableId(id);
+      if (stackable) {
         const have = inventoryHasId(P.inventory, id);
         if (!have && uniqueInventorySlots(P.inventory) >= CAP) return false;
-        let copies = 0;
-        for (let i = 0; i < P.inventory.length; i++) if (P.inventory[i] === id) copies++;
-        if (copies >= RUNE_COPY_CAP) return false;
-        P.inventory.push(id);
+        if (isRuneId(id)) {
+          let copies = 0;
+          for (let i = 0; i < P.inventory.length; i++) if (P.inventory[i] === id) copies++;
+          if (copies >= RUNE_COPY_CAP) return false;
+        }
+        if (have) {
+          let last = -1;
+          for (let i = 0; i < P.inventory.length; i++) if (P.inventory[i] === id) last = i;
+          P.inventory.splice(last + 1, 0, id);
+        } else {
+          P.inventory.push(id);
+        }
         return true;
       }
       if (uniqueInventorySlots(P.inventory) >= CAP) return false;
@@ -347,7 +363,9 @@
         // Keep unknown and hidden ids. Do not truncate. Hidden is display-only.
         inv.push(id);
       });
-      P.inventory = inv;
+      P.inventory = (global.XscapeItemStack && typeof XscapeItemStack.groupStackablesInList === "function")
+        ? XscapeItemStack.groupStackablesInList(inv)
+        : inv;
       const counts = {};
       const order = [];
       (P.bank || []).forEach(function (raw) {
@@ -1381,7 +1399,7 @@
     const P = profile();
     if (!Array.isArray(P.inventory)) P.inventory = [];
     const space = (typeof global.inventorySpace === "function") ? inventorySpace() : Math.max(0, CAP - uniqueInventorySlots(P.inventory));
-    const needsSlot = rune ? (inventoryHasId(P.inventory, itemId) ? 0 : 1) : qty;
+    const needsSlot = isStackableId(itemId) ? (inventoryHasId(P.inventory, itemId) ? 0 : 1) : qty;
     if (space < needsSlot) {
       if (typeof flashMsg === "function") flashMsg("Inventory full", "#ff8a70");
       return false;
@@ -1533,6 +1551,7 @@
     init: init,
     applyBuyProfile: applyBuyProfile,
     isRuneId: isRuneId,
+    isStackableId: isStackableId,
     uniqueInventorySlots: uniqueInventorySlots,
     markDirty: markDirty,
     markHudDirty: markHudDirty,
