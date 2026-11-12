@@ -2526,7 +2526,20 @@
     hookAllBossEntries();
   }
 
-  function hookBossEntry(api, message) {
+  function issueBossStart(boss) {
+    if (!session || !boss) return;
+    try {
+      rpc("start_boss_fight", { p_boss: boss }).then(function (res) {
+        if (res && res.ok === false) console.warn("start_boss_fight", boss, res.error || res);
+      }).catch(function (e) {
+        console.warn("start_boss_fight", boss, e);
+      });
+    } catch (e) {
+      console.warn("start_boss_fight", boss, e);
+    }
+  }
+
+  function hookBossEntry(api, message, boss) {
     if (!api) return;
     if (typeof api.tryEnter === "function" && !api.tryEnter._cloud) {
       var rawTry = api.tryEnter;
@@ -2540,18 +2553,31 @@
       var rawStart = api.startFight;
       api.startFight = function () {
         if (!isTestMode() && requireSignIn(message)) return;
+        if (!isTestMode()) issueBossStart(boss);
         return rawStart.apply(this, arguments);
       };
       api.startFight._cloud = true;
     }
   }
 
+  function hookJadStart() {
+    var api = global.Xscape;
+    if (!api || typeof api.startFight !== "function" || api.startFight._cloudStart) return;
+    var raw = api.startFight;
+    api.startFight = function () {
+      if (session && !isTestMode()) issueBossStart("jad");
+      return raw.apply(this, arguments);
+    };
+    api.startFight._cloudStart = true;
+  }
+
   function hookAllBossEntries() {
-    hookBossEntry(global.XscapeKree, "Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.");
-    hookBossEntry(global.XscapeWidow, "Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.");
-    hookBossEntry(global.XscapeKnight, "Sign in to fight the Hollow Knight-King. Guests can only fight Magmor, the Molten Titan in starter gear.");
-    hookBossEntry(global.XscapeGorehorn, "Sign in to fight Gorehorn. Guests can only fight Magmor, the Molten Titan in starter gear.");
-    hookBossEntry(global.XscapeColossus, "Sign in to fight the Drowned Colossus. Guests can only fight Magmor, the Molten Titan in starter gear.");
+    hookBossEntry(global.XscapeKree, "Sign in to fight Vaelkor the Stormwing. Guests can only fight Magmor, the Molten Titan in starter gear.", "kree");
+    hookBossEntry(global.XscapeWidow, "Sign in to fight the Widow Queen. Guests can only fight Magmor, the Molten Titan in starter gear.", "widow");
+    hookBossEntry(global.XscapeKnight, "Sign in to fight the Hollow Knight-King. Guests can only fight Magmor, the Molten Titan in starter gear.", "knight");
+    hookBossEntry(global.XscapeGorehorn, "Sign in to fight Gorehorn. Guests can only fight Magmor, the Molten Titan in starter gear.", "gorehorn");
+    hookBossEntry(global.XscapeColossus, "Sign in to fight the Drowned Colossus. Guests can only fight Magmor, the Molten Titan in starter gear.", "colossus");
+    hookJadStart();
   }
   function hookKreeEntry() { hookAllBossEntries(); }
   function hookWidowEntry() { hookAllBossEntries(); }
@@ -2733,6 +2759,13 @@
       applyCloudProfile(res.profile, { fromCloudLoad: true });
       return;
     }
+    // Conservation or other ok:false (not just stale): adopt the server
+    // copy and do not set pushAgain. applyCloudProfile uses _rawSaveProfile
+    // so this cannot loop. Mid-fight scene / combat is left alone.
+    if (res && res.ok === false && res.profile) {
+      applyCloudProfile(res.profile, { fromCloudLoad: true });
+      return;
+    }
     if (res && res.ok && res.profile) {
       if (res.profile.revision != null) {
         var nextRev = Number(res.profile.revision);
@@ -2798,6 +2831,7 @@
     hookFunctions();
     hookOwnItem();
     setTimeout(function () { hookAllBossEntries(); }, 0);
+    setTimeout(function () { hookAllBossEntries(); }, 500);
     if (page === "hub") {
       ensureLoginUi();
       ensureHubChrome();

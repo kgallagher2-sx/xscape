@@ -1,6 +1,6 @@
 # Reward RPC and SECURITY DEFINER audit
 
-Audit date: 2026-11-12 (America/New_York). Live project `uakiqnjvqjkogpczwxdu`, after Phase 1 batch 2 (tasks 1.3, 1.6, 1.9). Function bodies were read with `pg_get_functiondef` on that date. Public wrappers were already `SECURITY DEFINER` with `SET search_path` from batch 1 (task 1.8).
+Audit date: 2026-11-12 (America/New_York). Live project `uakiqnjvqjkogpczwxdu`, after Phase 1 batch 3 (tasks 1.2, solo `record_raid_clear` wall-clock, and world-boss start nonces). Function bodies were re-read with `pg_get_functiondef` during batch 2 and the new batch-3 functions were applied on this date. Public wrappers remain `SECURITY DEFINER` with `SET search_path` from batch 1 (task 1.8).
 
 Legend: **yes** / **no**. Red rows are marked **RED**.
 
@@ -8,13 +8,14 @@ Legend: **yes** / **no**. Red rows are marked **RED**.
 
 | RPC | Rate-limited | Real elapsed time | Idempotency key | Trusts client numbers other than ticks | Rejects anonymous | Notes |
 |---|---|---|---|---|---|---|
-| `record_jad_kill` | yes (12s `last_jad_at`) | no (only `p_ticks < 20`) | yes (`p_nonce`) | yes (`p_score` updates `jad_best_score`; loot/GP is server-rolled) | yes | **RED**: 20-tick (12s) floor is far below a real Jad fight; no wall-clock vs a start RPC. |
-| `record_kree_kill` | yes (20s `last_kree_at`) | no (only `p_ticks < 20`) | no | no (`p_item_ids` is accepted but the server rolls loot) | yes (wrapper, 1.9) | **RED**: no nonce, no real elapsed time. Anon rejection added in 1.9. |
-| `record_widow_kill` | yes (20s `last_widow_at`) | no (only `p_ticks < 20`) | no | no (server rolls) | yes (wrapper, 1.9) | **RED**: same as other world-boss kills. |
-| `record_colossus_kill` | yes (20s `last_colossus_at`) | no (only `p_ticks < 20`) | no | no (server rolls) | yes (wrapper, 1.9) | **RED**: same. |
-| `record_gorehorn_kill` | yes (20s `last_gorehorn_at`) | no (only `p_ticks < 20`) | no | no (server rolls) | yes (wrapper, 1.9) | **RED**: same. |
-| `record_knight_kill` | yes (20s `last_knight_at`) | no (only `p_ticks < 20`) | no | no (server rolls) | yes (wrapper, 1.9) | **RED**: same. |
-| `record_raid_clear` (solo) | yes (30s `last_raid_at`) | no (only `p_ticks < 20`; does not check `solo_raid_runs.started_at`) | yes (`p_nonce`) | yes (`p_score` feeds `roll_group_raid_loot` / GP) | yes | **RED**: 20-tick floor and trusted score; start RPC exists but clear does not use its clock. |
+| `record_jad_kill` | yes (12s `last_jad_at`) | yes, when a `start_boss_fight('jad')` row exists (`elapsed >= p_ticks*0.6s - 3s`); otherwise the old 20-tick floor only | yes (`p_nonce`, plus a server start nonce) | yes (`p_score` updates `jad_best_score`; loot/GP is server-rolled) | yes | Batch 3: wrapper asserts elapsed against the latest unconsumed start. Cached old clients with no start row still use the 12s cooldown + 20-tick floor (legacy). `p_score` is still trusted for `jad_best_score`. |
+| `record_kree_kill` | yes (20s `last_kree_at`) | yes, when a `start_boss_fight('kree')` row exists (`elapsed >= p_ticks*0.6s - 3s`); otherwise the old 20-tick floor only | yes (server start nonce; consumed after a successful record) | no (`p_item_ids` is accepted but the server rolls loot) | yes (wrapper, 1.9) | Batch 3: same elapsed check as Jad. Legacy path if no start row. |
+| `record_widow_kill` | yes (20s `last_widow_at`) | yes, when a `start_boss_fight('widow')` row exists (`elapsed >= p_ticks*0.6s - 3s`); otherwise the old 20-tick floor only | yes (server start nonce; consumed after a successful record) | no (server rolls) | yes (wrapper, 1.9) | Batch 3: elapsed check on all six bosses. |
+| `record_colossus_kill` | yes (20s `last_colossus_at`) | yes, when a `start_boss_fight('colossus')` row exists (`elapsed >= p_ticks*0.6s - 3s`); otherwise the old 20-tick floor only | yes (server start nonce; consumed after a successful record) | no (server rolls) | yes (wrapper, 1.9) | Batch 3: elapsed check on all six bosses. |
+| `record_gorehorn_kill` | yes (20s `last_gorehorn_at`) | yes, when a `start_boss_fight('gorehorn')` row exists (`elapsed >= p_ticks*0.6s - 3s`); otherwise the old 20-tick floor only | yes (server start nonce; consumed after a successful record) | no (server rolls) | yes (wrapper, 1.9) | Batch 3: elapsed check on all six bosses. |
+| `record_knight_kill` | yes (20s `last_knight_at`) | yes, when a `start_boss_fight('knight')` row exists (`elapsed >= p_ticks*0.6s - 3s`); otherwise the old 20-tick floor only | yes (server start nonce; consumed after a successful record) | no (server rolls) | yes (wrapper, 1.9) | Batch 3: elapsed check on all six bosses. |
+| `record_raid_clear` (solo) | yes (30s `last_raid_at`) | yes (requires an active `solo_raid_runs` row; 65s / 109 ticks; `p_ticks*0.6s <= elapsed + 3s`) | yes (`p_nonce`) | partial (`p_score` is capped by `game.cap_raid_score(..., 1)` before `roll_group_raid_loot`) | yes | Batch 3: same floor and cap as group 1.6. No start → rejected (`No active raid`). |
+| `start_boss_fight` | yes (40 starts / 10 minutes) | n/a (issues the start nonce) | yes (server nonce) | no (boss id is a catalog key) | yes | New in batch 3. Client `cloud.js` calls this from hooked `startFight` (all six bosses, including Jad). Test-mode query flags skip it so instant loot hooks stay on the legacy record path. |
 | `complete_raid_run` (group) | yes (30s `last_raid_at` per member, 1.6) | yes (65s / 109 ticks, plus `p_ticks*0.6s <= elapsed + 3s`) | yes (run id; repeats return `already`) | partial (`p_scores` and `p_dead` are client-supplied; scores are capped by `game.cap_raid_score`) | yes | Floor and cap added in 1.6. See reasoning in `supabase/20261112_07_phase1_1_6_raid_timing.sql`. |
 | `buy_shop_item` | yes (2s `last_purchase_at`) | n/a | no | no (server prices; item id is a catalog key) | yes (wrapper, 1.9) | Anon rejection added in 1.9. |
 | `buy_supply_item` | yes (short cooldown; `is_anonymous` already in `game.*`) | n/a | no | no (server prices and qty-checked) | yes | |
@@ -26,20 +27,22 @@ Legend: **yes** / **no**. Red rows are marked **RED**.
 
 ### Red rows (outstanding)
 
-These are the cells that stay red after this batch. 1.3 and 1.6 closed the previous reds on `settle_duel` and `complete_raid_run`. 1.9 only added anonymous rejection on the world-boss / shop wrappers.
+Batch 3 closed the previous reds on solo `record_raid_clear`, the six world-boss `record_*_kill` wrappers (for clients that issue `start_boss_fight`), and `save_player_state` conservation (shipped in **enforce** mode, with a runtime flag to drop to log-only).
 
-1. **`record_raid_clear` (solo)** — still no wall-clock check against `game.solo_raid_runs.started_at`, still a 20-tick floor, and `p_score` still drives loot/GP. Same class of cheat 1.6 just closed for group clears.
-2. **World-boss `record_*_kill` (Jad, Kree, Widow, Colossus, Gorehorn, Knight)** — cooldown plus a 20-tick floor only. No start-time row, and only Jad has a nonce. A client can still claim a kill in 12s of real time (20s for the others) once the cooldown elapses. Jad also trusts `p_score` for `jad_best_score`.
-3. **`save_player_state` (not a reward RPC, but adjacent)** — Phase 1.2 is still open: a matching revision still lets the client send inventory / bank / equipment / GP-adjacent state. Batch 1 already revoked direct `player_state` REST updates.
+Remaining / leftover reds:
+
+1. **World-boss legacy path** — if no `game.boss_fight_starts` row exists (cached old client, or a fight already running at deploy), `record_*_kill` still uses only the 12s/20s cooldown and 20-tick floor. New `cloud.js` always starts a fight nonce, so this shrinks as clients update. Worth watching `boss_fight_starts` vs successful records for a week, then rejecting the legacy path.
+2. **`record_jad_kill` `p_score`** — still trusted for `jad_best_score` (loot/GP stays server-rolled). Not a GP cheat, but a leaderboard number.
+3. **Trade / offer values** — still client-chosen, then escrowed from that player's own inventory (unchanged). Optional `trade_accept` cooldown is still open.
 
 ### Larger holes for Kellen (not built in this batch)
 
-- Put the same 1.6-style wall-clock minimum and score cap on **solo** `record_raid_clear`, using `start_solo_raid_run`.
-- Add start-run RPCs (or reuse an existing one) and a real elapsed-time floor for **Jad and the five world bosses**, plus nonces for the bosses that lack them.
-- 1.2 conservation checks on `save_player_state` (inventory/bank/GP cannot appear from nowhere).
+- Drop the world-boss **legacy path** (no start row) once almost every client is on a build that calls `start_boss_fight`.
+- Cap or ignore `record_jad_kill` `p_score` for `jad_best_score`.
 - Optional short cooldown on `trade_accept` to slow trade-bot cycling.
 - `report_raid_deaths` can mark other party members dead (needed for the host, but it is a trusted client list). Worth a later look, not a one-line fix.
 - Admin RPCs (`admin_chat_history`, `admin_trade_history`) are allow-listed to a single admin UUID. Fine today; a role table would be cleaner than a hard-coded id.
+- Watch `game.save_rejections` after 1.2 enforce ships. Flip `game.runtime_flags.save_conservation` to `log_only` if real players are blocked by a missed raise path; flip back to `enforce` once that path is an RPC.
 
 ## SECURITY DEFINER audit (all 44 public functions)
 
@@ -81,12 +84,13 @@ All 44 `public` functions are `SECURITY DEFINER` and have `SET search_path` (bat
 | `report_raid_deaths` | yes (caller must be in the run; may flag other members) | no | yes | See larger holes. |
 | `require_signed_in` | yes (`auth.uid()` required) | no | yes | |
 | `respond_duel_challenge` | yes (the challenged `uid`) | no | yes | |
-| `save_player_state` | yes (writes `uid` only) | no | yes | Still trusts the payload (1.2). |
+| `save_player_state` | yes (writes `uid` only) | no | yes | 1.2 conservation: unknown ids / caps / slots always reject; gear counts must match; consumables may only decrease. `game.save_rejections` has no client access. Runtime flag `save_conservation` is `enforce`. |
 | `server_now` | n/a (no user rows) | no | yes | |
 | `set_party_ready` | yes (`UPDATE ... WHERE user_id = uid`) | no | yes | Live SQL committed as `supabase/party_ready_and_start.sql`. |
 | `settle_duel` | yes (participant only) | no | yes | 1.3 bilateral reports. |
 | `start_party` | yes (leader = `uid`) | no | yes | Snapshot committed with `set_party_ready`. |
 | `start_solo_raid_run` | yes (inserts `uid`) | no | yes | |
+| `start_boss_fight` | yes (inserts `uid`) | no | yes | Batch 3. |
 | `trade_accept` | yes (party to the trade) | no | yes | |
 | `trade_accept_request` | yes | no | yes | |
 | `trade_cancel_open` | yes (own open trade) | no | yes | |
@@ -99,4 +103,5 @@ All 44 `public` functions are `SECURITY DEFINER` and have `SET search_path` (bat
 - **Found:** every public wrapper already had `SECURITY DEFINER` and `SET search_path` from batch 1. The `game.*` bodies already used `auth.uid()` (or an admin allow-list) and did not depend on RLS to stop cross-user writes.
 - **Fixed (small, 1.9):** `record_colossus_kill`, `record_gorehorn_kill`, `record_knight_kill`, `record_widow_kill`, `record_kree_kill`, and `buy_shop_item` now reject `game.is_anonymous()` on the public wrapper. `settle_duel` / `refund_duel` also reject anonymous as part of 1.3.
 - **Not a defect:** `server_now` has no uid filter.
-- **Not fixed here:** trusted client numbers on solo raid / boss kills, and `save_player_state` conservation (listed above for Kellen).
+- **Fixed in batch 3:** solo `record_raid_clear` wall-clock + `cap_raid_score`; `start_boss_fight` + elapsed checks on all six world-boss wrappers; `save_player_state` conservation in enforce mode.
+- **Not fixed here:** world-boss legacy path when no start row exists; `record_jad_kill` `p_score` for best-score; trade cooldown / `report_raid_deaths` (listed above for Kellen).

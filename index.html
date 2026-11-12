@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112154425-a56eeaa";</script>
+  <script>window.XSCAPE_BUILD = "20261112162309-690316a";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -3692,12 +3692,17 @@ function migrateLegacyStarter() {
       next.push(id);
       present[id] = true;
     }
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
-      if (present[id] || isOwned(id)) continue;
-      next.push(id);
-      present[id] = true;
-      changed = true;
+    // Signed-in holdings come from the server. Do not mint missing starters
+    // into the bank here — a later save would fail conservation.
+    const signedIn = !!(window.XscapeCloud && typeof XscapeCloud.userId === "function" && XscapeCloud.userId());
+    if (!signedIn) {
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        if (present[id] || isOwned(id)) continue;
+        next.push(id);
+        present[id] = true;
+        changed = true;
+      }
     }
     Profile.bank = next;
   }
@@ -3709,6 +3714,9 @@ function migrateLegacyStarter() {
 }
 
 function maybeGrantLegacyFireCape() {
+  if (window.XscapeCloud && typeof XscapeCloud.userId === "function" && XscapeCloud.userId()) {
+    return false;
+  }
   let earned = !!Profile.hasFireCape || !!Profile.seenFirstKill || isOwned("fire_cape");
   if (!earned) {
     try {
