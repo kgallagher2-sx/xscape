@@ -631,6 +631,7 @@
       settings.kreeBrief = localStorage.getItem("kellenscape-kree-brief-seen") === "1";
       settings.widowBrief = localStorage.getItem("kellenscape-widow-brief-seen") === "1";
     } catch (e) {}
+    if (global.XSCAPE_BUILD) settings.xscapeBuild = String(global.XSCAPE_BUILD);
     if (global.XscapeSupplies && typeof XscapeSupplies.settingsSlice === "function") {
       var qs = XscapeSupplies.settingsSlice();
       if (qs && qs.quickSlots) settings.quickSlots = qs.quickSlots;
@@ -2529,9 +2530,24 @@
           requireSignIn("Guests fight in starter kit only. Sign in to wear better gear. Your Fire cape stays in the bank until you sign in.");
           return false;
         }
-        return rawEquip.apply(this, arguments);
+        var ok = rawEquip.apply(this, arguments);
+        if (ok && typeof flushSave === "function") {
+          try { flushSave(); } catch (e) {}
+        }
+        return ok;
       };
       global.equipItem._cloud = true;
+    }
+    if (typeof global.unequipSlot === "function" && !global.unequipSlot._cloud) {
+      var rawUnequip = global.unequipSlot;
+      global.unequipSlot = function () {
+        var ok = rawUnequip.apply(this, arguments);
+        if (ok && typeof flushSave === "function") {
+          try { flushSave(); } catch (e) {}
+        }
+        return ok;
+      };
+      global.unequipSlot._cloud = true;
     }
     if (typeof global.equipLoadout === "function" && !global.equipLoadout._cloud) {
       var rawLoadout = global.equipLoadout;
@@ -3191,6 +3207,7 @@
 
     reloadProfile: reloadProfile,
     flushSave: flushSave,
+    saveProfileLocally: saveProfileLocally,
     flushDeferredFightSave: flushDeferredFightSave,
     cancelPendingFightRecords: cancelPendingFightRecords,
     applyProfile: applyCloudProfile,

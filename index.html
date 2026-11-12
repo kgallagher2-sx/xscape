@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112184026-54fcc3b";</script>
+  <script>window.XSCAPE_BUILD = "20261112184636-d7dcb2b";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -8722,10 +8722,14 @@ function applyNewVersion(build) {
     sessionStorage.setItem("xscape-reload-aim", build);
   } catch (e) {}
   (async function () {
+    // Local only. Do not flushSave from a stale client — that can send a
+    // half-applied equip (item still in the bag and worn) and get rejected.
+    // The new build will flush a consistent snapshot after reload.
     try {
-      if (typeof saveProfile === "function") saveProfile();
-      if (window.XscapeCloud && typeof XscapeCloud.flushSave === "function") {
-        await XscapeCloud.flushSave();
+      if (window.XscapeCloud && typeof XscapeCloud.saveProfileLocally === "function") {
+        XscapeCloud.saveProfileLocally();
+      } else if (typeof saveProfile === "function") {
+        saveProfile();
       }
     } catch (e) {}
     location.reload();
@@ -8864,7 +8868,7 @@ window.shortBuildLabel = shortBuildLabel;
     });
   });
   setTimeout(checkXscapeVersion, 1500);
-  setInterval(checkXscapeVersion, 3 * 60 * 1000);
+  setInterval(checkXscapeVersion, 20 * 1000);
   setInterval(function () {
     if (_update.pending && _update.pending !== (window.XSCAPE_BUILD || "dev") && !isMidFight()) {
       applyNewVersion(_update.pending);
