@@ -19,12 +19,12 @@
 
   /* Bonus keys: astab, aslash, acrush, amagic, arange,
                  dstab, dslash, dcrush, dmagic, drange,
-                 str (melee), rstr (ranged strength), mdmg (magic damage %). */
+                 str (melee), rstr (ranged strength), mdmg (magic damage %), pray (prayer bonus). */
   function emptyBonuses() {
     return {
       astab: 0, aslash: 0, acrush: 0, amagic: 0, arange: 0,
       dstab: 0, dslash: 0, dcrush: 0, dmagic: 0, drange: 0,
-      str: 0, rstr: 0, mdmg: 0
+      str: 0, rstr: 0, mdmg: 0, pray: 0
     };
   }
 
@@ -731,6 +731,57 @@
       expected: expectedDamage(max, vs.chance)
     };
   }
+  function lookupGearItem(id) {
+    if (!id) return null;
+    if (ITEMS && ITEMS[id]) return ITEMS[id];
+    if (global.ITEMS && global.ITEMS[id] && global.ITEMS[id] !== ITEMS[id]) return global.ITEMS[id];
+    if (typeof global.getItem === "function") {
+      try { var it = global.getItem(id); if (it) return it; } catch (e) {}
+    }
+    if (global.XscapeRaid && typeof XscapeRaid.getItem === "function") {
+      try { var itR = XscapeRaid.getItem(id); if (itR) return itR; } catch (e2) {}
+    }
+    return null;
+  }
+
+  function itemPrayerBonus(it) {
+    if (!it || !it.bonuses) return 0;
+    var bon = it.bonuses;
+    var v = (bon.pray != null) ? bon.pray : bon.prayer;
+    if (v == null && bon.other) v = (bon.other.pray != null) ? bon.other.pray : bon.other.prayer;
+    v = Number(v);
+    return isFinite(v) ? v : 0;
+  }
+
+  // Worn prayer bonus from equipped gear. Negative totals clamp to 0.
+  function prayerBonus(eq) {
+    eq = eq || (typeof Profile !== "undefined" && Profile && Profile.equipment) || {};
+    var sum = 0;
+    for (var i = 0; i < EQUIP_SLOTS.length; i++) {
+      sum += itemPrayerBonus(lookupGearItem(eq[EQUIP_SLOTS[i]]));
+    }
+    // Raid loadouts may use "boots" instead of "feet".
+    if (!eq.feet && eq.boots) sum += itemPrayerBonus(lookupGearItem(eq.boots));
+    return Math.max(0, sum);
+  }
+
+  // OSRS shape: drain resistance = 60 + 2 * bonus. +0 is unchanged; +30 lasts 2x.
+  function prayerDrainFactor(bonus) {
+    bonus = Math.max(0, Number(bonus) || 0);
+    return 60 / (60 + 2 * bonus);
+  }
+
+  function equipmentOf(state, opts) {
+    opts = opts || {};
+    if (opts.equipment) return opts.equipment;
+    if (state && state.equipment) return state.equipment;
+    if (state && state.loadout) return state.loadout;
+    var player = (state && state.player) || state || {};
+    return player.equipment || player.loadout
+      || (typeof Profile !== "undefined" && Profile && Profile.equipment)
+      || {};
+  }
+
   function drainPrayer(state, opts) {
     opts = opts || {};
     if (!state) return 0;
@@ -739,21 +790,31 @@
     if (!prayerOn) return 0;
     var ticks = (opts.ticks != null) ? opts.ticks : state.ticks;
     var every = CONST.PRAYER_DRAIN_EVERY;
-    if (!ticks || (ticks % every) !== 0) return 0;
+    // Tick 0 is a no-op (same as before). After that we accumulate every tick
+    // so fractional drain from prayer bonus is smooth.
+    if (!ticks) return 0;
     var amt = (opts.amount != null) ? opts.amount : (1 + (opts.extra || 0));
     if (amt <= 0) return 0;
+    var bonus = (opts.prayerBonus != null) ? opts.prayerBonus : prayerBonus(equipmentOf(state, opts));
+    var perTick = (amt / every) * prayerDrainFactor(bonus);
     var player = state.player || state;
+    var accHost = player;
+    accHost.prayerDrainAcc = (accHost.prayerDrainAcc || 0) + perTick;
+    var got = Math.floor(accHost.prayerDrainAcc + 1e-9);
+    if (got <= 0) return 0;
+    accHost.prayerDrainAcc -= got;
     var maxP = global.PLAYER_MAX_PRAYER || 99;
     var pts = (player.prayerPts != null) ? player.prayerPts : player.pray;
-    pts = Math.max(0, (pts || 0) - amt);
+    pts = Math.max(0, (pts || 0) - got);
     if (player.prayerPts != null) player.prayerPts = Math.min(maxP, pts);
     if (player.pray != null) player.pray = Math.min(maxP, pts);
     if (pts <= 0) {
+      accHost.prayerDrainAcc = 0;
       state.prayer = null;
       if (player.prayer !== undefined) player.prayer = null;
       if (typeof opts.onDeplete === "function") opts.onDeplete(state);
     }
-    return amt;
+    return got;
   }
   // Alias so existing gorehorn.js / window callers keep working.
   global.gorehornSetMultiplier = function (eq, hp) { return gorehornSetMultiplier(eq, hp); };
@@ -1676,6 +1737,8 @@
     gorehornSetMultiplier: gorehornSetMultiplier,
     playerHit: playerHit,
     drainPrayer: drainPrayer,
+    prayerBonus: prayerBonus,
+    prayerDrainFactor: prayerDrainFactor,
     currentSkillLevel: currentSkillLevel,
 
     rand: rand,

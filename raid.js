@@ -230,12 +230,12 @@
   const HOST_RAID_ITEMS = {
     hollowbolt_xbow: { id: "hollowbolt_xbow", name: "Hollowbolt crossbow", slot: "weapon", tier: "unique", twohand: false, speed: 4, range: 5, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:105, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:100, mdmg:0 } },
     hollow_bolts: { id: "hollow_bolts", name: "Hollow bolts", slot: "ammo", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:0, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:140, mdmg:0 } },
-    veilhide_body: { id: "veilhide_body", name: "Veilhide body", slot: "body", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:-8,arange:42, dstab:40,dslash:40,dcrush:44,dmagic:30,drange:50, str:0, rstr:4, mdmg:0 } },
-    veilhide_chaps: { id: "veilhide_chaps", name: "Veilhide chaps", slot: "legs", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:-6,arange:25, dstab:22,dslash:20,dcrush:24,dmagic:16,drange:32, str:0, rstr:0, mdmg:0 } },
+    veilhide_body: { id: "veilhide_body", name: "Veilhide body", slot: "body", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:-8,arange:42, dstab:40,dslash:40,dcrush:44,dmagic:30,drange:50, str:0, rstr:4, mdmg:0, pray:1 } },
+    veilhide_chaps: { id: "veilhide_chaps", name: "Veilhide chaps", slot: "legs", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:-6,arange:25, dstab:22,dslash:20,dcrush:24,dmagic:16,drange:32, str:0, rstr:0, mdmg:0, pray:1 } },
     veilhide_vambs: { id: "veilhide_vambs", name: "Veilhide vambraces", slot: "hands", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:16, dstab:6,dslash:5,dcrush:7,dmagic:6,drange:4, str:0, rstr:0, mdmg:0 } },
     crownshard_boots: { id: "crownshard_boots", name: "Crownshard boots", slot: "feet", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:10, dstab:6,dslash:6,dcrush:6,dmagic:4,drange:6, str:0, rstr:4, mdmg:0 } },
-    unsleeping_stole: { id: "unsleeping_stole", name: "Unsleeping stole", slot: "neck", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:4,dslash:4,dcrush:4,dmagic:4,drange:4, str:0, rstr:0, mdmg:0 } },
-    gloamheart_cape: { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:10,dslash:10,dcrush:10,dmagic:8,drange:16, str:0, rstr:6, mdmg:0 } },
+    unsleeping_stole: { id: "unsleeping_stole", name: "Unsleeping stole", slot: "neck", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:4,dslash:4,dcrush:4,dmagic:4,drange:4, str:0, rstr:0, mdmg:0, pray:8 } },
+    gloamheart_cape: { id: "gloamheart_cape", name: "Gloamheart cape", slot: "cape", tier: "unique", bonuses: { astab:0,aslash:0,acrush:0,amagic:0,arange:12, dstab:10,dslash:10,dcrush:10,dmagic:8,drange:16, str:0, rstr:6, mdmg:0, pray:2 } },
     /* Mid-tier alcove ids match midPool() (hyphens). Stats match RAID_ITEMS. */
     "tempered-xbow": { id: "tempered-xbow", name: "Tempered crossbow", slot: "weapon", tier: "mid", twohand: false, speed: 4, range: 5, bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:50, dstab:0,dslash:0,dcrush:0,dmagic:0,drange:0, str:0, rstr:40, mdmg:0 } },
     "duskhide-body": { id: "duskhide-body", name: "Duskhide body", slot: "body", tier: "mid", bonuses: { astab:0,aslash:0,acrush:0,amagic:-4,arange:8, dstab:20,dslash:18,dcrush:22,dmagic:8,drange:30, str:0, rstr:0, mdmg:0 } },
@@ -1067,9 +1067,19 @@
               if (s.prayer) { s.prayer = null; if (s.player) s.player.prayer = null; }
             }
           });
-        } else if (s.prayer && s.ticks % PRAYER_DRAIN_EVERY === 0) {
+        } else if (s.prayer && s.ticks) {
           var extra = (s.boss && s.boss.kind === "morvane" && phaseOf(s) >= 4) ? 1 : 0;
-          drainPrayer(s, 1 + extra);
+          var bonus = 0;
+          var sb = sumBonuses(s.player && s.player.loadout);
+          if (sb && sb.other) bonus = Math.max(0, Number(sb.other.prayer) || 0);
+          var factor = 60 / (60 + 2 * bonus);
+          var accHost = s.player || s;
+          accHost.prayerDrainAcc = (accHost.prayerDrainAcc || 0) + ((1 + extra) / PRAYER_DRAIN_EVERY) * factor;
+          var got = Math.floor(accHost.prayerDrainAcc + 1e-9);
+          if (got > 0) {
+            accHost.prayerDrainAcc -= got;
+            drainPrayer(s, got);
+          }
         }
         if (f.atkCd > 0) f.atkCd--;
       });
@@ -1620,9 +1630,19 @@
           if (st.prayer) { st.prayer = null; if (st.player) st.player.prayer = null; }
         }
       });
-    } else if (st.prayer && st.ticks % PRAYER_DRAIN_EVERY === 0) {
+    } else if (st.prayer && st.ticks) {
       const extra = (st.boss && st.boss.kind === "morvane" && phaseOf(st) >= 4) ? 1 : 0;
-      drainPrayer(st, 1 + extra);
+      var bonus = 0;
+      var sb = sumBonuses(st.player && st.player.loadout);
+      if (sb && sb.other) bonus = Math.max(0, Number(sb.other.prayer) || 0);
+      var factor = 60 / (60 + 2 * bonus);
+      var accHost = st.player || st;
+      accHost.prayerDrainAcc = (accHost.prayerDrainAcc || 0) + ((1 + extra) / PRAYER_DRAIN_EVERY) * factor;
+      var got = Math.floor(accHost.prayerDrainAcc + 1e-9);
+      if (got > 0) {
+        accHost.prayerDrainAcc -= got;
+        drainPrayer(st, got);
+      }
     }
     if (p.atkCd > 0) p.atkCd--;
 

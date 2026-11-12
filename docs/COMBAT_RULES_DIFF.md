@@ -94,6 +94,10 @@ Live caveats (unchanged by this batch, not unified):
   damage is `chance × 14`, not `chance × 15`. Their live basic style is
   `"melee"` which normalizes to **crush** (the Knight slash row above is the
   formula style, not the live basic hit).
+- **Vaelkor the Stormwing melee asymmetry is intended.** Kellen confirmed
+  on 12 November 2026, 12:35 PM America/New_York, that you cannot melee
+  him because he flies (`MONSTERS["kree-arra"].flying = true`). Not a bug;
+  no combat numbers were changed for this.
 - Raid Warden / Morvane / shade incoming uses **special accuracy**, not
   `npcHitChance`: Warden 22 @ 0.80; Morvane P1–P4 42/48/55/65 @
   0.88/0.90/0.93/0.96; shade 6 @ 0.70. Task 4.4 does **not** change those
@@ -120,8 +124,37 @@ Jad/Kree/Widow/raid pattern.
 | Knight-King | **1 every 6 ticks** | **1 every 2 ticks** | same fallback bug |
 | Duel | **3 every tick** | **1 every 2 ticks** | local `PRAY_DRAIN = 3` applied every tick. This is a large feel change (99 prayer lasted ~33 ticks / ~20 s; it now lasts ~198 ticks / ~119 s) and is required so drain is identical across fights. |
 
-`drainPrayer` lives in `combat.js` as `XscapeCombat.drainPrayer`. Gear prayer
-bonus is displayed but is still not applied to drain (open question).
+`drainPrayer` lives in `combat.js` as `XscapeCombat.drainPrayer`.
+
+**Worn prayer bonus slows drain (approved by Kellen, 12 November 2026,
+12:35 PM America/New_York).** Resistance is the OSRS shape
+`60 + 2 × prayerBonus`, so the effective rate is the base rate
+(1 point per 2 ticks) times `60 / (60 + 2 × bonus)`. +0 is unchanged
+(+30 lasts 2×). Drain accumulates as a fraction every tick and negative
+bonus clamps to 0. This is the shared function, so it applies at every
+boss, in hosted and standalone raids, and in duels.
+
+Item audit: no `combat.js` ITEMS entry currently has a `pray` / `prayer`
+bonus field (starter and black d'hide, glory, fury, fire cape, Stormwing,
+Widow Weaver, Kingsguard, Gorehorn, Kraken/coral, Eclipse, Unsleeping
+robes/charm, Hollowplate, Nightfall, etc.). The only items that already
+had a prayer stat are the Gloamhold / raid uniques, stored as
+`bonuses.other.prayer` on standalone `RAID_ITEMS` and now also as
+`bonuses.pray` on the hosted copies (same existing numbers, not new
+balance):
+
+| Item | Prayer bonus |
+|---|---|
+| Unsleeping stole | +8 |
+| Gloamheart cape | +2 |
+| Veilhide body | +1 |
+| Veilhide chaps | +1 |
+| **Best worn total** | **+12** |
+
+At +12, factor is 60/84 ≈ 0.714, so 99 prayer lasts about 1.4×
+(~277 ticks / ~166 s) versus 198 ticks / ~119 s at +0. Vault-curse
+instant prayer hits in the raid are unchanged (they are not the
+per-tick drain).
 
 Standalone `raid.html` does not load `combat.js` (ITEMS conflict risk). It
 keeps local `TICK_MS=600` / `PRAYER_DRAIN_EVERY=2` / `CONSUME_CD=3` and uses
@@ -244,9 +277,11 @@ Super defence, brew defence, and defence drains were **applied** to
 
 ### Open questions (not changed)
 
-1. **Prayer-bonus drain.** Several items show a prayer bonus
-   (`wornPrayerBonus` in the equipment panel) but drain does not use it.
-   Inventing a reduction would change numbers; left alone.
+1. ~~**Prayer-bonus drain.**~~ **Resolved (Kellen, 12 November 2026,
+   12:35 PM America/New_York):** worn prayer bonus slows drain via the
+   OSRS `60 + 2 × bonus` resistance in `XscapeCombat.drainPrayer`. See
+   section 4. Most main-game items still have no prayer stat; the
+   highest existing set is the raid stole/cape/veilhide total of +12.
 2. **Gloam brew stacking.** Defence boost is `+20% + 2` of *current*, so
    re-sipping can climb well past 120. Attack/strength/ranged/magic shrink
    the same way. Is that intended?

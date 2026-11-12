@@ -185,3 +185,55 @@ test("super defence is +5 + 15% (99 → 118); brew defence is +2 + 20% of curren
   s.PlayerStats.applyBrew();
   assert.equal(s.PlayerStats.level("defence"), 120);
 });
+
+function drainN(XC, bonus, ticks, startPts) {
+  const st = { prayer: "melee", ticks: 0, player: { prayerPts: startPts == null ? 99 : startPts } };
+  let drained = 0;
+  for (let i = 1; i <= ticks; i++) {
+    st.ticks = i;
+    drained += XC.drainPrayer(st, { prayerBonus: bonus }) || 0;
+  }
+  return { drained, left: st.player.prayerPts, acc: st.player.prayerDrainAcc || 0 };
+}
+
+test("prayer bonus +0 is unchanged; +30 lasts 2x; negative bonus clamps to 0", () => {
+  const s = loadCombat();
+  const XC = s.XscapeCombat;
+  assert.equal(XC.prayerDrainFactor(0), 1);
+  assert.equal(XC.prayerDrainFactor(30), 0.5);
+  assert.equal(XC.prayerDrainFactor(-10), 1);
+  const z = drainN(XC, 0, 20);
+  assert.equal(z.drained, 10);
+  assert.equal(z.left, 89);
+  const plus = drainN(XC, 30, 20);
+  assert.equal(plus.drained, 5);
+  assert.equal(plus.left, 94);
+  const neg = drainN(XC, -8, 20);
+  assert.equal(neg.drained, 10);
+});
+
+test("prayer bonus is read from equipped gear and accumulates fractionally", () => {
+  const s = loadCombat();
+  const XC = s.XscapeCombat;
+  // +15 → factor 60/90 = 2/3 of the 0.5/tick base = 1/3 point per tick.
+  // 20 ticks → 6 points drained, 2/3 left in the accumulator.
+  const mid = drainN(XC, 15, 20);
+  assert.equal(mid.drained, 6);
+  assert.ok(Math.abs(mid.acc - 2 / 3) < 1e-9);
+  // A stole +8 / cape +2 / veilhide body+chaps +1+1 set is +12 (factor 60/84).
+  s.ITEMS.unsleeping_stole = { id: "unsleeping_stole", slot: "neck", bonuses: { pray: 8 } };
+  s.ITEMS.gloamheart_cape = { id: "gloamheart_cape", slot: "cape", bonuses: { pray: 2 } };
+  s.ITEMS.veilhide_body = { id: "veilhide_body", slot: "body", bonuses: { pray: 1 } };
+  s.ITEMS.veilhide_chaps = { id: "veilhide_chaps", slot: "legs", bonuses: { pray: 1 } };
+  const eq = { neck: "unsleeping_stole", cape: "gloamheart_cape", body: "veilhide_body", legs: "veilhide_chaps" };
+  assert.equal(XC.prayerBonus(eq), 12);
+  assert.ok(Math.abs(XC.prayerDrainFactor(12) - 60 / 84) < 1e-12);
+  const st = { prayer: "range", ticks: 0, player: { prayerPts: 99 }, equipment: eq };
+  let drained = 0;
+  for (let i = 1; i <= 14; i++) { // 14 * (0.5 * 60/84) = 5 exactly
+    st.ticks = i;
+    drained += XC.drainPrayer(st) || 0;
+  }
+  assert.equal(drained, 5);
+  assert.equal(st.player.prayerPts, 94);
+});
