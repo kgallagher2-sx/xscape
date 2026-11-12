@@ -1075,6 +1075,7 @@
     const finish = function (loot, awarded) {
       showLoot(loot, awarded, result);
     };
+        if (audio() && audio().stopAmbient) audio().stopAmbient();
     if (!force && cloud && typeof cloud.rpc === "function") {
       Promise.resolve(cloud.rpc("record_knight_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
         if (res && res.ok) {
@@ -1196,10 +1197,13 @@
   function install() {
     if (global.Scenes) {
       global.Scenes.knight = {
+        id: "knight",
         enter: function () { tryEnter({}); },
-        leave: function () {
+        exit: function () {
           releaseTiles();
           setKnightChrome(false);
+          const ov = $("overlay-knight-loot");
+          if (ov) ov.classList.add("hidden");
           const br = $("overlay-knight-tut");
           if (br) br.classList.add("hidden");
           if (audio() && audio().stopAmbient) audio().stopAmbient();

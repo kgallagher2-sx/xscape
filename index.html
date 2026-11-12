@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112162309-690316a";</script>
+  <script>window.XSCAPE_BUILD = "20261112163613-b492aa6";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2219,7 +2219,10 @@ function inventoryList() {
   return (Profile.inventory || []).filter((id) => {
     if (!id) return false;
     if (isRuneItem(id)) return true;
-    return !!(ITEMS[id] && !itemIsHidden(ITEMS[id]));
+    const it = ITEMS[id];
+    // Hidden items stay in the stored array; they are only omitted from display.
+    if (it && itemIsHidden(it)) return false;
+    return true;
   });
 }
 
@@ -2299,7 +2302,11 @@ function bankUniqueCount() {
   for (let i = 0; i < b.length; i++) {
     const id = b[i];
     if (!id || seen[id]) continue;
-    if (!isRuneItem(id) && (!ITEMS[id] || itemIsHidden(ITEMS[id]))) continue;
+    if (isRuneItem(id)) { /* count */ }
+    else {
+      const it = ITEMS[id];
+      if (it && itemIsHidden(it)) continue;
+    }
     seen[id] = true;
     n++;
   }
@@ -2312,7 +2319,6 @@ function bankSpace() {
 
 function addToInventory(id) {
   if (!id) return false;
-  if (!ITEMS[id] && !isRuneItem(id)) return false;
   if (!Profile.inventory) Profile.inventory = [];
   const needsSlot = (isRuneItem(id) && inventoryHas(id)) ? 0 : 1;
   if (needsSlot && uniqueInventorySlots() >= INVENTORY_CAP) return false;
@@ -2329,7 +2335,7 @@ function removeFromInventory(id) {
 }
 
 function addToBankStore(id) {
-  if (!id || (!ITEMS[id] && !isRuneItem(id))) return false;
+  if (!id) return false;
   if (!Profile.bank) Profile.bank = [];
   if (bankCount(id) === 0 && bankUniqueCount() >= BANK_CAP) return false;
   Profile.bank.push(id);
@@ -2375,7 +2381,11 @@ function bankList() {
   for (let i = 0; i < b.length; i++) {
     const id = b[i];
     if (!id || seen[id]) continue;
-    if (!isRuneItem(id) && (!ITEMS[id] || itemIsHidden(ITEMS[id]))) continue;
+    if (isRuneItem(id)) { /* keep */ }
+    else {
+      const it = ITEMS[id];
+      if (it && itemIsHidden(it)) continue;
+    }
     seen[id] = true;
     out.push(id);
   }
@@ -2428,33 +2438,18 @@ function reclaimStrayWornItems() {
 function normalizeContainers() {
   reclaimStrayWornItems();
   const inv = [];
-  const runeSeen = {};
-  let slots = 0;
   (Profile.inventory || []).forEach((id) => {
     if (!id) return;
-    const it = ITEMS[id];
-    // Keep unknown ids: supplies.js registers potions after the first load. Runes too.
-    if (it && itemIsHidden(it)) return;
-    if (isRuneItem(id)) {
-      if (!runeSeen[id]) {
-        if (slots >= INVENTORY_CAP) return;
-        runeSeen[id] = true;
-        slots++;
-      }
-      inv.push(id);
-      return;
-    }
-    if (slots >= INVENTORY_CAP) return;
+    // Keep unknown and hidden ids. Hidden filtering is display-only.
+    // Do not truncate to the cap here — dropping a copy would look like
+    // "gear decreased" to the 1.2 server check.
     inv.push(id);
-    slots++;
   });
   Profile.inventory = inv;
   const counts = {};
   const order = [];
   (Profile.bank || []).forEach((id) => {
     if (!id) return;
-    const it = ITEMS[id];
-    if (it && itemIsHidden(it)) return;
     if (!counts[id]) {
       counts[id] = 0;
       order.push(id);
@@ -3882,7 +3877,18 @@ function saveProfile() {
       widowBestTicks: Profile.widowBestTicks || null
     }));
     if (Profile.name) localStorage.setItem(STORAGE.name, Profile.name);
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Could not save local progress", e);
+    if (!saveProfile._quotaWarned) {
+      saveProfile._quotaWarned = true;
+      var msg = "This device could not save your progress (storage is full). Your items may not be here the next time you open the game.";
+      if (typeof flashMsg === "function") {
+        try { flashMsg(msg, "#ff8a70"); } catch (e2) {}
+      } else {
+        try { alert(msg); } catch (e2) {}
+      }
+    }
+  }
   G.name = Profile.name;
   G.gp = Profile.gp;
 }
@@ -8226,6 +8232,10 @@ function inspectDoseOf(id, it) {
 
 function inspectItemName(id, it) {
   let name = (it && it.name) || "";
+  if (!name && it) { /* named empty */ }
+  if (!name && (typeof ITEMS === "undefined" || !ITEMS[id]) && !(typeof isRuneItem === "function" && isRuneItem(id))) {
+    return "Unknown item";
+  }
   if (!name && window.XscapeIcons && XscapeIcons.itemName) name = XscapeIcons.itemName(id);
   if (!name) name = String(id || "").replace(/_/g, " ");
   const dose = inspectDoseOf(id, it);
@@ -8431,6 +8441,7 @@ window.hideItemInspect = hideItemInspect;
 window.installItemInspect = installItemInspect;
 window.gearTierLabel = gearTierLabel;
 </script>
+<script src="item-catalog.js"></script>
 <script src="item-icons.js"></script>
 <script>
 if (window.XscapeIcons) XscapeIcons.bindExamine = function () {};

@@ -864,6 +864,7 @@
     const already = ((global.Profile && Profile.unlockedItems) || []).slice();
     const cloud = global.XscapeCloud;
     const finish = function (loot, awarded) { showLoot(loot, awarded, result); };
+        if (audio() && audio().stopAmbient) audio().stopAmbient();
     if (!force && cloud && typeof cloud.rpc === "function") {
       Promise.resolve(cloud.rpc("record_colossus_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
         if (res && res.ok) {
@@ -984,10 +985,13 @@
   function install() {
     if (global.Scenes) {
       global.Scenes.colossus = {
+        id: "colossus",
         enter: function () { tryEnter({}); },
-        leave: function () {
+        exit: function () {
           releaseTiles();
           setColossusChrome(false);
+          const ov = $("overlay-colossus-loot");
+          if (ov) ov.classList.add("hidden");
           const br = $("overlay-colossus-tut");
           if (br) br.classList.add("hidden");
           if (audio() && audio().stopAmbient) audio().stopAmbient();

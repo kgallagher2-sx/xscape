@@ -868,6 +868,7 @@
     const finish = function (loot, awarded) {
       showLoot(loot, awarded, result);
     };
+        if (audio() && audio().stopAmbient) audio().stopAmbient();
     if (!force && cloud && typeof cloud.rpc === "function") {
       Promise.resolve(cloud.rpc("record_gorehorn_kill", { p_ticks: G.ticks | 0 })).then(function (res) {
         if (res && res.ok) {
@@ -989,10 +990,13 @@
   function install() {
     if (global.Scenes) {
       global.Scenes.gorehorn = {
+        id: "gorehorn",
         enter: function () { tryEnter({}); },
-        leave: function () {
+        exit: function () {
           releaseTiles();
           setGorehornChrome(false);
+          const ov = $("overlay-gorehorn-loot");
+          if (ov) ov.classList.add("hidden");
           const br = $("overlay-gorehorn-tut");
           if (br) br.classList.add("hidden");
           if (audio() && audio().stopAmbient) audio().stopAmbient();

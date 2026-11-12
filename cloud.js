@@ -2739,21 +2739,80 @@
     return pushInFlight;
   }
 
+  function catalogCanonical(id) {
+    var cat = global.XscapeItemCatalog;
+    if (cat && typeof cat.canonical === "function") return cat.canonical(id);
+    return id;
+  }
+
+  function itemIsConsumableId(id) {
+    if (!id) return false;
+    var cat = global.XscapeItemCatalog;
+    if (cat && typeof cat.isConsumable === "function" && cat.isConsumable(id)) return true;
+    var it = global.ITEMS && ITEMS[id];
+    if (it && (it.consumable || it.kind === "food" || it.kind === "potion" || it.kind === "rune")) return true;
+    if (typeof global.isRuneItem === "function" && isRuneItem(id)) return true;
+    return /_rune$/.test(String(id));
+  }
+
+  function gearCountsFromState(state) {
+    var counts = {};
+    function add(id) {
+      if (!id || id === "null") return;
+      if (itemIsConsumableId(id)) return;
+      var can = catalogCanonical(id);
+      counts[can] = (counts[can] || 0) + 1;
+    }
+    var inv = (state && state.inventory) || [];
+    var bank = (state && state.bank) || [];
+    var i;
+    for (i = 0; i < inv.length; i++) add(inv[i]);
+    for (i = 0; i < bank.length; i++) add(bank[i]);
+    var eq = (state && state.equipment) || {};
+    Object.keys(eq).forEach(function (slot) { add(eq[slot]); });
+    return counts;
+  }
+
+  function droppedGearVsCloud(outgoing, confirmed) {
+    if (!confirmed) return null;
+    var next = gearCountsFromState(outgoing);
+    var prev = gearCountsFromState(confirmed);
+    var id;
+    for (id in prev) {
+      if ((next[id] || 0) < prev[id]) {
+        return { id: id, old: prev[id], next: next[id] || 0 };
+      }
+    }
+    return null;
+  }
+
   async function pushStateOnce() {
     if (!session) return;
     var P = global.Profile || {};
     var settings = collectPlayerSettings(true);
     var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
+    var outgoing = filterAlcoveMidsFromPayload({
+      levels: P.levels || {},
+      equipment: P.equipment || {},
+      unlockedItems: P.unlockedItems || [],
+      bank: P.bank || [],
+      inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : (P.inventory || []),
+      settings: settings,
+      revision: saveRevision
+    }, cloudProfile);
+    // 2.2: never ask the server to delete gear. Resync from the last
+    // confirmed copy instead. applyCloudProfile uses _rawSaveProfile, so
+    // this cannot loop with the ok:false handler below.
+    if (cloudProfile) {
+      var dropped = droppedGearVsCloud(outgoing, cloudProfile);
+      if (dropped) {
+        console.warn("pre-save guard: non-consumable count dropped; resyncing", dropped);
+        applyCloudProfile(cloudProfile, { fromCloudLoad: true });
+        return;
+      }
+    }
     var res = await rpc("save_player_state", {
-      p_payload: filterAlcoveMidsFromPayload({
-        levels: P.levels || {},
-        equipment: P.equipment || {},
-        unlockedItems: P.unlockedItems || [],
-        bank: P.bank || [],
-        inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : (P.inventory || []),
-        settings: settings,
-        revision: saveRevision
-      }, cloudProfile)
+      p_payload: outgoing
     });
     if (res && res.stale && res.profile) {
       applyCloudProfile(res.profile, { fromCloudLoad: true });

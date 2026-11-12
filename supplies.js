@@ -267,7 +267,6 @@
     global.addToInventory = function (id) {
       if (!id) return false;
       id = canonicalSupplyId(id);
-      if (!global.ITEMS || !ITEMS[id]) return false;
       const P = profile();
       if (!P.inventory) P.inventory = [];
       if (isRuneId(id)) {
@@ -287,7 +286,6 @@
     global.addToBankStore = function (id) {
       if (!id) return false;
       id = canonicalSupplyId(id);
-      if (!global.ITEMS || !ITEMS[id]) return false;
       const P = profile();
       if (!P.bank) P.bank = [];
       const cap = (typeof global.BANK_CAP === "number") ? global.BANK_CAP : 200;
@@ -303,33 +301,24 @@
     };
     const prevNorm = global.normalizeContainers;
     global.normalizeContainers = function () {
+      // Restore reclaimStrayWornItems (the previous wrap dropped it).
+      if (typeof global.reclaimStrayWornItems === "function") {
+        try { global.reclaimStrayWornItems(); } catch (e) {}
+      }
       const P = profile();
       const inv = [];
-      const runeCopies = {};
       (P.inventory || []).forEach(function (raw) {
-        const id = canonicalSupplyId(raw);
-        if (!id || !ITEMS[id]) return;
-        if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
-        if (isRuneId(id)) {
-          if (runeCopies[id] == null) {
-            if (uniqueInventorySlots(inv) >= CAP) return;
-            runeCopies[id] = 0;
-          }
-          if (runeCopies[id] >= RUNE_COPY_CAP) return;
-          runeCopies[id]++;
-          inv.push(id);
-          return;
-        }
-        if (uniqueInventorySlots(inv) >= CAP) return;
+        const id = canonicalSupplyId(raw) || raw;
+        if (!id) return;
+        // Keep unknown and hidden ids. Do not truncate. Hidden is display-only.
         inv.push(id);
       });
       P.inventory = inv;
       const counts = {};
       const order = [];
       (P.bank || []).forEach(function (raw) {
-        const id = canonicalSupplyId(raw);
-        if (!id || !ITEMS[id]) return;
-        if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) return;
+        const id = canonicalSupplyId(raw) || raw;
+        if (!id) return;
         if (!counts[id]) { counts[id] = 0; order.push(id); }
         counts[id]++;
       });
@@ -348,9 +337,9 @@
       const b = P.bank || [];
       for (let i = 0; i < b.length; i++) {
         const id = b[i];
-        if (!id || !ITEMS[id]) continue;
-        if (typeof itemIsHidden === "function" && itemIsHidden(ITEMS[id])) continue;
-        if (seen[id]) continue;
+        if (!id || seen[id]) continue;
+        const it = global.ITEMS && ITEMS[id];
+        if (it && typeof itemIsHidden === "function" && itemIsHidden(it)) continue;
         seen[id] = true;
         out.push(id);
       }

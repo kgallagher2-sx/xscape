@@ -2076,8 +2076,11 @@
     if (global.XscapeCombat && XscapeCombat.RUNES && XscapeCombat.RUNES[id] && XscapeCombat.RUNES[id].name) {
       return XscapeCombat.RUNES[id].name;
     }
-    if (typeof global.runeItemName === "function") return runeItemName(id);
-    return id;
+    if (typeof global.isRuneItem === "function" && isRuneItem(id) && typeof global.runeItemName === "function") {
+      return runeItemName(id);
+    }
+    if (typeof global.runeItemName === "function" && /_rune$/.test(String(id || ""))) return runeItemName(id);
+    return "Unknown item";
   }
 
   var bankQtyMode = "1";
