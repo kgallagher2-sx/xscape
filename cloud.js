@@ -2892,6 +2892,71 @@
     return counts;
   }
 
+  function copyEquipment(eq) {
+    var out = {};
+    if (!eq || typeof eq !== "object") return out;
+    Object.keys(eq).forEach(function (k) { out[k] = eq[k]; });
+    return out;
+  }
+
+  function inventoryForCloudSave(P) {
+    var inv = expandHeldList((P && P.inventory) || []);
+    var supplies = global.XscapeSupplies;
+    if (supplies && typeof supplies.buyQueueActive === "function" && supplies.buyQueueActive()
+        && typeof supplies.pendingBuyItems === "function") {
+      var pend = supplies.pendingBuyItems() || [];
+      for (var i = 0; i < pend.length; i++) {
+        var at = inv.lastIndexOf(pend[i]);
+        if (at >= 0) inv.splice(at, 1);
+      }
+    }
+    return inv;
+  }
+
+  function removeOneFromList(list, id) {
+    if (!Array.isArray(list) || !id) return false;
+    var can = catalogCanonical(id);
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (list[i] === id || catalogCanonical(list[i]) === can) {
+        list.splice(i, 1);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /* If a just-worn piece is still sitting in the outgoing bag (stale shop
+     snapshot, missed remove, hyphen/underscore alias), conservation sees
+     "gear increased" and the client re-applies the server profile — the
+     swap appears, then snaps back. Strip only the excess of items that
+     are actually worn, down to the last confirmed count. */
+  function stripWornGearIncreases(outgoing, confirmed) {
+    if (!outgoing || !confirmed) return;
+    var next = gearCountsFromState(outgoing);
+    var prev = gearCountsFromState(confirmed);
+    var id;
+    for (id in next) {
+      var extra = (next[id] || 0) - (prev[id] || 0);
+      if (extra < 1) continue;
+      var worn = false;
+      var eq = outgoing.equipment || {};
+      Object.keys(eq).forEach(function (slot) {
+        if (eq[slot] && catalogCanonical(eq[slot]) === id) worn = true;
+      });
+      if (!worn) continue;
+      var n = extra;
+      while (n > 0 && removeOneFromList(outgoing.inventory, id)) {
+        removeOneFromList(global.Profile && Profile.inventory, id);
+        n--;
+      }
+      while (n > 0 && removeOneFromList(outgoing.bank, id)) {
+        removeOneFromList(global.Profile && Profile.bank, id);
+        n--;
+      }
+    }
+  }
+
   function droppedGearVsCloud(outgoing, confirmed) {
     if (!confirmed) return null;
     var next = gearCountsFromState(outgoing);
@@ -2909,16 +2974,19 @@
     if (!session) return;
     var P = global.Profile || {};
     var settings = collectPlayerSettings(true);
-    var funds = (global.XscapeSupplies && typeof XscapeSupplies.confirmedFunds === "function") ? XscapeSupplies.confirmedFunds() : null;
     var outgoing = filterAlcoveMidsFromPayload({
       levels: P.levels || {},
-      equipment: P.equipment || {},
-      unlockedItems: P.unlockedItems || [],
-      bank: P.bank || [],
-      inventory: (funds && Array.isArray(funds.inventory)) ? funds.inventory.slice() : (P.inventory || []),
+      equipment: copyEquipment(P.equipment),
+      unlockedItems: Array.isArray(P.unlockedItems) ? P.unlockedItems.slice() : [],
+      bank: expandHeldList(P.bank || []),
+      inventory: inventoryForCloudSave(P),
       settings: settings,
       revision: saveRevision
     }, cloudProfile);
+    // Never mix a stale shop-buy inventory snapshot with live equipment.
+    // If a worn piece is still also in the bag, drop the leftover copies
+    // so conservation does not reject the save and snap the swap back.
+    if (cloudProfile) stripWornGearIncreases(outgoing, cloudProfile);
     // 2.2: never ask the server to delete gear. Resync from the last
     // confirmed copy instead. applyCloudProfile uses _rawSaveProfile, so
     // this cannot loop with the ok:false handler below.

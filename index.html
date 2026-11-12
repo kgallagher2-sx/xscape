@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112182303-f706091";</script>
+  <script>window.XSCAPE_BUILD = "20261112184026-54fcc3b";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2565,8 +2565,26 @@ function equipItem(id) {
   if (!isOwned(id)) ownItem(id);
   const eq = Profile.equipment || (Profile.equipment = emptyEquipment());
   if (eq[it.slot] === id) return true;
-  if (inventoryHas(id)) removeFromInventory(id);
-  else if ((Profile.bank || []).indexOf(id) !== -1) removeFromBankStore(id);
+  if (!removeFromInventory(id) && !removeFromBankStore(id)) {
+    const can = (window.XscapeItemCatalog && typeof XscapeItemCatalog.canonical === "function")
+      ? XscapeItemCatalog.canonical(id) : id;
+    const lists = [Profile.inventory, Profile.bank];
+    let removed = false;
+    for (let li = 0; li < lists.length && !removed; li++) {
+      const list = lists[li];
+      if (!Array.isArray(list)) continue;
+      for (let i = 0; i < list.length; i++) {
+        const cur = list[i];
+        const curCan = (window.XscapeItemCatalog && typeof XscapeItemCatalog.canonical === "function")
+          ? XscapeItemCatalog.canonical(cur) : cur;
+        if (cur === id || (can && curCan === can)) {
+          list.splice(i, 1);
+          removed = true;
+          break;
+        }
+      }
+    }
+  }
   if (eq[it.slot] && eq[it.slot] !== id) {
     const prev = eq[it.slot];
     eq[it.slot] = null;

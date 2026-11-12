@@ -1267,6 +1267,15 @@
     };
   }
   function buyQueueActive() { return pendingBuys.length > 0; }
+  function pendingBuyItems() {
+    const out = [];
+    for (let i = 0; i < pendingBuys.length; i++) {
+      if (pendingBuys[i].cancelled) continue;
+      const items = pendingBuys[i].items || [];
+      for (let j = 0; j < items.length; j++) out.push(items[j]);
+    }
+    return out;
+  }
   function confirmedFunds() {
     if (!buyQueueActive()) return null;
     if (!lastConfirmed) snapshotConfirmed();
@@ -1541,6 +1550,7 @@
     decorateSlotButton: decorateSlotButton,
     decorateContainer: decorateContainer,
     buyQueueActive: buyQueueActive,
+    pendingBuyItems: pendingBuyItems,
     confirmedFunds: confirmedFunds,
     relayerPendingBuys: relayerPendingBuys,
     buy: buy,
