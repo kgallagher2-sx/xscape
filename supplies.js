@@ -72,6 +72,35 @@
   let editing = false;
   let assigning = -1;
   let dirtySave = false;
+  let hudDirty = true;
+  let invEpoch = 0;
+  let familyCache = null;
+
+  function bumpInventory() {
+    invEpoch++;
+    familyCache = null;
+    hudDirty = true;
+  }
+
+  function markHudDirty() {
+    hudDirty = true;
+  }
+
+  function familyCacheNow() {
+    if (familyCache && familyCache.epoch === invEpoch) return familyCache;
+    const arr = invArr();
+    const counts = Object.create(null);
+    const doses = Object.create(null);
+    for (let i = 0; i < arr.length; i++) {
+      const fam = familyOf(arr[i]);
+      if (!fam) continue;
+      counts[fam] = (counts[fam] || 0) + 1;
+      doses[fam] = (doses[fam] || 0) + doseOf(arr[i]);
+    }
+    familyCache = { epoch: invEpoch, counts: counts, doses: doses };
+    return familyCache;
+  }
+
   let shopQty = 1;
   let hotkeysOpen = false;
 
@@ -128,8 +157,9 @@
 
   function parseDose(id) {
     if (!id || typeof id !== "string") return null;
-    const m = id.match(new RegExp("^(" + POTION_IDS + ")_([1-4])$"));
-    if (!m) return null;
+    // Hoisted POTION_ID_RE (dose group is optional). Bare family ids are not doses.
+    const m = id.match(POTION_ID_RE);
+    if (!m || !m[2]) return null;
     return { family: m[1], dose: Number(m[2]) };
   }
 
@@ -168,7 +198,8 @@
   }
 
   function countFamily(fam, list) {
-    const arr = list || invArr();
+    if (list == null) return familyCacheNow().counts[fam] || 0;
+    const arr = list;
     let n = 0;
     for (let i = 0; i < arr.length; i++) {
       if (familyOf(arr[i]) === fam) n++;
@@ -204,9 +235,12 @@
   function totalDoses(fam, list) {
     if (isJad() && JAD_KIT[fam] != null) return jadCount(fam);
     let n = 0;
-    const arr = list || invArr();
-    for (let i = 0; i < arr.length; i++) {
-      if (familyOf(arr[i]) === fam) n += doseOf(arr[i]);
+    if (list == null) n = familyCacheNow().doses[fam] || 0;
+    else {
+      const arr = list;
+      for (let i = 0; i < arr.length; i++) {
+        if (familyOf(arr[i]) === fam) n += doseOf(arr[i]);
+      }
     }
     // Raid chest finds are counted as leftover sips, not full bottles.
     n += raidExtra(fam) || 0;
@@ -429,6 +463,7 @@
   function startJadKit() {
     const G = global.G;
     if (!G) return;
+    bumpInventory();
     G.jadKit = { shark: JAD_KIT.shark, prayer_potion: JAD_KIT.prayer_potion, ranging_potion: JAD_KIT.ranging_potion };
     G.sharks = JAD_KIT.shark;
     G.pots = JAD_KIT.prayer_potion;
@@ -443,6 +478,7 @@
   function startBroughtSupplies() {
     const G = global.G;
     if (!G) return;
+    bumpInventory();
     G.jadKit = null;
     G.sharks = countFamily("shark");
     G.pots = countFamily("super_restore") + countFamily("prayer_potion");
@@ -519,6 +555,7 @@
 
   function markDirty() {
     dirtySave = true;
+    bumpInventory();
     if (typeof global.saveProfile === "function") {
       try { global.saveProfile(); } catch (e) {}
     }
@@ -790,12 +827,44 @@
     return String(totalDoses(slot.id));
   }
 
-  function refresh() {
+  function updateSlotCooldowns(grid, slots, G, playing) {
+    if (!grid) return;
+    const btns = grid.querySelectorAll(".quick-slot");
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      const btn = btns[i];
+      const slot = slots[i];
+      if (!btn || !slot || slot.type !== "item") continue;
+      const fam = slot.id;
+      const cooling = playing && ((isFood(fam) && ((G.eatCd || 0) > 0 || G.pendingEat)) || (!isFood(fam) && ((G.potCd || 0) > 0 || (G.rangeCd || 0) > 0 || G.pendingPot || G.pendingRange)));
+      btn.classList.toggle("cooling", cooling && !editing);
+      btn.classList.toggle("pending", !!(G && G.pendingUse === fam) && !editing);
+      const sweep = btn.querySelector(".cd-sweep");
+      if (sweep && typeof global.tickProgress === "function") {
+        const maxCd = global.CONSUME_COOLDOWN_TICKS;
+        const cd = isFood(fam) ? (G.eatCd || 0) : (fam === "ranging_potion" ? (G.rangeCd || 0) : (G.potCd || 0));
+        const pending = !!(G && G.pendingUse === fam);
+        const remain = pending ? maxCd : Math.max(0, cd - tickProgress());
+        sweep.style.setProperty("--cd", ((remain / maxCd) * 100).toFixed(2) + "%");
+      }
+    }
+    if (global.XscapePerf) global.XscapePerf.suppliesLight = (global.XscapePerf.suppliesLight || 0) + 1;
+  }
+
+  function refresh(opts) {
     const grid = $("quick-grid");
     if (!grid) return;
-    const slots = layoutForFight();
     const G = global.G;
     const playing = !!(G && G.mode === "playing");
+    const slots = layoutForFight();
+    // Explicit refresh() is always a full rebuild. The rAF path passes
+    // { light: true } and only skips when nothing is dirty.
+    const light = opts === false || (opts && opts.light);
+    if (light && !hudDirty && !editing) {
+      updateSlotCooldowns(grid, slots, G, playing);
+      return;
+    }
+    hudDirty = false;
+    if (global.XscapePerf) global.XscapePerf.suppliesFull = (global.XscapePerf.suppliesFull || 0) + 1;
     const btns = grid.querySelectorAll(".quick-slot");
     for (let i = 0; i < SLOT_COUNT; i++) {
       let btn = btns[i];
@@ -1189,6 +1258,7 @@
   function shopUnitPrice(shopId) { return Number(PRICES[shopId] || PRICES[familyOf(shopId)] || 0); }
 
   function paintBuy() {
+    bumpInventory();
     renderShop();
     if (global.XscapeHub && XscapeHub.renderBank) XscapeHub.renderBank();
     if (typeof global.refreshGearViews === "function") refreshGearViews();
@@ -1342,6 +1412,7 @@
     const P = profile();
     if (p.gp != null) { P.gp = Number(p.gp) || 0; if (global.G) G.gp = P.gp; }
     if (Array.isArray(p.inventory)) P.inventory = p.inventory.slice();
+    bumpInventory();
     if (p.revision != null && global.XscapeCloud && typeof XscapeCloud.noteRevision === "function") {
       XscapeCloud.noteRevision(p.revision);
     }
@@ -1463,7 +1534,9 @@
     applyBuyProfile: applyBuyProfile,
     isRuneId: isRuneId,
     uniqueInventorySlots: uniqueInventorySlots,
-    markDirty: markDirty
+    markDirty: markDirty,
+    markHudDirty: markHudDirty,
+    bumpInventory: bumpInventory
   };
   global.XscapeSupplies = api;
   global.openSupplyShop = openShop;

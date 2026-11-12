@@ -19,6 +19,11 @@
   var hubChannel = null;
   var ready = false;
   var saveTimer = null;
+  var fightSaveTimer = null;
+  var fightSavePending = false;
+  var saveForce = false;
+  var FIGHT_SAVE_MS = 30000;
+
   var lastKreeKills = 0;
   var lastRaidClears = 0;
   var recordingKill = false;
@@ -2370,8 +2375,16 @@
     if (typeof global.saveProfile === "function" && !global.saveProfile._cloud) {
       _rawSaveProfile = global.saveProfile;
       var wrappedSave = function () {
+        var fighting = inLiveFight();
+        if (fighting && !saveForce) {
+          // 6.3: during a fight, mark dirty and defer local + cloud flush
+          // to fight end, visibility hidden, or every 30s.
+          noteDeferredFightSave();
+          maybeRecordProgress();
+          return;
+        }
         _rawSaveProfile.apply(this, arguments);
-        scheduleStateSave();
+        if (!saveForce) scheduleStateSave();
         maybeRecordProgress();
       };
       wrappedSave._cloud = true;
@@ -2707,8 +2720,12 @@
   }
 
   async function flushSave() {
+    fightSavePending = false;
+    clearSaveTimers();
+    saveForce = true;
     try { if (typeof global.saveProfile === "function") global.saveProfile(); } catch (e) {}
-    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    saveForce = false;
+    if (global.XscapePerf) global.XscapePerf.savesFlushed = (global.XscapePerf.savesFlushed || 0) + 1;
     var jadRes = null;
     // Only record a kill that has not yet been confirmed. Leftover ticks/score
     // after a successful payout must not trigger another record_jad_kill on
@@ -2740,10 +2757,57 @@
     if (typeof global.refreshGearViews === "function") global.refreshGearViews();
   }
 
+  function inLiveFight() {
+    try {
+      if (global.XscapeCombat && typeof XscapeCombat.isFightPlaying === "function") {
+        return !!XscapeCombat.isFightPlaying();
+      }
+    } catch (e) {}
+    return !!(global.G && global.G.mode === "playing");
+  }
+
+  function noteDeferredFightSave() {
+    fightSavePending = true;
+    if (global.XscapePerf) {
+      global.XscapePerf.fightSavesDeferred = (global.XscapePerf.fightSavesDeferred || 0) + 1;
+    }
+    armFightSaveTimer();
+  }
+
+  function armFightSaveTimer() {
+    if (fightSaveTimer || !session) return;
+    fightSaveTimer = setTimeout(function () {
+      fightSaveTimer = null;
+      if (!fightSavePending) return;
+      // 30s flush of localStorage + save_player_state; re-arm only if
+      // another consume happens later (noteDeferredFightSave).
+      flushSave();
+    }, FIGHT_SAVE_MS);
+  }
+
+  function clearSaveTimers() {
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    if (fightSaveTimer) { clearTimeout(fightSaveTimer); fightSaveTimer = null; }
+  }
+
+  // Called from updateHud: if the fight just ended with a deferred save,
+  // flush immediately so win/lose/abandon persist consumed supplies.
+  function flushDeferredFightSave() {
+    if (!fightSavePending) return;
+    if (inLiveFight()) return;
+    flushSave();
+  }
+
   function scheduleStateSave() {
     if (!session) return;
+    if (inLiveFight() && !saveForce) {
+      noteDeferredFightSave();
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      return;
+    }
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(pushState, 800);
+    if (global.XscapePerf) global.XscapePerf.savesScheduled = (global.XscapePerf.savesScheduled || 0) + 1;
   }
 
   var pushInFlight = null;
@@ -2759,6 +2823,7 @@
       try {
         do {
           pushAgain = false;
+          if (global.XscapePerf) global.XscapePerf.savesPushed = (global.XscapePerf.savesPushed || 0) + 1;
           await pushStateOnce();
         } while (pushAgain && session);
       } finally {
@@ -3030,6 +3095,7 @@
 
     reloadProfile: reloadProfile,
     flushSave: flushSave,
+    flushDeferredFightSave: flushDeferredFightSave,
     cancelPendingFightRecords: cancelPendingFightRecords,
     applyProfile: applyCloudProfile,
     noteRevision: function (rev) {

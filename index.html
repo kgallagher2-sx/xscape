@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>window.XSCAPE_BUILD = "20261112171512-3502a2b";</script>
+  <script>window.XSCAPE_BUILD = "20261112172355-d5581ea";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -5396,24 +5396,59 @@ function fmtTime(sec) {
 
 function updateHud() {
   if (!G.player) return;
+  const perf = (window.XscapePerf = window.XscapePerf || {
+    frames: 0, hudFull: 0, hudLight: 0, suppliesFull: 0, suppliesLight: 0,
+    savesScheduled: 0, savesPushed: 0, savesFlushed: 0, fightSavesDeferred: 0
+  });
+  perf.frames = (perf.frames || 0) + 1;
+
   const hp = G.player.hp, php = G.player.prayerPts;
-  $("hp-txt").textContent = hp + "/" + PLAYER_MAX_HP;
-  $("prayer-txt").textContent = php + "/" + PLAYER_MAX_PRAYER;
-  $("hp-fill").style.transform = "scaleX(" + Math.min(1, hp / PLAYER_MAX_HP) + ")";
-  $("prayer-fill").style.transform = "scaleX(" + Math.min(1, php / PLAYER_MAX_PRAYER) + ")";
-  $("hp-fill").classList.toggle("low", hp <= 40 && hp > 20);
-  $("hp-fill").classList.toggle("crit", hp <= 20);
-  if ($("qty-shark")) $("qty-shark").textContent = G.sharks;
-  if ($("qty-pot")) $("qty-pot").textContent = G.pots;
-  if ($("btn-shark")) $("btn-shark").disabled = G.sharks <= 0;
-  if ($("btn-pot")) $("btn-pot").disabled = G.pots <= 0;
-  updateRangePotHud();
-  if (window.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh();
-  if (typeof PlayerStats !== "undefined" && PlayerStats.render) PlayerStats.render();
-  $("hud-time").textContent = fmtTime(G.elapsedMs / 1000);
-  $("hud-score").textContent = String(liveScore());
+  const timeStr = fmtTime((G.elapsedMs || 0) / 1000);
+  const scoreStr = String(liveScore());
+  const playing = G.mode === "playing";
+  const scene = G.scene || "";
+  const prayer = G.prayer || "";
+  const prev = updateHud._s || {};
+  const vitalsChanged = prev.hp !== hp || prev.php !== php;
+  const chromeChanged = prev.playing !== playing || prev.scene !== scene;
+  const prayerChanged = prev.prayer !== prayer;
+  const qtyChanged = prev.sharks !== G.sharks || prev.pots !== G.pots || prev.rangePots !== G.rangePots;
+  const heavy = !prev.ready || vitalsChanged || chromeChanged || prayerChanged || qtyChanged;
+
+  if (vitalsChanged || !prev.ready) {
+    $("hp-txt").textContent = hp + "/" + PLAYER_MAX_HP;
+    $("prayer-txt").textContent = php + "/" + PLAYER_MAX_PRAYER;
+    $("hp-fill").style.transform = "scaleX(" + Math.min(1, hp / PLAYER_MAX_HP) + ")";
+    $("prayer-fill").style.transform = "scaleX(" + Math.min(1, php / PLAYER_MAX_PRAYER) + ")";
+    $("hp-fill").classList.toggle("low", hp <= 40 && hp > 20);
+    $("hp-fill").classList.toggle("crit", hp <= 20);
+  }
+  if (prev.time !== timeStr) $("hud-time").textContent = timeStr;
+  if (prev.score !== scoreStr) $("hud-score").textContent = scoreStr;
+
+  if (heavy) {
+    if ($("qty-shark")) $("qty-shark").textContent = G.sharks;
+    if ($("qty-pot")) $("qty-pot").textContent = G.pots;
+    if ($("btn-shark")) $("btn-shark").disabled = G.sharks <= 0;
+    if ($("btn-pot")) $("btn-pot").disabled = G.pots <= 0;
+    updateRangePotHud();
+    if (window.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh();
+    if (typeof PlayerStats !== "undefined" && PlayerStats.render) PlayerStats.render();
+    perf.hudFull = (perf.hudFull || 0) + 1;
+  } else {
+    if (window.XscapeSupplies && XscapeSupplies.refresh) XscapeSupplies.refresh({ light: true });
+    perf.hudLight = (perf.hudLight || 0) + 1;
+  }
   updateConsumeVisuals();
-  setPlayingChrome(G.mode === "playing");
+  if (chromeChanged || !prev.ready) setPlayingChrome(playing);
+  updateHud._s = {
+    ready: true, hp: hp, php: php, time: timeStr, score: scoreStr,
+    playing: playing, scene: scene, prayer: prayer,
+    sharks: G.sharks, pots: G.pots, rangePots: G.rangePots
+  };
+  if (window.XscapeCloud && typeof XscapeCloud.flushDeferredFightSave === "function") {
+    try { XscapeCloud.flushDeferredFightSave(); } catch (e) {}
+  }
 }
 
 function buildResult() {
