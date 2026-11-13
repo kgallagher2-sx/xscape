@@ -89,7 +89,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | RPC-1 | Done (Kellen, Nov 13) | Remove the legacy world-boss kill path (kill RPC with no start row) before launch; every kill must come from a server-started fight. Pairs with F5. | [REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) |
 | RPC-2 | Done (Kellen, Nov 13) | Server computes the Magmor (Jad) best score from the fight it timed (start_boss_fight row); ignore the client p_score. | Same |
 | RPC-3 | Done (Kellen, Nov 13) | Add a few-second server cooldown between accepted trades (trade_accept) to slow trade bots. | Same |
-| RPC-4 | Needs Kellen | `report_raid_deaths` can mark other party members dead (trusted client list). Later look, not a one-line fix. | Same |
+| RPC-4 | Done (Kellen, Nov 13) | Superseded by NET-1: raids (and PvP) will be server-run, so no client reports deaths. Until then the host stays the source of truth. | Same |
 | RPC-5 | Needs Kellen | Admin RPCs are allow-listed to a single UUID; a role table would be cleaner. | Same |
 
 ### Boss mechanics
@@ -155,3 +155,14 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Hide the Duel Arena now (too similar to OSRS). Don't delete its code yet.
 - Keep the Duel Arena itself (the area/building); it will be repurposed for the new PvP content. (Correction, Kellen Nov 13: he meant the arena, not jewelry.)
 - Earmark: design and build our own PvP (and possibly staking) content BEFORE launch. Belongs in roadmap M3. Needs a design session.
+
+
+## NET-1 Server-run multiplayer (Kellen, Nov 13, 2026) - REVISIT BEFORE BUILDING
+- Direction: raids and PvP run on our own game server (authoritative tick loop). Phones send inputs only and draw what the server says. No player's client can cheat the result, and host lag no longer affects the party.
+- Replaces the Phase 5 approach (leader's phone simulates the fight) in XSCAPE_FIX_PLAN.md. Phase 5 bug fixes only matter if we ship before NET-1.
+- Likely shape: a small Node game server (e.g. Fly.io) sharing combat code with the client; Supabase stays for accounts, saves, GP/items and loot.
+- Open paths, write both and decide at the server planning session:
+  - Path A: server runs raids + PvP only; solo bosses stay on the phone with today's server checks (timed fights, server-rolled loot). Cheaper, works on weaker connections.
+  - Path B: server runs all combat, solo too. Fully cheat-proof; more hosting cost; every fight needs a connection.
+- Caveats to settle then: hosting cost grows with players (~$10-50/mo at start, Kellen OK with that); scaling plan; region/latency; disconnect and reconnect rules; fallback if the server is down.
+- Placement: roadmap M1 foundations (shared combat engine with B1), needed before the new PvP (PVP-1) and before the raid redesign ships.

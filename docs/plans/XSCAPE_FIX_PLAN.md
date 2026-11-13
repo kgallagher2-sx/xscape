@@ -468,6 +468,8 @@ If the sandbox does this work, it goes in a separate working copy with one commi
 
 ## Phase 5: Multiplayer sync
 
+> **Superseded direction (Kellen, Nov 13, 2026):** raids and PvP will be server-run (see NET-1 in docs/README.md). The fixes below only matter if we ship before NET-1.
+
 **Principle:** In a raid the leader's client simulates everyone; in a duel each client simulates both players. Each client may only send *its own player's inputs*, stamped with the tick they apply on. The server settles results only when the clients agree (1.3, 1.6). The long-term direction for "server is the source of truth" is a server-side simulation, but that's a large separate project. This phase makes the clients agree reliably first.
 
 ### 5.1 Group raid
