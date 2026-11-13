@@ -183,3 +183,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Spells will go beyond combat (utility, travel, skilling, etc.).
 - Deliverable: the full first spellbook. For every spell: name, purpose (combat or utility), level/unlock gate, staff requirement if any, rune cost, effect/max hit, targets (incl. the multi-target spell from BOSS-B3.4-spell), and out-of-runes behaviour.
 - Replaces MAGIC_SYSTEM_PROPOSAL.md as the source of truth once written; absorbs MAGIC-Q3, MAGIC-Q4 and BOSS-B3.4-spell.
+
+- ANIM-Q1 (Kellen, Nov 13): 2–4 frame pixel loops for launch; smoother animation is a post-launch improvement, not a launch requirement.

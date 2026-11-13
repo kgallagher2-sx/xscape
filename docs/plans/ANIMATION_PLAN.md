@@ -35,6 +35,6 @@ Kellen: armor seems redrawn per facing (front/back/left/right) instead of one it
 - Must stay smooth on a phone (390x844).
 
 ## Open decisions for Kellen
-- ANIM-Q1: frame budget/style (simple 2–4 frame pixel loops vs smoother).
+- ANIM-Q1: DONE (Kellen, Nov 13): launch baseline is simple 2–4 frame pixel loops. Smoother animation is NOT required for launch; improve progressively post-launch as art capacity allows. The system must allow swapping in more frames later without code changes.
 - ANIM-Q3: art pipeline, 3D-to-sprite vs layered 2D (see ANIM-ART).
 - ANIM-Q2: do the player first, or bundle the player with the first boss pass?
