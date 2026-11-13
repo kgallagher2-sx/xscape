@@ -155,7 +155,7 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
   - Each call costs favor. You earn favor by helping them, e.g. answering their expedition distress calls.
 - 💡 **Trophy room:** the fort shows boss heads, best times and your rarest drop. Friends can visit.
 - 💡 **Lore scraps:** pages from the Deep and Hunts reveal the bosses' story. Finishing a chapter unlocks a title.
-- 💡 **Weather and night cycle:** some hunts and events only happen at night or in storms.
+- ✅ **Day/night cycle and weather** (Kellen, 12 Nov): unique tasks by time of day. Ideas: night-only rare hunts, glowing ores, a night merchant, storm events.
 
 ## Design checklist (what makes it sticky)
 Variable rewards, near misses, streaks/dailies, short loops inside long goals, collections, social obligation, visible progress, status, resetting timers, comeback help.
