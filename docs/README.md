@@ -75,7 +75,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | ID | Status | Decision | Source |
 |---|---|---|---|
 | FIX-4.5-a | Done (Kellen, Nov 13) | Gloam brew Defence: cap it. Base the boost on the normal (unboosted) level so re-sips top back up instead of stacking (99 gives 120). Formula is level-relative so it carries over to LEVEL-REDO. | Appendix §6 item 2; fix plan 4.5 |
-| FIX-4.5-b | Needs Kellen | Raid Gloam heal hardcodes a 99 HP base rather than the fighter's actual Hitpoints. | Appendix §6 item 3 |
+| FIX-4.5-b | Done (Kellen, Nov 13) | Raid Gloam heal: base it on the fighter's real Hitpoints level, not a hardcoded 99 (no change today; fits LEVEL-REDO). | Appendix §6 item 3 |
 | FIX-4.5-c | Needs Kellen | Duels snapshot `Profile.levels` and have no mid-fight potions, so a pre-duel Super defence does not apply. Boosted levels must never be written to `save_player_state`. | Appendix §6 item 4 |
 | FIX-4.5-d | Needs Kellen | Duel magic max-hit uses a unique formula, not `playerHit`. Left alone so PvP numbers do not move — confirm. | Appendix §6 item 5 |
 | FIX-4.5-e | Needs Kellen | Raid special accuracy (Warden / Morvane / shade) does not use `npcHitChance`, so 4.4 and Withering Gaze do not affect those hits. Should specials use formula Defence? | Appendix §6 item 6 |
