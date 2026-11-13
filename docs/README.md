@@ -152,5 +152,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 
 ## PVP-1 Duel Arena hidden; new PvP before launch (Kellen, Nov 13, 2026)
 - Hide the Duel Arena now (too similar to OSRS). Don't delete its code yet.
-- Keep the duel-related jewelry; it will be repurposed.
+- Keep the Duel Arena itself (the area/building); it will be repurposed for the new PvP content. (Correction, Kellen Nov 13: he meant the arena, not jewelry.)
 - Earmark: design and build our own PvP (and possibly staking) content BEFORE launch. Belongs in roadmap M3. Needs a design session.
