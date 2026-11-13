@@ -102,8 +102,8 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | BOSS-B8-rooms | Done (Kellen, Nov 13) | Gloamhold raid rooms move onto the shared arena engine (raids are boss fights in sequence); done with the NET-1 server work. | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B9-bands | Done (Kellen, Nov 13) | Target kill time 2-4 minutes in the boss's intended gear. No best-in-slot rule (BiS will change over time). Raid room targets follow the same intended-gear rule. Tested in the balance pass. | Same |
 | BOSS-B3.4-spell | Folded into MAGIC-BOOK (Nov 13) | Multi-target spell for the six spectral knights gets designed in the spellbook session. | [B3.4](plans/BOSS_MECHANICS_PLAN.md) |
-| BOSS-B6.1-info | Needs Kellen | Vaelkor info-page text for the redesign. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
-| BOSS-B6.1-hp | Needs Kellen | Minion HP “about 75” — confirm in a balance pass. Max hit 18 is already decided. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
+| BOSS-B6.1-info | Done (Kellen, Nov 13) | Write Vaelkor's info page from the decided mechanics (flying: melee can't reach; at 75% flies out of reach and summons 3 minions; whirlwinds; returns when they die). | See plan |
+| BOSS-B6.1-hp | Done (Kellen, Nov 13) | Minion HP 75 for now; tune in the balance pass. Max hit 18. | See plan |
 
 ### Magic proposal (not approved)
 
@@ -118,7 +118,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 
 | ID | Status | Decision | Source |
 |---|---|---|---|
-| IDEAS-ECON | Needs Kellen | Cut raw GP from boss drops and add gold sinks. Direction decided 12 Nov; numbers need a balance pass and sign-off before anything ships. | [IDEAS.md, Economy](plans/IDEAS.md) |
+| IDEAS-ECON | Done (Kellen, Nov 13) | Cut raw GP from boss drops by about half and add gold sinks; exact numbers in the economy pass. | See plan |
 
 ---
 
