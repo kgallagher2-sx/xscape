@@ -177,7 +177,7 @@ Goal: less like OSRS Kree'arra; the bodyguards become a summoned phase.
 - **Below 75% HP:** he flies higher (out of reach of every style, untargetable) and summons his 3 minions. He keeps dropping whirlwinds on tiles during this phase.
 - **Minions (3):** one melee, one ranged, one magic. They chase the player and attack from their own reach: melee 1 tile, ranged 4 tiles, magic 4 tiles. HP raised to about **75** each (numbers to confirm in a balance pass).
 - **All 3 dead:** Vaelkor comes back down to "finish the job" and is targetable again for the rest of the fight.
-- **Decided (Nov 13):** he returns at the HP he left at (so about 75%). Whirlwinds fall 1.25x as often while he is in the air. Minion max hits are a balance-pass number tuned against the gear tiers (starter, mid, best), not fixed in this doc.
+- **Decided (Nov 13):** he returns at the HP he left at (so about 75%). Whirlwinds fall 1.25x as often while he is in the air. Minion max hit is **18** for each style (melee, ranged, magic); actual damage still scales with the player's gear and Defence.
 - Open: info page text.
 
 ## B7: Magmor, the Molten Titan
