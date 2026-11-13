@@ -8,7 +8,7 @@ Started 12 Nov 2026.
 ## Guiding principles (Kellen, 12 Nov 2026)
 - **Goal:** make the game sticky. Give players a reason to "hop on for a minute" that turns into hours, and reasons to pull friends in.
 - **Be our own game.** Borrow the feel of OSRS where it's worth it, but avoid copying more of its systems. Prefer ideas that grow from Xscape's core: short, hard boss fights on a phone.
-- **Leveling:** any new skill levels like World of Warcraft, not RuneScape. Levels are fast and satisfying, and the game is not meant to be a grind.
+- **Leveling:** any new skill levels more like World of Warcraft than RuneScape. A small grind is fine and keeps people coming back (Kellen, 12 Nov): early levels come quickly, the last few take a real but reasonable push, and there's no 99-style wall.
 
 ---
 
@@ -80,7 +80,7 @@ Introduced through the Deep.
 - Some floors have ore veins to mine between fights. Mining takes a few ticks and can wake nearby enemies (risk vs. reward).
 - Rarer ores sit deeper (working names): iron on floors 1-10, emberite on 20+, voidstone on 40+.
 - Ore feeds smithing gear, relic upgrades and infusion ingredients.
-- Levels WoW-style, with no grind wall.
+- Levels WoW-style, with a small grind at the top end.
 
 ### 💡 Group gathering
 Shared skilling spots that yield faster with more players nearby.
@@ -152,7 +152,7 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 ---
 
 ## Decisions log
-- **12 Nov:** Be our own game. Use WoW-style leveling, not a grind.
+- **12 Nov:** Be our own game. Use WoW-style leveling with a small grind, never a 99-style wall.
 - **12 Nov:** The Deep is the top pick.
 - **12 Nov:** Add Mining via rare ores in the Deep.
 - **12 Nov:** Kellen likes Relics, Wall stones, Hunts, Siege, Expeditions and the Infusion forge.
