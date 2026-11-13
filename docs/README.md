@@ -109,7 +109,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 
 | ID | Status | Decision | Source |
 |---|---|---|---|
-| MAGIC-Q1 | Needs Kellen | Inventory-slot rune stacks (recommended) vs consuming straight from the bank. | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
+| MAGIC-Q1 | Done (Kellen, Nov 13) | Runes come from inventory stacks you bring into the fight (not the bank). | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
 | MAGIC-Q2 | Needs Kellen | Nightfall as a powered built-in spell at base 38 (recommended) vs only autocasting Spire. | Same |
 | MAGIC-Q3 | Needs Kellen | Adding the 400k Ashen staff so magic is not locked behind Widow. | Same |
 | MAGIC-Q4 | Needs Kellen | Confirm no mid-fight auto-fallback when runes run out. | Same |
