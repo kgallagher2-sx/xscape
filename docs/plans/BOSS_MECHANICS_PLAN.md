@@ -191,20 +191,21 @@ Goal: less like OSRS Kree'arra; the bodyguards become a summoned phase.
 - **Minions (3):** one melee, one ranged, one magic. They chase the player and attack from their own reach: melee 1 tile, ranged 4 tiles, magic 4 tiles. HP raised to about **75** each (numbers to confirm in a balance pass).
 - **All 3 dead:** Vaelkor comes back down to "finish the job" and is targetable again for the rest of the fight.
 - **Decided (Nov 13):** he returns at the HP he left at (so about 75%). Whirlwinds fall 1.25x as often while he is in the air. Minion max hit is **18** for each style (melee, ranged, magic); actual damage still scales with the player's gear and Defence.
+- **Decided (Nov 13, arena):** shared arena engine. 'Flying' is a targeting flag only. Normal flying: melee can never hit him, ranged and magic can. High phase (below 75%): untargetable by all styles until all 3 minions die, then back to normal flying.
 - Open: info page text.
 
 ## B7: Magmor, the Molten Titan
 
 **Today:** a single-row lane (`TILE.rows = 1`), the guest and starter fight.
 - **Decide:** keep the lane (it's the tutorial fight and simple on purpose), or move to the arena engine.
-- **Recommendation:** keep the lane, apply only rules 4 and 6, and revisit later.
+- **Decided (Kellen, Nov 13):** move Magmor to a real room on the shared arena engine.
 - **Verify:** the guest flow still works end to end, from a starter kill to the Fire cape.
 
 ## B8: Gloamhold raid
 
 **Today:** its own grid (`raid.js:10-11`, `COLS=5`, `ROWS=1`) with BFS pathfinding, and its own copy of the combat code.
 - **Decide:** move the raid rooms onto `arena.js`, or leave them for a dedicated raid run.
-- **Recommendation:** leave for now, but make `raid.js` use the shared BFS from B1.2 so there's one pathfinder.
+- **Decided (Kellen, Nov 13):** move the raid rooms onto the shared arena engine, together with the NET-1 server work.
 - **Verify:** three group clears on staging with no desync (same check as bug-plan 5.1).
 
 ---

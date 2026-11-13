@@ -97,9 +97,9 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | ID | Status | Decision | Source |
 |---|---|---|---|
 | BOSS-B1.4 | Done (Kellen, Nov 13, revised) | ONE camera system game-wide: a flat 2D camera that follows the player but clamps at the edges of the current area. A scene that fits the screen never scrolls (whole room in view, like today's boss rooms); in larger areas and the open world it keeps the player centered except near edges. Design rule: boss rooms are sized to fit a phone screen. Never 3D or rotating; 2D pixel art; characters turn to face their target. M1 foundation (CAMERA-1). | [Boss plan, Open decisions](plans/BOSS_MECHANICS_PLAN.md#open-decisions) |
-| BOSS-B6-arena | Needs Kellen | Vaelkor arena (B6). Phase redesign B6.1 is otherwise decided. | Same |
-| BOSS-B7-lane | Needs Kellen | Magmor lane (B7). | Same |
-| BOSS-B8-rooms | Needs Kellen | Gloamhold raid rooms (B8). | Same |
+| BOSS-B6-arena | Done (Kellen, Nov 13) | Vaelkor moves to the shared arena engine. 'Flying' is only a targeting flag (no special flight code). Normal state: flying, so melee can NEVER hit him; ranged and magic can. Below 75%: 'flies higher' = untargetable by every style; player must kill the 3 minions; then he returns to normal flying (ranged/magic only) at the HP he left at. | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
+| BOSS-B7-lane | Done (Kellen, Nov 13) | Magmor gets a real room on the shared arena engine (trial fight teaches the same movement as everywhere else). | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
+| BOSS-B8-rooms | Done (Kellen, Nov 13) | Gloamhold raid rooms move onto the shared arena engine (raids are boss fights in sequence); done with the NET-1 server work. | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B9-bands | Needs Kellen | Per-boss target kill times and damage bands (B9). | Same |
 | BOSS-B3.4-spell | Needs Kellen | Multi-target magic spell to support the six spectral knights. Needs a magic-system design (rune cost, targets, max hit) and sign-off. | [B3.4](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B6.1-info | Needs Kellen | Vaelkor info-page text for the redesign. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
