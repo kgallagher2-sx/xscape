@@ -100,7 +100,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | BOSS-B6-arena | Done (Kellen, Nov 13) | Vaelkor moves to the shared arena engine. 'Flying' is only a targeting flag (no special flight code). Normal state: flying, so melee can NEVER hit him; ranged and magic can. Below 75%: 'flies higher' = untargetable by every style; player must kill the 3 minions; then he returns to normal flying (ranged/magic only) at the HP he left at. | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B7-lane | Done (Kellen, Nov 13) | Magmor gets a real room on the shared arena engine (trial fight teaches the same movement as everywhere else). | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B8-rooms | Done (Kellen, Nov 13) | Gloamhold raid rooms move onto the shared arena engine (raids are boss fights in sequence); done with the NET-1 server work. | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
-| BOSS-B9-bands | Needs Kellen | Per-boss target kill times and damage bands (B9). | Same |
+| BOSS-B9-bands | Done (Kellen, Nov 13) | Target kill time 2-4 minutes in the boss's intended gear. No best-in-slot rule (BiS will change over time). Raid room targets follow the same intended-gear rule. Tested in the balance pass. | Same |
 | BOSS-B3.4-spell | Folded into MAGIC-BOOK (Nov 13) | Multi-target spell for the six spectral knights gets designed in the spellbook session. | [B3.4](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B6.1-info | Needs Kellen | Vaelkor info-page text for the redesign. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B6.1-hp | Needs Kellen | Minion HP “about 75” — confirm in a balance pass. Max hit 18 is already decided. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
