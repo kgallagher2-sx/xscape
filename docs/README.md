@@ -74,7 +74,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 
 | ID | Status | Decision | Source |
 |---|---|---|---|
-| FIX-4.5-a | Needs Kellen | Gloam brew Defence is +20% + 2 of *current*, so re-sipping can climb well past 120. Intended? | Appendix §6 item 2; fix plan 4.5 |
+| FIX-4.5-a | Done (Kellen, Nov 13) | Gloam brew Defence: cap it. Base the boost on the normal (unboosted) level so re-sips top back up instead of stacking (99 gives 120). Formula is level-relative so it carries over to LEVEL-REDO. | Appendix §6 item 2; fix plan 4.5 |
 | FIX-4.5-b | Needs Kellen | Raid Gloam heal hardcodes a 99 HP base rather than the fighter's actual Hitpoints. | Appendix §6 item 3 |
 | FIX-4.5-c | Needs Kellen | Duels snapshot `Profile.levels` and have no mid-fight potions, so a pre-duel Super defence does not apply. Boosted levels must never be written to `save_player_state`. | Appendix §6 item 4 |
 | FIX-4.5-d | Needs Kellen | Duel magic max-hit uses a unique formula, not `playerHit`. Left alone so PvP numbers do not move — confirm. | Appendix §6 item 5 |
@@ -142,3 +142,9 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Replaces today's rule "guests aren't stored in the cloud" once built. Old local saves stop being importable.
 - Naming (Kellen, Nov 13): call it a TRIAL, not a guest. The trial ends when the player beats Magmor and gets the Fire cape. They then either stop, or sign in / sign up (Google, Apple, email) on the same account to unlock the rest of the game. GUEST-Q1 resolved: trial = Magmor only.
 - Open: GUEST-Q2 resolved (Kellen, Nov 13): delete unconverted trial accounts after 30 days with no play; the phone stores only the login/session token (no game data), so the same account resumes until then. GUEST-Q3 resolved: reinstalling or switching phones loses an unconverted trial; the Fire cape screen says sign up to keep your progress.
+
+
+## LEVEL-REDO Leveling system redo (Kellen, Nov 13, 2026; needs a design session)
+- Today every account starts at 99 in Attack, Strength, Defence, etc. Kellen expects to redo leveling (design direction: WoW-style leveling with a small grind), and isn't sure the 1-99 scale will stay.
+- Every level-based number (potion and brew boosts like FIX-4.5-a, the raid heal hardcoded to 99 HP in FIX-4.5-b, accuracy and max-hit formulas, gear requirements, boss tuning) must be rechecked when this lands. Write formulas relative to the player's level, never hardcode 99.
+- Placement: decide in the roadmap before M2 boss tuning and the M3 economy pass.
