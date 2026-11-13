@@ -255,3 +255,6 @@ The current execution front is **M0**: [F1, F7, and F10](plans/XSCAPE_FIX_PLAN.m
 ## Kellen confirmations (Nov 13, 2026)
 - The proposed M3 launch set and M5 split look good. The plan will keep being refined.
 - **Next design task, RELIC-DESIGN:** decide which relics exist and how the system works: how you get them, slots (the current idea is up to 3 equipped), upgrades from duplicates, whether they work only in The Deep or everywhere, and how they support "play your own way" builds. See the Relics section in [IDEAS.md](plans/IDEAS.md). Needed before The Deep is planned in M3.
+
+- PVP-1 (Kellen, Nov 13): hide the Duel Arena in M0; new original PvP content is a pre-launch M3 item (design session needed). Keep the duel jewelry for repurposing.
+- LEVEL-REDO (Kellen, Nov 13): possible leveling rework; decide before M2 boss tuning and the M3 economy pass.

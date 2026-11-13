@@ -76,8 +76,8 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 |---|---|---|---|
 | FIX-4.5-a | Done (Kellen, Nov 13) | Gloam brew Defence: cap it. Base the boost on the normal (unboosted) level so re-sips top back up instead of stacking (99 gives 120). Formula is level-relative so it carries over to LEVEL-REDO. | Appendix §6 item 2; fix plan 4.5 |
 | FIX-4.5-b | Done (Kellen, Nov 13) | Raid Gloam heal: base it on the fighter's real Hitpoints level, not a hardcoded 99 (no change today; fits LEVEL-REDO). | Appendix §6 item 3 |
-| FIX-4.5-c | Needs Kellen | Duels snapshot `Profile.levels` and have no mid-fight potions, so a pre-duel Super defence does not apply. Boosted levels must never be written to `save_player_state`. | Appendix §6 item 4 |
-| FIX-4.5-d | Needs Kellen | Duel magic max-hit uses a unique formula, not `playerHit`. Left alone so PvP numbers do not move — confirm. | Appendix §6 item 5 |
+| FIX-4.5-c | Moot (Kellen, Nov 13) | Duel Arena is being hidden (too close to OSRS); see PVP-1. |
+| FIX-4.5-d | Moot (Kellen, Nov 13) | Duel Arena is being hidden (too close to OSRS); see PVP-1. |
 | FIX-4.5-e | Needs Kellen | Raid special accuracy (Warden / Morvane / shade) does not use `npcHitChance`, so 4.4 and Withering Gaze do not affect those hits. Should specials use formula Defence? | Appendix §6 item 6 |
 | FIX-4.5-f | Needs Kellen | Raid shade host `defLevel` 8 vs legacy table 5. Not unified. | Appendix §6 item 7 |
 | FIX-4.5-g | Needs Kellen | Knight / Gorehorn / Colossus live basic max 28 vs formula 30 (existing override). | Appendix §6 item 8; also listed under 4.5 Status |
@@ -148,3 +148,9 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Today every account starts at 99 in Attack, Strength, Defence, etc. Kellen expects to redo leveling (design direction: WoW-style leveling with a small grind), and isn't sure the 1-99 scale will stay.
 - Every level-based number (potion and brew boosts like FIX-4.5-a, the raid heal hardcoded to 99 HP in FIX-4.5-b, accuracy and max-hit formulas, gear requirements, boss tuning) must be rechecked when this lands. Write formulas relative to the player's level, never hardcode 99.
 - Placement: decide in the roadmap before M2 boss tuning and the M3 economy pass.
+
+
+## PVP-1 Duel Arena hidden; new PvP before launch (Kellen, Nov 13, 2026)
+- Hide the Duel Arena now (too similar to OSRS). Don't delete its code yet.
+- Keep the duel-related jewelry; it will be repurposed.
+- Earmark: design and build our own PvP (and possibly staking) content BEFORE launch. Belongs in roadmap M3. Needs a design session.
