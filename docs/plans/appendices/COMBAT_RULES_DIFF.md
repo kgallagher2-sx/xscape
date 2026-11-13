@@ -1,5 +1,7 @@
 # Combat rules refactor — baseline and diff (Phase 1 batch 6, tasks 4.1–4.6)
 
+Appendix to the [fix plan](../XSCAPE_FIX_PLAN.md) Phase 4 (especially 4.5). Open questions in §6 are listed in the [plans index](../../README.md#open-decisions-for-kellen) as FIX-4.5-a through FIX-4.5-g. Content below is unchanged.
+
 Captured 12 November 2026, America/New_York.
 
 This document locks the pre-refactor combat numbers, records what moved, and
@@ -277,30 +279,32 @@ Super defence, brew defence, and defence drains were **applied** to
 
 ### Open questions (not changed)
 
+IDs **FIX-4.5-a** through **FIX-4.5-g** are also listed in the [plans index](../../README.md#open-decisions-for-kellen). Status is **Needs Kellen** unless marked resolved. Wording below is unchanged.
+
 1. ~~**Prayer-bonus drain.**~~ **Resolved (Kellen, 12 November 2026,
    12:35 PM America/New_York):** worn prayer bonus slows drain via the
    OSRS `60 + 2 × bonus` resistance in `XscapeCombat.drainPrayer`. See
    section 4. Most main-game items still have no prayer stat; the
    highest existing set is the raid stole/cape/veilhide total of +12.
-2. **Gloam brew stacking.** Defence boost is `+20% + 2` of *current*, so
+2. **FIX-4.5-a — Gloam brew stacking.** Defence boost is `+20% + 2` of *current*, so
    re-sipping can climb well past 120. Attack/strength/ranged/magic shrink
    the same way. Is that intended?
-3. **Raid Gloam heal** hardcodes a 99-HP base rather than the fighter's
+3. **FIX-4.5-b — Raid Gloam heal** hardcodes a 99-HP base rather than the fighter's
    actual hitpoints level.
-4. **Duel potions.** Duels snapshot `Profile.levels` (typically 99) into the
+4. **FIX-4.5-c — Duel potions.** Duels snapshot `Profile.levels` (typically 99) into the
    loadout and have no mid-fight potions. They do **not** read live
    `PlayerStats`, so a pre-duel Super defence does not change incoming or
    outgoing. Applying live boosts mid-duel would also be asymmetric PvP
    unless both sides get them. Boosted levels must never be written to
    `save_player_state`.
-5. **Duel magic max-hit** uses a unique formula, not `spellMaxHitFrom` /
+5. **FIX-4.5-d — Duel magic max-hit** uses a unique formula, not `spellMaxHitFrom` /
    `playerHit`. Left alone so PvP numbers do not move.
-6. **Raid special accuracy** (Warden / Morvane / shade) does not use
+6. **FIX-4.5-e — Raid special accuracy** (Warden / Morvane / shade) does not use
    `npcHitChance`, so 4.4 and Morvane's withering gaze still do not affect
    those incoming hits. Should specials use formula defence?
-7. **Raid shade** host `defLevel` 8 vs legacy `MONSTERS.shade` `defLevel` 5
+7. **FIX-4.5-f — Raid shade** host `defLevel` 8 vs legacy `MONSTERS.shade` `defLevel` 5
    was already flagged; not unified here.
-8. Knight / Gorehorn / Colossus live basic max of 28 vs formula 30 is an
+8. **FIX-4.5-g** Knight / Gorehorn / Colossus live basic max of 28 vs formula 30 is an
    existing override, not a plan bug.
 
 ---

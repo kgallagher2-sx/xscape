@@ -1,5 +1,7 @@
 # Reward RPC and SECURITY DEFINER audit
 
+Appendix to the [fix plan](../XSCAPE_FIX_PLAN.md) F1 / 1.9. Outstanding reds and “larger holes for Kellen” are listed in the [plans index](../../README.md#open-decisions-for-kellen). Content below is unchanged.
+
 Audit date: 2026-11-12 (America/New_York). Live project `uakiqnjvqjkogpczwxdu`, after Phase 1 batch 3 (tasks 1.2, solo `record_raid_clear` wall-clock, and world-boss start nonces). Function bodies were re-read with `pg_get_functiondef` during batch 2 and the new batch-3 functions were applied on this date. Public wrappers remain `SECURITY DEFINER` with `SET search_path` from batch 1 (task 1.8).
 
 Legend: **yes** / **no**. Red rows are marked **RED**.
@@ -29,20 +31,20 @@ Legend: **yes** / **no**. Red rows are marked **RED**.
 
 Batch 3 closed the previous reds on solo `record_raid_clear`, the six world-boss `record_*_kill` wrappers (for clients that issue `start_boss_fight`), and `save_player_state` conservation (shipped in **enforce** mode, with a runtime flag to drop to log-only).
 
-Remaining / leftover reds:
+Remaining / leftover reds (IDs **RPC-1**–**RPC-5** are also in the [plans index](../../README.md#open-decisions-for-kellen)):
 
-1. **World-boss legacy path** — if no `game.boss_fight_starts` row exists (cached old client, or a fight already running at deploy), `record_*_kill` still uses only the 12s/20s cooldown and 20-tick floor. New `cloud.js` always starts a fight nonce, so this shrinks as clients update. Worth watching `boss_fight_starts` vs successful records for a week, then rejecting the legacy path.
-2. **`record_jad_kill` `p_score`** — still trusted for `jad_best_score` (loot/GP stays server-rolled). Not a GP cheat, but a leaderboard number.
-3. **Trade / offer values** — still client-chosen, then escrowed from that player's own inventory (unchanged). Optional `trade_accept` cooldown is still open.
+1. **RPC-1 — World-boss legacy path** — if no `game.boss_fight_starts` row exists (cached old client, or a fight already running at deploy), `record_*_kill` still uses only the 12s/20s cooldown and 20-tick floor. New `cloud.js` always starts a fight nonce, so this shrinks as clients update. Worth watching `boss_fight_starts` vs successful records for a week, then rejecting the legacy path.
+2. **RPC-2 — `record_jad_kill` `p_score`** — still trusted for `jad_best_score` (loot/GP stays server-rolled). Not a GP cheat, but a leaderboard number.
+3. **RPC-3 — Trade / offer values** — still client-chosen, then escrowed from that player's own inventory (unchanged). Optional `trade_accept` cooldown is still open.
 
 ### Larger holes for Kellen (not built in this batch)
 
-- Drop the world-boss **legacy path** (no start row) once almost every client is on a build that calls `start_boss_fight`.
-- Cap or ignore `record_jad_kill` `p_score` for `jad_best_score`.
-- Optional short cooldown on `trade_accept` to slow trade-bot cycling.
-- `report_raid_deaths` can mark other party members dead (needed for the host, but it is a trusted client list). Worth a later look, not a one-line fix.
-- Admin RPCs (`admin_chat_history`, `admin_trade_history`) are allow-listed to a single admin UUID. Fine today; a role table would be cleaner than a hard-coded id.
-- Watch `game.save_rejections` after 1.2 enforce ships. Flip `game.runtime_flags.save_conservation` to `log_only` if real players are blocked by a missed raise path; flip back to `enforce` once that path is an RPC.
+- **RPC-1** — Drop the world-boss **legacy path** (no start row) once almost every client is on a build that calls `start_boss_fight`.
+- **RPC-2** — Cap or ignore `record_jad_kill` `p_score` for `jad_best_score`.
+- **RPC-3** — Optional short cooldown on `trade_accept` to slow trade-bot cycling.
+- **RPC-4** — `report_raid_deaths` can mark other party members dead (needed for the host, but it is a trusted client list). Worth a later look, not a one-line fix.
+- **RPC-5** — Admin RPCs (`admin_chat_history`, `admin_trade_history`) are allow-listed to a single admin UUID. Fine today; a role table would be cleaner than a hard-coded id.
+- Watch `game.save_rejections` after 1.2 enforce ships (operational, not a design fork). Flip `game.runtime_flags.save_conservation` to `log_only` if real players are blocked by a missed raise path; flip back to `enforce` once that path is an RPC.
 
 ## SECURITY DEFINER audit (all 44 public functions)
 

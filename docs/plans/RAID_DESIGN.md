@@ -1,5 +1,7 @@
 # Gloamhold — Raid Design
 
+Plans index: [docs/README.md](../README.md). Some early TODOs below have since shipped; status is noted without deleting the original items.
+
 A completely original raid for Xscape. No Jagex names, lore, or art.
 
 ## Pitch
@@ -98,10 +100,10 @@ Numbers will be reported from the headless sim after implementation.
 
 ## Open TODOs
 
-- Wire to the shared tile-attack helper and item table once that worker lands; keep the same ids and formulas.
-- Embed the raid in `index.html` as a first-class scene (first ship is `raid.html` plus a hub link, same origin / same profile).
-- Hub gear-equip UI if it is not in yet.
-- A short first-entry briefing card, then skip forever (like the Jad tutorial flag).
+- **RAID-T1** (re-check before acting) — Wire to the shared tile-attack helper and item table once that worker lands; keep the same ids and formulas.
+- **RAID-T2** — **Done** (as of Nov 2026 on `main`): Embed the raid in `index.html` as a first-class scene (first ship is `raid.html` plus a hub link, same origin / same profile).
+- **RAID-T3** — **Done** (hub equipment sheet exists on `main`): Hub gear-equip UI if it is not in yet.
+- **RAID-T4** — **Done** (`overlay-raid-tut` / `kellenscape-raid-brief-seen`): A short first-entry briefing card, then skip forever (like the Jad tutorial flag).
 
 ## Implementation notes (MECH_V13)
 

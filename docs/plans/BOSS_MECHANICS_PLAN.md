@@ -1,6 +1,8 @@
 # Xscape boss mechanics plan
 
-This run is separate from the bug run in `XSCAPE_FIX_PLAN.md`. It covers the arena changes that came out of the Widow investigation, the known boss design problems, and a place to record Kellen's boss feedback before any code is written.
+Plans index: [docs/README.md](../README.md). This run is executed after the bug-fix plan's F-items and remaining phases.
+
+This run is separate from the bug run in [`XSCAPE_FIX_PLAN.md`](XSCAPE_FIX_PLAN.md). It covers the arena changes that came out of the Widow investigation, the known boss design problems, and a place to record Kellen's boss feedback before any code is written.
 
 File:line references point at the `xscape-main.zip` snapshot (build `20261111224507-090c8ec`). Re-check them against `main` before starting.
 
@@ -119,6 +121,7 @@ The current boss arenas use `TILE` in `index.html:2659`: a fixed 5 columns, rows
 - **Verify:** Headless sim with a scripted "perfect" player, who always dodges and prays correctly, takes only the intended unavoidable damage (spiders, skeletons). A scripted "no-prayer" player dies within the target time window.
 
 ### B2.4 Kellen's Widow changes (Nov 13, 2026, planning only)
+- **Status:** Open (planning only; not yet in code).
 - **Skeletons walk faster:** 1 tile per tick, the same as the player's walk speed (they are far too slow today).
 - **Web special:** when you are caught in the web and the baby spiders come out, each spider hit does **4–8 damage**, typeless: no prayer blocks it and Defence does not reduce it.
 
@@ -137,6 +140,7 @@ The current boss arenas use `TILE` in `index.html:2659`: a fixed 5 columns, rows
   - A perfect player wins in the target time with starter, mid and best gear (record the numbers).
 
 ### B3.4 Kellen's Knight-King minion changes (Nov 13, 2026, planning only)
+- **Status:** Open (planning only; not yet in code).
 - **Bug to check first:** his 6 spectral knights don't seem able to hit anything today. Find out why before retuning.
 - **Minion hits:** small hits, about **4–6 max**, with **lower accuracy** than a normal monster, because there are 6 of them.
 - **Intent:** the group should push the player toward a way to hit several enemies at once.
@@ -178,6 +182,7 @@ Same rule as Widow: it doesn't chase, so out of reach it must use ranged and mag
 - **Verify:** distance map; info page states that melee can't reach him.
 
 ### B6.1 Kellen's Vaelkor redesign (Nov 13, 2026, planning only)
+- **Status:** Open (planning only; not yet in code).
 Goal: less like OSRS Kree'arra; the bodyguards become a summoned phase.
 - **Start:** no minions in the room at the start; Vaelkor fights alone.
 - **Below 75% HP:** he flies higher (out of reach of every style, untargetable) and summons his 3 minions. He keeps dropping whirlwinds on tiles during this phase.
@@ -216,7 +221,7 @@ For each boss, record:
 | Magmor | | | | | |
 | Gloamhold (Morvane) | | | | | |
 
-Each filled-in row becomes concrete tasks under its B-section. Balance changes still need Kellen's sign-off through Gameboy (`OWNERS.md`).
+Each filled-in row becomes concrete tasks under its B-section. Balance changes still need Kellen's sign-off through Gameboy ([`OWNERS.md`](../../OWNERS.md)).
 
 ---
 
@@ -227,7 +232,7 @@ Each filled-in row becomes concrete tasks under its B-section. Balance changes s
    - one-prayer (holds a single protection prayer)
    - idle
    
-   Record kill time, damage taken and death rate over 50 seeded runs. Each boss gets target bands. Perfect should win, one-prayer should take heavy damage, idle should die. This needs the seeded `simulate()` work from `ARCHITECTURE.md`, step 7; until then, use manual runs with `godMode` and a damage log.
+   Record kill time, damage taken and death rate over 50 seeded runs. Each boss gets target bands. Perfect should win, one-prayer should take heavy damage, idle should die. This needs the seeded `simulate()` work from [`ARCHITECTURE.md`](../../ARCHITECTURE.md), step 7; until then, use manual runs with `godMode` and a damage log.
 3. **Manual QA** on a phone: every attack seen and its prayer check confirmed, info page read against what happened, scene `exit` cleanup checked (start the next fight and confirm a clean arena).
 4. **Server:** the kill RPC's minimum-time check (bug-plan 1.9) is updated to the new realistic fastest kill.
 
@@ -240,8 +245,12 @@ Each filled-in row becomes concrete tasks under its B-section. Balance changes s
 6. B6 / B7 / B8 decisions
 
 ## Open decisions
-1. B1.4: camera, only if tiles are too small on 360 px phones.
-2. B6: Vaelkor arena.
-3. B7: Magmor lane.
-4. B8: raid rooms.
-5. Per-boss target kill times and damage bands (B9).
+Status of each item: **needs Kellen**. Stable IDs (also in the [plans index](../README.md#open-decisions-for-kellen)):
+
+1. **BOSS-B1.4** — B1.4: camera, only if tiles are too small on 360 px phones.
+2. **BOSS-B6-arena** — B6: Vaelkor arena.
+3. **BOSS-B7-lane** — B7: Magmor lane.
+4. **BOSS-B8-rooms** — B8: raid rooms.
+5. **BOSS-B9-bands** — Per-boss target kill times and damage bands (B9).
+
+Related, still **needs Kellen** (already decided text is unchanged above): **BOSS-B3.4-spell** (multi-target magic spell in B3.4), **BOSS-B6.1-info** (Vaelkor info page text), **BOSS-B6.1-hp** (minion HP “about 75”, confirm in a balance pass).

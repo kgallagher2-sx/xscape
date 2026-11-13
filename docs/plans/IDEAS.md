@@ -1,5 +1,7 @@
 # Xscape future ideas
 
+Plans index: [docs/README.md](../README.md). This is a brainstorm and decisions log, not an execution plan. Items stay here until they are written into a plan with Do / Done when / Verify.
+
 Brainstorm list for aligning content in future releases. Nothing here is approved until Kellen marks it.
 Started 12 Nov 2026.
 
@@ -167,6 +169,7 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 - Natural homes for other ideas: Hunts (wilds), Caravans (routes between towns), ore spots, night/weather events, companion expedition trails, world boss arenas.
 
 ## Economy (Kellen, 12 Nov: gold must be harder to get; people like working for gold)
+Direction decided. Numbers are **IDEAS-ECON** (Needs Kellen) in the [plans index](../README.md#open-decisions-for-kellen): they need a balance pass and sign-off before anything ships.
 - Cut raw GP from boss drops; drop more sellable items instead (earning takes a step).
 - Gold sinks: infusions, relic upgrades, companion favor boosts, fort upgrades, gear repairs.
 - Trader prices that dip when many players sell the same thing (rewards variety).

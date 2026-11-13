@@ -1,5 +1,7 @@
 # Xscape fix plan
 
+Plans index: [docs/README.md](../README.md). Appendices: [combat rules diff](appendices/COMBAT_RULES_DIFF.md) (Phase 4 / 4.5), [reward RPC audit](appendices/REWARD_RPC_AUDIT.md) (F1 / 1.9).
+
 Source review: snapshot in `xscape-main.zip` (build `20261111224507-090c8ec`). File:line references point at that snapshot. Re-check them against `main` before starting each task.
 
 **Guiding rule: the server is the source of truth.** The client may *ask* for changes and *display* state. It never decides which GP or items exist or who owns them. Each task below either moves a decision to the server or makes the client agree with what the server already decided.
@@ -12,7 +14,7 @@ Every task has:
 Phases are ordered by risk. Phase 1 blocks everything else, because until it lands any player can mint items.
 
 
-**Status (12 November 2026, America/New_York).** Source: git log, `docs/COMBAT_RULES_DIFF.md`, and shipped builds on `main`. Later equip-persist hotfixes (commits d7dcb2b, 2ae8f84, a1d6256) are not plan items; the last of those is noted under 2.2.
+**Status (12 November 2026, America/New_York).** Source: git log, [`appendices/COMBAT_RULES_DIFF.md`](appendices/COMBAT_RULES_DIFF.md), and shipped builds on `main`. Later equip-persist hotfixes (commits d7dcb2b, 2ae8f84, a1d6256) are not plan items; the last of those is noted under 2.2.
 
 | Item | Team status | Code review (12 Nov) |
 |---|---|---|
@@ -59,7 +61,7 @@ Each follow-up has the same Done/Verify rule as the main tasks. F1, F7 and F10 c
 
 | # | Fix | Done when | Verify |
 |---|---|---|---|
-| **F1** | `REVOKE EXECUTE ON FUNCTION public.merge_local_save(jsonb), game.merge_local_save(jsonb) FROM authenticated, anon, PUBLIC;` then drop both. The client no longer calls it. Fix `REWARD_RPC_AUDIT.md:69`. | No RPC can add bank, equipment or GP from client input except shop, loot, trade and duel. | `rpc('merge_local_save', {p_payload:{bank:['tentacle_whip']}})` returns permission denied; `select proname from pg_proc where proname='merge_local_save'` returns 0 rows. |
+| **F1** | `REVOKE EXECUTE ON FUNCTION public.merge_local_save(jsonb), game.merge_local_save(jsonb) FROM authenticated, anon, PUBLIC;` then drop both. The client no longer calls it. Fix [`appendices/REWARD_RPC_AUDIT.md`](appendices/REWARD_RPC_AUDIT.md) (was line 69 at the 12 Nov review). | No RPC can add bank, equipment or GP from client input except shop, loot, trade and duel. | `rpc('merge_local_save', {p_payload:{bank:['tentacle_whip']}})` returns permission denied; `select proname from pg_proc where proname='merge_local_save'` returns 0 rows. |
 | **F2** | `holdings_from_state` counts only the 11 real equipment slots; `save_player_state` rejects unknown equipment keys. | A save can't make gear disappear through an invalid slot. | A save with `equipment:{"x":"fire_cape"}` (cape moved out of bank) is rejected and the cape is still owned. |
 | **F3** | `expand_item_ids` rejects over-cap lists instead of cutting them off. | Over-cap is a rejection, never a silent decrease. | A save with 100,001 copies is rejected; the stored count is unchanged. |
 | **F4** | Raid score cap uses server `now() - started_at`, and the cap is lowered so it binds. | Score can't exceed what the real duration allows. | Complete at the floor with `p_scores` of 10^9 → stored score equals the cap for 65 s. |
@@ -94,7 +96,7 @@ Checked 12 Nov 2026. The Claude sandbox (Airlock) can edit code, write SQL and r
 | **D. Sandbox can write the SQL; host must apply and verify** | F1, F2, F3, F4, F5, F6, F9, 6.2 server side, 7.4, 7.5, 7.5b, 0.3 exploit script (written here, run from the host) | Apply to Supabase (staging first if 0.1 exists). First export the live function definitions (`pg_get_functiondef`) so migrations target what's really deployed; this matters because of 0.2 |
 | **E. Host only** | 0.1 staging project, 0.2 confirming live order, 0.4, build stamping, push and deploy, every Verify against the live server, phone profiling | All of it |
 
-If the sandbox does this work, it goes in a separate working copy with one commit per item, delivered as a patch, and it follows `CLAIM.md` / `OWNERS.md` like any other contributor.
+If the sandbox does this work, it goes in a separate working copy with one commit per item, delivered as a patch, and it follows [`CLAIM.md`](../../CLAIM.md) / [`OWNERS.md`](../../OWNERS.md) like any other contributor.
 
 ## Phase 0: Foundations (needed to verify everything else)
 
@@ -236,7 +238,7 @@ If the sandbox does this work, it goes in a separate working copy with one commi
 
 ### 1.9 Sweep every reward RPC for the same holes
 - **Status:** Done, build 20261112154425-a56eeaa (commit 690316a).
-- **Review (12 Nov 2026, code check of `xscape-main_updated.zip`):** 🟡 Partial. `assert_boss_elapsed` passes when no start row exists, so a client that never calls `start_boss_fight` skips the time check (F5). `docs/REWARD_RPC_AUDIT.md:69` wrongly lists `merge_local_save` as constrained.
+- **Review (12 Nov 2026, code check of `xscape-main_updated.zip`):** 🟡 Partial. `assert_boss_elapsed` passes when no start row exists, so a client that never calls `start_boss_fight` skips the time check (F5). [`appendices/REWARD_RPC_AUDIT.md`](appendices/REWARD_RPC_AUDIT.md) (line 69 at the 12 Nov review) wrongly lists `merge_local_save` as constrained.
 - **Do:** For each RPC that adds GP or items (`record_*_kill`, `record_raid_clear`, `buy_shop_item`, `claim_alcove_*`, trade, duel), list in a table:
   - whether it's rate-limited
   - whether it checks real elapsed time
@@ -347,7 +349,7 @@ If the sandbox does this work, it goes in a separate working copy with one commi
 
 ### 4.5 Potion and food audit
 - **Status:** Done as an audit, build 20261112171512-3502a2b (commit d5581ea). Waiting on Kellen: Gloam brew Defence past 120, raid specials ignore Defence, raid Gloam heal 99 HP base, duel magic formula, Shade defence 8 vs 5, Knight-King/Gorehorn/Colossus max hit 28 vs 30.
-- **Review (12 Nov 2026, code check of `xscape-main_updated.zip`):** 🟡 Partial, as the team says. `docs/COMBAT_RULES_DIFF.md` §6 lists intended effects, but not the per-fight green table. Design questions are waiting on Kellen.
+- **Review (12 Nov 2026, code check of `xscape-main_updated.zip`):** 🟡 Partial, as the team says. [`appendices/COMBAT_RULES_DIFF.md`](appendices/COMBAT_RULES_DIFF.md) §6 lists intended effects, but not the per-fight green table. Design questions are waiting on Kellen. Full write-up and IDs FIX-4.5-a through FIX-4.5-g are in the appendix §6 and in the [plans index](../README.md#open-decisions-for-kellen).
 - **Behaviour you want:** a potion or food can always be consumed, even at full stats or HP. That is what the code does today, so the Super restore item from the review is **not** a bug and gets no change.
 - **Do:** For every consumable in `supplies.js` `PRICES`, write down what it should do (stats, amount, duration, decay). Then check each one in each fight type (solo boss, raid, duel) that:
   - the boost is applied
@@ -432,7 +434,7 @@ If the sandbox does this work, it goes in a separate working copy with one commi
 
   The result is that stepping away during a melee tell still gets you hit at range by a red dart. Protect from Magic can't block it, because it's a melee hit, and the info page doesn't mention it. This is the same reach rule as 4.7, applied to monsters.
 - **Rule (decided):** every boss's melee reach is **2 tiles**, measured from the edge of the boss's footprint (Chebyshev distance; diagonals count). Bosses are large, so 2 instead of the usual 1. Regular-size monsters (babies, skeletons, raid adds) keep reach 1.
-- **Interim exception: Widow stays at reach 1 for this bug run.** In today's 5×5 cave a 2-tile reach covers every tile you can stand on, so she would never use magic. She moves to reach 2 when she gets her 9×9 room (`BOSS_MECHANICS_PLAN.md`, B1). Before applying reach 2 to any other boss, draw its arena's distance map and confirm some tiles are still out of reach. Any boss where none are keeps reach 1 until its arena is redone.
+- **Interim exception: Widow stays at reach 1 for this bug run.** In today's 5×5 cave a 2-tile reach covers every tile you can stand on, so she would never use magic. She moves to reach 2 when she gets her 9×9 room ([`BOSS_MECHANICS_PLAN.md`](BOSS_MECHANICS_PLAN.md), B1). Before applying reach 2 to any other boss, draw its arena's distance map and confirm some tiles are still out of reach. Any boss where none are keeps reach 1 until its arena is redone.
 - **Do:**
   - Give each boss a `meleeReach: 2` in its monster data, and use the shared reach helper from 4.7 (footprint-aware) everywhere a boss decides on, or lands, a melee attack.
   - **Choosing:** a boss may only pick melee if the player is within reach. Widow's `isAdjacent` check (`widow.js:67`) reads her `meleeReach` (1 for now). Widow doesn't chase, so outside reach she uses her ranged option (magic today).
@@ -454,7 +456,7 @@ If the sandbox does this work, it goes in a separate working copy with one commi
 - **Do:**
   - In `queueMoveTo` / `processMovement` (`index.html:2749, 2783`), treat footprint tiles as blocked for the scene that owns them. Each boss scene supplies `isBlocked(col,row)`.
   - Tapping a footprint tile sets the boss as the target instead of walking there.
-  - Today's movement goes straight, columns first and then rows, with no pathfinding. When the straight route crosses a blocked tile, step around it: try the row move first, and otherwise stop next to the boss. Full BFS pathfinding comes with the arena engine in `BOSS_MECHANICS_PLAN.md`.
+  - Today's movement goes straight, columns first and then rows, with no pathfinding. When the straight route crosses a blocked tile, step around it: try the row move first, and otherwise stop next to the boss. Full BFS pathfinding comes with the arena engine in [`BOSS_MECHANICS_PLAN.md`](BOSS_MECHANICS_PLAN.md).
   - Minion movement (`stepToward` in `widow.js`, and the equivalents in other bosses) skips blocked tiles the same way.
 - **Done when:** no player or minion position is ever inside a boss footprint.
 - **Verify:**
@@ -546,7 +548,7 @@ If the sandbox does this work, it goes in a separate working copy with one commi
   - localStorage and session keys: `kellenscape-kree-brief-seen`, `xscape-pending-jad`
   - DB columns: `jad_kills`, `jad_best_ticks`, `jad_best_score`, `last_jad_at`, `last_jad_nonce`, `kree_kills`, `kree_best_ticks`, `last_kree_at`
   - RPCs: `record_jad_kill`, `record_kree_kill`
-- **Comments and docs:** `ARCHITECTURE.md`, `BACKEND.md`, `OWNERS.md`, `RAID_DESIGN.md`.
+- **Comments and docs:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md), [`BACKEND.md`](../../BACKEND.md), [`OWNERS.md`](../../OWNERS.md), [`RAID_DESIGN.md`](RAID_DESIGN.md).
 
 One earlier find-and-replace went wrong: `combat.js:322` now says "OSRS Magmor, the Molten Titan is defence 480". That comment compares against the real OSRS Jad, so it should say TzTok-Jad.
 
@@ -593,7 +595,7 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
   - `loadProfile` reads the new keys (`magmorKills`, `vaelkorKills`, …) and falls back to the old ones. `saveProfile` writes only the new keys.
   - Same for localStorage keys: read the old key, write the new key, then delete the old one.
   - `applyCloudProfile` maps the server's names (old or new) onto the new fields.
-  - If the save schema version from the Phase 2 / `ARCHITECTURE.md` save task exists by then, this is migration #1.
+  - If the save schema version from the Phase 2 / [`ARCHITECTURE.md`](../../ARCHITECTURE.md) save task exists by then, this is migration #1.
 - **Verify:**
   - Load a saved old-format profile fixture (with `jadKills: 12, kreeKills: 4`). It shows 12 and 4, and after one save the stored profile has only the new keys.
   - Briefing-seen flags survive the rename, so the briefing doesn't pop up again.
@@ -646,22 +648,23 @@ Saved data has to be renamed without breaking old saves or old clients. Do it in
 ### 7.6 Final sweep
 - **Status:** Not started (planned after the Nov 18 reset).
 - **Review (12 Nov 2026, code check of `xscape-main_updated.zip`):** Not started (confirmed: old names still in code, e.g. 224 matches in `index.html`).
-- **Do:** `grep -rniE "jad|kree|armadyl" .` across the repo and `supabase/`. Every remaining hit is a deliberate OSRS reference, a compatibility alias with a removal date, or a migration file that has already been applied (never edit those). Record the remaining aliases and their removal dates in `RELEASE.md`.
+- **Do:** `grep -rniE "jad|kree|armadyl" .` across the repo and `supabase/`. Every remaining hit is a deliberate OSRS reference, a compatibility alias with a removal date, or a migration file that has already been applied (never edit those). Record the remaining aliases and their removal dates in [`RELEASE.md`](../../RELEASE.md).
 - **Verify:** QA does a full play-through on the live build (Magmor kill, Vaelkor kill, leaderboard, hub boss menu, info pages). Players see no old names, and no errors.
 
 ---
 
 ## Out of scope (separate projects)
-- **Boss mechanics run:** see `BOSS_MECHANICS_PLAN.md`. It covers the 9×9 arena engine, Widow's ranged attack, the Gorehorn, Colossus and Knight-King reworks, and Kellen's boss feedback.
+- **Boss mechanics run:** see [`BOSS_MECHANICS_PLAN.md`](BOSS_MECHANICS_PLAN.md). It covers the 9×9 arena engine, Widow's ranged attack, the Gorehorn, Colossus and Knight-King reworks, and Kellen's boss feedback.
 - Server-side fight simulation (true server authority for kills).
-- The wider refactor in `ARCHITECTURE.md` (content JSON, seeded `simulate()` for every boss), except the parts pulled in above.
+- The wider refactor in [`ARCHITECTURE.md`](../../ARCHITECTURE.md) (content JSON, seeded `simulate()` for every boss), except the parts pulled in above.
 
 ## Open questions for Kellen
-1. ~~Widow damage through Protect from Magic~~ **Resolved:** the "red dart" is her melee hitting from range (fixed by 4.8). Her intended ranged attack is a boss-mechanics change (see Out of scope).
-2. **Leaving mid-fight (3.1):** should it count as a death with any penalty, or just no loot and no kill count?
-3. **Ranged/magic ranges (4.7):** what numbers per weapon?
-4. **Existing dupes (1.5, 1.2):** once found, should they be removed, left alone, or converted to GP?
-5. **Legacy imports (1.4):** freeze them entirely, or allow GP-less imports for a while longer?
+Stable IDs are also listed in the [plans index](../README.md#open-decisions-for-kellen).
+1. **FIX-Q1** ~~Widow damage through Protect from Magic~~ **Resolved:** the "red dart" is her melee hitting from range (fixed by 4.8). Her intended ranged attack is a boss-mechanics change (see Out of scope).
+2. **FIX-Q2** (Needs Kellen) **Leaving mid-fight (3.1):** should it count as a death with any penalty, or just no loot and no kill count?
+3. **FIX-Q3** (Needs Kellen) **Ranged/magic ranges (4.7):** what numbers per weapon?
+4. **FIX-Q4** (Needs Kellen) **Existing dupes (1.5, 1.2):** once found, should they be removed, left alone, or converted to GP?
+5. **FIX-Q5** (Needs Kellen) **Legacy imports (1.4):** freeze them entirely, or allow GP-less imports for a while longer?
 
 ## Suggested order and sizing
 | Order | Tasks | Size |
