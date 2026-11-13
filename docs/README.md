@@ -96,7 +96,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 
 | ID | Status | Decision | Source |
 |---|---|---|---|
-| BOSS-B1.4 | Needs Kellen | Camera, only if tiles are too small on 360 px phones. | [Boss plan, Open decisions](plans/BOSS_MECHANICS_PLAN.md#open-decisions) |
+| BOSS-B1.4 | Done (Kellen, Nov 13) | Never a 3D or rotating camera: the game stays 2D pixel art, and characters keep turning to face their target. Boss fights must look and behave like the rest of the game (same view, same scale). Measure tile size on a small phone after the arena engine; any fix must keep that consistency (e.g. a flat 2D scroll only if the rest of the game also scrolls). | [Boss plan, Open decisions](plans/BOSS_MECHANICS_PLAN.md#open-decisions) |
 | BOSS-B6-arena | Needs Kellen | Vaelkor arena (B6). Phase redesign B6.1 is otherwise decided. | Same |
 | BOSS-B7-lane | Needs Kellen | Magmor lane (B7). | Same |
 | BOSS-B8-rooms | Needs Kellen | Gloamhold raid rooms (B8). | Same |
