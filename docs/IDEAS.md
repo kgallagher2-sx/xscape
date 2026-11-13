@@ -10,6 +10,11 @@ Started 12 Nov 2026.
 - **Be our own game.** Borrow the feel of OSRS where it's worth it, but avoid copying more of its systems. Prefer ideas that grow from Xscape's core: short, hard boss fights on a phone.
 - **Leveling:** any new skill levels more like World of Warcraft than RuneScape. A small grind is fine and keeps people coming back (Kellen, 12 Nov): early levels come quickly, the last few take a real but reasonable push, and there's no 99-style wall.
 
+- **Play your own way** (Kellen, 12 Nov): many things to do, and many ways to do them. Ideas:
+  - Account styles chosen at creation: all-rounder, skiller (no bosses), duelist (capped stats for arena), hardcore (one life). Each gets its own leaderboard and cosmetics.
+  - Multiple paths to every goal: gold from bossing, skilling, caravans or trading; gear from drops, crafting or the forge; relics from the Deep or rare hunts.
+  - Builds over one best setup: relics, infusions and boons make same-level players fight differently.
+
 ---
 
 ## Endless / time-sink modes
