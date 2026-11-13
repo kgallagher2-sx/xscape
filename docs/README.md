@@ -90,7 +90,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | RPC-2 | Done (Kellen, Nov 13) | Server computes the Magmor (Jad) best score from the fight it timed (start_boss_fight row); ignore the client p_score. | Same |
 | RPC-3 | Done (Kellen, Nov 13) | Add a few-second server cooldown between accepted trades (trade_accept) to slow trade bots. | Same |
 | RPC-4 | Done (Kellen, Nov 13) | Superseded by NET-1: raids (and PvP) will be server-run, so no client reports deaths. Until then the host stays the source of truth. | Same |
-| RPC-5 | Needs Kellen | Admin RPCs are allow-listed to a single UUID; a role table would be cleaner. | Same |
+| RPC-5 | Done (Kellen, Nov 13) | Replace the hard-coded admin UUID with assignable account roles before launch. See ROLES-1. | Same |
 
 ### Boss mechanics
 
@@ -167,3 +167,11 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Path B: server runs all combat, solo too. Fully cheat-proof; more hosting cost; every fight needs a connection.
 - Caveats to settle then: hosting cost grows with players (~$10-50/mo at start, Kellen OK with that); scaling plan; region/latency; disconnect and reconnect rules; fallback if the server is down.
 - Placement: roadmap M1 foundations (shared combat engine with B1), needed before the new PvP (PVP-1) and before the raid redesign ships.
+
+
+## ROLES-1 Admin and moderator roles (Kellen, Nov 13, 2026)
+- Server-side role table; roles are assigned to accounts (no hard-coded ids). Must be done before launch.
+- Admin and moderator are DIFFERENT roles:
+  - Admin: full control of the game (game settings and flags, account actions, all history tools, assigning roles).
+  - Moderator: less power than admin but more than a player (e.g. mute a player, view chat/trade history for reports).
+- Open for a later session: the exact permission list per role, mute/ban lengths, audit log of every mod/admin action, and how players report others.
