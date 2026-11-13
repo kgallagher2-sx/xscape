@@ -201,6 +201,10 @@ Variable rewards, near misses, streaks/dailies, short loops inside long goals, c
 - **GitHub:** keep for code; make the repo private before launch. Replace GitHub Pages hosting for the web version with Cloudflare Pages or Vercel (custom domain, preview builds). Mobile builds bundle the game files, so hosting matters less there.
 - **Add before launch:** custom domain, error reporting (e.g. Sentry), basic retention analytics.
 
+## Marketing (parked, 12 Nov)
+- Build-in-public series on X: weekly short devlog clips, before/after posts, follower polls, 2-3 posts a week.
+- Check SpaceX's social media and outside-work policy first; consider a separate Xscape account.
+
 ## Monetization (parked, not a priority)
 - Keep a free version. A membership is likely. Remember Apple takes 30%.
 
