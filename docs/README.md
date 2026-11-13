@@ -128,3 +128,7 @@ Nothing in Kellen's decision text was deleted. Overlap was handled by **moving**
 - `docs/REWARD_RPC_AUDIT.md` → `docs/plans/appendices/REWARD_RPC_AUDIT.md`, pointed from F1 / 1.9.
 - The magic proposal was copied into `docs/plans/proposals/` (still marked not approved).
 - Root and `docs/` stubs keep old links (including the comment in `supabase/20261112_08_phase1_1_9_reject_anonymous.sql`) resolvable without editing applied migrations.
+
+
+## Added Nov 13, 2026
+- [Animation plan](plans/ANIMATION_PLAN.md): attack and movement animations for the player, all bosses and minions. Planning only. Starts with the ANIM-0 audit; boss animations follow the boss mechanics order. Open decisions: ANIM-Q1, ANIM-Q2.
