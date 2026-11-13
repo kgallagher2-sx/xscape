@@ -88,7 +88,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 |---|---|---|---|
 | RPC-1 | Done (Kellen, Nov 13) | Remove the legacy world-boss kill path (kill RPC with no start row) before launch; every kill must come from a server-started fight. Pairs with F5. | [REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) |
 | RPC-2 | Done (Kellen, Nov 13) | Server computes the Magmor (Jad) best score from the fight it timed (start_boss_fight row); ignore the client p_score. | Same |
-| RPC-3 | Needs Kellen | Optional short cooldown on `trade_accept` to slow trade-bot cycling. | Same |
+| RPC-3 | Done (Kellen, Nov 13) | Add a few-second server cooldown between accepted trades (trade_accept) to slow trade bots. | Same |
 | RPC-4 | Needs Kellen | `report_raid_deaths` can mark other party members dead (trusted client list). Later look, not a one-line fix. | Same |
 | RPC-5 | Needs Kellen | Admin RPCs are allow-listed to a single UUID; a role table would be cleaner. | Same |
 
