@@ -199,7 +199,7 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Must respect the standing UI rules (no overhead names, no floating narration callouts, no labels on boss buttons): design tips as a tutorial layer (e.g. highlights, short coach cards) and confirm the style with Kellen.
 - Decided (Kellen, Nov 13): the fight PAUSES for tutorial tips. Server-run works: solo fight, so the client asks the server to hold the tick loop; boss freezes; resumes on tap. Only in solo tutorial fights, never in raids/PvP. The server timer used for kill checks and scores excludes paused time.
 - Decided: no death explanation screen.
-- Decided (Kellen, Nov 13): tips play on the FIRST attempt only. No replay setting; after that, players use the boss info button next to the boss at selection.
+- Decided (Kellen, Nov 13, revised): tips keep playing on every attempt until the player's FIRST Magmor kill / Fire cape, then stop for good (so a death before e.g. healers doesn't skip later lessons). No replay setting; afterwards players use the boss info button next to the boss at selection.
 - Decided (Kellen, Nov 13): tip style = while paused, dim the screen slightly, spotlight the thing being taught (prayer button, food, healer, boss tell), and show a short tip bubble anchored next to it; tap to resume. Floating tips are an approved exception to the no-floating-narration rule ONLY while the fight is paused in the tutorial.
-- Decided: no skip button (tips only play on the first attempt).
+- Decided (revised): keep a skip button so players who already know the fight can turn the tips off before their first kill.
 - Placement: M3 launch content, built alongside the Magmor arena move (BOSS-B7) and the trial flow (GUEST-1).
