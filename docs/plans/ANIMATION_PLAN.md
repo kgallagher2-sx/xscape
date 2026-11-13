@@ -37,4 +37,12 @@ Kellen: armor seems redrawn per facing (front/back/left/right) instead of one it
 ## Open decisions for Kellen
 - ANIM-Q1: DONE (Kellen, Nov 13): launch baseline is simple 2–4 frame pixel loops. Smoother animation is NOT required for launch; improve progressively post-launch as art capacity allows. The system must allow swapping in more frames later without code changes.
 - ANIM-Q3: art pipeline, 3D-to-sprite vs layered 2D (see ANIM-ART).
-- ANIM-Q2: do the player first, or bundle the player with the first boss pass?
+- ANIM-Q2: DONE (Kellen, Nov 13): player first, then bosses.
+
+
+## ANIM-RULE Reusable player animations (Kellen, Nov 13, 2026)
+- Animations belong to an ACTION TYPE, never to a specific item: e.g. slash, stab, 2h swing, crush, bow shot, crossbow shot, wand/staff cast, unarmed cast, block, eat/drink, death, walk, run, idle, plus non-combat (mining, hunting, climbing ladders up/down, other Deep and skilling actions).
+- Weapons and held items are separate sprites attached to a hand anchor point; each frame stores hand position and angle. Tier 1 and tier 3 swords use the same slash animation.
+- Adding a new weapon = one sprite + which action type it uses. No new animation work.
+- Armour pieces follow the single player model (ANIM-ART); this favours layered 2D (Option B).
+- Expect a large player animation list; build the full action-type list in ANIM-0.
