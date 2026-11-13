@@ -84,7 +84,7 @@ Boss modules, `raid.js`, and Supabase SQL for boss and loot RPCs.
 
 **Proposed:**
 
-- `RAID_DESIGN.md`
+- `docs/plans/RAID_DESIGN.md`
 - `supabase/unique_item_owners_rls.sql`
 - `supabase/unique_blue_partyhat.sql`
 

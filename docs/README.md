@@ -1,0 +1,130 @@
+# Xscape plans and docs
+
+This is the entry point for every planning and reference document in the repo. When it is time to execute a plan, start here, then open the linked doc — do not hunt around the tree.
+
+Plans live in [`docs/plans/`](plans/). Reference docs that bots and release steps use stay at the repo root (they are listed below). Historic paths such as `XSCAPE_FIX_PLAN.md` at the root are short stubs that point here.
+
+**Do not delete or rewrite Kellen's decisions.** If a task is finished, mark **Status** and keep the original Do / Done when / Verify text.
+
+---
+
+## Recommended execution order
+
+1. **Fix plan follow-ups F1, F7, and F10 first** ([`plans/XSCAPE_FIX_PLAN.md`](plans/XSCAPE_FIX_PLAN.md) — F1 closes the `merge_local_save` mint path, F7 is targeting / auto-retaliate, F10 is the late-fight consumable flush).
+2. **The rest of F2–F9**, plus leftover review findings on items already marked Done but 🟡/❌ (especially 1.2, 4.7, 6.3). Re-check against `main` before starting; the 12 Nov review is the status snapshot in that doc.
+3. **Remaining fix-plan phases 5, 7, and 0** — group raid / duel sync (5.1–5.2), the Jad → Magmor / Kree → Vaelkor / Armadyl → Stormwing renames (7.1–7.6, including 7.5b), and the skipped staging foundations (0.1–0.4) needed for some Verify steps.
+4. **Boss mechanics** ([`plans/BOSS_MECHANICS_PLAN.md`](plans/BOSS_MECHANICS_PLAN.md)) — B1 arena engine, then a B9 feedback pass, Widow as the pilot (B2, including Kellen's 13 Nov B2.4), Colossus (B5), Knight and Gorehorn (B3–B4, including B3.4), then B6 / B7 / B8 once their open decisions are answered.
+5. **IDEAS items** ([`plans/IDEAS.md`](plans/IDEAS.md)) only once an idea has been written into a plan with Do / Done when / Verify. Until then they stay in the brainstorm log.
+
+Phase 4.5 of the fix plan is an audit that is **blocked on Kellen** (FIX-4.5-*). Do not change those numbers until he answers.
+
+---
+
+## Document catalog
+
+| Doc | Purpose | Status | Owner | What's next |
+|---|---|---|---|---|
+| [plans/XSCAPE_FIX_PLAN.md](plans/XSCAPE_FIX_PLAN.md) | Bug / economy / combat / scenes / performance / rename work. Kellen's 12 Nov review and follow-ups **F1–F10**. Each task has Do / Done when / Verify. | In progress. Many Phase 1–6 items shipped; F1–F10 and phases 5, 7, 0 are still open. 4.5 waiting on Kellen. | Gameboy leads execution; Kellen signs off on balance and policy. | F1, F7, F10, then remaining F-items and phases 5 / 7 / 0. |
+| [plans/BOSS_MECHANICS_PLAN.md](plans/BOSS_MECHANICS_PLAN.md) | 9×9 arena engine and boss reworks. Includes Kellen's 13 Nov decisions: **B2.4** (Widow), **B3.4** (Knight-King minions), **B6.1** (Vaelkor redesign). Planning only until the bug-fix run reaches this step. | Not started in code. Several design decisions already recorded. | Boss Mechanics; Kellen signs off on feel and numbers through Gameboy. | After the fix-plan steps above: B1 → B9 → B2 → B5 → B3/B4 → B6/B7/B8. |
+| [plans/RAID_DESIGN.md](plans/RAID_DESIGN.md) | Gloamhold raid design, rooms, Morvane phases, loot, and shipped live-balance notes. | Mostly shipped as a first-class hub scene. Early TODOs RAID-T2–T4 are done; RAID-T1 should be re-checked. Later room/arena work is **B8**. | Raid / Gameboy for glue; Boss Mechanics for encounter feel. | Re-check RAID-T1; any 9×9 or room-size change waits on B8. |
+| [plans/IDEAS.md](plans/IDEAS.md) | Future-game brainstorm and Kellen's 12 Nov decisions log (The Deep, open world, economy, Mining, and the ideas he liked). | Brainstorm. Not an execution plan. | Kellen (direction); Gameboy to turn picked ideas into plans. | Leave until an item is specified as a plan. |
+| [plans/appendices/COMBAT_RULES_DIFF.md](plans/appendices/COMBAT_RULES_DIFF.md) | Appendix to fix-plan Phase 4. Baseline, shipped 4.1–4.6 diffs, and the 4.5 potion/food audit. | Audit shipped. §6 open questions are FIX-4.5-a–g. | Combat / Gameboy. | Wait on Kellen, then apply only what he approves. |
+| [plans/appendices/REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) | Appendix to fix-plan F1 / 1.9. Reward RPC and SECURITY DEFINER audit. | Batch reds mostly closed; leftover reds and larger holes remain. | Gameboy / backend. | F1 (drop `merge_local_save`); then RPC-* items as Kellen and the bug run allow. |
+| [plans/proposals/MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) | Spell-based magic proposal (copied from `/workspace/xscape-mechanics/` so it lives with the plans). | **Proposal only — not approved.** Do not implement until Kellen signs off through Gameboy. | Needs Kellen through Gameboy. Related: BOSS-B3.4-spell. | Answer MAGIC-Q1–Q4, then a real plan with Do / Verify if approved. |
+
+### Reference (stay at repo root)
+
+These are operational reference, not execution plans. They were **not** moved: scripts, `OWNERS.md`, `CLAIM.md`, and day-to-day bot workflow still use the root paths.
+
+| Doc | Purpose | Status | Owner | What's next |
+|---|---|---|---|---|
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Code map, save/cloud, stamp/release survey, wider refactor ideas (including seeded `simulate()`). | Reference. Some “next” work is already pulled into the fix or boss plans. | Code Architect / Gameboy. | Use as a map; don't treat leftover refactor ideas as the current bug run. |
+| [BACKEND.md](../BACKEND.md) | Supabase, auth, RPCs, cloud login. | Reference. | Gameboy / backend. | Consult when touching RPCs or auth. |
+| [CLAIM.md](../CLAIM.md) | File-claim protocol before edits. | Live process. | All bots. | Add a line before editing; remove it in the same finishing push. |
+| [OWNERS.md](../OWNERS.md) | Who owns which files; sign-off rules. | Live process. | Code Architect maintains the file; owners as listed. | Coordinate before editing a claimed path. |
+| [RELEASE.md](../RELEASE.md) | Stamp, `version.json`, Pages confirm. | Live process. | Gameboy. | Follow on every client ship. |
+
+A root [PLANS.md](../PLANS.md) also points at this index.
+
+### External (not copied, except the magic proposal)
+
+`/workspace/xscape-mechanics/` also has `MECHANICS_BIBLE.md` (implemented-mechanics audit at an older revision) and other proposals (boss weakness, Gloamhold loot, Knight-King damage). Those were **not** brought in: they are not approved execution plans, and several are superseded by the boss plan or by later live code. Link them from a future plan if Kellen picks one up.
+
+---
+
+## Open decisions for Kellen
+
+Pulled from the docs above. IDs are stable; use them in chat and in commits. **Resolved** items stay listed so nothing looks “lost.” Count of **open** items: **29** (25 in approved or in-progress plans, plus 4 on the unapproved magic proposal).
+
+### Fix plan — policy
+
+| ID | Status | Decision | Source |
+|---|---|---|---|
+| FIX-Q1 | Done | Widow “red dart” was melee-from-range (fixed by 4.8). Her intended ranged attack is a boss-mechanics change. | [Fix plan, Open questions](plans/XSCAPE_FIX_PLAN.md#open-questions-for-kellen) |
+| FIX-Q2 | Needs Kellen | Leaving mid-fight (3.1): death with a penalty, or just no loot and no kill count? | Same |
+| FIX-Q3 | Needs Kellen | Ranged / magic weapon ranges (4.7): what numbers per weapon? | Same |
+| FIX-Q4 | Needs Kellen | Existing dupes (1.5, 1.2): remove, leave, or convert to GP? | Same |
+| FIX-Q5 | Needs Kellen | Legacy imports (1.4): freeze entirely, or still allow GP-less imports for a while? | Same |
+
+### Fix plan — 4.5 combat / supplies (audit done, numbers not changed)
+
+Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md).
+
+| ID | Status | Decision | Source |
+|---|---|---|---|
+| FIX-4.5-a | Needs Kellen | Gloam brew Defence is +20% + 2 of *current*, so re-sipping can climb well past 120. Intended? | Appendix §6 item 2; fix plan 4.5 |
+| FIX-4.5-b | Needs Kellen | Raid Gloam heal hardcodes a 99 HP base rather than the fighter's actual Hitpoints. | Appendix §6 item 3 |
+| FIX-4.5-c | Needs Kellen | Duels snapshot `Profile.levels` and have no mid-fight potions, so a pre-duel Super defence does not apply. Boosted levels must never be written to `save_player_state`. | Appendix §6 item 4 |
+| FIX-4.5-d | Needs Kellen | Duel magic max-hit uses a unique formula, not `playerHit`. Left alone so PvP numbers do not move — confirm. | Appendix §6 item 5 |
+| FIX-4.5-e | Needs Kellen | Raid special accuracy (Warden / Morvane / shade) does not use `npcHitChance`, so 4.4 and Withering Gaze do not affect those hits. Should specials use formula Defence? | Appendix §6 item 6 |
+| FIX-4.5-f | Needs Kellen | Raid shade host `defLevel` 8 vs legacy table 5. Not unified. | Appendix §6 item 7 |
+| FIX-4.5-g | Needs Kellen | Knight / Gorehorn / Colossus live basic max 28 vs formula 30 (existing override). | Appendix §6 item 8; also listed under 4.5 Status |
+
+### Reward RPC audit — larger holes
+
+| ID | Status | Decision | Source |
+|---|---|---|---|
+| RPC-1 | Needs Kellen (related work is F5) | Drop the world-boss legacy path (kill RPC with no start row) once almost every client calls `start_boss_fight`. | [REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) |
+| RPC-2 | Needs Kellen | Cap or ignore `record_jad_kill` `p_score` for `jad_best_score`. | Same |
+| RPC-3 | Needs Kellen | Optional short cooldown on `trade_accept` to slow trade-bot cycling. | Same |
+| RPC-4 | Needs Kellen | `report_raid_deaths` can mark other party members dead (trusted client list). Later look, not a one-line fix. | Same |
+| RPC-5 | Needs Kellen | Admin RPCs are allow-listed to a single UUID; a role table would be cleaner. | Same |
+
+### Boss mechanics
+
+| ID | Status | Decision | Source |
+|---|---|---|---|
+| BOSS-B1.4 | Needs Kellen | Camera, only if tiles are too small on 360 px phones. | [Boss plan, Open decisions](plans/BOSS_MECHANICS_PLAN.md#open-decisions) |
+| BOSS-B6-arena | Needs Kellen | Vaelkor arena (B6). Phase redesign B6.1 is otherwise decided. | Same |
+| BOSS-B7-lane | Needs Kellen | Magmor lane (B7). | Same |
+| BOSS-B8-rooms | Needs Kellen | Gloamhold raid rooms (B8). | Same |
+| BOSS-B9-bands | Needs Kellen | Per-boss target kill times and damage bands (B9). | Same |
+| BOSS-B3.4-spell | Needs Kellen | Multi-target magic spell to support the six spectral knights. Needs a magic-system design (rune cost, targets, max hit) and sign-off. | [B3.4](plans/BOSS_MECHANICS_PLAN.md) |
+| BOSS-B6.1-info | Needs Kellen | Vaelkor info-page text for the redesign. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
+| BOSS-B6.1-hp | Needs Kellen | Minion HP “about 75” — confirm in a balance pass. Max hit 18 is already decided. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
+
+### Magic proposal (not approved)
+
+| ID | Status | Decision | Source |
+|---|---|---|---|
+| MAGIC-Q1 | Needs Kellen | Inventory-slot rune stacks (recommended) vs consuming straight from the bank. | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
+| MAGIC-Q2 | Needs Kellen | Nightfall as a powered built-in spell at base 38 (recommended) vs only autocasting Spire. | Same |
+| MAGIC-Q3 | Needs Kellen | Adding the 400k Ashen staff so magic is not locked behind Widow. | Same |
+| MAGIC-Q4 | Needs Kellen | Confirm no mid-fight auto-fallback when runes run out. | Same |
+
+### IDEAS (direction already recorded; numbers not)
+
+| ID | Status | Decision | Source |
+|---|---|---|---|
+| IDEAS-ECON | Needs Kellen | Cut raw GP from boss drops and add gold sinks. Direction decided 12 Nov; numbers need a balance pass and sign-off before anything ships. | [IDEAS.md, Economy](plans/IDEAS.md) |
+
+---
+
+## Combining notes
+
+Nothing in Kellen's decision text was deleted. Overlap was handled by **moving** supporting audits next to the plan they feed, not by merging files together:
+
+- `docs/COMBAT_RULES_DIFF.md` → `docs/plans/appendices/COMBAT_RULES_DIFF.md`, pointed from fix plan 4.5.
+- `docs/REWARD_RPC_AUDIT.md` → `docs/plans/appendices/REWARD_RPC_AUDIT.md`, pointed from F1 / 1.9.
+- The magic proposal was copied into `docs/plans/proposals/` (still marked not approved).
+- Root and `docs/` stubs keep old links (including the comment in `supabase/20261112_08_phase1_1_9_reject_anonymous.sql`) resolvable without editing applied migrations.
