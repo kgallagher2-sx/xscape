@@ -21,6 +21,7 @@ An endless descending dungeon built from our bosses.
 - Death keeps only part of the loot unless you cash out at a camp floor.
 - Duo dives, and a weekly depth leaderboard per friend group.
 - Drops infusion essences and expedition maps. Rift modifiers become floor types.
+- ✅ **Mining (Kellen):** rare ores found in the Deep. See Skills.
 
 ### ✅ Relics (found in the Deep)
 Set pieces that drop only at certain depths (e.g. floor 40+), which gives runs a long-term goal.
@@ -73,6 +74,13 @@ Track a rare creature across a procedural wilds map using clues (tracks, branche
 ### 💡 Farming and Herblore (OSRS-like, lower priority)
 - Herb and seed patches at the hub that grow in real time (20-80 min). Log in to harvest and replant.
 - Brew potions from farmed herbs instead of only buying them. This ties skilling to bossing.
+
+### ✅ Mining (Kellen, 12 Nov)
+Introduced through the Deep.
+- Some floors have ore veins to mine between fights. Mining takes a few ticks and can wake nearby enemies (risk vs. reward).
+- Rarer ores sit deeper (working names): iron on floors 1-10, emberite on 20+, voidstone on 40+.
+- Ore feeds smithing gear, relic upgrades and infusion ingredients.
+- Levels WoW-style, with no grind wall.
 
 ### 💡 Group gathering
 Shared skilling spots that yield faster with more players nearby.
@@ -146,4 +154,5 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 ## Decisions log
 - **12 Nov:** Be our own game. Use WoW-style leveling, not a grind.
 - **12 Nov:** The Deep is the top pick.
+- **12 Nov:** Add Mining via rare ores in the Deep.
 - **12 Nov:** Kellen likes Relics, Wall stones, Hunts, Siege, Expeditions and the Infusion forge.
