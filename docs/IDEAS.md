@@ -177,6 +177,15 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 Variable rewards, near misses, streaks/dailies, short loops inside long goals, collections, social obligation, visible progress, status, resetting timers, comeback help.
 **Never (Kellen, 12 Nov):** no gimmick or predatory monetization (paid loot boxes, pay-to-refill energy, money-driven FOMO).
 
+## Distribution (Kellen, 12 Nov)
+- Target: phone first. iPhone App Store primary, Android (Google Play) second; keep the web version.
+- Likely approach: wrap the existing HTML5 game with Capacitor (one codebase → web, iOS, Android). No rewrite needed.
+- Needs: a Mac with Xcode for iOS builds, Apple developer account ($99/yr), Google Play ($25 once).
+- iOS releases go through App Review (usually 1-2 days); keep hotfixes server-side where possible.
+- Native wins: push notifications (Expedition distress calls, streaks), haptics, Game Center, Sign in with Apple (required if other social logins).
+- Payments in the iOS app must use Apple IAP (15% under the Small Business Program, else 30%).
+- Suggested timing: stay web while iterating; wrap for public launch, iOS first then Android.
+
 ## Monetization (parked, not a priority)
 - Keep a free version. A membership is likely. Remember Apple takes 30%.
 
