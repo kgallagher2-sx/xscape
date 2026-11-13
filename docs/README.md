@@ -1,6 +1,6 @@
 # Xscape plans and docs
 
-This is the entry point for every planning and reference document in the repo. When it is time to execute a plan, start here, then open the linked doc — do not hunt around the tree.
+For the release-wide picture — vision, milestones M0–M5, dependencies, and how we work — start at the **[release roadmap](ROADMAP.md)**. This index remains the catalog of individual plans and the consolidated [open decisions for Kellen](#open-decisions-for-kellen). When it is time to execute a plan item, open the linked doc from here or from the roadmap — do not hunt around the tree.
 
 Plans live in [`docs/plans/`](plans/). Reference docs that bots and release steps use stay at the repo root (they are listed below). Historic paths such as `XSCAPE_FIX_PLAN.md` at the root are short stubs that point here.
 
@@ -24,6 +24,7 @@ Phase 4.5 of the fix plan is an audit that is **blocked on Kellen** (FIX-4.5-*).
 
 | Doc | Purpose | Status | Owner | What's next |
 |---|---|---|---|---|
+| [ROADMAP.md](ROADMAP.md) | Top-level release overview: vision, milestones M0–M5, mermaid dependency flow, parallel tracks, and how we work. | Living overview. Does not change existing decisions. | Kellen (direction); Gameboy maintains the doc. | Current front is M0 (F1, F7, F10 first). Confirm or cut the M3 launch set when ready. |
 | [plans/XSCAPE_FIX_PLAN.md](plans/XSCAPE_FIX_PLAN.md) | Bug / economy / combat / scenes / performance / rename work. Kellen's 12 Nov review and follow-ups **F1–F10**. Each task has Do / Done when / Verify. | In progress. Many Phase 1–6 items shipped; F1–F10 and phases 5, 7, 0 are still open. 4.5 waiting on Kellen. | Gameboy leads execution; Kellen signs off on balance and policy. | F1, F7, F10, then remaining F-items and phases 5 / 7 / 0. |
 | [plans/BOSS_MECHANICS_PLAN.md](plans/BOSS_MECHANICS_PLAN.md) | 9×9 arena engine and boss reworks. Includes Kellen's 13 Nov decisions: **B2.4** (Widow), **B3.4** (Knight-King minions), **B6.1** (Vaelkor redesign). Planning only until the bug-fix run reaches this step. | Not started in code. Several design decisions already recorded. | Boss Mechanics; Kellen signs off on feel and numbers through Gameboy. | After the fix-plan steps above: B1 → B9 → B2 → B5 → B3/B4 → B6/B7/B8. |
 | [plans/RAID_DESIGN.md](plans/RAID_DESIGN.md) | Gloamhold raid design, rooms, Morvane phases, loot, and shipped live-balance notes. | Mostly shipped as a first-class hub scene. Early TODOs RAID-T2–T4 are done; RAID-T1 should be re-checked. Later room/arena work is **B8**. | Raid / Gameboy for glue; Boss Mechanics for encounter feel. | Re-check RAID-T1; any 9×9 or room-size change waits on B8. |
@@ -31,6 +32,7 @@ Phase 4.5 of the fix plan is an audit that is **blocked on Kellen** (FIX-4.5-*).
 | [plans/appendices/COMBAT_RULES_DIFF.md](plans/appendices/COMBAT_RULES_DIFF.md) | Appendix to fix-plan Phase 4. Baseline, shipped 4.1–4.6 diffs, and the 4.5 potion/food audit. | Audit shipped. §6 open questions are FIX-4.5-a–g. | Combat / Gameboy. | Wait on Kellen, then apply only what he approves. |
 | [plans/appendices/REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) | Appendix to fix-plan F1 / 1.9. Reward RPC and SECURITY DEFINER audit. | Batch reds mostly closed; leftover reds and larger holes remain. | Gameboy / backend. | F1 (drop `merge_local_save`); then RPC-* items as Kellen and the bug run allow. |
 | [plans/proposals/MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) | Spell-based magic proposal (copied from `/workspace/xscape-mechanics/` so it lives with the plans). | **Proposal only — not approved.** Do not implement until Kellen signs off through Gameboy. | Needs Kellen through Gameboy. Related: BOSS-B3.4-spell. | Answer MAGIC-Q1–Q4, then a real plan with Do / Verify if approved. |
+| [plans/ANIMATION_PLAN.md](plans/ANIMATION_PLAN.md) | Attack and movement animations for the player, all bosses and minions. Includes the art pipeline decision frame (3D-to-sprite vs layered 2D, ANIM-ART). | Planning only. Starts with the ANIM-0 audit; boss animations follow the boss mechanics order. | Item & Character Design (art) with Gameboy (hook-up). | ANIM-0 and ANIM-ART-0 audits; answer ANIM-Q1, ANIM-Q2, ANIM-Q3. |
 
 ### Reference (stay at repo root)
 
@@ -44,7 +46,7 @@ These are operational reference, not execution plans. They were **not** moved: s
 | [OWNERS.md](../OWNERS.md) | Who owns which files; sign-off rules. | Live process. | Code Architect maintains the file; owners as listed. | Coordinate before editing a claimed path. |
 | [RELEASE.md](../RELEASE.md) | Stamp, `version.json`, Pages confirm. | Live process. | Gameboy. | Follow on every client ship. |
 
-A root [PLANS.md](../PLANS.md) also points at this index.
+A root [PLANS.md](../PLANS.md) also points at the [roadmap](ROADMAP.md) first, then this index.
 
 ### External (not copied, except the magic proposal)
 
@@ -130,5 +132,4 @@ Nothing in Kellen's decision text was deleted. Overlap was handled by **moving**
 - Root and `docs/` stubs keep old links (including the comment in `supabase/20261112_08_phase1_1_9_reject_anonymous.sql`) resolvable without editing applied migrations.
 
 
-## Added Nov 13, 2026
-- [Animation plan](plans/ANIMATION_PLAN.md): attack and movement animations for the player, all bosses and minions. Planning only. Starts with the ANIM-0 audit; boss animations follow the boss mechanics order. Includes the art pipeline decision (3D-to-sprite vs layered 2D, ANIM-ART). Open decisions: ANIM-Q1, ANIM-Q2, ANIM-Q3.
+Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in the [animation plan](plans/ANIMATION_PLAN.md) and are sequenced in the [roadmap](ROADMAP.md#m1-foundations).
