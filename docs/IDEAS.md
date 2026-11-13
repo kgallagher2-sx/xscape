@@ -146,13 +146,28 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 ---
 
 ## Retention & collection
-- 💡 **Daily and weekly bounties**, paid in a token for cosmetics or pets.
-- 💡 **Boss pets:** rare drops that follow the player around the hub.
+- ✅ **Streaks and dailies** (Kellen: pair with Expeditions). Daily or weekly bounties are paid in a token for cosmetics or pets. Missing a day doesn't wipe progress.
+- ✅ **Collection log** (Kellen: must have).
+- ✅ **Boss pets** (Kellen: must have). Rare drops that follow the player around the hub.
+- 💡 **Awakened bosses:** 50 kills unlock a harder version with new attacks, its own pet and a cosmetic.
+- 💡 **Companion bond:** expedition companions level up, gain traits, and can join you in the Deep as a weak helper.
+- 💡 **Trophy room:** the fort shows boss heads, best times and your rarest drop. Friends can visit.
+- 💡 **Lore scraps:** pages from the Deep and Hunts reveal the bosses' story. Finishing a chapter unlocks a title.
+- 💡 **Weather and night cycle:** some hunts and events only happen at night or in storms.
+
+## Design checklist (what makes it sticky)
+Variable rewards, near misses, streaks/dailies, short loops inside long goals, collections, social obligation, visible progress, status, resetting timers, comeback help.
+**Never (Kellen, 12 Nov):** no gimmick or predatory monetization (paid loot boxes, pay-to-refill energy, money-driven FOMO).
+
+## Monetization (parked, not a priority)
+- Keep a free version. A membership is likely. Remember Apple takes 30%.
 
 ---
 
 ## Decisions log
 - **12 Nov:** Be our own game. Use WoW-style leveling with a small grind, never a 99-style wall.
 - **12 Nov:** The Deep is the top pick.
+- **12 Nov:** Must-haves: collection log and pets. Streaks pair with Expeditions.
+- **12 Nov:** No predatory monetization; free version plus a possible membership (parked).
 - **12 Nov:** Add Mining via rare ores in the Deep.
 - **12 Nov:** Kellen likes Relics, Wall stones, Hunts, Siege, Expeditions and the Infusion forge.
