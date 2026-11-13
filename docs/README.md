@@ -141,4 +141,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - After Magmor hooks them, prompt to convert the guest into a full account (email, Sign in with Apple, Google) by linking the identity to the same user id, so nothing is lost.
 - Replaces today's rule "guests aren't stored in the cloud" once built. Old local saves stop being importable.
 - Naming (Kellen, Nov 13): call it a TRIAL, not a guest. The trial ends when the player beats Magmor and gets the Fire cape. They then either stop, or sign in / sign up (Google, Apple, email) on the same account to unlock the rest of the game. GUEST-Q1 resolved: trial = Magmor only.
-- Open: GUEST-Q2 how long unconverted guest accounts are kept, GUEST-Q3 guest on a reinstalled/new phone (progress is lost unless converted; warn them).
+- Open: GUEST-Q2 resolved (Kellen, Nov 13): delete unconverted trial accounts after 30 days with no play; the phone stores only the login/session token (no game data), so the same account resumes until then. GUEST-Q3 resolved: reinstalling or switching phones loses an unconverted trial; the Fire cape screen says sign up to keep your progress.
