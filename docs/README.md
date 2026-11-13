@@ -96,7 +96,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 
 | ID | Status | Decision | Source |
 |---|---|---|---|
-| BOSS-B1.4 | Done (Kellen, Nov 13) | HARD REQUIREMENT, game-wide (not a boss mechanic): a flat 2D camera that keeps the player centered on screen everywhere when the scene is bigger than the screen. Never 3D or rotating; stays 2D pixel art; characters turn to face their target. Boss fights look and behave like the rest of the game. Belongs in M1 foundations (shared scene/camera system). | [Boss plan, Open decisions](plans/BOSS_MECHANICS_PLAN.md#open-decisions) |
+| BOSS-B1.4 | Done (Kellen, Nov 13, revised) | ONE camera system game-wide: a flat 2D camera that follows the player but clamps at the edges of the current area. A scene that fits the screen never scrolls (whole room in view, like today's boss rooms); in larger areas and the open world it keeps the player centered except near edges. Design rule: boss rooms are sized to fit a phone screen. Never 3D or rotating; 2D pixel art; characters turn to face their target. M1 foundation (CAMERA-1). | [Boss plan, Open decisions](plans/BOSS_MECHANICS_PLAN.md#open-decisions) |
 | BOSS-B6-arena | Needs Kellen | Vaelkor arena (B6). Phase redesign B6.1 is otherwise decided. | Same |
 | BOSS-B7-lane | Needs Kellen | Magmor lane (B7). | Same |
 | BOSS-B8-rooms | Needs Kellen | Gloamhold raid rooms (B8). | Same |
