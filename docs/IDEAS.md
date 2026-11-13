@@ -195,6 +195,12 @@ Variable rewards, near misses, streaks/dailies, short loops inside long goals, c
   6. Listing: screenshots, description, age rating, privacy policy URL, privacy label, in-app account deletion (~1-2 days).
   7. App Review (~1-3 days; first submission may bounce once).
 
+## Infrastructure (12 Nov)
+- **Supabase:** keep long term (Postgres + auth; server-side GP/item checks live there). Before launch: Pro plan (~$25/mo, daily backups, no pausing), a separate staging project (fix plan Phase 0).
+- **Realtime multiplayer:** Supabase Realtime is fine for duels, raids, chat, presence. Tick-accurate co-op (Deep duos, Siege) may later need a small dedicated game server (e.g. Node on Fly.io), with Supabase still holding accounts and items.
+- **GitHub:** keep for code; make the repo private before launch. Replace GitHub Pages hosting for the web version with Cloudflare Pages or Vercel (custom domain, preview builds). Mobile builds bundle the game files, so hosting matters less there.
+- **Add before launch:** custom domain, error reporting (e.g. Sentry), basic retention analytics.
+
 ## Monetization (parked, not a priority)
 - Keep a free version. A membership is likely. Remember Apple takes 30%.
 
