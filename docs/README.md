@@ -140,4 +140,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Guests play through the server exactly like real players (same RPCs, GP and items server-side). Guest mode exists only to cut sign-up friction.
 - After Magmor hooks them, prompt to convert the guest into a full account (email, Sign in with Apple, Google) by linking the identity to the same user id, so nothing is lost.
 - Replaces today's rule "guests aren't stored in the cloud" once built. Old local saves stop being importable.
-- Open: GUEST-Q1 guest content limits (today guests only fight Magmor in starter gear), GUEST-Q2 how long unconverted guest accounts are kept, GUEST-Q3 guest on a reinstalled/new phone (progress is lost unless converted; warn them).
+- Naming (Kellen, Nov 13): call it a TRIAL, not a guest. The trial ends when the player beats Magmor and gets the Fire cape. They then either stop, or sign in / sign up (Google, Apple, email) on the same account to unlock the rest of the game. GUEST-Q1 resolved: trial = Magmor only.
+- Open: GUEST-Q2 how long unconverted guest accounts are kept, GUEST-Q3 guest on a reinstalled/new phone (progress is lost unless converted; warn them).
