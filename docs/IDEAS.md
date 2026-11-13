@@ -185,6 +185,15 @@ Variable rewards, near misses, streaks/dailies, short loops inside long goals, c
 - Native wins: push notifications (Expedition distress calls, streaks), haptics, Game Center, Sign in with Apple (required if other social logins).
 - Payments in the iOS app must use Apple IAP (15% under the Small Business Program, else 30%).
 - Suggested timing: stay web while iterating; wrap for public launch, iOS first then Android.
+- **Kellen (12 Nov):** has a Mac; wants to publish under an LLC.
+- **App Store launch checklist (rough, ~3-5 weeks with LLC):**
+  1. Form the LLC.
+  2. Get a free D-U-N-S number for the LLC (~1-2 weeks).
+  3. Enroll in Apple Developer Program as an organization ($99/yr).
+  4. Capacitor wrap: icons, splash, safe areas, backgrounding, TestFlight on a real iPhone (~2-4 dev days; can run during the D-U-N-S wait).
+  5. Sign in with Apple if other social logins exist (~1-2 days).
+  6. Listing: screenshots, description, age rating, privacy policy URL, privacy label, in-app account deletion (~1-2 days).
+  7. App Review (~1-3 days; first submission may bounce once).
 
 ## Monetization (parked, not a priority)
 - Keep a free version. A membership is likely. Remember Apple takes 30%.
