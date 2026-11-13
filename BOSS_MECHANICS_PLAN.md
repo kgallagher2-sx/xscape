@@ -118,6 +118,10 @@ The current boss arenas use `TILE` in `index.html:2659`: a fixed 5 columns, rows
 - **Do:** Re-place webs (landing tiles chosen near the player, with a 3-tick shadow that's escapable at walk speed), spider drop positions, skeleton spawn edges and walk speed so they still arrive in a comparable time, and the enrage double-web.
 - **Verify:** Headless sim with a scripted "perfect" player, who always dodges and prays correctly, takes only the intended unavoidable damage (spiders, skeletons). A scripted "no-prayer" player dies within the target time window.
 
+### B2.4 Kellen's Widow changes (Nov 13, 2026, planning only)
+- **Skeletons walk faster;** they are far too slow today. Exact speed to set in the balance pass.
+- **Web special:** when you are caught in the web and the baby spiders come out, each spider hit does **4–8 damage**, typeless: no prayer blocks it and Defence does not reduce it.
+
 ---
 
 ## B3: Hollow Knight-King
@@ -167,6 +171,14 @@ Same rule as Widow: it doesn't chase, so out of reach it must use ranged and mag
 - **Do:** whichever is decided, apply design rules 2, 4 and 6.
 - **Verify:** distance map; info page states that melee can't reach him.
 
+### B6.1 Kellen's Vaelkor redesign (Nov 13, 2026, planning only)
+Goal: less like OSRS Kree'arra; the bodyguards become a summoned phase.
+- **Start:** no minions in the room at the start; Vaelkor fights alone.
+- **Below 75% HP:** he flies higher (out of reach of every style, untargetable) and summons his 3 minions. He keeps dropping whirlwinds on tiles during this phase.
+- **Minions (3):** one melee, one ranged, one magic. They chase the player and attack from their own reach: melee 1 tile, ranged 4 tiles, magic 4 tiles. HP raised to about **75** each (numbers to confirm in a balance pass).
+- **All 3 dead:** Vaelkor comes back down to "finish the job" and is targetable again for the rest of the fight.
+- Open: whether he returns at a fixed HP or keeps his 75% HP, max hits for minions, whirlwind rate in the air phase, and info page text.
+
 ## B7: Magmor, the Molten Titan
 
 **Today:** a single-row lane (`TILE.rows = 1`), the guest and starter fight.
@@ -189,11 +201,11 @@ For each boss, record:
 
 | Boss | What feels wrong today | Intended feel / identity | Attacks to add, remove or change | Target kill time (starter / mid / best gear) | Must-keep |
 |---|---|---|---|---|---|
-| Widow Queen | Ranged attack missing; melee hits from range (bug run) | | Add ranged (B2.2) | | |
+| Widow Queen | Ranged attack missing; melee hits from range (bug run); skeletons too slow | | Add ranged (B2.2); faster skeletons; web spiders 4–8 typeless (B2.4) | | |
 | Hollow Knight-King | Protect from Melee trivialises early fight | | | | |
 | Gorehorn | All attacks melee | | | | |
 | Drowned Colossus | All attacks melee; rock and grab don't matter | | | | |
-| Vaelkor | | | | | |
+| Vaelkor | Too close to OSRS Kree'arra | Solo start, summoned-guard phase | Minions summoned below 75%; air phase with whirlwinds; ~75 HP minions (B6.1) | | |
 | Magmor | | | | | |
 | Gloamhold (Morvane) | | | | | |
 
