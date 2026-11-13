@@ -86,7 +86,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 
 | ID | Status | Decision | Source |
 |---|---|---|---|
-| RPC-1 | Needs Kellen (related work is F5) | Drop the world-boss legacy path (kill RPC with no start row) once almost every client calls `start_boss_fight`. | [REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) |
+| RPC-1 | Done (Kellen, Nov 13) | Remove the legacy world-boss kill path (kill RPC with no start row) before launch; every kill must come from a server-started fight. Pairs with F5. | [REWARD_RPC_AUDIT.md](plans/appendices/REWARD_RPC_AUDIT.md) |
 | RPC-2 | Needs Kellen | Cap or ignore `record_jad_kill` `p_score` for `jad_best_score`. | Same |
 | RPC-3 | Needs Kellen | Optional short cooldown on `trade_accept` to slow trade-bot cycling. | Same |
 | RPC-4 | Needs Kellen | `report_raid_deaths` can mark other party members dead (trusted client list). Later look, not a one-line fix. | Same |
