@@ -162,6 +162,10 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 - 💡 **Lore scraps:** pages from the Deep and Hunts reveal the bosses' story. Finishing a chapter unlocks a title.
 - ✅ **Day/night cycle and weather** (Kellen, 12 Nov): unique tasks by time of day. Ideas: night-only rare hunts, glowing ores, a night merchant, storm events.
 
+## Open world (Kellen, 12 Nov: needed, but a huge update)
+- Long-term pillar: expand beyond the hub into an explorable world.
+- Natural homes for other ideas: Hunts (wilds), Caravans (routes between towns), ore spots, night/weather events, companion expedition trails, world boss arenas.
+
 ## Economy (Kellen, 12 Nov: gold must be harder to get; people like working for gold)
 - Cut raw GP from boss drops; drop more sellable items instead (earning takes a step).
 - Gold sinks: infusions, relic upgrades, companion favor boosts, fort upgrades, gear repairs.
@@ -181,6 +185,7 @@ Variable rewards, near misses, streaks/dailies, short loops inside long goals, c
 ## Decisions log
 - **12 Nov:** Be our own game. Use WoW-style leveling with a small grind, never a 99-style wall.
 - **12 Nov:** The Deep is the top pick.
+- **12 Nov:** More open world is needed (huge update, long-term).
 - **12 Nov:** Make gold harder to get; rebalance boss rewards (numbers pending).
 - **12 Nov:** Companion favor: spend it on Deep supply runs and bank trips, earn it by helping the companion.
 - **12 Nov:** Must-haves: collection log and pets. Streaks pair with Expeditions.
