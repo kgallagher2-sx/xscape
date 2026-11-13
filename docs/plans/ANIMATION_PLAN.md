@@ -36,7 +36,7 @@ Kellen: armor seems redrawn per facing (front/back/left/right) instead of one it
 
 ## Open decisions for Kellen
 - ANIM-Q1: DONE (Kellen, Nov 13): launch baseline is simple 2–4 frame pixel loops. Smoother animation is NOT required for launch; improve progressively post-launch as art capacity allows. The system must allow swapping in more frames later without code changes.
-- ANIM-Q3: art pipeline, 3D-to-sprite vs layered 2D (see ANIM-ART).
+- ANIM-Q3: LEANING layered 2D (Kellen, Nov 13); confirm after the ANIM-ART-0 gear-art audit.
 - ANIM-Q2: DONE (Kellen, Nov 13): player first, then bosses.
 
 
