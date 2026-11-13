@@ -65,7 +65,7 @@ Pulled from the docs above. IDs are stable; use them in chat and in commits. **R
 | FIX-Q1 | Done | Widow “red dart” was melee-from-range (fixed by 4.8). Her intended ranged attack is a boss-mechanics change. | [Fix plan, Open questions](plans/XSCAPE_FIX_PLAN.md#open-questions-for-kellen) |
 | FIX-Q2 | Done (Kellen, Nov 12) | Leaving mid-fight (3.1): no loot, no kill, no death penalty. | Same |
 | FIX-Q3 | Done (Kellen, Nov 12) | Weapon ranges (4.7): wands and crossbows 5 tiles, 2-handed staves and bows 7; melee 1, halberd 2. | Same |
-| FIX-Q4 | Needs Kellen | Existing dupes (1.5, 1.2): remove, leave, or convert to GP? | Same |
+| FIX-Q4 | Done (Kellen, Nov 13) | Existing dupes (1.5, 1.2): leave them alone, it's pre-launch. | Same |
 | FIX-Q5 | Needs Kellen | Legacy imports (1.4): freeze entirely, or still allow GP-less imports for a while? | Same |
 
 ### Fix plan — 4.5 combat / supplies (audit done, numbers not changed)
