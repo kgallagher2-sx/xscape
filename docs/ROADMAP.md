@@ -260,3 +260,4 @@ The current execution front is **M0**: [F1, F7, and F10](plans/XSCAPE_FIX_PLAN.m
 - LEVEL-REDO (Kellen, Nov 13): possible leveling rework; decide before M2 boss tuning and the M3 economy pass.
 - NET-1 (Kellen, Nov 13): server-run raids and PvP, M1. Path A (multiplayer only) vs Path B (all combat) plus cost and scaling caveats to revisit before building.
 - Planning rule (Kellen, Nov 13): when there are several correct paths, write them all down and revisit before implementing.
+- CAMERA-1 (Kellen, Nov 13): game-wide 2D camera keeping the player centered (hard requirement, M1). Never 3D or rotating.
