@@ -136,6 +136,12 @@ The current boss arenas use `TILE` in `index.html:2659`: a fixed 5 columns, rows
   - A scripted Protect-from-Melee-only player takes meaningful damage.
   - A perfect player wins in the target time with starter, mid and best gear (record the numbers).
 
+### B3.4 Kellen's Knight-King minion changes (Nov 13, 2026, planning only)
+- **Bug to check first:** his 6 spectral knights don't seem able to hit anything today. Find out why before retuning.
+- **Minion hits:** small hits, about **4–6 max**, with **lower accuracy** than a normal monster, because there are 6 of them.
+- **Intent:** the group should push the player toward a way to hit several enemies at once.
+- **New idea (not in the game yet):** a multi-target magic spell, such as a small area burst. It needs a design in the magic system (rune cost, targets, max hit) and Kellen's sign-off.
+
 ## B4: Gorehorn, the Minotaur
 
 **Today:** He walks (`gorehorn.js:82, 542`). Every attack (basic, charge, rocks) is tagged melee (`gorehorn.js:259, 308`), so Protect from Melee blocks everything.
@@ -203,7 +209,7 @@ For each boss, record:
 | Boss | What feels wrong today | Intended feel / identity | Attacks to add, remove or change | Target kill time (starter / mid / best gear) | Must-keep |
 |---|---|---|---|---|---|
 | Widow Queen | Ranged attack missing; melee hits from range (bug run); skeletons too slow | | Add ranged (B2.2); faster skeletons; web spiders 4–8 typeless (B2.4) | | |
-| Hollow Knight-King | Protect from Melee trivialises early fight | | | | |
+| Hollow Knight-King | Protect from Melee trivialises early fight; minions never seem to hit | | 6 minions hit 4–6 with low accuracy; push multi-target play (B3.4) | | |
 | Gorehorn | All attacks melee | | | | |
 | Drowned Colossus | All attacks melee; rock and grab don't matter | | | | |
 | Vaelkor | Too close to OSRS Kree'arra | Solo start, summoned-guard phase | Minions summoned below 75%; air phase with whirlwinds; ~75 HP minions (B6.1) | | |
