@@ -1,3 +1,5 @@
+> **Combat rule (Kellen, Nov 13, 2026, FIX-4.5-e):** all combat uses one shared system. Every special attack must list everything special about it (ignores Defence, ignores prayer, drains Defence, typeless, etc.). Anything not listed follows the normal accuracy, Defence and prayer rules.
+
 # Xscape boss mechanics plan
 
 Plans index: [docs/README.md](../README.md). This run is executed after the bug-fix plan's F-items and remaining phases.
