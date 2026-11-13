@@ -250,3 +250,8 @@ These do not have to wait for M0 to finish. They should be started early so M4 i
 ## Where to go next
 
 The current execution front is **M0**: [F1, F7, and F10](plans/XSCAPE_FIX_PLAN.md) first, after the open M0 decisions Kellen still needs to answer. In parallel, Kellen can start the LLC and, when ready, confirm or cut the [M3 launch set](#m3-core-content-for-launch) and the remaining [open decisions](README.md#open-decisions-for-kellen).
+
+
+## Kellen confirmations (Nov 13, 2026)
+- The proposed M3 launch set and M5 split look good. The plan will keep being refined.
+- **Next design task, RELIC-DESIGN:** decide which relics exist and how the system works: how you get them, slots (the current idea is up to 3 equipped), upgrades from duplicates, whether they work only in The Deep or everywhere, and how they support "play your own way" builds. See the Relics section in [IDEAS.md](plans/IDEAS.md). Needed before The Deep is planned in M3.
