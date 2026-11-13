@@ -11,6 +11,14 @@ Owner: Item & Character Design (art) with Gameboy (hook-up). Related: boss mecha
 - **Done when:** the audit table is in this file.
 - **Verify:** Kellen reviews the table.
 
+## ANIM-ART Art pipeline decision (Kellen approved direction, Nov 13, 2026)
+Kellen: armor seems redrawn per facing (front/back/left/right) instead of one item fitting one character model; items should be designed once.
+- **Not doing:** real-time 3D (renderer rewrite, heavier on phones, every boss needs a 3D model).
+- **ANIM-ART-0 Audit:** check how player gear art is built today (per-facing hand-drawn vs layered) and record it here.
+- **Option A, 3D-to-sprite:** one 3D player model and 3D items in Blender, rendered out to sprites for every facing and animation frame. Design each item once; walk/attack frames come from the same rig.
+- **Option B, layered 2D sprites:** split the player into layers (body, helm, chest, legs, cape, weapon) on shared frames so new gear only fills its layer. Cheaper first step; can later be fed by Option A renders.
+- **Decide:** ANIM-Q3, A or B (or B now, A later), after ANIM-ART-0.
+
 ## ANIM-1 Shared animation system
 - **Do:** one sprite-animation helper (frames per action, ticks per frame, attack wind-up timed to the hit tick) used by every scene, instead of per-boss one-offs.
 - **Done when:** the player and one boss use it.
@@ -28,4 +36,5 @@ Owner: Item & Character Design (art) with Gameboy (hook-up). Related: boss mecha
 
 ## Open decisions for Kellen
 - ANIM-Q1: frame budget/style (simple 2–4 frame pixel loops vs smoother).
+- ANIM-Q3: art pipeline, 3D-to-sprite vs layered 2D (see ANIM-ART).
 - ANIM-Q2: do the player first, or bundle the player with the first boss pass?

@@ -131,4 +131,4 @@ Nothing in Kellen's decision text was deleted. Overlap was handled by **moving**
 
 
 ## Added Nov 13, 2026
-- [Animation plan](plans/ANIMATION_PLAN.md): attack and movement animations for the player, all bosses and minions. Planning only. Starts with the ANIM-0 audit; boss animations follow the boss mechanics order. Open decisions: ANIM-Q1, ANIM-Q2.
+- [Animation plan](plans/ANIMATION_PLAN.md): attack and movement animations for the player, all bosses and minions. Planning only. Starts with the ANIM-0 audit; boss animations follow the boss mechanics order. Includes the art pipeline decision (3D-to-sprite vs layered 2D, ANIM-ART). Open decisions: ANIM-Q1, ANIM-Q2, ANIM-Q3.
