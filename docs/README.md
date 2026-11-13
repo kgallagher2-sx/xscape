@@ -79,8 +79,8 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | FIX-4.5-c | Moot (Kellen, Nov 13) | Duel Arena is being hidden (too close to OSRS); see PVP-1. |
 | FIX-4.5-d | Moot (Kellen, Nov 13) | Duel Arena is being hidden (too close to OSRS); see PVP-1. |
 | FIX-4.5-e | Done (Kellen, Nov 13) | One combat system for everything: all hits, including boss specials, use the shared accuracy/Defence formula (npcHitChance etc.). Every special attack must explicitly spec what's special about it (ignores Defence, ignores prayer, drains Defence, typeless, etc.); anything unspecified follows the normal rules. Apply to Warden / Morvane / shade and every special in the boss plan. |
-| FIX-4.5-f | Needs Kellen | Raid shade host `defLevel` 8 vs legacy table 5. Not unified. | Appendix §6 item 7 |
-| FIX-4.5-g | Needs Kellen | Knight / Gorehorn / Colossus live basic max 28 vs formula 30 (existing override). | Appendix §6 item 8; also listed under 4.5 Status |
+| FIX-4.5-f | Done (Kellen, Nov 13) | One stat entry per monster (single source of truth); formula wins unless the boss plan deliberately overrides; exact numbers settled in the B9 balance pass. |
+| FIX-4.5-g | Done (Kellen, Nov 13) | One stat entry per monster (single source of truth); formula wins unless the boss plan deliberately overrides; exact numbers settled in the B9 balance pass. |
 
 ### Reward RPC audit — larger holes
 
