@@ -161,6 +161,7 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Direction: raids and PvP run on our own game server (authoritative tick loop). Phones send inputs only and draw what the server says. No player's client can cheat the result, and host lag no longer affects the party.
 - Replaces the Phase 5 approach (leader's phone simulates the fight) in XSCAPE_FIX_PLAN.md. Phase 5 bug fixes only matter if we ship before NET-1.
 - Likely shape: a small Node game server (e.g. Fly.io) sharing combat code with the client; Supabase stays for accounts, saves, GP/items and loot.
+- Long-term goal (Kellen, Nov 13): EVERYTHING lives on the server (Path B): fully cheat-proof, phones are never a bottleneck, and we can diagnose any problem because all game state and logs are server-side. Path A is only a possible staging step on the way.
 - Open paths, write both and decide at the server planning session:
   - Path A: server runs raids + PvP only; solo bosses stay on the phone with today's server checks (timed fights, server-rolled loot). Cheaper, works on weaker connections.
   - Path B: server runs all combat, solo too. Fully cheat-proof; more hosting cost; every fight needs a connection.
