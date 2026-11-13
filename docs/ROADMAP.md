@@ -262,3 +262,4 @@ The current execution front is **M0**: [F1, F7, and F10](plans/XSCAPE_FIX_PLAN.m
 - Planning rule (Kellen, Nov 13): when there are several correct paths, write them all down and revisit before implementing.
 - CAMERA-1 (Kellen, Nov 13, revised): one game-wide 2D camera that follows the player but stops at area edges; boss rooms sized to fit the screen so they never scroll (M1). Never 3D or rotating.
 - MAGIC-BOOK (Kellen, Nov 13): design the first complete spellbook (combat and utility spells, gates, staff requirements, rune costs) before building magic in M1. Spells need no weapon, only runes; Nightfall staff is rune-charged.
+- TUTORIAL-1 (Kellen, Nov 13): guided first Magmor fight teaching prayer, eating, potions and healers; launch-critical for trial conversion (M3, with BOSS-B7 and GUEST-1).

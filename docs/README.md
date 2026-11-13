@@ -185,3 +185,17 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Replaces MAGIC_SYSTEM_PROPOSAL.md as the source of truth once written; absorbs MAGIC-Q3, MAGIC-Q4 and BOSS-B3.4-spell.
 
 - ANIM-Q1 (Kellen, Nov 13): 2–4 frame pixel loops for launch; smoother animation is a post-launch improvement, not a launch requirement.
+
+
+## TUTORIAL-1 Guided first Magmor fight (Kellen, Nov 13, 2026) - launch-critical
+- Goal: the trial must hook players and teach everything needed to beat Magmor, so they convert to real accounts. UX must be incredible and intuitive.
+- Today: bank walkthrough, then a challenge to kill Magmor, with no tips during the fight.
+- Add in-fight guidance during the first trial fight (contextual, shown at the moment it matters):
+  - Prayer: prompt to turn on the right protection prayer, and teach the visual tell the boss gives before each attack style.
+  - Low HP: highlight the food (e.g. shark) on the quick bar and prompt to eat.
+  - Potions: explain what each potion does, highlighted when useful.
+  - Healers: when they spawn, alert that they heal Magmor and must be killed or pulled away (aggroed).
+  - Other mechanics Magmor has, each taught the first time it appears.
+- Must respect the standing UI rules (no overhead names, no floating narration callouts, no labels on boss buttons): design tips as a tutorial layer (e.g. highlights, short coach cards) and confirm the style with Kellen.
+- Open for design: tip style and placement, whether the fight pauses for the first tips, a skip option for returning players, a replay-tips setting, and a death/retry flow that explains what went wrong.
+- Placement: M3 launch content, built alongside the Magmor arena move (BOSS-B7) and the trial flow (GUEST-1).
