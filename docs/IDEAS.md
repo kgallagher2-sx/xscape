@@ -157,6 +157,13 @@ Both players get a cosmetic when the invited friend earns their first fire cape.
 - 💡 **Lore scraps:** pages from the Deep and Hunts reveal the bosses' story. Finishing a chapter unlocks a title.
 - ✅ **Day/night cycle and weather** (Kellen, 12 Nov): unique tasks by time of day. Ideas: night-only rare hunts, glowing ores, a night merchant, storm events.
 
+## Economy (Kellen, 12 Nov: gold must be harder to get; people like working for gold)
+- Cut raw GP from boss drops; drop more sellable items instead (earning takes a step).
+- Gold sinks: infusions, relic upgrades, companion favor boosts, fort upgrades, gear repairs.
+- Trader prices that dip when many players sell the same thing (rewards variety).
+- Skilling (Hunts, Mining, Caravans) as steady earners, not only bossing.
+- Numbers need a balance pass and Kellen's sign-off before anything ships.
+
 ## Design checklist (what makes it sticky)
 Variable rewards, near misses, streaks/dailies, short loops inside long goals, collections, social obligation, visible progress, status, resetting timers, comeback help.
 **Never (Kellen, 12 Nov):** no gimmick or predatory monetization (paid loot boxes, pay-to-refill energy, money-driven FOMO).
@@ -169,6 +176,7 @@ Variable rewards, near misses, streaks/dailies, short loops inside long goals, c
 ## Decisions log
 - **12 Nov:** Be our own game. Use WoW-style leveling with a small grind, never a 99-style wall.
 - **12 Nov:** The Deep is the top pick.
+- **12 Nov:** Make gold harder to get; rebalance boss rewards (numbers pending).
 - **12 Nov:** Companion favor: spend it on Deep supply runs and bank trips, earn it by helping the companion.
 - **12 Nov:** Must-haves: collection log and pets. Streaks pair with Expeditions.
 - **12 Nov:** No predatory monetization; free version plus a possible membership (parked).
