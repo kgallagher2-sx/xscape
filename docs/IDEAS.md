@@ -20,7 +20,13 @@ Be our own game. Borrow the feel of OSRS where it's worth it, but avoid copying 
 - **Bonded duo fights**: two-player-only bosses with split roles (e.g. one holds a lantern that reveals the boss). Status: proposed.
 
 ## Time-sink candidates (the main ask: play for hours)
-- **The Deep**: endless descending dungeon built from our bosses. Floors take 1-2 minutes. Pick 1 of 3 random boons between floors. Death keeps only part of the loot unless you cash out at a camp floor. Duo dives, weekly depth leaderboard per friend group. Drops infusion essences and expedition maps; Rift modifiers become floor types. Status: proposed.
+- **The Deep**: endless descending dungeon built from our bosses. Floors take 1-2 minutes. Pick 1 of 3 random boons between floors. Death keeps only part of the loot unless you cash out at a camp floor. Duo dives, weekly depth leaderboard per friend group. Drops infusion essences and expedition maps; Rift modifiers become floor types. Status: **Kellen's favorite (12 Nov) — top candidate.**
+  - Relic hunting: set pieces drop only at certain depths (e.g. floor 40+), giving runs a long-term goal. Status: proposed.
+
+- **Hunts**: track a rare creature across a procedural wilds map using clues (tracks, branches, blood trails), then fight it. 3-5 min each. Shiny variants and a hunting log to complete. Status: proposed.
+- **Siege**: up to 4 friends defend the hub gate against escalating waves with a boss every 5 waves; spend wave coins on towers, traps, and buffs between waves. Status: proposed.
+- **Gauntlet of champions**: ladder of AI duelists with personalities and fixed builds; beating one unlocks their gimmick as an infusion; ranks reset weekly. Status: proposed.
+- **Bounty contracts**: opt-in contracts to beat a named friend's ghost or score; the friend is notified when you claim it. Status: proposed.
 
 ## Hook skill candidates (OSRS-like, lower priority)
 - **Farming** (working name): herb/seed patches at the hub that grow in real time (20-80 min). Log in to harvest and replant. Status: proposed.
