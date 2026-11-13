@@ -66,7 +66,7 @@ Pulled from the docs above. IDs are stable; use them in chat and in commits. **R
 | FIX-Q2 | Done (Kellen, Nov 12) | Leaving mid-fight (3.1): no loot, no kill, no death penalty. | Same |
 | FIX-Q3 | Done (Kellen, Nov 12) | Weapon ranges (4.7): wands and crossbows 5 tiles, 2-handed staves and bows 7; melee 1, halberd 2. | Same |
 | FIX-Q4 | Done (Kellen, Nov 13) | Existing dupes (1.5, 1.2): leave them alone, it's pre-launch. | Same |
-| FIX-Q5 | Needs Kellen | Legacy imports (1.4): freeze entirely, or still allow GP-less imports for a while? | Same |
+| FIX-Q5 | Done (Kellen, Nov 13) | Legacy imports (1.4): retire local saves. Every guest gets a real server account (unique ID, server-authoritative like signed-in players); after the Magmor hook, prompt to upgrade the same account with email / Sign in with Apple / Google, keeping all progress. See GUEST-1. | Same |
 
 ### Fix plan — 4.5 combat / supplies (audit done, numbers not changed)
 
@@ -133,3 +133,11 @@ Nothing in Kellen's decision text was deleted. Overlap was handled by **moving**
 
 
 Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in the [animation plan](plans/ANIMATION_PLAN.md) and are sequenced in the [roadmap](ROADMAP.md#m1-foundations).
+
+
+## GUEST-1 Server-side guest accounts (Kellen, Nov 13, 2026; App Store mindset)
+- Every guest gets a unique server account on first launch (e.g. Supabase anonymous sign-in), not a phone/browser-only save. App Store builds won't have browser cookies to rely on.
+- Guests play through the server exactly like real players (same RPCs, GP and items server-side). Guest mode exists only to cut sign-up friction.
+- After Magmor hooks them, prompt to convert the guest into a full account (email, Sign in with Apple, Google) by linking the identity to the same user id, so nothing is lost.
+- Replaces today's rule "guests aren't stored in the cloud" once built. Old local saves stop being importable.
+- Open: GUEST-Q1 guest content limits (today guests only fight Magmor in starter gear), GUEST-Q2 how long unconverted guest accounts are kept, GUEST-Q3 guest on a reinstalled/new phone (progress is lost unless converted; warn them).
