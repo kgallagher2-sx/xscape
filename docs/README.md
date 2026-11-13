@@ -110,9 +110,9 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | ID | Status | Decision | Source |
 |---|---|---|---|
 | MAGIC-Q1 | Done (Kellen, Nov 13) | Runes come from inventory stacks you bring into the fight (not the bank). | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
-| MAGIC-Q2 | Needs Kellen | Nightfall as a powered built-in spell at base 38 (recommended) vs only autocasting Spire. | Same |
-| MAGIC-Q3 | Needs Kellen | Adding the 400k Ashen staff so magic is not locked behind Widow. | Same |
-| MAGIC-Q4 | Needs Kellen | Confirm no mid-fight auto-fallback when runes run out. | Same |
+| MAGIC-Q2 | Done (Kellen, Nov 13) | Nightfall staff is a rune-CHARGED weapon: runes are loaded in as charges, its built-in attack works like any weapon (no spell selection), recharge with runes. Numbers in the balance pass. | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
+| MAGIC-Q3 | Done (Kellen, Nov 13) | Folded into MAGIC-BOOK (staff gating and the Ashen staff get decided with the full spellbook). | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
+| MAGIC-Q4 | Done (Kellen, Nov 13) | Folded into MAGIC-BOOK (out-of-runes behaviour decided with the full spellbook). | [MAGIC_SYSTEM_PROPOSAL.md](plans/proposals/MAGIC_SYSTEM_PROPOSAL.md) |
 
 ### IDEAS (direction already recorded; numbers not)
 
@@ -175,3 +175,11 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Admin: full control of the game (game settings and flags, account actions, all history tools, assigning roles).
   - Moderator: less power than admin but more than a player (e.g. mute a player, view chat/trade history for reports).
 - Open for a later session: the exact permission list per role, mute/ban lengths, audit log of every mod/admin action, and how players report others.
+
+
+## MAGIC-BOOK First complete spellbook (Kellen, Nov 13, 2026) - design session needed before magic is built (M1)
+- Any spell can be cast with NO weapon; you only need the runes in your inventory. Staffs and wands boost magic, they are not required in general.
+- Some higher-level spells may still require a tier 1/2/3 staff to cast; that gating gets defined per spell.
+- Spells will go beyond combat (utility, travel, skilling, etc.).
+- Deliverable: the full first spellbook. For every spell: name, purpose (combat or utility), level/unlock gate, staff requirement if any, rune cost, effect/max hit, targets (incl. the multi-target spell from BOSS-B3.4-spell), and out-of-runes behaviour.
+- Replaces MAGIC_SYSTEM_PROPOSAL.md as the source of truth once written; absorbs MAGIC-Q3, MAGIC-Q4 and BOSS-B3.4-spell.

@@ -261,3 +261,4 @@ The current execution front is **M0**: [F1, F7, and F10](plans/XSCAPE_FIX_PLAN.m
 - NET-1 (Kellen, Nov 13): server-run raids and PvP, M1. Path A (multiplayer only) vs Path B (all combat) plus cost and scaling caveats to revisit before building.
 - Planning rule (Kellen, Nov 13): when there are several correct paths, write them all down and revisit before implementing.
 - CAMERA-1 (Kellen, Nov 13, revised): one game-wide 2D camera that follows the player but stops at area edges; boss rooms sized to fit the screen so they never scroll (M1). Never 3D or rotating.
+- MAGIC-BOOK (Kellen, Nov 13): design the first complete spellbook (combat and utility spells, gates, staff requirements, rune costs) before building magic in M1. Spells need no weapon, only runes; Nightfall staff is rune-charged.
