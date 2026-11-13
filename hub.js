@@ -2303,8 +2303,21 @@
       if (typeof openEquipmentView === "function") openEquipmentView();
       return;
     }
+    // The solo/group prompt used to unhide under Gloamhold at the bottom of
+    // Kael's list, which sits below the fold on a phone — a tap did nothing
+    // and raised no toast. Use the existing dedicated choice sheet instead.
+    var choice = $("overlay-raid-choice");
+    if (choice) {
+      closeSheet("overlay-boss");
+      openSheet("overlay-raid-choice");
+      return;
+    }
     var step = $("boss-raid-step");
-    if (step) step.classList.remove("hidden");
+    if (step) {
+      step.classList.remove("hidden");
+      try { step.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+      catch (e) { try { step.scrollIntoView(false); } catch (e2) {} }
+    }
   }
 
   function startGloamSolo() {
@@ -2315,6 +2328,7 @@
 
   function startGloamGroup() {
     closeSheet("overlay-boss");
+    closeSheet("overlay-raid-choice");
     openParty();
   }
 
