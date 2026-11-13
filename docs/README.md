@@ -101,7 +101,7 @@ Full write-up: [COMBAT_RULES_DIFF.md §6](plans/appendices/COMBAT_RULES_DIFF.md)
 | BOSS-B7-lane | Done (Kellen, Nov 13) | Magmor gets a real room on the shared arena engine (trial fight teaches the same movement as everywhere else). | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B8-rooms | Done (Kellen, Nov 13) | Gloamhold raid rooms move onto the shared arena engine (raids are boss fights in sequence); done with the NET-1 server work. | [Boss plan](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B9-bands | Needs Kellen | Per-boss target kill times and damage bands (B9). | Same |
-| BOSS-B3.4-spell | Needs Kellen | Multi-target magic spell to support the six spectral knights. Needs a magic-system design (rune cost, targets, max hit) and sign-off. | [B3.4](plans/BOSS_MECHANICS_PLAN.md) |
+| BOSS-B3.4-spell | Folded into MAGIC-BOOK (Nov 13) | Multi-target spell for the six spectral knights gets designed in the spellbook session. | [B3.4](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B6.1-info | Needs Kellen | Vaelkor info-page text for the redesign. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
 | BOSS-B6.1-hp | Needs Kellen | Minion HP “about 75” — confirm in a balance pass. Max hit 18 is already decided. | [B6.1](plans/BOSS_MECHANICS_PLAN.md) |
 
