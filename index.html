@@ -521,7 +521,6 @@
       box-shadow: 0 4px 16px #000; font-family: inherit;
     }
     #coach-tip.hidden { display: none; }
-    #app.hub-world #coach-tip { display: none !important; }
     #coach-tip .coach-tip-text { margin: 0 0 6px; }
     #coach-tip .coach-tip-actions { display: flex; justify-content: space-between; gap: 8px; }
     #coach-tip button {
@@ -5062,6 +5061,7 @@ const COACH_PRAYER_TEXT = {
 };
 let _coachQueue = [];
 let _coachTimer = 0;
+let _coachPulseTimer = 0;
 let _coachCurrent = null;
 
 function magmorCoachEnabled() {
@@ -5098,6 +5098,7 @@ function applyCoachHighlight(highlight) {
 
 function hideCoachTipCard() {
   if (_coachTimer) { clearTimeout(_coachTimer); _coachTimer = 0; }
+  if (_coachPulseTimer) { clearTimeout(_coachPulseTimer); _coachPulseTimer = 0; }
   _coachCurrent = null;
   const el = $("coach-tip");
   if (el) el.classList.add("hidden");
@@ -5133,6 +5134,10 @@ function showCoachTipCard(tip) {
   text.textContent = tip.text;
   el.classList.remove("hidden");
   applyCoachHighlight(tip.highlight);
+  if (_coachPulseTimer) clearTimeout(_coachPulseTimer);
+  const reapply = function () { if (_coachCurrent === tip) applyCoachHighlight(tip.highlight); };
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(reapply);
+  _coachPulseTimer = setTimeout(reapply, 120);
   if (_coachTimer) clearTimeout(_coachTimer);
   _coachTimer = setTimeout(function () { dismissCoachTip(); }, COACH_TIP_MS);
 }
@@ -7159,7 +7164,6 @@ const Scenes = {
 };
 
 function enterScene(id) {
-  if (id !== "jad" && typeof hideCoachTipCard === "function") hideCoachTipCard();
   if ((id === "hub" || id === "login") && typeof _bootTestPending !== "undefined" && !_bootTestPending) {
     if (typeof clearTestMode === "function") clearTestMode();
   }
@@ -7179,6 +7183,7 @@ function enterScene(id) {
   // Stale OSRS click X markers must not carry into the next scene
   // (they used to flush all at once onto the bank/hub canvas).
   if (G.scene !== id) G.clickMarks = [];
+  if (G.scene === "jad" && id !== "jad" && typeof hideCoachTipCard === "function") hideCoachTipCard();
   G.scene = id;
   next.enter();
   if (typeof checkXscapeVersion === "function") checkXscapeVersion();
