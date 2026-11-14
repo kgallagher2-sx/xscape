@@ -225,7 +225,7 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 
 ## DEEP-DESIGN (design session, Kellen, Nov 14, 2026)
 - Floors: regular monster rooms (screen-sized, with ore veins), a boss floor every 10, a camp floor every 10 (Kellen, revised).
-- Relics drop from the chest you open after clearing a floor; depth tier rules from RELIC-DESIGN apply; boss floors have better odds.
+- Relics are random finds from chests using the RELIC-DESIGN depth percentages. Killing a boss acts as one extra chest roll at that floor's rates (same max 10%); bosses never change relic odds or favor their own relic.
 - NO bank floors or bank chests in the Deep. Banking and resupply mid-run go through companion favor (spend favor to send loot home or bring supplies).
 - Camp floors exist; their purpose is still open.
 - Death: lose everything (see RELIC-DESIGN); IDEAS.md "death keeps part of loot" is superseded.
