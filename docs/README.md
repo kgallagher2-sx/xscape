@@ -235,3 +235,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Boss floors always spawn an exit ladder after the boss dies, so there are 2 exits per 10 floors (boss + random camp).
 - Boons (working name): NOT picked from cards. Each Deep boss carries one boon; defeating the boss transfers it to you for the rest of that dive. Boons are temporary run perks (like a potion boost lasting the dive), lost when you leave or die. Only bosses grant them.
 - A boss's boon is hidden until you defeat it (surprise reveal on kill).
+- Deep bosses: The Deep has its OWN new bosses from launch (not reused Magmor/Vaelkor/raid bosses). Needs a DEEP-BOSSES design session.
