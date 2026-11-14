@@ -251,3 +251,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Ores (working names, Kellen Nov 14): copper/tin (1+), iron (5+), emberite (20+), voidstone (40+), plus COAL as the filler ore. Smelting = main ore + coal into ingots; Smithing turns ingots into pickaxes, woodcutting axes and other tools. Ore can also be sold to traders; later feeds infusions. Rarer ores need higher Mining level and better pickaxes (proposed).
 - Smithing makes TOOLS ONLY at launch; combat gear stays from drops (smithed gear maybe later).
 - Pickaxes: better pickaxes mine faster, and rare ores require a minimum pickaxe tier (e.g. iron pick for emberite, emberite pick for voidstone; exact gates in balance pass).
+- Regular-floor monsters drop: the 25% key chance plus occasional coal or small gold.
