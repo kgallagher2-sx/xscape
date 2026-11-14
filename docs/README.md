@@ -257,3 +257,7 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Favor source (Kellen, Nov 14; approved Nov 12): favor is earned by helping companions on their Expeditions, not inside the Deep.
 - Favor call cost (Kellen, Nov 14): scales with BOTH depth (deeper = pricier) and how many items the companion carries (each way). Exact numbers in balance pass.
 - Friends leaderboard (Kellen, Nov 14): ranks friends by deepest floor ever reached, floor shown next to each name.
+
+## DEEP-BOSSES (design session, Kellen, Nov 14, 2026)
+- 9 new Deep bosses, one per launch relic; each uses its relic against the player.
+- Boss pick: each boss floor rolls a RANDOM boss from the 9; it uses its relic at the tier for that depth (T1 floors 1-19, T2 20-39, T3 40+).
