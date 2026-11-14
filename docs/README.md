@@ -272,4 +272,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Galewing (Gale Feather): dashes 2 tiles after her specials; track and reposition.
   - Chanter Below (Prayer Bead): prayer lasts much longer; switch attack styles around it.
   - Lantern Wraith (Deep Lantern): reveals and seeds trap tiles; watch the floor.
-- Still open: each boss's attacks, specials, HP and numbers; boss art; how each boss's hidden boon relates to it.
+- Still open: each boss's attacks, specials, HP and numbers; boss art; boon strength numbers (balance pass).
+- Boons (Kellen, Nov 14): each boss's hidden boon is a WEAKER version of its own relic, lasting the rest of the dive (lost on leaving or death). Still hidden until the kill.
