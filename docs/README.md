@@ -252,7 +252,8 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Pickaxes: better pickaxes mine faster, and rare ores require a minimum pickaxe tier (e.g. iron pick for emberite, emberite pick for voidstone; exact gates in balance pass).
 - Regular-floor monsters drop: the 25% key chance plus occasional coal or small gold.
 - Inventory: normal inventory on dives; ore, food and loot compete for space; companion favor sends items home.
-- Still open: DEEP-BOSSES session (9 relic bosses), friends leaderboard details, all numbers (balance pass).
+- Still open: DEEP-BOSSES session (9 relic bosses), all numbers (balance pass).
 - Companion favor: companions do NOT follow you. Spend favor to call one; each call is one trip that brings requested supplies from your bank and takes chosen items back to the bank. Every call costs favor.
 - Favor source (Kellen, Nov 14; approved Nov 12): favor is earned by helping companions on their Expeditions, not inside the Deep.
 - Favor call cost (Kellen, Nov 14): scales with BOTH depth (deeper = pricier) and how many items the companion carries (each way). Exact numbers in balance pass.
+- Friends leaderboard (Kellen, Nov 14): ranks friends by deepest floor ever reached, floor shown next to each name.
