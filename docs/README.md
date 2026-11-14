@@ -237,3 +237,9 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - A boss's boon is hidden until you defeat it (surprise reveal on kill).
 - Deep bosses: The Deep has its OWN new bosses from launch (not reused Magmor/Vaelkor/raid bosses). Needs a DEEP-BOSSES design session.
 - Deep bosses = one boss per relic (9 at launch, matching the launch relic list). Each boss has its relic attached and uses it against you (e.g. the Ember Heart boss burns you; the Hollow Crown boss survives one killing hit). New relics later bring new bosses.
+- REVISED relic sources (Kellen, Nov 14): relics must be RARE (a weeks-long goal, never 3 best relics in a day).
+  - Lore: relics are ancient artifacts people hid at their camps; you find them there.
+  - Floor types: (1) regular floors: mining-focused with ore veins and a few easy "annoyance" monsters; (2) camp floors (one random floor per 10): a tent to search for small supplies (e.g. 2 sharks, maybe 1 dose of prayer potion if lucky), ONE tier chest, and the exit ladder; (3) boss floors (relic bosses, exit ladder after the kill).
+  - One tier chest per 10 floors, on the camp floor. The chest's tier shows which relic tier it can roll; opening it rolls the relic chance.
+  - Depth unlocks higher-tier chests and raises the chance a chest is higher tier, but never guarantees it (a deep chest can still be Tier 1).
+  - Earlier "chest after every floor" line is superseded. Boss kill = one extra relic roll at that depth's rates (keep or revisit given rarity goal).
