@@ -203,3 +203,15 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Decided (Kellen, Nov 13): tip style = while paused, dim the screen slightly, spotlight the thing being taught (prayer button, food, healer, boss tell), and show a short tip bubble anchored next to it; tap to resume. Floating tips are an approved exception to the no-floating-narration rule ONLY while the fight is paused in the tutorial.
 - Decided (revised): keep a skip button so players who already know the fight can turn the tips off before their first kill.
 - Placement: M3 launch content, built alongside the Magmor arena move (BOSS-B7) and the trial flow (GUEST-1).
+
+
+## RELIC-DESIGN (design session, Kellen, Nov 14, 2026)
+- Source: relics drop ONLY in The Deep.
+- Slots: start with 1; 2nd and 3rd unlock through progression, tied to the LEVEL-REDO system (exact unlock points decided there). Max 3 equipped.
+- Tiers, no upgrading: deeper floors unlock higher tiers and chances scale with depth (example numbers, final in balance pass):
+  - Tier 1: floors 1-19 scale 1%->10%, capped at 10% after floor 20.
+  - Tier 2: floors 20-39 scale 1%->10%, capped at 10% from 40.
+  - Tier 3: floor 40+ scaling up; tiers 1 and 2 stay at their 10% caps.
+- A higher tier is a stronger version of the same relic (e.g. Tier 2 Ember Heart burns longer/harder).
+- Relics change how you play rather than adding raw stats, and work everywhere.
+- Open: duplicates (salvage/trade/untradeable), the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss), loss on death in the Deep.
