@@ -274,3 +274,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Lantern Wraith (Deep Lantern): reveals and seeds trap tiles; watch the floor.
 - Still open: each boss's attacks, specials, HP and numbers; boss art; boon strength numbers (balance pass).
 - Boons (Kellen, Nov 14): each boss's hidden boon is a WEAKER version of its own relic, lasting the rest of the dive (lost on leaving or death). Still hidden until the kill.
+- Boon stacking (Kellen, Nov 14): boons stack; you keep every boon earned in the dive until you leave or die.
