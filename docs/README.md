@@ -262,3 +262,14 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - 9 new Deep bosses, one per launch relic; each uses its relic against the player.
 - Boss pick: each boss floor rolls a RANDOM boss from the 9; it uses its relic at the tier for that depth (T1 floors 1-19, T2 20-39, T3 40+).
 - No repeats: within one dive, a boss can't appear again until all 9 have appeared (shuffle-bag).
+- Boss concepts (LOCKED by Kellen, Nov 14; names are working names):
+  - Cinderling Matron (Ember Heart): first hit sets you burning; outheal the burn or end it fast.
+  - Gnashjaw (Twin Fang): every Nth attack hits twice; count swings, pray/eat before the double.
+  - The Bled King (Blood Price): hits harder below half HP; burst him through the last half.
+  - Hollow Warden (Hollow Crown): survives one killing blow at low HP; save a special/burst for the second "death".
+  - Granite Brute (Stone Skin): armor hardens after 3 ticks without taking damage; keep steady pressure.
+  - Mire Leech (Leech Ring): heals off damage she deals; protect-pray and deny her healing.
+  - Galewing (Gale Feather): dashes 2 tiles after her specials; track and reposition.
+  - Chanter Below (Prayer Bead): prayer lasts much longer; switch attack styles around it.
+  - Lantern Wraith (Deep Lantern): reveals and seeds trap tiles; watch the floor.
+- Still open: each boss's attacks, specials, HP and numbers; boss art; how each boss's hidden boon relates to it.
