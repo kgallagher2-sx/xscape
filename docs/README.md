@@ -275,3 +275,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Still open: each boss's attacks, specials, HP and numbers; boss art; boon strength numbers (balance pass).
 - Boons (Kellen, Nov 14): each boss's hidden boon is a WEAKER version of its own relic, lasting the rest of the dive (lost on leaving or death). Still hidden until the kill.
 - Boon stacking (Kellen, Nov 14): boons stack; you keep every boon earned in the dive until you leave or die.
+- Boon + matching relic (Kellen, Nov 14): a boon ADDS to the same relic if equipped (e.g. Blood Price + Bled King boon add together) for the rest of the dive.
