@@ -530,6 +530,7 @@
       border: 1px solid #7a6238; color: #e8d080;
     }
     #coach-tip #btn-coach-ok { border-color: #c9a24a; color: #ffe44a; }
+    #coach-tip #btn-coach-ok.hidden { display: none; }
     @keyframes tip-pulse {
       0%, 100% { box-shadow: 0 0 0 1px #ffe44a; border-color: #ffe44a; }
       50% { box-shadow: 0 0 12px 3px rgba(255, 228, 74, 0.9); border-color: #fff4a0; }
@@ -5092,6 +5093,7 @@ function applyCoachHighlight(highlight) {
     if (!slot) continue;
     if (highlight === "food" && slot.type === "item" && COACH_FOOD_IDS[slot.id]) btns[i].classList.add("tip-pulse");
     else if (highlight === "potion" && slot.type === "item" && COACH_POTION_IDS[slot.id]) btns[i].classList.add("tip-pulse");
+    else if (highlight === "prayers" && slot.type === "prayer") btns[i].classList.add("tip-pulse");
     else if (highlight && highlight.prayer && slot.type === "prayer" && slot.id === highlight.prayer) btns[i].classList.add("tip-pulse");
   }
 }
@@ -5117,12 +5119,15 @@ function dismissCoachTip() {
 function skipMagmorCoachTips() {
   try { localStorage.setItem(STORAGE.coachTipsSkip, "1"); } catch (e) {}
   _coachQueue = [];
-  hideCoachTipCard();
+  if (G && G.coachHold) releaseMagmorCoachHold();
+  else hideCoachTipCard();
 }
 
 function resetMagmorCoachTips() {
   _coachQueue = [];
+  if (G) G.coachHold = false;
   hideCoachTipCard();
+  restoreCoachOkButton();
   if (G) G.coachShown = { food: false, prayer: false, potion: false, healers: false };
 }
 
@@ -5138,8 +5143,14 @@ function showCoachTipCard(tip) {
   const reapply = function () { if (_coachCurrent === tip) applyCoachHighlight(tip.highlight); };
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(reapply);
   _coachPulseTimer = setTimeout(reapply, 120);
+  const ok = $("btn-coach-ok");
+  if (ok && !tip.sticky) {
+    ok.textContent = "OK";
+    ok.classList.remove("hidden");
+  }
   if (_coachTimer) clearTimeout(_coachTimer);
-  _coachTimer = setTimeout(function () { dismissCoachTip(); }, COACH_TIP_MS);
+  if (tip.sticky) _coachTimer = 0;
+  else _coachTimer = setTimeout(function () { dismissCoachTip(); }, COACH_TIP_MS);
 }
 
 function showNextCoachTip() {
@@ -5209,13 +5220,106 @@ function offerMagmorHealerTip() {
   });
 }
 
+const COACH_BRIEF_STEPS = [
+  {
+    id: "brief-prayer",
+    text: "Watch Magmor's body and listen. Switch Protect from Magic, Missiles, or Melee to match the tell — before he hits.",
+    highlight: "prayers"
+  },
+  {
+    id: "brief-food",
+    text: "Magmor can hit 97. Eat a shark when your health is low.",
+    highlight: "food"
+  },
+  {
+    id: "brief-potion",
+    text: "Prayer potions restore Prayer. Ranging potions boost Ranged.",
+    highlight: "potion"
+  },
+  {
+    id: "brief-healers",
+    text: "Healers heal Magmor. Tap them to kill them or pull their aggro.",
+    highlight: null
+  },
+  {
+    id: "brief-ready",
+    text: "Attack Magmor when you're ready.",
+    highlight: null
+  }
+];
+
+function magmorCoachHolding() {
+  return !!(G && G.coachHold);
+}
+
+function restoreCoachOkButton() {
+  const ok = $("btn-coach-ok");
+  if (!ok) return;
+  ok.textContent = "OK";
+  ok.classList.remove("hidden");
+}
+
+function showCoachBriefStep(i) {
+  const steps = COACH_BRIEF_STEPS;
+  if (i < 0 || i >= steps.length) return;
+  if (G) G.coachBriefStep = i;
+  const step = steps[i];
+  const last = i === steps.length - 1;
+  showCoachTipCard({
+    id: step.id,
+    text: step.text,
+    highlight: step.highlight,
+    sticky: true
+  });
+  const ok = $("btn-coach-ok");
+  if (ok) {
+    ok.textContent = "Next";
+    ok.classList.toggle("hidden", last);
+  }
+}
+
+function startMagmorCoachBriefing() {
+  if (!magmorCoachEnabled()) {
+    if (G) G.coachHold = false;
+    return;
+  }
+  G.coachHold = true;
+  G.coachBriefStep = 0;
+  showCoachBriefStep(0);
+}
+
+function advanceCoachBriefing() {
+  const next = (G && G.coachBriefStep || 0) + 1;
+  if (next >= COACH_BRIEF_STEPS.length) return;
+  showCoachBriefStep(next);
+}
+
+function releaseMagmorCoachHold() {
+  if (!G || !G.coachHold) return;
+  G.coachHold = false;
+  hideCoachTipCard();
+  restoreCoachOkButton();
+  // Fight clock is tick-based (elapsedMs = ticks * 600ms). Keep both at 0
+  // until the first attack so score and record_jad_kill use combat time only.
+  G.ticks = 0;
+  G.elapsedMs = 0;
+  G.startMs = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+  G._last = G.startMs;
+  acc = 0;
+}
+
 function bindCoachTipUi() {
   if (bindCoachTipUi.done) return;
   bindCoachTipUi.done = true;
   const skip = $("btn-coach-skip");
   const ok = $("btn-coach-ok");
   if (skip) skip.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); skipMagmorCoachTips(); });
-  if (ok) ok.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); dismissCoachTip(); });
+  if (ok) ok.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (magmorCoachHolding()) advanceCoachBriefing();
+    else dismissCoachTip();
+  });
 }
 bindCoachTipUi();
 
@@ -5279,6 +5383,7 @@ function applyBoltHit(target, dmg) {
 }
 
 function playerAttack() {
+  if (typeof magmorCoachHolding === "function" && magmorCoachHolding()) return false;
   if (!G.player || G.player.hp <= 0) return;
   if (G.target === "jad" && (!G.jad || G.jad.hp <= 0)) return;
   if (typeof G.target === "number" && (!G.healers[G.target] || !G.healers[G.target].alive)) {
@@ -5398,6 +5503,7 @@ function gameTick() {
   const sc = currentScene();
   if (sc && typeof sc.tick === "function") { sc.tick(); return; }
   if (G.mode !== "playing") return;
+  if (typeof magmorCoachHolding === "function" && magmorCoachHolding()) return;
   G.ticks++;
 
   if (G.eatCd > 0) G.eatCd--;
@@ -6853,6 +6959,7 @@ canvas.addEventListener("pointerdown", (e) => {
     if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1) {
       G.target = "jad";
       hitNpc = true;
+      releaseMagmorCoachHold();
     }
   }
   // Tap a floor tile to walk there (OSRS-style). NPCs still take priority.
@@ -6866,6 +6973,9 @@ canvas.addEventListener("pointerdown", (e) => {
 });
 
 function addClickMark(x, y, kind) {
+  if (kind === "npc" && typeof magmorCoachHolding === "function" && magmorCoachHolding()) {
+    releaseMagmorCoachHold();
+  }
   if (!G.clickMarks) G.clickMarks = [];
   G.clickMarks.push({ x, y, kind, t: 0 });
 }
@@ -7452,7 +7562,7 @@ function beginCombat() {
   if (!audio.muted) audio.startAmbient();
   setPlayingChrome(true);
   updateDebugCombat();
-  if (typeof offerMagmorPotionTip === "function") offerMagmorPotionTip();
+  if (typeof startMagmorCoachBriefing === "function") startMagmorCoachBriefing();
 }
 
 function startFirstKill(opts) {
