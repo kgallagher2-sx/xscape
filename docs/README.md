@@ -246,3 +246,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - CLARIFIED relic rolls (Kellen, Nov 14):
   - Camp chest: roll 1 decides the chest's tier (deeper = better odds of a higher tier). Then a single chance (max 10%) to get a relic OF THAT TIER. A Tier 3 chest can only give a Tier 3 relic; there is no separate relic-tier roll inside the chest.
   - Boss: its own relic drop at 5%. The relic's tier and which relic it is are based on the current floor depth, NOT the boss's theme. Replaces the earlier "boss = extra chest roll" line.
+- Duo dives: yes, planned (after NET-1 game server). Friends depth leaderboard proposed.
