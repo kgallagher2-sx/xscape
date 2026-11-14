@@ -226,7 +226,7 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 ## DEEP-DESIGN (design session, Kellen, Nov 14, 2026)
 - Floors: regular monster rooms (screen-sized, with ore veins), a boss floor every 10, a camp floor every 10 (Kellen, revised).
 - NO bank floors or bank chests in the Deep. Banking and resupply mid-run go through companion favor (spend favor to send loot home or bring supplies).
-- Camp floors exist; their purpose is still open.
+- Camp floors (Kellen, Nov 14): FINAL contents are the supply tent, one tier chest, and the exit ladder. Nothing else.
 - Death: lose everything (see RELIC-DESIGN); IDEAS.md "death keeps part of loot" is superseded.
 - Exits: each camp floor has a ladder straight to the top of the Deep; leaving that way keeps everything you carry. Between camps, only companion favor gets loot home.
 - Every dive starts at floor 1. Future idea: quests that unlock starting from deeper floors.
@@ -252,7 +252,7 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Pickaxes: better pickaxes mine faster, and rare ores require a minimum pickaxe tier (e.g. iron pick for emberite, emberite pick for voidstone; exact gates in balance pass).
 - Regular-floor monsters drop: the 25% key chance plus occasional coal or small gold.
 - Inventory: normal inventory on dives; ore, food and loot compete for space; companion favor sends items home.
-- Still open: other camp uses, DEEP-BOSSES session (9 relic bosses), friends leaderboard details, all numbers (balance pass).
+- Still open: DEEP-BOSSES session (9 relic bosses), friends leaderboard details, all numbers (balance pass).
 - Companion favor: companions do NOT follow you. Spend favor to call one; each call is one trip that brings requested supplies from your bank and takes chosen items back to the bank. Every call costs favor.
 - Favor source (Kellen, Nov 14; approved Nov 12): favor is earned by helping companions on their Expeditions, not inside the Deep.
 - Favor call cost (Kellen, Nov 14): scales with BOTH depth (deeper = pricier) and how many items the companion carries (each way). Exact numbers in balance pass.
