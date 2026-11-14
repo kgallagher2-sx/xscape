@@ -222,4 +222,3 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Utility: Gale Feather (2-tile movement for 3/4/5 s after dodging a special); Prayer Bead (prayer drains 15/25/35% slower); Deep Lantern (reveals ore veins and trap tiles; Tier 3 also stairs).
   - Each relic lists exactly what it changes; everything else follows normal combat rules.
 - Status: RELIC-DESIGN done enough to plan The Deep. Remaining open: the "per what" of spawn rates (per floor, chest or boss), decided when The Deep is planned.
-- Open (old line kept for history): the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss).
