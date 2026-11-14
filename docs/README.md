@@ -214,4 +214,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Tier 3: floor 40+ scaling up; tiers 1 and 2 stay at their 10% caps.
 - A higher tier is a stronger version of the same relic (e.g. Tier 2 Ember Heart burns longer/harder).
 - Relics change how you play rather than adding raw stats, and work everywhere.
-- Open: duplicates (salvage/trade/untradeable), the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss), loss on death in the Deep.
+- Relics are untradeable. Duplicates can be stored in the bank or sold to a Relic trader NPC at the entrance of The Deep.
+- Open: the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss), loss on death in the Deep.
