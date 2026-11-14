@@ -299,3 +299,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Lantern Wraith (Deep Lantern): magic lantern flare (Protect from Magic). Deep Lantern: her lantern lights hidden trap tiles across the room for 2 ticks; she also seeds new trap tiles. Special: lantern goes dark and the room dims for a few ticks; only lit traps stay visible.
   - Animations: idle float, flare, lantern reveal pulse, trap seed, room dim and relight, trap trigger, hit, death.
 - Animation rule (Kellen, Nov 14): every Deep boss tell, attack, special and phase change needs its own proper animation before it ships, in the style of the existing bosses. No text-based tells.
+- Multi-target (Kellen, Nov 14): each of the 5 combat spells (Spark, Arc, Flare, Crest, Spire) has a 3x3 area version that hits ALL enemies in a 3x3 square. 10 combat spells total. Covers BOSS-B3.4-spell (six spectral knights). Area version cost/damage in balance pass.
