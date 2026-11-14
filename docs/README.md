@@ -243,3 +243,6 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - One tier chest per 10 floors, on the camp floor. The chest's tier shows which relic tier it can roll; opening it rolls the relic chance.
   - Depth unlocks higher-tier chests and raises the chance a chest is higher tier, but never guarantees it (a deep chest can still be Tier 1).
   - Earlier "chest after every floor" line is superseded. Boss kill = one extra relic roll at that depth's rates (keep or revisit given rarity goal).
+- CLARIFIED relic rolls (Kellen, Nov 14):
+  - Camp chest: roll 1 decides the chest's tier (deeper = better odds of a higher tier). Then a single chance (max 10%) to get a relic OF THAT TIER. A Tier 3 chest can only give a Tier 3 relic; there is no separate relic-tier roll inside the chest.
+  - Boss: its own relic drop at 5%. The relic's tier and which relic it is are based on the current floor depth, NOT the boss's theme. Replaces the earlier "boss = extra chest roll" line.
