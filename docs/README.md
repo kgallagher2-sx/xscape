@@ -215,4 +215,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - A higher tier is a stronger version of the same relic (e.g. Tier 2 Ember Heart burns longer/harder).
 - Relics change how you play rather than adding raw stats, and work everywhere.
 - Relics are untradeable. Duplicates can be stored in the bank or sold to a Relic trader NPC at the entrance of The Deep.
-- Open: the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss), loss on death in the Deep.
+- Death in The Deep: you lose EVERYTHING you carried, including equipped relics. Only banked relics are safe. The Relic trader lets you buy back your GEAR only, for a price (number in economy pass); inventory items and relics cannot be bought back.
+- Open: the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss).
