@@ -236,3 +236,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Boons (working name): NOT picked from cards. Each Deep boss carries one boon; defeating the boss transfers it to you for the rest of that dive. Boons are temporary run perks (like a potion boost lasting the dive), lost when you leave or die. Only bosses grant them.
 - A boss's boon is hidden until you defeat it (surprise reveal on kill).
 - Deep bosses: The Deep has its OWN new bosses from launch (not reused Magmor/Vaelkor/raid bosses). Needs a DEEP-BOSSES design session.
+- Deep bosses = one boss per relic (9 at launch, matching the launch relic list). Each boss has its relic attached and uses it against you (e.g. the Ember Heart boss burns you; the Hollow Crown boss survives one killing hit). New relics later bring new bosses.
