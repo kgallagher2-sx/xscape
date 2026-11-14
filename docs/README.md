@@ -279,3 +279,5 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Depth scaling (Kellen, Nov 14): each boss has a base stat line; HP and max hit rise every 10 floors, on top of its relic tier. Numbers in balance pass.
 - Companion calls on boss floors (Kellen, Nov 14): allowed before engaging; NO calls once the boss fight starts.
 - Boss drops (Kellen, Nov 14): besides the separate 5% relic chance, ore and a little gold, both scaling with depth (keeps gold hard). Numbers in balance pass.
+- Difficulty (Kellen, Nov 14): Deep bosses are DEMI-BOSSES, easier than existing bosses (Magmor, Vaelkor, raids). Keep the mechanics; target kill time about 1 minute (main bosses stay 2-4 min).
+- Cinderling Matron (LOCKED, Kellen, Nov 14): basic fire bolt (Magic, Protect from Magic blocks). Ember Heart: her first landed hit burns you 5 ticks at the depth's relic tier. Special every 5th attack: fire bomb on a tile that glows red 2 ticks before landing; step off to avoid. Below half HP: bomb tiles keep burning, so the room fills up; finish her fast. Tells are body glow and red tile, no text.
