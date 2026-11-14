@@ -305,3 +305,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Out of runes (Kellen, Nov 14; closes MAGIC-Q4): no attack, the spell chip flashes red, NO auto-fallback to a cheaper spell or melee. Player taps the chip to pick an affordable spell.
 - Unlocks (Kellen, Nov 14): most spells unlock by Magic level (3x3 versions a bit after their single-target spell; exact levels in LEVEL-REDO). The TOP spells also need a quest. Quest-locked (Kellen, Nov 14): Spire, Crest 3x3, Spire 3x3. The quests themselves: still open.
 - 3x3 rune cost (Kellen, Nov 14): each 3x3 spell costs TRIPLE the runes of its single-target version. Exact rune mix in balance pass.
+- 3x3 damage (Kellen, Nov 14): every target in the 3x3 gets its OWN independent hit roll (0 to the spell's full max hit), e.g. max 20 on 9 targets = 9 separate rolls of 0-20. No damage reduction for extra targets.
