@@ -300,3 +300,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
   - Animations: idle float, flare, lantern reveal pulse, trap seed, room dim and relight, trap trigger, hit, death.
 - Animation rule (Kellen, Nov 14): every Deep boss tell, attack, special and phase change needs its own proper animation before it ships, in the style of the existing bosses. No text-based tells.
 - Multi-target (Kellen, Nov 14): each of the 5 combat spells (Spark, Arc, Flare, Crest, Spire) has a 3x3 area version that hits ALL enemies in a 3x3 square. 10 combat spells total. Covers BOSS-B3.4-spell (six spectral knights). Area version cost/damage in balance pass.
+- Utility spells at launch (Kellen, Nov 14): Home teleport (back to town; not usable in the Deep or mid-fight), Light (a buff lasting about 10 minutes that works like a small Deep Lantern), Superheat (smelt ore to an ingot on the spot). Bones to food: NO.
