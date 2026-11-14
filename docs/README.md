@@ -231,3 +231,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Death: lose everything (see RELIC-DESIGN); IDEAS.md "death keeps part of loot" is superseded.
 - Exits: each camp floor has a ladder straight to the top of the Deep; leaving that way keeps everything you carry. Between camps, only companion favor gets loot home.
 - Every dive starts at floor 1. Future idea: quests that unlock starting from deeper floors.
+- Camp placement: one camp on a RANDOM floor within each block of 10 floors. Camps are "raided" for a small amount of supplies (a little food, maybe a potion) and hold the exit ladder.
