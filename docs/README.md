@@ -224,9 +224,10 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Status: RELIC-DESIGN done enough to plan The Deep. Remaining open: the "per what" of spawn rates (per floor, chest or boss), decided when The Deep is planned.
 
 ## DEEP-DESIGN (design session, Kellen, Nov 14, 2026)
-- Floors: regular monster rooms (screen-sized, with ore veins), a boss floor every 10, a camp floor every 5 (spacing proposed, not challenged).
+- Floors: regular monster rooms (screen-sized, with ore veins), a boss floor every 10, a camp floor every 10 (Kellen, revised).
 - Relics drop from the chest you open after clearing a floor; depth tier rules from RELIC-DESIGN apply; boss floors have better odds.
 - NO bank floors or bank chests in the Deep. Banking and resupply mid-run go through companion favor (spend favor to send loot home or bring supplies).
 - Camp floors exist; their purpose is still open.
 - Death: lose everything (see RELIC-DESIGN); IDEAS.md "death keeps part of loot" is superseded.
 - Exits: each camp floor has a ladder straight to the top of the Deep; leaving that way keeps everything you carry. Between camps, only companion favor gets loot home.
+- Every dive starts at floor 1. Future idea: quests that unlock starting from deeper floors.
