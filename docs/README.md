@@ -261,3 +261,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 ## DEEP-BOSSES (design session, Kellen, Nov 14, 2026)
 - 9 new Deep bosses, one per launch relic; each uses its relic against the player.
 - Boss pick: each boss floor rolls a RANDOM boss from the 9; it uses its relic at the tier for that depth (T1 floors 1-19, T2 20-39, T3 40+).
+- No repeats: within one dive, a boss can't appear again until all 9 have appeared (shuffle-bag).
