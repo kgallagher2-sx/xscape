@@ -276,3 +276,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Boons (Kellen, Nov 14): each boss's hidden boon is a WEAKER version of its own relic, lasting the rest of the dive (lost on leaving or death). Still hidden until the kill.
 - Boon stacking (Kellen, Nov 14): boons stack; you keep every boon earned in the dive until you leave or die.
 - Boon + matching relic (Kellen, Nov 14): a boon ADDS to the same relic if equipped (e.g. Blood Price + Bled King boon add together) for the rest of the dive.
+- Depth scaling (Kellen, Nov 14): each boss has a base stat line; HP and max hit rise every 10 floors, on top of its relic tier. Numbers in balance pass.
