@@ -216,4 +216,10 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Relics change how you play rather than adding raw stats, and work everywhere.
 - Relics are untradeable. Duplicates can be stored in the bank or sold to a Relic trader NPC at the entrance of The Deep.
 - Death in The Deep: you lose EVERYTHING you carried, including equipped relics. Only banked relics are safe. The Relic trader lets you buy back your GEAR only, for a price (number in economy pass); inventory items and relics cannot be bought back.
-- Open: the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss).
+- Launch relic list (draft approved as a starting point, Kellen Nov 14; numbers are placeholders for the balance pass; Tier 1/2/3):
+  - Offense: Ember Heart (first hit burns 3/5/8 per tick for 5 ticks); Twin Fang (every 6th/5th/4th attack hits twice); Blood Price (+10/15/20% damage below half HP).
+  - Survival: Hollow Crown (once per fight, a killing hit leaves you at 1/10/25 HP); Stone Skin (after 3 ticks without damage, next hit -20/35/50%); Leech Ring (heal 3/5/8% of damage dealt).
+  - Utility: Gale Feather (2-tile movement for 3/4/5 s after dodging a special); Prayer Bead (prayer drains 15/25/35% slower); Deep Lantern (reveals ore veins and trap tiles; Tier 3 also stairs).
+  - Each relic lists exactly what it changes; everything else follows normal combat rules.
+- Status: RELIC-DESIGN done enough to plan The Deep. Remaining open: the "per what" of spawn rates (per floor, chest or boss), decided when The Deep is planned.
+- Open (old line kept for history): the launch relic list, the "per what" of spawn rates (per floor, per chest, per boss).
