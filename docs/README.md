@@ -249,3 +249,4 @@ Animation-plan open decisions **ANIM-Q1**, **ANIM-Q2**, and **ANIM-Q3** live in 
 - Duo dives: yes, planned (after NET-1 game server). Friends depth leaderboard proposed.
 - Anti-rush (Kellen, Nov 14): the ladder down on each regular floor is locked. Each ore mined or monster killed has a 25% chance to drop a key that unlocks it (about 4 actions per floor on average; tune in balance pass). Boss floors: the boss must die to continue (proposed boss-wall).
 - Ores (working names, Kellen Nov 14): copper/tin (1+), iron (5+), emberite (20+), voidstone (40+), plus COAL as the filler ore. Smelting = main ore + coal into ingots; Smithing turns ingots into pickaxes, woodcutting axes and other tools. Ore can also be sold to traders; later feeds infusions. Rarer ores need higher Mining level and better pickaxes (proposed).
+- Smithing makes TOOLS ONLY at launch; combat gear stays from drops (smithed gear maybe later).
